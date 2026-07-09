@@ -1,0 +1,324 @@
+.stations-count-title {
+    margin-bottom: 1.5rem;
+}
+
+.view-map-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    justify-content: center;
+    border: 1px solid var(--c-blue);
+    color: var(--c-blue);
+    padding: 0 0.65rem;
+    cursor: pointer;
+    height: 51px;
+    margin-left: 0.5rem;
+    background: transparent;
+    white-space: nowrap;
+    font-weight: 600;
+    font-size: 0.7rem;
+}
+
+.view-map-btn svg {
+    width: 25px;
+    height: 25px;
+}
+
+.on-this-page {
+    font-size: 0.83rem;
+}
+.on-this-page ul {
+    margin-left: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.on-this-page li {
+    font-size: 16px;
+    list-style-type: disc;
+}
+.on-this-page li::marker {
+    color: var(--c-blue);
+}
+.on-this-page-link {
+    color: var(--c-blue);
+    text-decoration: underline;
+    font-size: 16px;
+    line-height: 1.45;
+}
+.on-this-page-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.admitted-voters-box {
+    padding: 1.25rem 1.25rem;
+    background-color: var(--c-box-bg);
+    font-size: 0.85rem;
+}
+.admitted-voters-item {
+    display: flex;
+    justify-content: space-between;
+}
+.admitted-voters-item:not(:first-child) {
+    border-top: 1px solid var(--c-border);
+    padding-top: 0.5rem;
+}
+.admitted-voters-item:not(:last-child) {
+    padding-bottom: 0.5rem;
+}
+
+.votes-cast-list-container {
+    font-size: 0.85rem;
+}
+.votes-cast-list-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 1.15rem 0.75rem 1.15rem;
+}
+.votes-cast-list-item {
+    color: var(--c-text);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.15rem 0.75rem 1.15rem;
+    height: 85px;
+}
+.votes-cast-list-item:hover {
+    text-decoration: none;
+}
+.votes-cast-list-item-static {
+    cursor: default;
+}
+.votes-cast-list-item:nth-child(odd) {
+    background-color: var(--c-box-bg);
+}
+.votes-cast-list-item-child {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.votes-cast-list-item-link {
+    text-decoration: underline;
+    color: var(--c-blue);
+}
+
+.votes-cast-list-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.15rem;
+}
+
+.results-reports-files {
+    font-size: 0.85rem;
+}
+.results-reports-icon {
+    min-width: 30px;
+    width: 30px;
+    height: 30px;
+    color: var(--c-blue);
+}
+.results-reports-item {
+    display: flex;
+    gap: 0.6rem;
+}
+.results-reports-item:not(:last-child) {
+    margin-bottom: 0.5rem;
+}
+.results-reports-content {
+    display: flex;
+    flex-direction: column;
+}
+.results-reports-content-title {
+    color: var(--c-blue);
+}
+
+.results-image-container {
+    position: relative;
+    max-width: 15rem;
+    aspect-ratio: 1/0.65;
+    overflow: hidden;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+.results-image {
+    max-width: 15rem;
+}
+.results-image-resize {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    background: var(--c-blue);
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+.counting-results-infobox {
+    margin-top: 8.5rem;
+}
+
+.party-level-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    font-family: var(--f-title);
+    margin-bottom: 1rem;
+}
+
+.candidate-results-table {
+    font-size: 0.85rem;
+}
+
+.candidate-results-table-header,
+.candidate-results-table-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.candidate-results-table-header {
+    font-weight: 700;
+    padding: 0 0.9rem 0.75rem;
+}
+
+.candidate-results-table-row {
+    padding: 1.3rem;
+}
+
+.candidate-results-table-row:nth-child(odd) {
+    background: var(--c-box-bg);
+}
+
+.candidate-results-table-name {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.candidate-results-table-number {
+    min-width: 1.4rem;
+    color: var(--c-muted);
+}
+
+.candidate-results-table-votes {
+    min-width: 1.5rem;
+    text-align: right;
+}
+
+.candidate-results-table-total {
+    margin-top: 0.25rem;
+    padding-left: 0.9rem;
+}
+
+.report-error-page {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.report-error-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.report-error-intro {
+    max-width: 35rem;
+    line-height: 1.6;
+}
+
+.report-error-deadline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.report-error-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.report-error-section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-family: var(--f-title);
+}
+
+.report-error-checklist {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.report-error-checklist li {
+    position: relative;
+    padding-left: 2rem;
+    font-size: 0.85rem;
+    line-height: 1.65;
+}
+
+.report-error-checklist li::before {
+    content: '✔';
+    position: absolute;
+    top: 0.05rem;
+    left: 0;
+    color: var(--c-done);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.report-error-checklist li::before {
+    content: '\2713';
+}
+
+.report-error-checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.report-error-checklist-item-icon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--c-done);
+}
+
+.report-error-checklist-item-text {
+    flex: 1;
+}
+
+.report-error-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: fit-content;
+    background: var(--c-navy);
+    color: var(--c-white);
+    padding: 0.8rem 1.2rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.report-error-button:hover {
+    color: var(--c-white);
+    text-decoration: none;
+    background: #173966;
+}
+
+.report-error-button svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+@media (max-width: 1024px) {
+    .counting-results-infobox {
+        margin-top: 0;
+    }
+}

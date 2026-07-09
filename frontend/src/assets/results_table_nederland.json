@@ -1,0 +1,450 @@
+{
+  "rows": [
+    {
+      "position": 1,
+      "candidate": "Zilverlicht, E. (Eldor)",
+      "votes": {
+        "total": 88888,
+        "kieskring1": 88888,
+        "kieskring2": 88888,
+        "kieskring3": 88888,
+        "kieskring4": 88888,
+        "kieskring5": 88888,
+        "kieskring6": 88888,
+        "kieskring7": 88888,
+        "kieskring8": 88888
+      }
+    },
+    {
+      "position": 2,
+      "candidate": "Donderbrul, G. (Grom)",
+      "votes": {
+        "total": 4349,
+        "kieskring1": 4349,
+        "kieskring2": 4349,
+        "kieskring3": 4349,
+        "kieskring4": 4349,
+        "kieskring5": 4349,
+        "kieskring6": 4349,
+        "kieskring7": 4349,
+        "kieskring8": 4349
+      }
+    },
+    {
+      "position": 3,
+      "candidate": "Fluisterwind, S. (Seraphina)",
+      "votes": {
+        "total": 1784,
+        "kieskring1": 1784,
+        "kieskring2": 1784,
+        "kieskring3": 1784,
+        "kieskring4": 1784,
+        "kieskring5": 1784,
+        "kieskring6": 1784,
+        "kieskring7": 1784,
+        "kieskring8": 1784
+      }
+    },
+    {
+      "position": 4,
+      "candidate": "Nachtschaduw, V. (Vesper)",
+      "votes": {
+        "total": 5028,
+        "kieskring1": 5028,
+        "kieskring2": 5028,
+        "kieskring3": 5028,
+        "kieskring4": 5028,
+        "kieskring5": 5028,
+        "kieskring6": 5028,
+        "kieskring7": 5028,
+        "kieskring8": 5028
+      }
+    },
+    {
+      "position": 5,
+      "candidate": "Stormvleugel, R. (Ravian)",
+      "votes": {
+        "total": 8013,
+        "kieskring1": 8013,
+        "kieskring2": 8013,
+        "kieskring3": 8013,
+        "kieskring4": 8013,
+        "kieskring5": 8013,
+        "kieskring6": 8013,
+        "kieskring7": 8013,
+        "kieskring8": 8013
+      }
+    },
+    {
+      "position": 6,
+      "candidate": "Sterrenzwerver, M. (Mirella)",
+      "votes": {
+        "total": 1148,
+        "kieskring1": 1148,
+        "kieskring2": 1148,
+        "kieskring3": 1148,
+        "kieskring4": 1148,
+        "kieskring5": 1148,
+        "kieskring6": 1148,
+        "kieskring7": 1148,
+        "kieskring8": 1148
+      }
+    },
+    {
+      "position": 7,
+      "candidate": "Maanfluisteraar, X. (Xander)",
+      "votes": {
+        "total": 1374,
+        "kieskring1": 1374,
+        "kieskring2": 1374,
+        "kieskring3": 1374,
+        "kieskring4": 1374,
+        "kieskring5": 1374,
+        "kieskring6": 1374,
+        "kieskring7": 1374,
+        "kieskring8": 1374
+      }
+    },
+    {
+      "position": 8,
+      "candidate": "Windzanger, P. (Paxton)",
+      "votes": {
+        "total": 5045,
+        "kieskring1": 5045,
+        "kieskring2": 5045,
+        "kieskring3": 5045,
+        "kieskring4": 5045,
+        "kieskring5": 5045,
+        "kieskring6": 5045,
+        "kieskring7": 5045,
+        "kieskring8": 5045
+      }
+    },
+    {
+      "position": 9,
+      "candidate": "Vuurvlinder, F. (Faelia)",
+      "votes": {
+        "total": 6690,
+        "kieskring1": 6690,
+        "kieskring2": 6690,
+        "kieskring3": 6690,
+        "kieskring4": 6690,
+        "kieskring5": 6690,
+        "kieskring6": 6690,
+        "kieskring7": 6690,
+        "kieskring8": 6690
+      }
+    },
+    {
+      "position": 10,
+      "candidate": "Rotsbreker, H. (Helga)",
+      "votes": {
+        "total": 5948,
+        "kieskring1": 5948,
+        "kieskring2": 5948,
+        "kieskring3": 5948,
+        "kieskring4": 5948,
+        "kieskring5": 5948,
+        "kieskring6": 5948,
+        "kieskring7": 5948,
+        "kieskring8": 5948
+      }
+    },
+    {
+      "position": 11,
+      "candidate": "Zonnewende, L. (Luna)",
+      "votes": {
+        "total": 9261,
+        "kieskring1": 9261,
+        "kieskring2": 9261,
+        "kieskring3": 9261,
+        "kieskring4": 9261,
+        "kieskring5": 9261,
+        "kieskring6": 9261,
+        "kieskring7": 9261,
+        "kieskring8": 9261
+      }
+    },
+    {
+      "position": 12,
+      "candidate": "Groenhart, T. (Timo)",
+      "votes": {
+        "total": 8811,
+        "kieskring1": 8811,
+        "kieskring2": 8811,
+        "kieskring3": 8811,
+        "kieskring4": 8811,
+        "kieskring5": 8811,
+        "kieskring6": 8811,
+        "kieskring7": 8811,
+        "kieskring8": 8811
+      }
+    },
+    {
+      "position": 13,
+      "candidate": "Veldbloem, N. (Naima)",
+      "votes": {
+        "total": 4152,
+        "kieskring1": 4152,
+        "kieskring2": 4152,
+        "kieskring3": 4152,
+        "kieskring4": 4152,
+        "kieskring5": 4152,
+        "kieskring6": 4152,
+        "kieskring7": 4152,
+        "kieskring8": 4152
+      }
+    },
+    {
+      "position": 14,
+      "candidate": "IJzeren, V. (Vincent)",
+      "votes": {
+        "total": 2798,
+        "kieskring1": 2798,
+        "kieskring2": 2798,
+        "kieskring3": 2798,
+        "kieskring4": 2798,
+        "kieskring5": 2798,
+        "kieskring6": 2798,
+        "kieskring7": 2798,
+        "kieskring8": 2798
+      }
+    },
+    {
+      "position": 15,
+      "candidate": "Blauwhof, P. (Priya)",
+      "votes": {
+        "total": 8861,
+        "kieskring1": 8861,
+        "kieskring2": 8861,
+        "kieskring3": 8861,
+        "kieskring4": 8861,
+        "kieskring5": 8861,
+        "kieskring6": 8861,
+        "kieskring7": 8861,
+        "kieskring8": 8861
+      }
+    },
+    {
+      "position": 16,
+      "candidate": "Windmaker, J. (Jamal)",
+      "votes": {
+        "total": 9462,
+        "kieskring1": 9462,
+        "kieskring2": 9462,
+        "kieskring3": 9462,
+        "kieskring4": 9462,
+        "kieskring5": 9462,
+        "kieskring6": 9462,
+        "kieskring7": 9462,
+        "kieskring8": 9462
+      }
+    },
+    {
+      "position": 17,
+      "candidate": "Sterrenveld, E. (Esmée)",
+      "votes": {
+        "total": 9151,
+        "kieskring1": 9151,
+        "kieskring2": 9151,
+        "kieskring3": 9151,
+        "kieskring4": 9151,
+        "kieskring5": 9151,
+        "kieskring6": 9151,
+        "kieskring7": 9151,
+        "kieskring8": 9151
+      }
+    },
+    {
+      "position": 18,
+      "candidate": "Roodman, M. (Mohammed)",
+      "votes": {
+        "total": 5626,
+        "kieskring1": 5626,
+        "kieskring2": 5626,
+        "kieskring3": 5626,
+        "kieskring4": 5626,
+        "kieskring5": 5626,
+        "kieskring6": 5626,
+        "kieskring7": 5626,
+        "kieskring8": 5626
+      }
+    },
+    {
+      "position": 19,
+      "candidate": "Zilverberg, C. (Chen)",
+      "votes": {
+        "total": 8829,
+        "kieskring1": 8829,
+        "kieskring2": 8829,
+        "kieskring3": 8829,
+        "kieskring4": 8829,
+        "kieskring5": 8829,
+        "kieskring6": 8829,
+        "kieskring7": 8829,
+        "kieskring8": 8829
+      }
+    },
+    {
+      "position": 20,
+      "candidate": "Duinwalker, S. (Soraya)",
+      "votes": {
+        "total": 1577,
+        "kieskring1": 1577,
+        "kieskring2": 1577,
+        "kieskring3": 1577,
+        "kieskring4": 1577,
+        "kieskring5": 1577,
+        "kieskring6": 1577,
+        "kieskring7": 1577,
+        "kieskring8": 1577
+      }
+    },
+    {
+      "position": 21,
+      "candidate": "Lichtveld, A. (Alex)",
+      "votes": {
+        "total": 6065,
+        "kieskring1": 6065,
+        "kieskring2": 6065,
+        "kieskring3": 6065,
+        "kieskring4": 6065,
+        "kieskring5": 6065,
+        "kieskring6": 6065,
+        "kieskring7": 6065,
+        "kieskring8": 6065
+      }
+    },
+    {
+      "position": 22,
+      "candidate": "Kruidentuin, H. (Habiba)",
+      "votes": {
+        "total": 9359,
+        "kieskring1": 9359,
+        "kieskring2": 9359,
+        "kieskring3": 9359,
+        "kieskring4": 9359,
+        "kieskring5": 9359,
+        "kieskring6": 9359,
+        "kieskring7": 9359,
+        "kieskring8": 9359
+      }
+    },
+    {
+      "position": 23,
+      "candidate": "Vlietstra, B. (Bram)",
+      "votes": {
+        "total": 6025,
+        "kieskring1": 6025,
+        "kieskring2": 6025,
+        "kieskring3": 6025,
+        "kieskring4": 6025,
+        "kieskring5": 6025,
+        "kieskring6": 6025,
+        "kieskring7": 6025,
+        "kieskring8": 6025
+      }
+    },
+    {
+      "position": 24,
+      "candidate": "Meermin, K. (Kai)",
+      "votes": {
+        "total": 3536,
+        "kieskring1": 3536,
+        "kieskring2": 3536,
+        "kieskring3": 3536,
+        "kieskring4": 3536,
+        "kieskring5": 3536,
+        "kieskring6": 3536,
+        "kieskring7": 3536,
+        "kieskring8": 3536
+      }
+    },
+    {
+      "position": 25,
+      "candidate": "Goudappel, D. (Diana)",
+      "votes": {
+        "total": 1439,
+        "kieskring1": 1439,
+        "kieskring2": 1439,
+        "kieskring3": 1439,
+        "kieskring4": 1439,
+        "kieskring5": 1439,
+        "kieskring6": 1439,
+        "kieskring7": 1439,
+        "kieskring8": 1439
+      }
+    },
+    {
+      "position": 26,
+      "candidate": "Bosrank, F. (Finn)",
+      "votes": {
+        "total": 4846,
+        "kieskring1": 4846,
+        "kieskring2": 4846,
+        "kieskring3": 4846,
+        "kieskring4": 4846,
+        "kieskring5": 4846,
+        "kieskring6": 4846,
+        "kieskring7": 4846,
+        "kieskring8": 4846
+      }
+    },
+    {
+      "position": 27,
+      "candidate": "Sterrenveld, J. (Julia)",
+      "votes": {
+        "total": 3933,
+        "kieskring1": 3933,
+        "kieskring2": 3933,
+        "kieskring3": 3933,
+        "kieskring4": 3933,
+        "kieskring5": 3933,
+        "kieskring6": 3933,
+        "kieskring7": 3933,
+        "kieskring8": 3933
+      }
+    },
+    {
+      "position": 28,
+      "candidate": "Regenboog, G. (Giovanni)",
+      "votes": {
+        "total": 5560,
+        "kieskring1": 5560,
+        "kieskring2": 5560,
+        "kieskring3": 5560,
+        "kieskring4": 5560,
+        "kieskring5": 5560,
+        "kieskring6": 5560,
+        "kieskring7": 5560,
+        "kieskring8": 5560
+      }
+    },
+    {
+      "position": 29,
+      "candidate": "Hemelrijk, M. (Milan)",
+      "votes": {
+        "total": 7791,
+        "kieskring1": 7791,
+        "kieskring2": 7791,
+        "kieskring3": 7791,
+        "kieskring4": 7791,
+        "kieskring5": 7791,
+        "kieskring6": 7791,
+        "kieskring7": 7791,
+        "kieskring8": 7791
+      }
+    }
+  ],
+  "totals": {
+    "total": 325560,
+    "kieskring1": 325560,
+    "kieskring2": 325560,
+    "kieskring3": 325560,
+    "kieskring4": 325560,
+    "kieskring5": 325560,
+    "kieskring6": 325560,
+    "kieskring7": 325560,
+    "kieskring8": 325560
+  }
+}

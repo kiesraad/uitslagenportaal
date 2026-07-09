@@ -1,0 +1,63 @@
+[
+  {
+        "kieskring_nr": 1,
+        "name": "Groningen"
+    },{
+        "kieskring_nr": 2,
+        "name": "Leeuwarden"
+    },{
+        "kieskring_nr": 3,
+        "name": "Assen"
+    },{
+        "kieskring_nr": 4,
+        "name": "Zwolle"
+    },{
+        "kieskring_nr": 5,
+        "name": "Lelystad"
+    },{
+        "kieskring_nr": 6,
+        "name": "Nijmegen"
+    },{
+        "kieskring_nr": 7,
+        "name": "Arnhem"
+    },{
+        "kieskring_nr": 8,
+        "name": "Utrecht"
+    },{
+        "kieskring_nr": 9,
+        "name": "Amsterdam"
+    },{
+        "kieskring_nr": 10,
+        "name": "Haarlem"
+    },{
+        "kieskring_nr": 11,
+        "name": "Den Helder"
+    },{
+        "kieskring_nr": 12,
+        "name": "‘s-Gravenhage"
+    },{
+        "kieskring_nr": 13,
+        "name": "Rotterdam"
+    },{
+        "kieskring_nr": 14,
+        "name": "Dordrecht"
+    },{
+        "kieskring_nr": 15,
+        "name": "Leiden"
+    },{
+        "kieskring_nr": 16,
+        "name": "Middelburg"
+    },{
+        "kieskring_nr": 17,
+        "name": "Tilburg"
+    },{
+        "kieskring_nr": 18,
+        "name": "‘s-Hertogenbosch"
+    },{
+        "kieskring_nr": 19,
+        "name": "Maastricht"
+    },{
+        "kieskring_nr": 20,
+        "name": "Bonaire"
+    }
+]
