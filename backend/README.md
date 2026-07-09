@@ -49,3 +49,25 @@ python manage.py runserver
 python manage.py makemigrations backend
 python manage.py migrate backend
 ```
+
+## Management commands
+
+# Wipes all election data, keeps super user
+```bash
+python manage.py wipe_db
+```
+
+# Seed the ElectionConfig
+```bash
+python manage.py seed
+```
+
+# Import all EML files in the .data folder
+```bash
+python manage.py import_election
+```
+
+# Wipe, seed & import in one
+```bash
+python manage.py reset_and_import
+```

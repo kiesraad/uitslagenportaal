@@ -1,0 +1,87 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Django: runserver",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "runserver"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Django: import_election",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "import_election",
+                "${workspaceFolder}/.data"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Django: wipe_db",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "wipe_db"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Django: seed",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "seed"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Django: wipe, seed & import",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "reset_and_import",
+                "${workspaceFolder}/.data"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        }
+    ]
+}

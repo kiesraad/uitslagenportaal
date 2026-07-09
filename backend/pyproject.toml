@@ -7,11 +7,20 @@ requires-python = ">=3.12"
 dependencies = [
     "django>=6.0.3",
     "django-cors-headers>=4.9.0",
+    "django-extensions>=4.1",
     "djangorestframework>=3.16.1",
     "psycopg2-binary>=2.9.12",
+    "pyeml-bindings",
     "python-dotenv>=1.2.2",
     "requests>=2.32.5",
+    "tqdm>=4.68.2",
 ]
+
+[tool.uv]
+override-dependencies = ["xsdata>=26.1"]
 
 [tool.setuptools]
 py-modules = []
+
+[tool.uv.sources]
+pyeml-bindings = { git = "https://github.com/kiesraad/pyeml_bindings.git" }
