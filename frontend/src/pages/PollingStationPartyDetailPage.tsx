@@ -2,65 +2,57 @@ import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import IssueNotice from '../components/PollingStationDetailPage/IssueNotice'
 import PageTop from '../components/DetailPage/PageTop'
-import VotesList from '../components/DetailPage/VotesList'
-import VotesResume from '../components/PollingStationDetailPage/VotesResume'
+import CandidatesVoteList from '../components/DetailPage/CandidatesVoteList'
 import { Layout } from '../components/Layout'
 import { useElectionConfig, useRegion } from '../hooks/queries'
 import { appRoutes } from '../utils/routes'
 import PageIndex from '../components/PageIndex'
-import type { VoterTurnoutCount } from '../api/types'
 
-
-type VoterTurnoutRow = { reason_code: string; label: string; bold?: boolean }
-
-
-export default function PollingStationDetailPage() {
+export default function PollingStationPartyDetailPage() {
   const {
     electionConfigSlug: electionConfigSlugParam,
     parentRegionSlug: parentRegionSlugParam,
     pollingStationSlug: pollingStationSlugParam,
-  } = useParams<{ electionConfigSlug: string; parentRegionSlug: string; pollingStationSlug: string }>()
+    partySlug: partySlugParam,
+  } = useParams<{ electionConfigSlug: string; parentRegionSlug: string; pollingStationSlug: string; partySlug: string }>()
 
   const electionConfigSlug = decodeURIComponent(electionConfigSlugParam ?? '')
   const parentRegionSlug = decodeURIComponent(parentRegionSlugParam ?? '')
   const pollingStationSlug = decodeURIComponent(pollingStationSlugParam ?? '')
+  const partySlug = decodeURIComponent(partySlugParam ?? '')
 
   const { data: electionConfig, isLoading: isElectionLoading } = useElectionConfig(electionConfigSlug)
   const { data: region, isLoading: isRegionLoading, isError: isRegionError, refetch } = useRegion(electionConfigSlug, parentRegionSlug)
   const { data: pollingStation, isLoading: isPollingStationLoading } = useRegion(electionConfigSlug, pollingStationSlug)
+
+
+  const currentPartyVoteCounts = useMemo(
+    () =>
+      (pollingStation?.vote_counts.filter(
+        (voteCount) => voteCount.party.slug === partySlug && voteCount.result_level === 'CANDIDATE',
+      ) ?? []).sort((a, b) => (a.candidate?.position ?? 0) - (b.candidate?.position ?? 0)),
+    [pollingStation?.vote_counts, partySlug],
+  )
 
   const partyLevelVoteCounts = useMemo(
     () => pollingStation?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
     [pollingStation?.vote_counts],
   )
 
+  const partyVoteCount = useMemo(
+    () => partyLevelVoteCounts.find((voteCount) => voteCount.party.slug === partySlug),
+    [partyLevelVoteCounts, partySlug],
+  )
+
+  const partyListNumber = useMemo(
+    () => partyLevelVoteCounts.findIndex((voteCount) => voteCount.party.slug === partySlug) + 1,
+    [partyLevelVoteCounts, partySlug],
+  )
+
   const municipalityDetailRoute = appRoutes.municipalityDetail(electionConfigSlug, parentRegionSlug)
   const pollingStationDetailRoute = appRoutes.pollingStationDetail(electionConfigSlug, parentRegionSlug, pollingStationSlug)
   const reportHref = appRoutes.reportError(parentRegionSlug, pollingStationSlug)
 
-  const ADMITTED_VOTER_ROWS: VoterTurnoutRow[] = [
-    { reason_code: 'geldige stempassen', label: 'Stempassen' },
-    { reason_code: 'geldige volmachtbewijzen', label: 'Volmachtbewijzen' },
-    { reason_code: 'geldige kiezerspassen', label: 'Kiezerspassen' },
-    { reason_code: 'toegelaten kiezers', label: 'Toegelaten kiezers', bold: true },
-  ]
-
-
-  const VOTES_CAST: VoterTurnoutRow[] = [
-    { reason_code: 'total counted', label: 'Totaal stemmen op kandidaten', bold: true },
-    { reason_code: 'blanco', label: 'Blanco stemmen' },
-    { reason_code: 'ongeldig', label: 'Ongeldige stemmen' },
-    { reason_code: 'cast', label: 'Totaal uitgebrachte stemmen' },
-  ]
-
-
-  function getAdmittedVoterVotes(voterTurnoutCounts: VoterTurnoutCount[] | undefined, rows: VoterTurnoutRow[]) {
-    return rows.map(({ reason_code, label, bold }) => ({
-      name: label,
-      count: voterTurnoutCounts?.find((entry) => entry.reason_code === reason_code)?.votes ?? 0,
-      ...(bold ? { bold: true as const } : {}),
-    }))
-  }
 
   const pageTitle = pollingStation
     ? `Telresultaten stembureau\n${pollingStation.region_name}`
@@ -93,6 +85,8 @@ export default function PollingStationDetailPage() {
     )
   }
 
+  const partyName = partyVoteCount?.party.registered_name ?? 'Lijst'
+
   return (
     <Layout
       title={`Telresultaten stembureau – ${pollingStation.region_name}`}
@@ -118,24 +112,15 @@ export default function PollingStationDetailPage() {
           />
 
           <section id="telresultaten">
-            <h3 className="mb-2">Telresultaten</h3>
-            <p>De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware.</p>
+            <h2 className="result-how-title mb-0 semibold">Telresultaten lijst {partyListNumber || '?'}</h2>
+            <h3 className="party-level-title mb-2">{partyName}</h3>
+            <CandidatesVoteList
+              voteCounts={currentPartyVoteCounts}
+              partyVote={partyVoteCount}
+              partyListNumber={partyListNumber}
+            />
           </section>
 
-          <section className="admitted-voters">
-            <h4 className="mb-2">Toegelaten kiezers</h4>
-            <VotesResume votes={getAdmittedVoterVotes(pollingStation.voter_turnout_counts, ADMITTED_VOTER_ROWS)} />
-          </section>
-
-          <section className="votes-cast">
-            <h4 className="mb-2">Uitgebrachte stemmen</h4>
-            <p className="mb-4">Klik op een lijst om de stemmen per kandidaat te zien</p>
-            <VotesList voteCounts={partyLevelVoteCounts} />
-          </section>
-
-          <VotesResume
-            votes={getAdmittedVoterVotes(pollingStation.voter_turnout_counts, VOTES_CAST)}
-          />
           <IssueNotice id="fout-melden" reportHref={reportHref} />
         </div>
       </div>

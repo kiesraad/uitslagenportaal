@@ -4,6 +4,7 @@ import { ElectionConfigDetailPage } from './pages/ElectionConfigDetailPage'
 
 import { MunicipalityDetailPage } from './pages/MunicipalityDetailPage/MunicipalityDetailPage'
 import PollingStationDetailPage from './pages/PollingStationDetailPage'
+import PollingStationPartyDetailPage from './pages/PollingStationPartyDetailPage'
 
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
         <Route path="/:electionConfigSlug/gemeente" element={<ElectionConfigDetailPage />} />
         <Route path="/:electionConfigSlug/:regionSlug" element={<MunicipalityDetailPage />} />
         <Route path="/:electionConfigSlug/:parentRegionSlug/:pollingStationSlug" element={<PollingStationDetailPage />} />
+        <Route path="/:electionConfigSlug/:parentRegionSlug/:pollingStationSlug/:partySlug" element={<PollingStationPartyDetailPage />} />
       </Routes>
     </BrowserRouter>
   )

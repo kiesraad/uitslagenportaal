@@ -19,10 +19,21 @@ export type ElectionStep = {
 
 export type RegionCategory = 'STAAT' | 'WATERSCHAP' | 'KIESKRING' | 'GEMEENTE' | 'PROVINCIE' | "STEMBUREAU"
 
+export type VoterTurnoutCategory = 'REJECTED' | 'UNCOUNTED'
+
+export type VoterTurnoutCount = {
+  cast: number
+  total_counted: number
+  category: VoterTurnoutCategory
+  reason_code: string
+  votes: number
+}
+
 export type Region = {
   region_name: string
   slug: string
   vote_counts: VoteCounts
+  voter_turnout_counts?: VoterTurnoutCount[]
 }
 
 export type RegionResponse = Region[]
