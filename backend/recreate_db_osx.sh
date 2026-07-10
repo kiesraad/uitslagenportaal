@@ -31,9 +31,17 @@ WHERE datname = '${DB_NAME}'
   AND pid <> pg_backend_pid();
 
 DROP DATABASE IF EXISTS ${DB_NAME};
-DROP USER IF EXISTS ${DB_USER};
 
-CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';
+-- Create the role only if it doesn't already exist. We deliberately do NOT
+-- drop the user, because it may own other databases (e.g. the *_test DBs),
+-- and Postgres refuses to drop a role that still owns objects.
+DO \$\$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${DB_USER}') THEN
+    CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';
+  END IF;
+END
+\$\$;
 
 CREATE DATABASE ${DB_NAME}
   OWNER ${DB_USER}

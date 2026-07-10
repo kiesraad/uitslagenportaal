@@ -5,12 +5,12 @@
             "name": "Django: runserver",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/manage.py",
+            "program": "${workspaceFolder}/backend/manage.py",
             "args": [
                 "runserver"
             ],
             "django": true,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/backend",
             "envFile": "${workspaceFolder}/.env",
             "env": {
                 "DJANGO_SETTINGS_MODULE": "mainsite.settings"
@@ -21,14 +21,14 @@
             "name": "Django: import_election",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/manage.py",
+            "program": "${workspaceFolder}/backend/manage.py",
             "args": [
                 "import_election",
-                "${workspaceFolder}/.data"
+                "${workspaceFolder}/backend/.data"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "envFile": "${workspaceFolder}/.env",
+            "envFile": "${workspaceFolder}/backend/.env",
             "env": {
                 "DJANGO_SETTINGS_MODULE": "mainsite.settings"
             },
@@ -38,13 +38,13 @@
             "name": "Django: wipe_db",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/manage.py",
+            "program": "${workspaceFolder}/backend/manage.py",
             "args": [
                 "wipe_db"
             ],
             "django": true,
-            "cwd": "${workspaceFolder}",
-            "envFile": "${workspaceFolder}/.env",
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
             "env": {
                 "DJANGO_SETTINGS_MODULE": "mainsite.settings"
             },
@@ -54,13 +54,13 @@
             "name": "Django: seed",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/manage.py",
+            "program": "${workspaceFolder}/backend/manage.py",
             "args": [
                 "seed"
             ],
             "django": true,
-            "cwd": "${workspaceFolder}",
-            "envFile": "${workspaceFolder}/.env",
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
             "env": {
                 "DJANGO_SETTINGS_MODULE": "mainsite.settings"
             },
@@ -70,14 +70,14 @@
             "name": "Django: wipe, seed & import",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/manage.py",
+            "program": "${workspaceFolder}/backend/manage.py",
             "args": [
                 "reset_and_import",
-                "${workspaceFolder}/.data"
+                "${workspaceFolder}/backend/.data"
             ],
             "django": true,
-            "cwd": "${workspaceFolder}",
-            "envFile": "${workspaceFolder}/.env",
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
             "env": {
                 "DJANGO_SETTINGS_MODULE": "mainsite.settings"
             },

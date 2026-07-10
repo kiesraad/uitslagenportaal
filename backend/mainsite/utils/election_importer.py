@@ -263,9 +263,9 @@ class EML510bImporter(EMLBaseImporter):
                 )
 
         if vote_counts:
-            VoteCount.objects.bulk_create(vote_counts, batch_size=4000)
+            VoteCount.objects.bulk_create(vote_counts, batch_size=1000)
         if turnout_counts:
-            VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=4000)
+            VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=1000)
 
 
 class EML510dImporter(EMLBaseImporter):
