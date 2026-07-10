@@ -31,7 +31,12 @@ uv venv
 uv pip install -e .
 ```
 
-3. Adding new packages
+3. Make sure all the required files are there for debugging
+
+- Make an .env file with: DB_NAME, DB_USER, DB_PASSWORD and DB_HOST
+- Have an .data folder for debug data and fill it with EML files from an election
+
+4. Adding new packages
 
 ```bash
 uv add [package]
