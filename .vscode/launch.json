@@ -11,7 +11,7 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}/backend",
-            "envFile": "${workspaceFolder}/.env",
+            "envFile": "${workspaceFolder}/backend/.env",
             "env": {
                 "DJANGO_SETTINGS_MODULE": "mainsite.settings"
             },
@@ -27,7 +27,7 @@
                 "${workspaceFolder}/backend/.data"
             ],
             "django": true,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/backend",
             "envFile": "${workspaceFolder}/backend/.env",
             "env": {
                 "DJANGO_SETTINGS_MODULE": "mainsite.settings"
