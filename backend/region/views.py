@@ -58,6 +58,7 @@ class RegionDetailView(RetrieveAPIView):
             return Region.objects.prefetch_related(
                 "vote_counts__party",
                 "vote_counts__candidate",
+                "voter_turnout_counts"
             ).get(
                 election__election_config__slug=election_config_slug,
                 slug=region_slug,

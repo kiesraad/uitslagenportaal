@@ -130,14 +130,14 @@ class VoterTurnoutCount(BaseModel):
         on_delete=models.CASCADE,
         related_name="voter_turnout_counts",
     )
-    cast = models.PositiveIntegerField(null=True, blank=True)
-    total_counted = models.PositiveIntegerField(null=True, blank=True)
 
     CATEGORY_REJECTED = "REJECTED"
     CATEGORY_UNCOUNTED = "UNCOUNTED"
+    CATEGORY_TOTALS = "TOTALS"
     CATEGORY_CHOICES = [
         (CATEGORY_REJECTED, "Rejected votes"),
         (CATEGORY_UNCOUNTED, "Uncounted votes"),
+        (CATEGORY_TOTALS, "Total votes"),
     ]
     category = models.CharField(max_length=16, choices=CATEGORY_CHOICES)
     reason_code = models.CharField(max_length=64)

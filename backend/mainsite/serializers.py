@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from election.models import Election, VoteCount
+from election.models import Election, VoteCount, VoterTurnoutCount
 from region.models import Region
 from party.models import Candidate, Party
 
@@ -60,3 +60,10 @@ class VoteCountSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = VoteCount
         fields = ("id", "valid_votes", "candidate", "party", "result_level")
+
+
+class VoterTurnoutCountSummarySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = VoterTurnoutCount
+        fields = ("category", "reason_code", "votes")

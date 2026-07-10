@@ -7,7 +7,13 @@ from xml.etree import ElementTree as ET
 from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.formats.dataclass.parsers.config import ParserConfig
 
-from election.models import ElectionConfig, Election, Contest, VoteCount, VoterTurnoutCount
+from election.models import (
+    ElectionConfig,
+    Election,
+    Contest,
+    VoteCount,
+    VoterTurnoutCount,
+)
 from party.models import Candidate, Party
 from region.models import Region
 from mainsite.models import RegionCategory
@@ -95,8 +101,6 @@ class EMLBaseImporter:
                 VoterTurnoutCount(
                     contest=contest,
                     region=region,
-                    cast=votes.cast,
-                    total_counted=votes.total_counted,
                     category=VoterTurnoutCount.CATEGORY_REJECTED,
                     reason_code=rejected.reason_code.value,
                     votes=rejected.value,
@@ -107,13 +111,29 @@ class EMLBaseImporter:
                 VoterTurnoutCount(
                     contest=contest,
                     region=region,
-                    cast=votes.cast,
-                    total_counted=votes.total_counted,
                     category=VoterTurnoutCount.CATEGORY_UNCOUNTED,
                     reason_code=uncounted.reason_code.value,
                     votes=uncounted.value,
                 )
             )
+        turnout_counts.append(
+            VoterTurnoutCount(
+                contest=contest,
+                region=region,
+                category=VoterTurnoutCount.CATEGORY_TOTALS,
+                reason_code="cast",
+                votes=votes.cast,
+            )
+        )
+        turnout_counts.append(
+            VoterTurnoutCount(
+                contest=contest,
+                region=region,
+                category=VoterTurnoutCount.CATEGORY_TOTALS,
+                reason_code="total counted",
+                votes=votes.total_counted,
+            )
+        )
 
 
 class EML110aImporter(EMLBaseImporter):
@@ -263,9 +283,9 @@ class EML510bImporter(EMLBaseImporter):
                 )
 
         if vote_counts:
-            VoteCount.objects.bulk_create(vote_counts, batch_size=1000)
+            VoteCount.objects.bulk_create(vote_counts, batch_size=4000)
         if turnout_counts:
-            VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=1000)
+            VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=4000)
 
 
 class EML510dImporter(EMLBaseImporter):
@@ -334,9 +354,7 @@ class EML510dImporter(EMLBaseImporter):
                     candidate_by_key,
                     vote_counts,
                 )
-                self._collect_turnout_counts(
-                    contest, gsb_region, unit, turnout_counts
-                )
+                self._collect_turnout_counts(contest, gsb_region, unit, turnout_counts)
 
         if vote_counts:
             VoteCount.objects.bulk_create(vote_counts, batch_size=1000)
