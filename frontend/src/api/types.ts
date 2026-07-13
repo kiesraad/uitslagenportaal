@@ -2,16 +2,16 @@ export type ElectionConfig = {
   slug: string
   label: string
   date: string
-  steps?: ElectionStep[]
+  timeline_entries?: TimelineEntry[]
 }
 
 export type ElectionConfigsResponse = ElectionConfig[]
 
-export type ElectionStepState = 'pending' | 'in-progress' | 'done'
+export type TimelineEntryStatus = 'pending' | 'in-progress' | 'done'
 
-export type ElectionStep = {
+export type TimelineEntry = {
   position: number
-  state: ElectionStepState
+  status: TimelineEntryStatus
   title: string
   date: string
   body: string
@@ -34,6 +34,7 @@ export type Region = {
   slug: string
   vote_counts: VoteCounts
   voter_turnout_counts?: VoterTurnoutCount[]
+  timeline_entries?: TimelineEntry[]
 }
 
 export type RegionResponse = Region[]

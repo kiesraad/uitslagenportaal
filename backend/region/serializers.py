@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from election.serializers import TimelineEntrySerializer
 from region.models import Region
 from mainsite.serializers import (
     VoteCountSummarySerializer,
@@ -17,7 +18,21 @@ class RegionDetailSerializer(serializers.ModelSerializer):
 
     voter_turnout_counts = VoterTurnoutCountSummarySerializer(many=True, read_only=True)
     vote_counts = VoteCountSummarySerializer(many=True, read_only=True)
+    # For now the timeline entries come from the region's election config, so
+    # every region in an election shows the same entries. This will be refactored
+    # to per-region entries later; the serializer field keeps the API stable.
+    timeline_entries = TimelineEntrySerializer(
+        source="election.election_config.timeline_entries",
+        many=True,
+        read_only=True,
+    )
 
     class Meta:
         model = Region
-        fields = ("voter_turnout_counts", "region_name", "vote_counts", "slug")
+        fields = (
+            "voter_turnout_counts",
+            "region_name",
+            "vote_counts",
+            "slug",
+            "timeline_entries",
+        )

@@ -4,6 +4,7 @@ import IssueNotice from '../components/PollingStationDetailPage/IssueNotice'
 import PageTop from '../components/DetailPage/PageTop'
 import VotesList from '../components/DetailPage/VotesList'
 import VotesResume from '../components/PollingStationDetailPage/VotesResume'
+import ResultsTimeline from '../components/PollingStationDetailPage/ResultsTimeline'
 import { Layout } from '../components/Layout'
 import { useElectionConfig, useRegion } from '../hooks/queries'
 import { appRoutes } from '../utils/routes'
@@ -132,6 +133,11 @@ export default function PollingStationDetailPage() {
             <p className="mb-4">Klik op een lijst om de stemmen per kandidaat te zien</p>
             <VotesList voteCounts={partyLevelVoteCounts} />
           </section>
+
+          <ResultsTimeline
+            title="Hoe komt de uitslag tot stand?"
+            entries={pollingStation.timeline_entries ?? []}
+          />
 
           <VotesResume
             votes={getAdmittedVoterVotes(pollingStation.voter_turnout_counts, VOTES_CAST)}

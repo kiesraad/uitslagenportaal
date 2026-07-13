@@ -1,17 +1,17 @@
 from rest_framework import serializers
 
-from election.models import Contest, ElectionStep, ElectionConfig
+from election.models import Contest, TimelineEntry, ElectionConfig
 from mainsite.serializers import (
     RegionSummarySerializer,
     ElectionSummarySerializer,
 )
 
-class ElectionStepSerializer(serializers.ModelSerializer):
+class TimelineEntrySerializer(serializers.ModelSerializer):
     class Meta:
-        model = ElectionStep
+        model = TimelineEntry
         fields = (
             "position",
-            "state",
+            "status",
             "title",
             "date",
             "body",
@@ -19,7 +19,7 @@ class ElectionStepSerializer(serializers.ModelSerializer):
 
 
 class ElectionConfigSerializer(serializers.ModelSerializer):
-    steps = ElectionStepSerializer(many=True, read_only=True)
+    timeline_entries = TimelineEntrySerializer(many=True, read_only=True)
 
     class Meta:
         model = ElectionConfig
@@ -27,7 +27,7 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
             "slug",
             "label",
             "date",
-            'steps'
+            'timeline_entries'
         )
 
 
