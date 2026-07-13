@@ -10,7 +10,6 @@ export type ElectionConfigsResponse = ElectionConfig[]
 export type TimelineEntryStatus = 'pending' | 'in-progress' | 'done'
 
 export type TimelineEntry = {
-  position: number
   status: TimelineEntryStatus
   title: string
   date: string

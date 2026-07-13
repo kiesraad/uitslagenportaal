@@ -10,7 +10,6 @@ class TimelineEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = TimelineEntry
         fields = (
-            "position",
             "status",
             "title",
             "date",

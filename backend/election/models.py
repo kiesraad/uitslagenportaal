@@ -44,20 +44,14 @@ class TimelineEntry(BaseModel):
         on_delete=models.CASCADE,
         related_name="timeline_entries",
     )
-    position = models.PositiveIntegerField()
     status = models.CharField(max_length=16, choices=TimelineEntryStatus.choices)
     title = models.CharField(max_length=255)
     date = models.DateTimeField()
     body = models.TextField()
 
     class Meta:
+        # Entries are ordered chronologically by date.
         ordering = ("date",)
-        constraints = [
-            models.UniqueConstraint(
-                fields=["election_config", "position"],
-                name="unique_step_position_per_election",
-            )
-        ]
 
     def __str__(self):
         return f"{self.election_config.identifier}: {self.title}"

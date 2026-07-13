@@ -19,7 +19,7 @@ export function HomePage() {
   if (election_configs.length === 1 && election_configs[0]?.timeline_entries?.length) {
     timelineEntries = election_configs[0].timeline_entries
       .slice()
-      .sort((a, b) => a.position - b.position)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map((entry) => ({
         status: entry.status,
         title: entry.title,

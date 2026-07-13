@@ -17,7 +17,6 @@ WS2023_ELECTION_SEED = [
         },
         "timeline_entries": [
             {
-                "position": 1,
                 "status": "pending",
                 "title": "De Kiesraad publiceert de uitslag",
                 "date": "2023-12-15T11:00:00",
@@ -27,7 +26,6 @@ WS2023_ELECTION_SEED = [
                 ),
             },
             {
-                "position": 2,
                 "status": "in-progress",
                 "title": "Centraal Stembureau controleert",
                 "date": "2023-12-14T10:00:00",
@@ -41,7 +39,6 @@ WS2023_ELECTION_SEED = [
                 ),
             },
             {
-                "position": 3,
                 "status": "in-progress",
                 "title": "Optelling per kieskring",
                 "date": "2023-12-09T12:00:00",
@@ -51,7 +48,6 @@ WS2023_ELECTION_SEED = [
                 ),
             },
             {
-                "position": 4,
                 "status": "done",
                 "title": "Optelling per gemeente",
                 "date": "2023-12-09T08:00:00",
@@ -62,7 +58,6 @@ WS2023_ELECTION_SEED = [
                 ),
             },
             {
-                "position": 5,
                 "status": "done",
                 "title": "Telling in de stembureaus",
                 "date": "2023-12-08T21:00:00",
@@ -84,7 +79,6 @@ WS2023_ELECTION_SEED = [
     #     },
     #     "timeline_entries": [
     #         {
-    #             "position": 1,
     #             "status": "pending",
     #             "title": "De Kiesraad publiceert de uitslag",
     #             "date": "2023-12-15T11:00:00",
@@ -94,7 +88,6 @@ WS2023_ELECTION_SEED = [
     #             ),
     #         },
     #         {
-    #             "position": 2,
     #             "status": "in-progress",
     #             "title": "Centraal Stembureau controleert",
     #             "date": "2023-12-14T10:00:00",
@@ -133,7 +126,6 @@ class Command(BaseCommand):
             for entry_data in item["timeline_entries"]:
                 TimelineEntry.objects.create(
                     election_config=election_config,
-                    position=entry_data["position"],
                     status=entry_data["status"],
                     title=entry_data["title"],
                     date=timezone.make_aware(datetime.fromisoformat(entry_data["date"])),
