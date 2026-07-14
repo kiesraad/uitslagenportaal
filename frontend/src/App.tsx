@@ -4,8 +4,8 @@ import { ElectionConfigMunicipalityListPage } from './pages/ElectionConfigMunici
 import { MunicipalityPollingstationListPage } from './pages/MunicipalityPage/MunicipalityPollingstationListPage'
 import { MunicipalityPartyResultsPage } from './pages/MunicipalityPage/MunicipalityPartyResultsPage'
 import { MunicipalityResultsPage } from './pages/MunicipalityPage/MunicipalityResultsPage'
-import PollingStationResultsPage from './pages/PollingStationResultsPage.tsx'
-import PollingStationPartyResultsPage from './pages/PollingStationPartyResultsPage'
+import PollingStationResultsPage from './pages/PollingStationPage/PollingStationResultsPage.tsx'
+import PollingStationPartyResultsPage from './pages/PollingStationPage/PollingStationPartyResultsPage.tsx'
 
 
 

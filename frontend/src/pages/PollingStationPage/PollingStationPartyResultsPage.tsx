@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import IssueNotice from '../components/PollingStationDetailPage/IssueNotice'
-import PageTop from '../components/DetailPage/PageTop'
-import CandidatesVoteList from '../components/DetailPage/CandidatesVoteList'
-import { Layout } from '../components/Layout'
-import { useElectionConfig, useRegion } from '../hooks/queries'
-import { appRoutes } from '../utils/routes'
-import PageIndex from '../components/PageIndex'
+import IssueNotice from '../../components/PollingStationDetailPage/IssueNotice'
+import PageTop from '../../components/DetailPage/PageTop'
+import CandidatesVoteList from '../../components/DetailPage/CandidatesVoteList'
+import { Layout } from '../../components/Layout'
+import { useElectionConfig, useRegion } from '../../hooks/queries'
+import { appRoutes } from '../../utils/routes'
+import PageIndex from '../../components/PageIndex'
 
 export default function PollingStationPartyResultsPage() {
   const {
