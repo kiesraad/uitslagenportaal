@@ -1,9 +1,9 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { HomePage } from './pages/HomePage'
 import { ElectionConfigMunicipalityListPage } from './pages/ElectionConfigMunicipalityListPage'
-import { MunicipalityPollingstationListPage } from './pages/MunicipalityDetailPage/MunicipalityPollingstationListPage'
-import { MunicipalityPartyResultsPage } from './pages/MunicipalityDetailPage/MunicipalityPartyResultsPage'
-import { MunicipalityResultsPage } from './pages/MunicipalityDetailPage/MunicipalityResultsPage'
+import { MunicipalityPollingstationListPage } from './pages/MunicipalityPage/MunicipalityPollingstationListPage'
+import { MunicipalityPartyResultsPage } from './pages/MunicipalityPage/MunicipalityPartyResultsPage'
+import { MunicipalityResultsPage } from './pages/MunicipalityPage/MunicipalityResultsPage'
 import PollingStationResultsPage from './pages/PollingStationResultsPage.tsx'
 import PollingStationPartyResultsPage from './pages/PollingStationPartyResultsPage'
 
