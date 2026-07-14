@@ -1,16 +1,17 @@
 import { useParams } from 'react-router-dom'
-import { Layout } from '../../components/Layout'
+import { Layout } from '../../components/Layout.tsx'
 import PageTop from '../../components/DetailPage/PageTop.tsx'
 import SharedTabs from '../../components/DetailPage/SharedTabs.tsx'
-import { useElectionConfig, useRegion } from '../../hooks/queries'
-import { appRoutes } from '../../utils/routes'
+import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
+import { appRoutes } from '../../utils/routes.ts'
 import PollingStationList from '../../components/MunicipalityDetailPage/PollingStationList.tsx'
 import './municipality-detail-page.css'
 
-export function MunicipalityDetailPage() {
+export function MunicipalityDetailPollingstationListPage() {
   const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
   const regionSlug = decodeURIComponent(regionSlugParam ?? '')
   const municipalityDetailPollingstationListRoute = appRoutes.municipalityDetailPollingstationList(electionConfigSlug ?? '', regionSlug)
+  const municipalityDetailResultsRoute = appRoutes.municipalityDetailResultsRoute(electionConfigSlug ?? '', regionSlug)
 
   const { data: electionConfig } = useElectionConfig(electionConfigSlug)
   const { data: region, isLoading, isError, refetch } = useRegion(electionConfigSlug, regionSlug)
@@ -57,8 +58,8 @@ export function MunicipalityDetailPage() {
               },
               {
                 label: 'Hele gemeente',
-                value: municipalityResultsRoute,
-                activePatterns: [municipalityResultsRoute],
+                value: municipalityDetailResultsRoute,
+                activePatterns: [municipalityDetailResultsRoute],
               },
             ]}
           />

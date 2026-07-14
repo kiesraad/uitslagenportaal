@@ -2,6 +2,7 @@ export const appRoutes = {
   home: () => '/',
   electionConfigDetailMunicipality: (electionConfigSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/gemeente`,
   municipalityDetailPollingstationList: (electionConfigSlug: string, regionSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/${encodeURIComponent(regionSlug)}`,
+  municipalityDetailResultsRoute: (electionConfigSlug: string, regionSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/${encodeURIComponent(regionSlug)}/results`,
   pollingStationDetail: (electionConfigSlug: string, regionSlug: string, pollingStationSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/${encodeURIComponent(regionSlug)}/${encodeURIComponent(pollingStationSlug)}`,
 
 
