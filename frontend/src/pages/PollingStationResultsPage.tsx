@@ -10,7 +10,7 @@ import { appRoutes } from '../utils/routes'
 import PageIndex from '../components/PageIndex'
 
 
-export default function PollingStationDetailPage() {
+export default function PollingStationResultsPage() {
   const {
     electionConfigSlug: electionConfigSlugParam,
     parentRegionSlug: parentRegionSlugParam,
