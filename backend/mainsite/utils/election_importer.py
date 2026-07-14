@@ -259,7 +259,17 @@ class EML510bImporter(EMLBaseImporter):
                 (candidate.party_id, candidate.identifier): candidate
                 for candidate in Candidate.objects.filter(contest=contest)
             }
-            # Parse candidate info as well
+            self._parse_party_candidate_votecounts(
+                contest,
+                region,
+                contest_data.total_votes.selection,
+                party_by_name,
+                candidate_by_key,
+                vote_counts,
+            )
+            self._collect_turnout_counts(
+                contest, region, contest_data.total_votes, turnout_counts
+            )
             for unit in contest_data.reporting_unit_votes:
                 polling_station = Region.objects.create(
                     election=self.election,
