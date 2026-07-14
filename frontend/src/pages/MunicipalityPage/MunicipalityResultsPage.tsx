@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout.tsx'
-import PageTop from '../../components/DetailPage/PageTop.tsx'
-import SharedTabs from '../../components/DetailPage/SharedTabs.tsx'
+import PageTop from '../../components/PageTop.tsx'
+import SharedTabs from '../../components/SharedTabs.tsx'
 import VotesResume from '../../components/ResultsPage/VotesResume.tsx'
-import VotesList from '../../components/DetailPage/VotesList'
+import VotesList from '../../components/ResultsPage/VotesList.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 

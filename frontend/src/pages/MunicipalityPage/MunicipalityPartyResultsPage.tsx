@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout.tsx'
-import PageTop from '../../components/DetailPage/PageTop.tsx'
+import PageTop from '../../components/PageTop.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
-import CandidatesVoteList from '../../components/DetailPage/CandidatesVoteList'
+import CandidatesVoteList from '../../components/ResultsPage/CandidatesVoteList.tsx'
 import PageIndex from '../../components/PageIndex'
 
 export function MunicipalityPartyResultsPage() {
