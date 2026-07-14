@@ -1,4 +1,5 @@
 import type { VoteCount, VoteCounts } from '../../api/types'
+import { formatCandidateName } from '../../utils/formatCandidateName'
 
 type Props = {
   voteCounts: VoteCounts
@@ -26,7 +27,7 @@ export default function CandidatesVoteList({ voteCounts, partyVote, partyListNum
           <div key={voteCount.id} className="votes-cast-list-item votes-cast-list-item-static">
             <div className="votes-cast-list-item-child">
               <span>{i + 1}</span>
-              <span>{voteCount.candidate?.last_name}, {voteCount.candidate?.first_name}</span>
+              <span>{formatCandidateName(voteCount.candidate!)}</span>
             </div>
             <div className="votes-cast-list-item-child">
               <span className="votes-cast-list-item-votes bold">{voteCount.valid_votes ? voteCount.valid_votes : '-'}</span>
