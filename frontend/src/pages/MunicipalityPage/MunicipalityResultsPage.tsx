@@ -8,8 +8,6 @@ import VotesList from '../../components/ResultsPage/VotesList.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 
-import './municipality-page.css'
-
 export function MunicipalityResultsPage() {
   const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
   const regionSlug = decodeURIComponent(regionSlugParam ?? '')

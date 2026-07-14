@@ -5,8 +5,6 @@ import SharedTabs from '../../components/SharedTabs.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 import PollingStationList from '../../components/MunicipalityPage/PollingStationList.tsx'
-import './municipality-page.css'
-
 export function MunicipalityPollingstationListPage() {
   const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
   const regionSlug = decodeURIComponent(regionSlugParam ?? '')
