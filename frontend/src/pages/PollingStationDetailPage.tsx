@@ -8,10 +8,6 @@ import { Layout } from '../components/Layout'
 import { useElectionConfig, useRegion } from '../hooks/queries'
 import { appRoutes } from '../utils/routes'
 import PageIndex from '../components/PageIndex'
-import type { VoterTurnoutCount } from '../api/types'
-
-
-type VoterTurnoutRow = { reason_code: string; label: string; bold?: boolean }
 
 
 export default function PollingStationDetailPage() {
@@ -37,30 +33,6 @@ export default function PollingStationDetailPage() {
   const municipalityDetailPollingstationListRoute = appRoutes.municipalityDetailPollingstationList(electionConfigSlug, parentRegionSlug)
   const pollingStationDetailRoute = appRoutes.pollingStationDetail(electionConfigSlug, parentRegionSlug, pollingStationSlug)
   const reportHref = appRoutes.reportError(parentRegionSlug, pollingStationSlug)
-
-  const ADMITTED_VOTER_ROWS: VoterTurnoutRow[] = [
-    { reason_code: 'geldige stempassen', label: 'Stempassen' },
-    { reason_code: 'geldige volmachtbewijzen', label: 'Volmachtbewijzen' },
-    { reason_code: 'geldige kiezerspassen', label: 'Kiezerspassen' },
-    { reason_code: 'toegelaten kiezers', label: 'Toegelaten kiezers', bold: true },
-  ]
-
-
-  const VOTES_CAST: VoterTurnoutRow[] = [
-    { reason_code: 'total counted', label: 'Totaal stemmen op kandidaten', bold: true },
-    { reason_code: 'blanco', label: 'Blanco stemmen' },
-    { reason_code: 'ongeldig', label: 'Ongeldige stemmen' },
-    { reason_code: 'cast', label: 'Totaal uitgebrachte stemmen' },
-  ]
-
-
-  function getAdmittedVoterVotes(voterTurnoutCounts: VoterTurnoutCount[] | undefined, rows: VoterTurnoutRow[]) {
-    return rows.map(({ reason_code, label, bold }) => ({
-      name: label,
-      count: voterTurnoutCounts?.find((entry) => entry.reason_code === reason_code)?.votes ?? 0,
-      ...(bold ? { bold: true as const } : {}),
-    }))
-  }
 
   const pageTitle = pollingStation
     ? `Telresultaten stembureau\n${pollingStation.region_name}`
@@ -124,7 +96,7 @@ export default function PollingStationDetailPage() {
 
           <section className="admitted-voters">
             <h4 className="mb-2">Toegelaten kiezers</h4>
-            <VotesResume votes={getAdmittedVoterVotes(pollingStation.voter_turnout_counts, ADMITTED_VOTER_ROWS)} />
+            <VotesResume type='admittedVoters' votes={pollingStation.voter_turnout_counts} />
           </section>
 
           <section className="votes-cast">
@@ -134,7 +106,8 @@ export default function PollingStationDetailPage() {
           </section>
 
           <VotesResume
-            votes={getAdmittedVoterVotes(pollingStation.voter_turnout_counts, VOTES_CAST)}
+            type='votesCast'
+            votes={pollingStation.voter_turnout_counts}
           />
           <IssueNotice id="fout-melden" reportHref={reportHref} />
         </div>

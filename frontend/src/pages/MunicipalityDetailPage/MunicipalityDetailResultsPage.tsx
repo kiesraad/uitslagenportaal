@@ -5,7 +5,6 @@ import PageTop from '../../components/DetailPage/PageTop.tsx'
 import SharedTabs from '../../components/DetailPage/SharedTabs.tsx'
 import VotesResume from '../../components/PollingStationDetailPage/VotesResume'
 import VotesList from '../../components/DetailPage/VotesList'
-import type { VoterTurnoutCount } from '../../api/types'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 
@@ -39,36 +38,10 @@ export function MunicipalityDetailResultsPage() {
     )
   }
 
-  type VoterTurnoutRow = { reason_code: string; label: string; bold?: boolean }
-
-  const ADMITTED_VOTER_ROWS: VoterTurnoutRow[] = [
-    { reason_code: 'geldige stempassen', label: 'Stempassen' },
-    { reason_code: 'geldige volmachtbewijzen', label: 'Volmachtbewijzen' },
-    { reason_code: 'geldige kiezerspassen', label: 'Kiezerspassen' },
-    { reason_code: 'toegelaten kiezers', label: 'Toegelaten kiezers', bold: true },
-  ]
-
-  const VOTES_CAST: VoterTurnoutRow[] = [
-    { reason_code: 'total counted', label: 'Totaal stemmen op kandidaten', bold: true },
-    { reason_code: 'blanco', label: 'Blanco stemmen' },
-    { reason_code: 'ongeldig', label: 'Ongeldige stemmen' },
-    { reason_code: 'cast', label: 'Totaal uitgebrachte stemmen' },
-  ]
-
   const partyLevelVoteCounts = useMemo(
     () => region?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
     [region?.vote_counts],
   )
-
-
-
-  function getAdmittedVoterVotes(voterTurnoutCounts: VoterTurnoutCount[] | undefined, rows: VoterTurnoutRow[]) {
-    return rows.map(({ reason_code, label, bold }) => ({
-      name: label,
-      count: voterTurnoutCounts?.find((entry) => entry.reason_code === reason_code)?.votes ?? 0,
-      ...(bold ? { bold: true as const } : {}),
-    }))
-  }
 
   return (
     <Layout
@@ -104,7 +77,7 @@ export function MunicipalityDetailResultsPage() {
         <div className="page-space-3">
           <section className="admitted-voters">
             <h4 className="mb-2">Toegelaten kiezers</h4>
-            <VotesResume votes={getAdmittedVoterVotes(region.voter_turnout_counts, ADMITTED_VOTER_ROWS)} />
+            <VotesResume type='admittedVoters' votes={region.voter_turnout_counts} />
           </section>
 
           <section className="votes-cast">
@@ -114,7 +87,8 @@ export function MunicipalityDetailResultsPage() {
           </section>
 
           <VotesResume
-            votes={getAdmittedVoterVotes(region.voter_turnout_counts, VOTES_CAST)}
+            type='votesCast'
+            votes={region.voter_turnout_counts}
           />
         </div>
       </div>
