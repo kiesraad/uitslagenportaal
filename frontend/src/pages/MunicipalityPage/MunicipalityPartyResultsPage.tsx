@@ -5,7 +5,7 @@ import PageTop from '../../components/DetailPage/PageTop.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 
-import IssueNotice from '../../components/PollingStationDetailPage/IssueNotice'
+import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import CandidatesVoteList from '../../components/DetailPage/CandidatesVoteList'
 import PageIndex from '../../components/PageIndex'
 

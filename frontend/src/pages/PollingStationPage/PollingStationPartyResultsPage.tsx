@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import IssueNotice from '../../components/PollingStationDetailPage/IssueNotice'
+import IssueNotice from '../../components/ResultsPage/IssueNotice'
 import PageTop from '../../components/DetailPage/PageTop'
 import CandidatesVoteList from '../../components/DetailPage/CandidatesVoteList'
 import { Layout } from '../../components/Layout'
