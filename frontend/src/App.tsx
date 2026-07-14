@@ -5,7 +5,7 @@ import { ElectionConfigDetailPage } from './pages/ElectionConfigDetailPage'
 import { MunicipalityDetailPollingstationListPage } from './pages/MunicipalityDetailPage/MunicipalityDetailPollingstationListPage.tsx'
 import { MunicipalityDetailResultsPage } from './pages/MunicipalityDetailPage/MunicipalityDetailResultsPage.tsx'
 import PollingStationDetailPage from './pages/PollingStationDetailPage'
-import PollingStationPartyDetailPage from './pages/PollingStationPartyDetailPage'
+import PollingStationPartyResultsPage from './pages/PollingStationPartyResultsPage.tsx'
 
 
 function App() {
@@ -17,7 +17,7 @@ function App() {
         <Route path="/:electionConfigSlug/:regionSlug" element={<MunicipalityDetailPollingstationListPage />} />
         <Route path="/:electionConfigSlug/:regionSlug/results" element={<MunicipalityDetailResultsPage />} />
         <Route path="/:electionConfigSlug/:parentRegionSlug/:pollingStationSlug" element={<PollingStationDetailPage />} />
-        <Route path="/:electionConfigSlug/:parentRegionSlug/:pollingStationSlug/:partySlug" element={<PollingStationPartyDetailPage />} />
+        <Route path="/:electionConfigSlug/:parentRegionSlug/:pollingStationSlug/:partySlug" element={<PollingStationPartyResultsPage />} />
       </Routes>
     </BrowserRouter>
   )

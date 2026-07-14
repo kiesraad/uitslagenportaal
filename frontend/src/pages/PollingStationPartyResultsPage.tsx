@@ -8,7 +8,7 @@ import { useElectionConfig, useRegion } from '../hooks/queries'
 import { appRoutes } from '../utils/routes'
 import PageIndex from '../components/PageIndex'
 
-export default function PollingStationPartyDetailPage() {
+export default function PollingStationPartyResultsPage() {
   const {
     electionConfigSlug: electionConfigSlugParam,
     parentRegionSlug: parentRegionSlugParam,
