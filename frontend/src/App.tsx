@@ -1,7 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { HomePage } from './pages/HomePage'
-import { ElectionConfigDetailPage } from './pages/ElectionConfigDetailPage'
-
+import { ElectionConfigMunicipalityListPage } from './pages/ElectionConfigMunicipalityListPage'
 import { MunicipalityPollingstationListPage } from './pages/MunicipalityDetailPage/MunicipalityPollingstationListPage'
 import { MunicipalityResultsPage } from './pages/MunicipalityDetailPage/MunicipalityResultsPage'
 import PollingStationResultsPage from './pages/PollingStationResultsPage.tsx'
@@ -13,7 +12,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/:electionConfigSlug/gemeente" element={<ElectionConfigDetailPage />} />
+        <Route path="/:electionConfigSlug/gemeente" element={<ElectionConfigMunicipalityListPage />} />
         <Route path="/:electionConfigSlug/:regionSlug" element={<MunicipalityPollingstationListPage />} />
         <Route path="/:electionConfigSlug/:regionSlug/results" element={<MunicipalityResultsPage />} />
         <Route path="/:electionConfigSlug/:parentRegionSlug/:pollingStationSlug" element={<PollingStationResultsPage />} />

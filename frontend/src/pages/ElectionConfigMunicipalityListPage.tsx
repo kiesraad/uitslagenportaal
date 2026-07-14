@@ -8,7 +8,7 @@ import { appRoutes } from '../utils/routes.ts'
 import { useElectionConfig, useRegions } from '../hooks/queries.ts'
 
 
-export function ElectionConfigDetailPage() {
+export function ElectionConfigMunicipalityListPage() {
   
   const navigate = useNavigate()
   const { electionConfigSlug} = useParams<{ electionConfigSlug: string }>()
