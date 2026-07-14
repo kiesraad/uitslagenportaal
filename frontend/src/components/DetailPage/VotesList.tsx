@@ -21,20 +21,22 @@ export default function VotesList({ voteCounts, total, columns = ['Lijst', 'Aant
       </div>
       <div className="votes-cast-list">
         {voteCounts.map((voteCount, i) => {
+          const isClickable = voteCount.valid_votes > 0
+
           const content = (
             <>
               <div className="votes-cast-list-item-child">
                 <span>{i + 1}</span>
-                <span className="votes-cast-list-item-link">{voteCount.party.registered_name}</span>
+                <span className={isClickable ? 'votes-cast-list-item-link' : undefined}>{voteCount.party.registered_name}</span>
               </div>
               <div className="votes-cast-list-item-child">
                 <span className="votes-cast-list-item-votes bold">{voteCount.valid_votes}</span>
-                <span className="gemeente-chevron">{'>'}</span>
+                {isClickable && <span className="gemeente-chevron">{'>'}</span>}
               </div>
             </>
           )
 
-          if (!voteCount.valid_votes) {
+          if (!isClickable) {
             return (
               <div key={voteCount.id} className="votes-cast-list-item votes-cast-list-item-static">
                 {content}
