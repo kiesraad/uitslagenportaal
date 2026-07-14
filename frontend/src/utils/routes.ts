@@ -3,7 +3,11 @@ export const appRoutes = {
   electionConfigMunicipalityList: (electionConfigSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/gemeente`,
   municipalityPollingstationList: (electionConfigSlug: string, regionSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/${encodeURIComponent(regionSlug)}`,
   municipalityResults: (electionConfigSlug: string, regionSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/${encodeURIComponent(regionSlug)}/results`,
+  municipalityPartyResults: (electionConfigSlug: string, regionSlug: string, partySlug: string) =>
+    `${appRoutes.municipalityResults(electionConfigSlug, regionSlug)}/${encodeURIComponent(partySlug)}`,
   pollingStationResults: (electionConfigSlug: string, regionSlug: string, pollingStationSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/${encodeURIComponent(regionSlug)}/${encodeURIComponent(pollingStationSlug)}`,
+  pollingStationPartyResults: (electionConfigSlug: string, regionSlug: string, pollingStationSlug: string, partySlug: string) =>
+    `${appRoutes.pollingStationResults(electionConfigSlug, regionSlug, pollingStationSlug)}/${encodeURIComponent(partySlug)}`,
 
 
   // Below are the pages of the initial stubbed frontend, which we will replace and use as reference

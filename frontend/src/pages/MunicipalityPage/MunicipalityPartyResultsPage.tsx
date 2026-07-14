@@ -49,7 +49,7 @@ export function MunicipalityPartyResultsPage() {
 
   const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, regionSlug)
   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug, regionSlug)
-  const municipalityPartyResultsRoute = `${municipalityResultsRoute}/${encodeURIComponent(partySlug)}`
+  const municipalityPartyResultsRoute = appRoutes.municipalityPartyResults(electionConfigSlug, regionSlug, partySlug)
   const reportHref = appRoutes.reportError(regionSlug)
 
 

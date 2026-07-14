@@ -51,7 +51,7 @@ export default function PollingStationPartyResultsPage() {
 
   const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, parentRegionSlug)
   const pollingStationResultsRoute = appRoutes.pollingStationResults(electionConfigSlug, parentRegionSlug, pollingStationSlug)
-  const pollingStationPartyResultsRoute = `${pollingStationResultsRoute}/${encodeURIComponent(partySlug)}`
+  const pollingStationPartyResultsRoute = appRoutes.pollingStationPartyResults(electionConfigSlug, parentRegionSlug, pollingStationSlug, partySlug)
   const reportHref = appRoutes.reportError(parentRegionSlug, pollingStationSlug)
 
 
