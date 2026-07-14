@@ -18,7 +18,7 @@ export function ElectionConfigDetailPage() {
   const electionLabel = electionConfig?.label ?? 'Verkiezing laden…'
 
   function navigateToGemeente(option: SearchListOption) {
-    navigate(appRoutes.municipalityDetail(electionConfigSlug ?? '', option.id))
+    navigate(appRoutes.municipalityDetailPollingstationList(electionConfigSlug ?? '', option.id))
   }
 
   if (isLoading) {
@@ -86,7 +86,7 @@ export function ElectionConfigDetailPage() {
           <div key={letter} className="searchlist-section">
             <div className="searchlist-letter">{letter}</div>
             {municipalities.map((municipality) => (
-              <Link key={municipality.id} to={appRoutes.municipalityDetail(electionConfig.slug, municipality.id)}>
+              <Link key={municipality.id} to={appRoutes.municipalityDetailPollingstationList(electionConfig.slug, municipality.id)}>
                 <span>{municipality.label}</span>
                 <span className="gemeente-chevron">{'>'}</span>
               </Link>

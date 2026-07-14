@@ -10,7 +10,7 @@ import './municipality-detail-page.css'
 export function MunicipalityDetailPage() {
   const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
   const regionSlug = decodeURIComponent(regionSlugParam ?? '')
-  const municipalityDetailRoute = appRoutes.municipalityDetail(electionConfigSlug ?? '', regionSlug)
+  const municipalityDetailPollingstationListRoute = appRoutes.municipalityDetailPollingstationList(electionConfigSlug ?? '', regionSlug)
 
   const { data: electionConfig } = useElectionConfig(electionConfigSlug)
   const { data: region, isLoading, isError, refetch } = useRegion(electionConfigSlug, regionSlug)
@@ -45,21 +45,21 @@ export function MunicipalityDetailPage() {
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigDetailMunicipality(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
-          { href: municipalityDetailRoute, label: `Gemeente ${region.region_name}` },
+          { href: municipalityDetailPollingstationListRoute, label: `Gemeente ${region.region_name}` },
         ]}
         tabs={
           <SharedTabs
             tabs={[
               {
                 label: 'Resultaten per stembureau',
-                value: municipalityDetailRoute,
-                activePatterns: [municipalityDetailRoute, `${municipalityDetailRoute}/*`],
+                value: municipalityDetailPollingstationListRoute,
+                activePatterns: [municipalityDetailPollingstationListRoute, `${municipalityDetailPollingstationListRoute}/*`],
               },
-              // {
-              //   label: 'Hele gemeente',
-              //   value: municipalityResultsRoute,
-              //   activePatterns: [municipalityResultsRoute],
-              // },
+              {
+                label: 'Hele gemeente',
+                value: municipalityResultsRoute,
+                activePatterns: [municipalityResultsRoute],
+              },
             ]}
           />
         }

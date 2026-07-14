@@ -34,7 +34,7 @@ export default function PollingStationDetailPage() {
     [pollingStation?.vote_counts],
   )
 
-  const municipalityDetailRoute = appRoutes.municipalityDetail(electionConfigSlug, parentRegionSlug)
+  const municipalityDetailPollingstationListRoute = appRoutes.municipalityDetailPollingstationList(electionConfigSlug, parentRegionSlug)
   const pollingStationDetailRoute = appRoutes.pollingStationDetail(electionConfigSlug, parentRegionSlug, pollingStationSlug)
   const reportHref = appRoutes.reportError(parentRegionSlug, pollingStationSlug)
 
@@ -104,7 +104,7 @@ export default function PollingStationDetailPage() {
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigDetailMunicipality(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },
-          { href: municipalityDetailRoute, label: `Gemeente ${region.region_name}` },
+          { href: municipalityDetailPollingstationListRoute, label: `Gemeente ${region.region_name}` },
           { href: pollingStationDetailRoute, label: pollingStation.region_name },
         ]}
       />
