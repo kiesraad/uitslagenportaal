@@ -48,6 +48,8 @@ export function MunicipalityPartyResultsPage() {
   )
 
   const municipalityDetailPollingstationListRoute = appRoutes.municipalityDetailPollingstationList(electionConfigSlug, regionSlug)
+  const municipalityDetailResultsRoute = appRoutes.municipalityDetailResultsRoute(electionConfigSlug, regionSlug)
+  const municipalityDetailPartyResultsRoute = `${municipalityDetailResultsRoute}/${encodeURIComponent(partySlug)}`
   const reportHref = appRoutes.reportError(regionSlug)
 
 
@@ -96,6 +98,8 @@ export function MunicipalityPartyResultsPage() {
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigDetailMunicipality(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },
           { href: municipalityDetailPollingstationListRoute, label: `Gemeente ${region.region_name}` },
+          { href: municipalityDetailResultsRoute, label: 'Hele gemeente' },
+          { href: municipalityDetailPartyResultsRoute, label: partyName },
         ]}
       />
       <div className="page-main page-main-two-columns">
