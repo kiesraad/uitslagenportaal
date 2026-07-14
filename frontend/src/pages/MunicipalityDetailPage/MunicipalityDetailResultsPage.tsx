@@ -1,8 +1,10 @@
+import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout.tsx'
 import PageTop from '../../components/DetailPage/PageTop.tsx'
 import SharedTabs from '../../components/DetailPage/SharedTabs.tsx'
 import VotesResume from '../../components/PollingStationDetailPage/VotesResume'
+import VotesList from '../../components/DetailPage/VotesList'
 import type { VoterTurnoutCount } from '../../api/types'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
@@ -53,6 +55,12 @@ export function MunicipalityDetailResultsPage() {
     { reason_code: 'cast', label: 'Totaal uitgebrachte stemmen' },
   ]
 
+  const partyLevelVoteCounts = useMemo(
+    () => region?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
+    [region?.vote_counts],
+  )
+
+
 
   function getAdmittedVoterVotes(voterTurnoutCounts: VoterTurnoutCount[] | undefined, rows: VoterTurnoutRow[]) {
     return rows.map(({ reason_code, label, bold }) => ({
@@ -97,6 +105,12 @@ export function MunicipalityDetailResultsPage() {
           <section className="admitted-voters">
             <h4 className="mb-2">Toegelaten kiezers</h4>
             <VotesResume votes={getAdmittedVoterVotes(region.voter_turnout_counts, ADMITTED_VOTER_ROWS)} />
+          </section>
+
+          <section className="votes-cast">
+            <h4 className="mb-2">Uitgebrachte stemmen</h4>
+            <p className="mb-4">Klik op een lijst om de stemmen per kandidaat te zien</p>
+            <VotesList voteCounts={partyLevelVoteCounts} />
           </section>
 
           <VotesResume
