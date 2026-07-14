@@ -8,7 +8,7 @@ import VotesList from '../../components/DetailPage/VotesList'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 
-import './municipality-detail-page.css'
+import './municipality-page.css'
 
 export function MunicipalityResultsPage() {
   const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()

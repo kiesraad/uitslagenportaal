@@ -5,7 +5,7 @@ import SharedTabs from '../../components/DetailPage/SharedTabs.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 import PollingStationList from '../../components/MunicipalityDetailPage/PollingStationList.tsx'
-import './municipality-detail-page.css'
+import './municipality-page.css'
 
 export function MunicipalityPollingstationListPage() {
   const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
