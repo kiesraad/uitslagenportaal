@@ -47,9 +47,9 @@ export function MunicipalityPartyResultsPage() {
     [partyLevelVoteCounts, partySlug],
   )
 
-  const municipalityDetailPollingstationListRoute = appRoutes.municipalityDetailPollingstationList(electionConfigSlug, regionSlug)
-  const municipalityDetailResultsRoute = appRoutes.municipalityDetailResultsRoute(electionConfigSlug, regionSlug)
-  const municipalityDetailPartyResultsRoute = `${municipalityDetailResultsRoute}/${encodeURIComponent(partySlug)}`
+  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, regionSlug)
+  const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug, regionSlug)
+  const municipalityPartyResultsRoute = `${municipalityResultsRoute}/${encodeURIComponent(partySlug)}`
   const reportHref = appRoutes.reportError(regionSlug)
 
 
@@ -96,10 +96,10 @@ export function MunicipalityPartyResultsPage() {
         subtitle="Geplaatst op: 10 december 2025 - 12:17"
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
-          { href: appRoutes.electionConfigDetailMunicipality(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },
-          { href: municipalityDetailPollingstationListRoute, label: `Gemeente ${region.region_name}` },
-          { href: municipalityDetailResultsRoute, label: 'Hele gemeente' },
-          { href: municipalityDetailPartyResultsRoute, label: partyName },
+          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },
+          { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
+          { href: municipalityResultsRoute, label: 'Hele gemeente' },
+          { href: municipalityPartyResultsRoute, label: partyName },
         ]}
       />
       <div className="page-main page-main-two-columns">

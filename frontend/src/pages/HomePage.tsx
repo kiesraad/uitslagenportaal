@@ -58,7 +58,7 @@ export function HomePage() {
               {election_configs.map((election_config) => (
                 <div key={election_config.slug} className={'home-hero-card-link'}>
                   <span className="gemeente-chevron">›</span>
-                  <Link to={appRoutes.electionConfigDetailMunicipality(election_config.slug)}>{election_config.label}</Link>
+                  <Link to={appRoutes.electionConfigMunicipalityList(election_config.slug)}>{election_config.label}</Link>
                 </div>
               ))}
             </div>
@@ -97,7 +97,7 @@ export function HomePage() {
                   {election_configs.map((election_config) => (
                     <div key={election_config.slug} className={'home-hero-card-link'}>
                       <span className="gemeente-chevron">›</span>
-                      <Link to={appRoutes.electionConfigDetailMunicipality(election_config.slug)}>Bekijk de tellingen per stembureau voor {election_config.label}</Link>
+                      <Link to={appRoutes.electionConfigMunicipalityList(election_config.slug)}>Bekijk de tellingen per stembureau voor {election_config.label}</Link>
                     </div>
                   ))}
                 </p>

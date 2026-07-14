@@ -13,8 +13,8 @@ import './municipality-page.css'
 export function MunicipalityResultsPage() {
   const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
   const regionSlug = decodeURIComponent(regionSlugParam ?? '')
-  const municipalityDetailPollingstationListRoute = appRoutes.municipalityDetailPollingstationList(electionConfigSlug ?? '', regionSlug)
-  const municipalityDetailResultsRoute = appRoutes.municipalityDetailResultsRoute(electionConfigSlug ?? '', regionSlug)
+  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug)
+  const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? '', regionSlug)
 
   const { data: electionConfig } = useElectionConfig(electionConfigSlug)
   const { data: region, isLoading, isError, refetch } = useRegion(electionConfigSlug, regionSlug)
@@ -53,8 +53,8 @@ export function MunicipalityResultsPage() {
         subtitle="Geplaatst op: 10 december 2025 - 12:17"
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
-          { href: appRoutes.electionConfigDetailMunicipality(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
-          { href: municipalityDetailPollingstationListRoute, label: `Gemeente ${region.region_name}` },
+          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
+          { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
           
         ]}
         tabs={
@@ -62,13 +62,13 @@ export function MunicipalityResultsPage() {
             tabs={[
               {
                 label: 'Resultaten per stembureau',
-                value: municipalityDetailPollingstationListRoute,
-                activePatterns: [municipalityDetailPollingstationListRoute],
+                value: municipalityPollingstationListRoute,
+                activePatterns: [municipalityPollingstationListRoute],
               },
               {
                 label: 'Hele gemeente',
-                value: municipalityDetailResultsRoute,
-                activePatterns: [municipalityDetailResultsRoute],
+                value: municipalityResultsRoute,
+                activePatterns: [municipalityResultsRoute],
               },
             ]}
           />

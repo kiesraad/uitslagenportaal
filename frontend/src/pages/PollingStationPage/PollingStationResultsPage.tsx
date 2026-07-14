@@ -30,8 +30,8 @@ export default function PollingStationResultsPage() {
     [pollingStation?.vote_counts],
   )
 
-  const municipalityDetailPollingstationListRoute = appRoutes.municipalityDetailPollingstationList(electionConfigSlug, parentRegionSlug)
-  const pollingStationDetailRoute = appRoutes.pollingStationDetail(electionConfigSlug, parentRegionSlug, pollingStationSlug)
+  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, parentRegionSlug)
+  const pollingStationResultsRoute = appRoutes.pollingStationResults(electionConfigSlug, parentRegionSlug, pollingStationSlug)
   const reportHref = appRoutes.reportError(parentRegionSlug, pollingStationSlug)
 
   const pageTitle = pollingStation
@@ -75,9 +75,9 @@ export default function PollingStationResultsPage() {
         subtitle="Geplaatst op: 10 december 2025 - 12:17"
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
-          { href: appRoutes.electionConfigDetailMunicipality(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },
-          { href: municipalityDetailPollingstationListRoute, label: `Gemeente ${region.region_name}` },
-          { href: pollingStationDetailRoute, label: pollingStation.region_name },
+          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },
+          { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
+          { href: pollingStationResultsRoute, label: pollingStation.region_name },
         ]}
       />
       <div className="page-main page-main-two-columns">
