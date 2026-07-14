@@ -2,9 +2,11 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { HomePage } from './pages/HomePage'
 import { ElectionConfigMunicipalityListPage } from './pages/ElectionConfigMunicipalityListPage'
 import { MunicipalityPollingstationListPage } from './pages/MunicipalityDetailPage/MunicipalityPollingstationListPage'
+import { MunicipalityPartyResultsPage } from './pages/MunicipalityDetailPage/MunicipalityPartyResultsPage'
 import { MunicipalityResultsPage } from './pages/MunicipalityDetailPage/MunicipalityResultsPage'
 import PollingStationResultsPage from './pages/PollingStationResultsPage.tsx'
 import PollingStationPartyResultsPage from './pages/PollingStationPartyResultsPage'
+
 
 
 function App() {
@@ -15,6 +17,7 @@ function App() {
         <Route path="/:electionConfigSlug/gemeente" element={<ElectionConfigMunicipalityListPage />} />
         <Route path="/:electionConfigSlug/:regionSlug" element={<MunicipalityPollingstationListPage />} />
         <Route path="/:electionConfigSlug/:regionSlug/results" element={<MunicipalityResultsPage />} />
+        <Route path="/:electionConfigSlug/:regionSlug/results/:partySlug" element={<MunicipalityPartyResultsPage />} />
         <Route path="/:electionConfigSlug/:parentRegionSlug/:pollingStationSlug" element={<PollingStationResultsPage />} />
         <Route path="/:electionConfigSlug/:parentRegionSlug/:pollingStationSlug/:partySlug" element={<PollingStationPartyResultsPage />} />
       </Routes>
