@@ -7,7 +7,7 @@ import { appRoutes } from '../../utils/routes.ts'
 import PollingStationList from '../../components/MunicipalityDetailPage/PollingStationList.tsx'
 import './municipality-detail-page.css'
 
-export function MunicipalityDetailPollingstationListPage() {
+export function MunicipalityPollingstationListPage() {
   const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
   const regionSlug = decodeURIComponent(regionSlugParam ?? '')
   const municipalityDetailPollingstationListRoute = appRoutes.municipalityDetailPollingstationList(electionConfigSlug ?? '', regionSlug)
