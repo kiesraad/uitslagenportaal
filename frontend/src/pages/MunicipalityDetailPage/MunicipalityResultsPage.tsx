@@ -55,6 +55,7 @@ export function MunicipalityResultsPage() {
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigDetailMunicipality(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
           { href: municipalityDetailPollingstationListRoute, label: `Gemeente ${region.region_name}` },
+          
         ]}
         tabs={
           <SharedTabs
