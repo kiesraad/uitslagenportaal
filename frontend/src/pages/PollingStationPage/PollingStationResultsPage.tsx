@@ -94,10 +94,7 @@ export default function PollingStationResultsPage() {
             <p>De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware.</p>
           </section>
 
-          <section className="admitted-voters">
-            <h4 className="mb-2">Toegelaten kiezers</h4>
-            <VotesResume type='admittedVoters' votes={pollingStation.voter_turnout_counts} />
-          </section>
+          <VotesResume type='admittedVoters' votes={pollingStation.voter_turnout_counts} />
 
           <section className="votes-cast">
             <h4 className="mb-2">Uitgebrachte stemmen</h4>

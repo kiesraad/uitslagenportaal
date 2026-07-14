@@ -76,10 +76,7 @@ export function MunicipalityResultsPage() {
       />
       <div className="page-main page-main-two-columns">
         <div className="page-space-3">
-          <section className="admitted-voters">
-            <h4 className="mb-2">Toegelaten kiezers</h4>
             <VotesResume type='admittedVoters' votes={region.voter_turnout_counts} />
-          </section>
 
           <section className="votes-cast">
             <h4 className="mb-2">Uitgebrachte stemmen</h4>
@@ -87,10 +84,7 @@ export function MunicipalityResultsPage() {
             <VotesList voteCounts={partyLevelVoteCounts} />
           </section>
 
-          <VotesResume
-            type='votesCast'
-            votes={region.voter_turnout_counts}
-          />
+          <VotesResume type='votesCast' votes={region.voter_turnout_counts} />
         </div>
       </div>
     </Layout>
