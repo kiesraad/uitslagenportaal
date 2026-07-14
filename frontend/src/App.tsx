@@ -14,12 +14,12 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/:electionConfigSlug/gemeente" element={<ElectionConfigMunicipalityListPage />} />
-        <Route path="/:electionConfigSlug/:regionSlug" element={<MunicipalityPollingstationListPage />} />
-        <Route path="/:electionConfigSlug/:regionSlug/results" element={<MunicipalityResultsPage />} />
-        <Route path="/:electionConfigSlug/:regionSlug/results/:partySlug" element={<MunicipalityPartyResultsPage />} />
-        <Route path="/:electionConfigSlug/:parentRegionSlug/:pollingStationSlug" element={<PollingStationResultsPage />} />
-        <Route path="/:electionConfigSlug/:parentRegionSlug/:pollingStationSlug/:partySlug" element={<PollingStationPartyResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb" element={<ElectionConfigMunicipalityListPage />} />
+        <Route path="/:electionConfigSlug/gsb/:regionSlug" element={<MunicipalityPollingstationListPage />} />
+        <Route path="/:electionConfigSlug/gsb/:regionSlug/resultaten" element={<MunicipalityResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:regionSlug/resultaten/:partySlug" element={<MunicipalityPartyResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/:pollingStationSlug" element={<PollingStationResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/:pollingStationSlug/:partySlug" element={<PollingStationPartyResultsPage />} />
       </Routes>
     </BrowserRouter>
   )

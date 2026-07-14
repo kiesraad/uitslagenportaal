@@ -66,7 +66,7 @@ export function ElectionConfigMunicipalityListPage() {
           { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig.label},
         ]}
         tabs={<SharedTabs tabs={[
-          { label: 'Gemeente', value: appRoutes.electionConfigMunicipalityList(electionConfig.slug), activePatterns: ['/:electionConfigSlug/gemeente'] },
+          { label: 'Gemeente', value: appRoutes.electionConfigMunicipalityList(electionConfig.slug), activePatterns: ['/:electionConfigSlug/gsb'] },
         ]} />}
 
       />

@@ -1,11 +1,11 @@
 export const appRoutes = {
   home: () => '/',
-  electionConfigMunicipalityList: (electionConfigSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/gemeente`,
-  municipalityPollingstationList: (electionConfigSlug: string, regionSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/${encodeURIComponent(regionSlug)}`,
-  municipalityResults: (electionConfigSlug: string, regionSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/${encodeURIComponent(regionSlug)}/results`,
+  electionConfigMunicipalityList: (electionConfigSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/gsb`,
+  municipalityPollingstationList: (electionConfigSlug: string, regionSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/gsb/${encodeURIComponent(regionSlug)}`,
+  municipalityResults: (electionConfigSlug: string, regionSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/gsb/${encodeURIComponent(regionSlug)}/resultaten`,
   municipalityPartyResults: (electionConfigSlug: string, regionSlug: string, partySlug: string) =>
     `${appRoutes.municipalityResults(electionConfigSlug, regionSlug)}/${encodeURIComponent(partySlug)}`,
-  pollingStationResults: (electionConfigSlug: string, regionSlug: string, pollingStationSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/${encodeURIComponent(regionSlug)}/${encodeURIComponent(pollingStationSlug)}`,
+  pollingStationResults: (electionConfigSlug: string, regionSlug: string, pollingStationSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/gsb/${encodeURIComponent(regionSlug)}/${encodeURIComponent(pollingStationSlug)}`,
   pollingStationPartyResults: (electionConfigSlug: string, regionSlug: string, pollingStationSlug: string, partySlug: string) =>
     `${appRoutes.pollingStationResults(electionConfigSlug, regionSlug, pollingStationSlug)}/${encodeURIComponent(partySlug)}`,
 
