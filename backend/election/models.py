@@ -31,33 +31,27 @@ class Election(BaseModel):
     )
 
 
-class ElectionStepState(models.TextChoices):
+class TimelineEntryStatus(models.TextChoices):
     PENDING = "pending", "Pending"
     IN_PROGRESS = "in-progress", "In progress"
     DONE = "done", "Done"
 
 
-class ElectionStep(BaseModel):
+class TimelineEntry(BaseModel):
 
     election_config = models.ForeignKey(
         "election.ElectionConfig",
         on_delete=models.CASCADE,
-        related_name="steps",
+        related_name="timeline_entries",
     )
-    position = models.PositiveIntegerField()
-    state = models.CharField(max_length=16, choices=ElectionStepState.choices)
+    status = models.CharField(max_length=16, choices=TimelineEntryStatus.choices)
     title = models.CharField(max_length=255)
     date = models.DateTimeField()
     body = models.TextField()
 
     class Meta:
-        ordering = ("position",)
-        constraints = [
-            models.UniqueConstraint(
-                fields=["election_config", "position"],
-                name="unique_step_position_per_election",
-            )
-        ]
+        # Entries are ordered chronologically by date.
+        ordering = ("date",)
 
     def __str__(self):
         return f"{self.election_config.identifier}: {self.title}"

@@ -1,10 +1,11 @@
 import { faCheck, faFile } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import ReactMarkdown from 'react-markdown';
+import { formatTimelineDate } from '../utils/date';
 
-type State = 'pending' | 'in-progress' | 'done'
-export interface Step {
-    state: State
+export type TimelineEntryStatus = 'pending' | 'in-progress' | 'done'
+export interface TimelineEntry {
+    status: TimelineEntryStatus
     title: string
     date: string
     body: string;
@@ -18,36 +19,36 @@ export interface Step {
     }[]
 }
 type Props = {
-    steps: Step[]
+    entries: TimelineEntry[]
 }
-export default function Timeline({ steps }: Props) {
+export default function Timeline({ entries }: Props) {
     return (
         <div className="timeline">
-            {steps.map((step, i) => (
-                <div key={step.title} className={`timeline-item`}>
-                    <div className={`timeline-line ${step.state} ${step.state === 'done' ? 'border-solid' : 'border-dashed'} ${steps.length === i + 1 ? 'last' : ''}`}></div>
+            {entries.map((entry, i) => (
+                <div key={entry.title} className={`timeline-item`}>
+                    <div className={`timeline-line ${entry.status} ${entry.status === 'done' ? 'border-solid' : 'border-dashed'} ${entries.length === i + 1 ? 'last' : ''}`}></div>
                     <div className={'tl-marker-container'}>
-                        <div className={`tl-marker ${step.state}`}>
-                            <div className={`${step.state}-layer-1`}></div>
-                            {step.state === 'done' ? (
+                        <div className={`tl-marker ${entry.status}`}>
+                            <div className={`${entry.status}-layer-1`}></div>
+                            {entry.status === 'done' ? (
                                 <FontAwesomeIcon icon={faCheck} />
                             ) : null}
                         </div>
                     </div>
                     <div className="tl-body">
-                        <div className="tl-title">{step.title}</div>
-                        <div className="tl-date">{step.date}</div>
+                        <div className="tl-title">{entry.title}</div>
+                        <div className="tl-date">{formatTimelineDate(entry.date)}</div>
                         <div className="tl-desc">
-                            <ReactMarkdown>{step.body}</ReactMarkdown>
+                            <ReactMarkdown>{entry.body}</ReactMarkdown>
                         </div>
-                        {step.link && (
+                        {entry.link && (
                             <div className="tl-link">
-                                <a href="#">{step.link}</a>
+                                <a href="#">{entry.link}</a>
                             </div>
                         )}
-                        {step.files ? (
+                        {entry.files ? (
                             <div className="tl-files mt-3">
-                                {step.files.map((file, i) => (
+                                {entry.files.map((file, i) => (
                                     <a href={file.url} key={i} className={'tl-files-item'}>
                                         <FontAwesomeIcon icon={faFile} />
                                         <div className={'tl-files-content'}>

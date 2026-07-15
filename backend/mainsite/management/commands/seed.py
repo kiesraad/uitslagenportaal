@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
-from election.models import ElectionConfig, ElectionStep
+from election.models import ElectionConfig, TimelineEntry
 
 
 WS2023_ELECTION_SEED = [
@@ -15,10 +15,9 @@ WS2023_ELECTION_SEED = [
             "category": "WS",
             "date": "2023-12-15T11:00:00"
         },
-        "steps": [
+        "timeline_entries": [
             {
-                "position": 1,
-                "state": "pending",
+                "status": "pending",
                 "title": "De Kiesraad publiceert de uitslag",
                 "date": "2023-12-15T11:00:00",
                 "body": (
@@ -27,8 +26,7 @@ WS2023_ELECTION_SEED = [
                 ),
             },
             {
-                "position": 2,
-                "state": "in-progress",
+                "status": "in-progress",
                 "title": "Centraal Stembureau controleert",
                 "date": "2023-12-14T10:00:00",
                 "body": (
@@ -41,8 +39,7 @@ WS2023_ELECTION_SEED = [
                 ),
             },
             {
-                "position": 3,
-                "state": "in-progress",
+                "status": "in-progress",
                 "title": "Optelling per kieskring",
                 "date": "2023-12-09T12:00:00",
                 "body": (
@@ -51,8 +48,7 @@ WS2023_ELECTION_SEED = [
                 ),
             },
             {
-                "position": 4,
-                "state": "done",
+                "status": "done",
                 "title": "Optelling per gemeente",
                 "date": "2023-12-09T08:00:00",
                 "body": (
@@ -62,8 +58,7 @@ WS2023_ELECTION_SEED = [
                 ),
             },
             {
-                "position": 5,
-                "state": "done",
+                "status": "done",
                 "title": "Telling in de stembureaus",
                 "date": "2023-12-08T21:00:00",
                 "body": (
@@ -82,10 +77,9 @@ WS2023_ELECTION_SEED = [
     #         "label": "Provinciale Staten 2023",
     #         "category": "PS",
     #     },
-    #     "steps": [
+    #     "timeline_entries": [
     #         {
-    #             "position": 1,
-    #             "state": "pending",
+    #             "status": "pending",
     #             "title": "De Kiesraad publiceert de uitslag",
     #             "date": "2023-12-15T11:00:00",
     #             "body": (
@@ -94,8 +88,7 @@ WS2023_ELECTION_SEED = [
     #             ),
     #         },
     #         {
-    #             "position": 2,
-    #             "state": "in-progress",
+    #             "status": "in-progress",
     #             "title": "Centraal Stembureau controleert",
     #             "date": "2023-12-14T10:00:00",
     #             "body": (
@@ -130,13 +123,12 @@ class Command(BaseCommand):
                 label=election_data["label"],
                 date=timezone.make_aware(datetime.fromisoformat(election_data["date"],))
             )
-            for step_data in item["steps"]:
-                ElectionStep.objects.create(
+            for entry_data in item["timeline_entries"]:
+                TimelineEntry.objects.create(
                     election_config=election_config,
-                    position=step_data["position"],
-                    state=step_data["state"],
-                    title=step_data["title"],
-                    date=timezone.make_aware(datetime.fromisoformat(step_data["date"])),
-                    body=step_data["body"],
+                    status=entry_data["status"],
+                    title=entry_data["title"],
+                    date=timezone.make_aware(datetime.fromisoformat(entry_data["date"])),
+                    body=entry_data["body"],
                 )
             self.stdout.write(f"Elections seeded")
