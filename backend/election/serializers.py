@@ -1,10 +1,36 @@
 from rest_framework import serializers
 
-from election.models import Contest, TimelineEntry, ElectionConfig
+from election.models import Contest, TimelineEntry, ElectionConfig, ElectionDocument
 from mainsite.serializers import (
     RegionSummarySerializer,
     ElectionSummarySerializer,
 )
+
+
+class ElectionDocumentSerializer(serializers.ModelSerializer):
+    url = serializers.CharField(read_only=True)
+    storage_key = serializers.CharField(read_only=True)
+    content_type = serializers.CharField(read_only=True)
+    size = serializers.IntegerField(read_only=True)
+    file_type = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = ElectionDocument
+        fields = (
+            "url",
+            "storage_key",
+            "content_type",
+            "size",
+            "file_type",
+        )
+
+    def get_url(self, obj: ElectionDocument) -> str:
+        request = self.context.get("request")
+        path = f"/api/documents/{obj.pk}/download/"
+        if request is not None:
+            return request.build_absolute_uri(path)
+        return path
+
 
 class TimelineEntrySerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,12 +48,7 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ElectionConfig
-        fields = (
-            "slug",
-            "label",
-            "date",
-            'timeline_entries'
-        )
+        fields = ("slug", "label", "date", "timeline_entries")
 
 
 class ContestListSerializer(serializers.ModelSerializer):
@@ -50,11 +71,4 @@ class ContestDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contest
-        fields = (
-            "id",
-            "identifier",
-            "name",
-            "election",
-            "region"
-        )
-
+        fields = ("id", "identifier", "name", "election", "region")
