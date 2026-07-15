@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Layout } from '../components/Layout.tsx'
-import Timeline, { type Step } from '../components/Timeline.tsx'
+import Timeline, { type TimelineEntry } from '../components/Timeline.tsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faHourglass } from '@fortawesome/free-regular-svg-icons'
 import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons'
@@ -14,17 +14,17 @@ export function HomePage() {
   const election_configs: ElectionConfig[] = data ?? []
   const hasResult = election_configs.length > 0
 
-  // If there is only one election and it has steps, create the timeline steps
-  let timelineSteps: Step[] = []
-  if (election_configs.length === 1 && election_configs[0]?.steps?.length) {
-    timelineSteps = election_configs[0].steps
+  // If there is only one election and it has timeline entries, build the timeline
+  let timelineEntries: TimelineEntry[] = []
+  if (election_configs.length === 1 && election_configs[0]?.timeline_entries?.length) {
+    timelineEntries = election_configs[0].timeline_entries
       .slice()
-      .sort((a, b) => a.position - b.position)
-      .map((step) => ({
-        state: step.state,
-        title: step.title,
-        date: new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' }).format(new Date(step.date)),
-        body: step.body,
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map((entry) => ({
+        status: entry.status,
+        title: entry.title,
+        date: entry.date,
+        body: entry.body,
       }))
   }
 
@@ -86,7 +86,7 @@ export function HomePage() {
               publiceert. Bij iedere stap is er controle, zodat de uitslag klopt.
             </p>
 
-            <Timeline steps={timelineSteps} />
+            <Timeline entries={timelineEntries} />
           </section>
 
           <section className="home-bottom-info page-main-w-half">

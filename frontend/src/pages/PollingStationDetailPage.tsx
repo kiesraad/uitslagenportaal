@@ -4,6 +4,7 @@ import IssueNotice from '../components/PollingStationDetailPage/IssueNotice'
 import PageTop from '../components/DetailPage/PageTop'
 import VotesList from '../components/DetailPage/VotesList'
 import VotesResume from '../components/PollingStationDetailPage/VotesResume'
+import ResultsTimeline from '../components/PollingStationDetailPage/ResultsTimeline'
 import { Layout } from '../components/Layout'
 import { useElectionConfig, useRegion } from '../hooks/queries'
 import { appRoutes } from '../utils/routes'
@@ -136,6 +137,13 @@ export default function PollingStationDetailPage() {
           <VotesResume
             votes={getAdmittedVoterVotes(pollingStation.voter_turnout_counts, VOTES_CAST)}
           />
+
+          <ResultsTimeline
+            title="Hoe komt de uitslag tot stand?"
+            description="Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
+            entries={pollingStation.timeline_entries ?? []}
+          />
+
           <IssueNotice id="fout-melden" reportHref={reportHref} />
         </div>
       </div>
