@@ -16,6 +16,15 @@ export type TimelineEntry = {
   body: string
 }
 
+export type ElectionDocument = {
+  name: string
+  url: string
+  type: string
+  size: string
+  description: string
+  file_type: string
+}
+
 export type RegionCategory = 'STAAT' | 'WATERSCHAP' | 'KIESKRING' | 'GEMEENTE' | 'PROVINCIE' | "STEMBUREAU"
 
 export type VoterTurnoutCategory = 'REJECTED' | 'UNCOUNTED'
@@ -34,6 +43,7 @@ export type Region = {
   vote_counts: VoteCounts
   voter_turnout_counts?: VoterTurnoutCount[]
   timeline_entries?: TimelineEntry[]
+  documents?: ElectionDocument[]
 }
 
 export type RegionResponse = Region[]

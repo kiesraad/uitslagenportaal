@@ -5,6 +5,7 @@ import PageTop from '../../components/PageTop.tsx'
 import SharedTabs from '../../components/SharedTabs.tsx'
 import VotesResume from '../../components/ResultsPage/VotesResume.tsx'
 import VotesList from '../../components/ResultsPage/VotesList.tsx'
+import ReportsWithResults from '../../components/ResultsPage/ReportsWithResults.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 
@@ -16,6 +17,11 @@ export function MunicipalityResultsPage() {
 
   const { data: electionConfig } = useElectionConfig(electionConfigSlug)
   const { data: region, isLoading, isError, refetch } = useRegion(electionConfigSlug, regionSlug)
+
+  const partyLevelVoteCounts = useMemo(
+    () => region?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
+    [region?.vote_counts],
+  )
 
   if (isLoading) {
     return (
@@ -35,11 +41,6 @@ export function MunicipalityResultsPage() {
       </Layout>
     )
   }
-
-  const partyLevelVoteCounts = useMemo(
-    () => region?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
-    [region?.vote_counts],
-  )
 
   return (
     <Layout
@@ -83,6 +84,12 @@ export function MunicipalityResultsPage() {
           </section>
 
           <VotesResume type='votesCast' votes={region.voter_turnout_counts} />
+
+          <ReportsWithResults
+            title="Brondocumenten"
+            description="Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
+            documents={region.documents}
+          />
         </div>
       </div>
     </Layout>
