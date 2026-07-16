@@ -8,6 +8,8 @@ import VotesList from '../../components/ResultsPage/VotesList.tsx'
 import ReportsWithResults from '../../components/ResultsPage/ReportsWithResults.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
+import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
+
 
 export function MunicipalityResultsPage() {
   const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
@@ -90,6 +92,9 @@ export function MunicipalityResultsPage() {
             description="Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
             documents={region.documents}
           />
+
+          <IssueNotice id="fout-melden" reportHref={appRoutes.reportError(regionSlug, undefined)} />
+
         </div>
       </div>
     </Layout>
