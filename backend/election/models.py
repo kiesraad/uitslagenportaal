@@ -103,6 +103,14 @@ class VoteCount(BaseModel):
         default=RESULT_LEVEL_CANDIDATE,
     )
 
+    EML_TYPE_510B = "EML510b"
+    EML_TYPE_510D = "EML510d"
+    EML_TYPE_CHOICES = [
+        (EML_TYPE_510B, "EML510b"),
+        (EML_TYPE_510D, "EML510d"),
+    ]
+    eml_type = models.CharField(max_length=32, choices=EML_TYPE_CHOICES, null=True)
+
     # TODO: create unique contstraint
     # class Meta:
     #     constraints = [

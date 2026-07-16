@@ -77,6 +77,7 @@ class EMLBaseImporter:
                         party=current_party,
                         result_level=VoteCount.RESULT_LEVEL_PARTY,
                         valid_votes=votes_item.valid_votes,
+                        eml_type=self.eml_type,
                     )
                 )
             if votes_item.candidate:
@@ -96,6 +97,7 @@ class EMLBaseImporter:
                         candidate=candidate,
                         result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
                         valid_votes=votes_item.valid_votes,
+                        eml_type=self.eml_type,
                     )
                 )
 
@@ -234,6 +236,8 @@ class EML230bImporter(EMLBaseImporter):
 class EML510bImporter(EMLBaseImporter):
     """Telling"""
 
+    eml_type = "510b"
+
     def _get_election_ientifier_data(self):
         return self.eml.count.election.election_identifier
 
@@ -313,6 +317,8 @@ class EML510bImporter(EMLBaseImporter):
 
 class EML510dImporter(EMLBaseImporter):
     """Totaaltelling."""
+
+    eml_type = "510d"
 
     def _get_election_ientifier_data(self):
         return self.eml.count.election.election_identifier
