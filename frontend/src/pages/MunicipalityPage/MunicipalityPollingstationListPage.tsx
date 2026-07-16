@@ -5,16 +5,31 @@ import SharedTabs from '../../components/SharedTabs.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 import PollingStationList from '../../components/MunicipalityPage/PollingStationList.tsx'
+import { useRegions } from '../../hooks/queries.ts'
+import { RegionList } from '../../components/ListPage/RegionList.tsx'
+
+
 export function MunicipalityPollingstationListPage() {
   const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
   const regionSlug = decodeURIComponent(regionSlugParam ?? '')
   const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug)
   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? '', regionSlug)
 
-  const { data: electionConfig } = useElectionConfig(electionConfigSlug)
-  const { data: region, isLoading, isError, refetch } = useRegion(electionConfigSlug, regionSlug)
+  const {
+    data: electionConfig,
+    isLoading: isElectionConfigLoading,
+    isError: isElectionConfigError,
+    refetch: refetchElectionConfig,
+  } = useElectionConfig(electionConfigSlug)
+  const {
+    data: region,
+    isLoading: isRegionLoading,
+    isError: isRegionError,
+    refetch: refetchRegion,
+  } = useRegion(electionConfigSlug, regionSlug)
+  const { data: pollingStations } = useRegions(electionConfigSlug, regionSlug, 'STEMBUREAU')
 
-  if (isLoading) {
+  if (isElectionConfigLoading || isRegionLoading) {
     return (
       <Layout title="Gemeente laden…" description="Gemeente laden…">
         <p>Gemeente laden…</p>
@@ -22,11 +37,14 @@ export function MunicipalityPollingstationListPage() {
     )
   }
 
-  if (isError || !region) {
+  if (isElectionConfigError || isRegionError || !electionConfig || !region) {
     return (
       <Layout title="Gemeente niet gevonden" description="Kan gemeente niet laden.">
         <p>Kan gemeente niet laden.</p>
-        <button type="button" onClick={() => refetch()}>
+        <button type="button" onClick={() => {
+          refetchElectionConfig()
+          refetchRegion()
+        }}>
           Opnieuw proberen
         </button>
       </Layout>
@@ -43,7 +61,7 @@ export function MunicipalityPollingstationListPage() {
         subtitle="Geplaatst op: 10 december 2025 - 12:17"
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
-          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
+          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig.label },
           { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
         ]}
         tabs={
@@ -63,6 +81,11 @@ export function MunicipalityPollingstationListPage() {
           />
         }
       />
+      {/* <RegionList
+        electionConfig={electionConfig}
+        regions={pollingStations}
+        regionCategory='STEMBUREAU'
+      /> */}
 
       <PollingStationList
         region={region}
