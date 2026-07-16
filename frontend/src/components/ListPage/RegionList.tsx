@@ -5,25 +5,36 @@ import SearchBar from '../SearchBar'
 import type { SearchListOption } from '../SearchBar'
 import type { ElectionConfig } from '../../api/types'
 import { appRoutes } from '../../utils/routes'
+import type { Region } from '../../api/types'
+
 
 type Props = {
   electionConfig: ElectionConfig
-  electionConfigSlug: string
-  regionOptions: SearchListOption[]
-  regionsByLetter: Record<string, SearchListOption[]>
+  regions: Region[] | undefined
 }
 
 export function RegionList({
   electionConfig,
-  regionOptions,
-  regionsByLetter,
+  regions
 }: Props) {
+
 
   const navigate = useNavigate()
 
   function navigateToGemeente(option: SearchListOption) {
     navigate(appRoutes.municipalityPollingstationList(electionConfig.slug ?? '', option.id))
   }
+
+  const regionOptions: SearchListOption[] = (regions ?? [])
+    .filter((region) => region.region_name)
+    .map(({ slug, region_name }) => ({ id: slug, label: region_name }))
+
+  const regionsByLetter = regionOptions.reduce<Record<string, SearchListOption[]>>((grouped, option) => {
+    const name = option.label.startsWith("'s-") ? option.label.slice(3) : option.label
+    const letter = name[0].toUpperCase()
+      ; (grouped[letter] ??= []).push(option)
+    return grouped
+  }, {})
 
   return (
     <div className="page-main">

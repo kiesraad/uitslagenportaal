@@ -2,15 +2,15 @@ import { useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout.tsx'
 import PageTop from '../../components/PageTop.tsx'
 import SharedTabs from '../../components/SharedTabs.tsx'
-import type { SearchListOption } from '../../components/SearchBar.tsx'
+
 import { RegionList } from '../../components/ListPage/RegionList.tsx'
 import { appRoutes } from '../../utils/routes.ts'
 import { useElectionConfig, useRegions } from '../../hooks/queries.ts'
 import { getRegionLabel } from '../../utils/region.ts'
 
 export function ElectionConfigMunicipalityListPage() {
-  
-  const { electionConfigSlug} = useParams<{ electionConfigSlug: string }>()
+
+  const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>()
   const { data: electionConfig, isLoading, isError, refetch } = useElectionConfig(electionConfigSlug)
   const { data: regions } = useRegions(electionConfigSlug, undefined, 'GEMEENTE')
 
@@ -35,19 +35,6 @@ export function ElectionConfigMunicipalityListPage() {
     )
   }
 
-
-  const regionOptions: SearchListOption[] = (regions ?? [])
-    .filter((region) => region.region_name)
-    .map(({ slug, region_name }) => ({ id: slug, label: region_name }))
-
-  const regionsByLetter = regionOptions.reduce<Record<string, SearchListOption[]>>((grouped, option) => {
-    const name = option.label.startsWith("'s-") ? option.label.slice(3) : option.label
-    const letter = name[0].toUpperCase()
-    ;(grouped[letter] ??= []).push(option)
-    return grouped
-  }, {})
-
-
   return (
     <Layout
       title={`Telresultaten ${electionConfig.label}`}
@@ -58,7 +45,7 @@ export function ElectionConfigMunicipalityListPage() {
         subtitle={`Verkiezingsdag: ${electionConfig.date ? new Date(electionConfig.date).toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}`}
         breadcrumb={[
           { href: '/', label: 'Home' },
-          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig.label},
+          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig.label },
         ]}
         tabs={<SharedTabs tabs={[
           { label: 'Gemeente', value: appRoutes.electionConfigMunicipalityList(electionConfig.slug), activePatterns: ['/:electionConfigSlug/gsb'] },
@@ -68,9 +55,7 @@ export function ElectionConfigMunicipalityListPage() {
       />
       <RegionList
         electionConfig={electionConfig}
-        electionConfigSlug={electionConfigSlug ?? ''}
-        regionOptions={regionOptions}
-        regionsByLetter={regionsByLetter}
+        regions={regions}
       />
 
     </Layout>
