@@ -48,4 +48,3 @@ class Candidate(BaseModel):
     first_name = models.CharField(max_length=255, null=True, blank=True)
     name_prefix = models.CharField(max_length=128, null=True, blank=True)
     last_name = models.CharField(max_length=255)
-    locality_name = models.CharField(max_length=255)
