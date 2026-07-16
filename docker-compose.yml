@@ -34,6 +34,13 @@ services:
       db:
         condition: service_healthy
 
+  # For running one-off scripts/management commands, e.g.:
+  #   docker compose run --rm backend-scripts python manage.py <command>
+  backend-scripts:
+    extends:
+      service: backend
+    command: sleep infinity
+
   frontend:
     build: ./frontend
     environment:
