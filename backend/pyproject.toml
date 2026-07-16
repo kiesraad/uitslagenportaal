@@ -16,6 +16,13 @@ dependencies = [
     "tqdm>=4.68.2",
 ]
 
+[dependency-groups]
+dev = [
+    "ruff>=0.14.0",
+    "pytest>=8.4.0",
+    "pytest-django>=4.11.0",
+]
+
 [tool.uv]
 override-dependencies = ["xsdata>=26.1"]
 
@@ -24,3 +31,15 @@ py-modules = []
 
 [tool.uv.sources]
 pyeml-bindings = { git = "https://github.com/kiesraad/pyeml_bindings.git" }
+
+[tool.ruff]
+target-version = "py314"
+line-length = 120
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "mainsite.settings"
+python_files = ["test_*.py"]
