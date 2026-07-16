@@ -4,7 +4,6 @@ import PageTop from '../../components/PageTop.tsx'
 import SharedTabs from '../../components/SharedTabs.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
-import PollingStationList from '../../components/MunicipalityPage/PollingStationList.tsx'
 import { useRegions } from '../../hooks/queries.ts'
 import { RegionList } from '../../components/ListPage/RegionList.tsx'
 
