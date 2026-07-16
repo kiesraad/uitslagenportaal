@@ -1,4 +1,5 @@
 from rest_framework.routers import DefaultRouter
+from django.urls import path
 
 from .views import ContestViewSet, ElectionConfigViewSet, download_document
 
@@ -7,7 +8,6 @@ router.register("election_configs", ElectionConfigViewSet, basename="election_co
 router.register("contests", ContestViewSet, basename="contest")
 
 
-from django.urls import path
 urlpatterns = [
     path(
         "documents/<int:pk>/download/",
@@ -16,4 +16,3 @@ urlpatterns = [
     ),
     *router.urls,
 ]
-# urlpatterns = router.urls
