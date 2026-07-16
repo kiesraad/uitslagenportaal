@@ -33,7 +33,6 @@ export default function PollingStationResultsPage() {
 
   const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, parentRegionSlug)
   const pollingStationResultsRoute = appRoutes.pollingStationResults(electionConfigSlug, parentRegionSlug, pollingStationSlug)
-  const reportHref = appRoutes.reportError(parentRegionSlug, pollingStationSlug)
 
   const pageTitle = pollingStation
     ? `Telresultaten stembureau\n${pollingStation.region_name}`
@@ -114,7 +113,7 @@ export default function PollingStationResultsPage() {
             entries={pollingStation.timeline_entries ?? []}
           />
 
-          <IssueNotice id="fout-melden" reportHref={reportHref} />
+          <IssueNotice />
         </div>
       </div>
     </Layout>

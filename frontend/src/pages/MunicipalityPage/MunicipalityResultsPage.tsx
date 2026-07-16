@@ -56,7 +56,7 @@ export function MunicipalityResultsPage() {
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
           { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
-          
+
         ]}
         tabs={
           <SharedTabs
@@ -77,7 +77,7 @@ export function MunicipalityResultsPage() {
       />
       <div className="page-main page-main-two-columns">
         <div className="page-space-3">
-            <VotesResume type='admittedVoters' votes={region.voter_turnout_counts} />
+          <VotesResume type='admittedVoters' votes={region.voter_turnout_counts} />
 
           <section className="votes-cast">
             <h4 className="mb-2">Uitgebrachte stemmen</h4>
@@ -93,7 +93,7 @@ export function MunicipalityResultsPage() {
             documents={region.documents}
           />
 
-          <IssueNotice id="fout-melden" reportHref={appRoutes.reportError(regionSlug, undefined)} />
+          <IssueNotice />
 
         </div>
       </div>
