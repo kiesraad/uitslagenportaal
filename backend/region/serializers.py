@@ -12,7 +12,7 @@ from mainsite.serializers import (
 class RegionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region
-        fields = ("region_name", "slug")
+        fields = ("region_name", "slug", "region_category")
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):
