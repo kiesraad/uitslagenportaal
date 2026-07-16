@@ -44,7 +44,6 @@ class TimelineVariant(models.TextChoices):
 
 
 class TimelineEntry(BaseModel):
-
     election_config = models.ForeignKey(
         "election.ElectionConfig",
         on_delete=models.CASCADE,

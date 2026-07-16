@@ -8,6 +8,7 @@ from mainsite.serializers import (
     VoteCountSummarySerializer,
     VoterTurnoutCountSummarySerializer,
 )
+from region.models import Region
 
 
 class RegionListSerializer(serializers.ModelSerializer):
@@ -17,7 +18,6 @@ class RegionListSerializer(serializers.ModelSerializer):
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):
-
     voter_turnout_counts = VoterTurnoutCountSummarySerializer(many=True, read_only=True)
     vote_counts = VoteCountSummarySerializer(many=True, read_only=True)
     timeline_entries = serializers.SerializerMethodField()

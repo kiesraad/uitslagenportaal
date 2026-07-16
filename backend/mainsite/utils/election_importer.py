@@ -4,7 +4,7 @@ from xml.etree import ElementTree as ET
 
 from django.utils import timezone
 from django.conf import settings
-from pyeml_bindings import Eml110a, Eml510, Eml230
+from pyeml_bindings import Eml110a, Eml230, Eml510
 from tqdm import tqdm
 from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.formats.dataclass.parsers.config import ParserConfig
@@ -14,6 +14,8 @@ from election.models import (
     Election,
     ElectionDocument,
     Contest,
+    Election,
+    ElectionConfig,
     VoteCount,
     VoterTurnoutCount,
 )
@@ -32,21 +34,17 @@ class EMLBaseImporter:
 
     def _parse_election(self) -> Election:
         election_identifier = self._get_election_ientifier_data().id.split("_")[0]
-        self.election_config = ElectionConfig.objects.get(
-            identifier=election_identifier
-        )
+        self.election_config = ElectionConfig.objects.get(identifier=election_identifier)
         election_identifier_object = self._get_election_ientifier_data()
         date_str = str(election_identifier_object.election_date[0])
         # election_subcategory can sometimes be a list
         try:
             election_subcategory = election_identifier_object.election_subcategory.value
         except AttributeError:
-            assert (
-                len(election_identifier_object.election_subcategory) == 1
-            ), "More than one election_subcategory, cannot parse"
-            election_subcategory = election_identifier_object.election_subcategory[
-                0
-            ].value
+            assert len(election_identifier_object.election_subcategory) == 1, (
+                "More than one election_subcategory, cannot parse"
+            )
+            election_subcategory = election_identifier_object.election_subcategory[0].value
         election, _ = Election.objects.get_or_create(
             election_config=self.election_config,
             name=election_identifier_object.election_name,
@@ -58,8 +56,8 @@ class EMLBaseImporter:
     def parse(self):
         try:
             self._parse_data()
-        except ElectionConfig.DoesNotExist as e:
-            print(f"Election is not configured, skipping 110a data import")
+        except ElectionConfig.DoesNotExist:
+            print("Election is not configured, skipping 110a data import")
 
     def _parse_party_candidate_votecounts(
         self, contest, region, items, party_by_name, candidate_by_key, vote_counts
@@ -68,9 +66,7 @@ class EMLBaseImporter:
         for votes_item in items:
             if votes_item.affiliation_identifier:
                 # get party from pre-saved data
-                current_party = party_by_name[
-                    votes_item.affiliation_identifier.registered_name
-                ]
+                current_party = party_by_name[votes_item.affiliation_identifier.registered_name]
                 vote_counts.append(
                     VoteCount(
                         region=region,
@@ -152,7 +148,7 @@ class EML110aImporter(EMLBaseImporter):
     def _parse_data(self):
         self._parse_regions()
         self._parse_registered_parties()
-        print(f"Succesfully imported data for Election")
+        print("Successfully imported data for Election")
 
     def _parse_regions(self) -> None:
         region_nodes = self.eml.election_event.election.election_tree.region
@@ -173,9 +169,7 @@ class EML110aImporter(EMLBaseImporter):
             )
 
     def _parse_registered_parties(self) -> list[Party]:
-        party_nodes = (
-            self.eml.election_event.election.registered_parties.registered_party
-        )
+        party_nodes = self.eml.election_event.election.registered_parties.registered_party
         for node in party_nodes:
             Party.objects.get_or_create(
                 election=self.election,
@@ -190,9 +184,7 @@ class EML230bImporter(EMLBaseImporter):
         return self.eml.candidate_list.election.election_identifier
 
     def _parse_data(self):
-        assert (
-            len(self.eml.candidate_list.election.contest) == 1
-        ), "More than one contest, cannot parse"
+        assert len(self.eml.candidate_list.election.contest) == 1, "More than one contest, cannot parse"
         contest_data = self.eml.candidate_list.election.contest[0]
         contest, _ = Contest.objects.get_or_create(
             identifier=contest_data.contest_identifier.id,
@@ -206,14 +198,10 @@ class EML230bImporter(EMLBaseImporter):
             for candidate in affiliation.candidate:
                 first_name = None
                 if candidate.candidate_full_name.person_name.first_name:
-                    first_name = (
-                        candidate.candidate_full_name.person_name.first_name.content[0]
-                    )
+                    first_name = candidate.candidate_full_name.person_name.first_name.content[0]
                 name_prefix = None
                 if candidate.candidate_full_name.person_name.name_prefix:
-                    name_prefix = (
-                        candidate.candidate_full_name.person_name.name_prefix.content[0]
-                    )
+                    name_prefix = candidate.candidate_full_name.person_name.name_prefix.content[0]
                 Candidate.objects.create(
                     party=party,
                     contest=contest,
@@ -263,10 +251,7 @@ class EML510bImporter(EMLBaseImporter):
             return
 
         # Preload party names dict
-        party_by_name = {
-            party.registered_name: party
-            for party in Party.objects.filter(election=self.election)
-        }
+        party_by_name = {party.registered_name: party for party in Party.objects.filter(election=self.election)}
 
         vote_counts: list[VoteCount] = []
         turnout_counts: list[VoterTurnoutCount] = []
@@ -294,9 +279,7 @@ class EML510bImporter(EMLBaseImporter):
                 polling_station = Region.objects.create(
                     election=self.election,
                     region_number=unit.reporting_unit_identifier.id,
-                    region_name=unit.reporting_unit_identifier.value.split(
-                        " (postcode:"
-                    )[0],
+                    region_name=unit.reporting_unit_identifier.value.split(" (postcode:")[0],
                     parent=region,
                     region_category=RegionCategory.STEMBUREAU,
                 )
@@ -308,9 +291,7 @@ class EML510bImporter(EMLBaseImporter):
                     candidate_by_key,
                     vote_counts,
                 )
-                self._collect_turnout_counts(
-                    contest, polling_station, unit, turnout_counts
-                )
+                self._collect_turnout_counts(contest, polling_station, unit, turnout_counts)
 
         if vote_counts:
             VoteCount.objects.bulk_create(vote_counts, batch_size=4000)
@@ -338,16 +319,11 @@ class EML510dImporter(EMLBaseImporter):
         )
 
         # Preload party names dict
-        party_by_name = {
-            party.registered_name: party
-            for party in Party.objects.filter(election=self.election)
-        }
+        party_by_name = {party.registered_name: party for party in Party.objects.filter(election=self.election)}
 
         gsb_by_number = {
             int(region.region_number): region
-            for region in Region.objects.filter(
-                election=self.election, region_category=RegionCategory.GEMEENTE
-            )
+            for region in Region.objects.filter(election=self.election, region_category=RegionCategory.GEMEENTE)
         }
 
         vote_counts: list[VoteCount] = []
@@ -370,9 +346,7 @@ class EML510dImporter(EMLBaseImporter):
                 candidate_by_key,
                 vote_counts,
             )
-            self._collect_turnout_counts(
-                contest, region, contest_data.total_votes, turnout_counts
-            )
+            self._collect_turnout_counts(contest, region, contest_data.total_votes, turnout_counts)
 
             # Breakdown per GSB
             for unit in contest_data.reporting_unit_votes:

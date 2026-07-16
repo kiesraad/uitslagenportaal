@@ -10,9 +10,10 @@ from election.models import (
     ElectionDocument
 )
 from mainsite.serializers import (
-    RegionSummarySerializer,
     ElectionSummarySerializer,
+    RegionSummarySerializer,
 )
+
 
 
 class ElectionDocumentSerializer(serializers.ModelSerializer):
