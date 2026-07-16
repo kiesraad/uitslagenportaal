@@ -48,7 +48,7 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ElectionConfig
-        fields = ("slug", "label", "date", "timeline_entries")
+        fields = ("slug", "label", "date", "timeline_entries", "csb_type")
 
 
 class ContestListSerializer(serializers.ModelSerializer):
