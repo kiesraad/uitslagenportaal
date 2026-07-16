@@ -5,17 +5,20 @@ import SearchBar from '../SearchBar'
 import type { SearchListOption } from '../SearchBar'
 import type { ElectionConfig } from '../../api/types'
 import { appRoutes } from '../../utils/routes'
-import type { Region } from '../../api/types'
+import type { Region, RegionCategory } from '../../api/types'
+import { getRegionLabel } from '../../utils/region.ts'
 
 
 type Props = {
   electionConfig: ElectionConfig
   regions: Region[] | undefined
+  regionCategory: RegionCategory
 }
 
 export function RegionList({
   electionConfig,
-  regions
+  regions,
+  regionCategory,
 }: Props) {
 
 
@@ -40,7 +43,7 @@ export function RegionList({
     <div className="page-main">
       <SearchBar
         inputId="gemeente-search"
-        label="Zoek plaats of gemeente"
+        label={`Zoek ${getRegionLabel(regionCategory).toLowerCase()}`}
         options={regionOptions}
         placeholder="Bijv. Zoetermeer"
         onSelect={navigateToGemeente}

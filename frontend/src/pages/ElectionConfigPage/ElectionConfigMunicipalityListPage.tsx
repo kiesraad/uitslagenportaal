@@ -56,6 +56,7 @@ export function ElectionConfigMunicipalityListPage() {
       <RegionList
         electionConfig={electionConfig}
         regions={regions}
+        regionCategory='GEMEENTE'
       />
 
     </Layout>
