@@ -88,11 +88,6 @@ export function MunicipalityPollingstationListPage() {
         regionCategory='STEMBUREAU'
       />
 
-      {/* <PollingStationList
-        region={region}
-        electionConfigSlug={electionConfigSlug ?? ''}
-        regionSlug={regionSlug}
-      /> */}
     </Layout>
   )
 }

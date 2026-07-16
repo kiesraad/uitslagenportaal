@@ -6,13 +6,12 @@ import type { SearchListOption } from '../SearchBar'
 import type { ElectionConfig } from '../../api/types'
 import { appRoutes } from '../../utils/routes'
 import type { Region, RegionCategory } from '../../api/types'
-import { getRegionLabel } from '../../utils/region.ts'
 
 
 type Props = {
   electionConfig: ElectionConfig
   regions: Region[] | undefined
-  regionCategory: RegionCategory
+  regionCategory: Extract<RegionCategory, 'GEMEENTE' | 'STEMBUREAU'>
   parentRegionSlug?: string
 }
 
@@ -61,10 +60,8 @@ export function RegionList({
   return (
     <div className="page-main">
       <SearchBar
-        inputId="gemeente-search"
-        label={`Zoek ${getRegionLabel(regionCategory).toLowerCase()}`}
+        regionCategory={regionCategory}
         options={regionOptions}
-        placeholder="Bijv. Zoetermeer"
         onSelect={navigateToRegion}
       />
 
