@@ -81,17 +81,18 @@ export function MunicipalityPollingstationListPage() {
           />
         }
       />
-      {/* <RegionList
+      <RegionList
         electionConfig={electionConfig}
         regions={pollingStations}
+        parentRegionSlug={regionSlug}
         regionCategory='STEMBUREAU'
-      /> */}
+      />
 
-      <PollingStationList
+      {/* <PollingStationList
         region={region}
         electionConfigSlug={electionConfigSlug ?? ''}
         regionSlug={regionSlug}
-      />
+      /> */}
     </Layout>
   )
 }

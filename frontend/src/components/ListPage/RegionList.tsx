@@ -13,12 +13,14 @@ type Props = {
   electionConfig: ElectionConfig
   regions: Region[] | undefined
   regionCategory: RegionCategory
+  parentRegionSlug?: string
 }
 
 export function RegionList({
   electionConfig,
   regions,
   regionCategory,
+  parentRegionSlug,
 }: Props) {
 
 
@@ -26,6 +28,23 @@ export function RegionList({
 
   function navigateToGemeente(option: SearchListOption) {
     navigate(appRoutes.municipalityPollingstationList(electionConfig.slug ?? '', option.id))
+  }
+
+  function navigateToPollingStation(option: SearchListOption) {
+    if (!parentRegionSlug) return
+
+    navigate(appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id))
+  }
+
+  const navigateToRegion =
+    regionCategory === 'STEMBUREAU'
+      ? navigateToPollingStation
+      : navigateToGemeente
+
+  function getRegionRoute(option: SearchListOption) {
+    return regionCategory === 'STEMBUREAU' && parentRegionSlug
+      ? appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id)
+      : appRoutes.municipalityPollingstationList(electionConfig.slug, option.id)
   }
 
   const regionOptions: SearchListOption[] = (regions ?? [])
@@ -46,7 +65,7 @@ export function RegionList({
         label={`Zoek ${getRegionLabel(regionCategory).toLowerCase()}`}
         options={regionOptions}
         placeholder="Bijv. Zoetermeer"
-        onSelect={navigateToGemeente}
+        onSelect={navigateToRegion}
       />
 
       <h2 className="searchlist-title">Vind een gemeente van A tot Z</h2>
@@ -57,7 +76,7 @@ export function RegionList({
           {municipalities.map((municipality) => (
             <Link
               key={municipality.id}
-              to={appRoutes.municipalityPollingstationList(electionConfig.slug, municipality.id)}
+              to={getRegionRoute(municipality)}
             >
               <span>{municipality.label}</span>
               <span className="gemeente-chevron">{'>'}</span>
