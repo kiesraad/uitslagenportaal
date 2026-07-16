@@ -1,10 +1,12 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { HomePage } from './pages/HomePage'
-import { ElectionConfigDetailPage } from './pages/ElectionConfigDetailPage'
+import { ElectionConfigMunicipalityListPage } from './pages/ElectionConfigMunicipalityListPage'
+import { MunicipalityPollingstationListPage } from './pages/MunicipalityPage/MunicipalityPollingstationListPage'
+import { MunicipalityPartyResultsPage } from './pages/MunicipalityPage/MunicipalityPartyResultsPage'
+import { MunicipalityResultsPage } from './pages/MunicipalityPage/MunicipalityResultsPage'
+import PollingStationResultsPage from './pages/PollingStationPage/PollingStationResultsPage.tsx'
+import PollingStationPartyResultsPage from './pages/PollingStationPage/PollingStationPartyResultsPage.tsx'
 
-import { MunicipalityDetailPage } from './pages/MunicipalityDetailPage/MunicipalityDetailPage'
-import PollingStationDetailPage from './pages/PollingStationDetailPage'
-import PollingStationPartyDetailPage from './pages/PollingStationPartyDetailPage'
 
 
 function App() {
@@ -12,10 +14,12 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/:electionConfigSlug/gemeente" element={<ElectionConfigDetailPage />} />
-        <Route path="/:electionConfigSlug/:regionSlug" element={<MunicipalityDetailPage />} />
-        <Route path="/:electionConfigSlug/:parentRegionSlug/:pollingStationSlug" element={<PollingStationDetailPage />} />
-        <Route path="/:electionConfigSlug/:parentRegionSlug/:pollingStationSlug/:partySlug" element={<PollingStationPartyDetailPage />} />
+        <Route path="/:electionConfigSlug/gsb" element={<ElectionConfigMunicipalityListPage />} />
+        <Route path="/:electionConfigSlug/gsb/:regionSlug" element={<MunicipalityPollingstationListPage />} />
+        <Route path="/:electionConfigSlug/gsb/:regionSlug/resultaten" element={<MunicipalityResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:regionSlug/resultaten/:partySlug" element={<MunicipalityPartyResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/:pollingStationSlug" element={<PollingStationResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/:pollingStationSlug/:partySlug" element={<PollingStationPartyResultsPage />} />
       </Routes>
     </BrowserRouter>
   )

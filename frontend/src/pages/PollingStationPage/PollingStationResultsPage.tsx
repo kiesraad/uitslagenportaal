@@ -1,58 +1,39 @@
 import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import IssueNotice from '../components/PollingStationDetailPage/IssueNotice'
-import PageTop from '../components/DetailPage/PageTop'
-import CandidatesVoteList from '../components/DetailPage/CandidatesVoteList'
-import { Layout } from '../components/Layout'
-import { useElectionConfig, useRegion } from '../hooks/queries'
-import { appRoutes } from '../utils/routes'
-import PageIndex from '../components/PageIndex'
+import IssueNotice from '../../components/ResultsPage/IssueNotice'
+import PageTop from '../../components/PageTop'
+import VotesList from '../../components/ResultsPage/VotesList'
+import VotesResume from '../../components/ResultsPage/VotesResume'
+import { Layout } from '../../components/Layout'
+import { useElectionConfig, useRegion } from '../../hooks/queries'
+import { appRoutes } from '../../utils/routes'
+import PageIndex from '../../components/PageIndex'
+import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline'
 
-export default function PollingStationPartyDetailPage() {
+
+export default function PollingStationResultsPage() {
   const {
     electionConfigSlug: electionConfigSlugParam,
     parentRegionSlug: parentRegionSlugParam,
     pollingStationSlug: pollingStationSlugParam,
-    partySlug: partySlugParam,
-  } = useParams<{ electionConfigSlug: string; parentRegionSlug: string; pollingStationSlug: string; partySlug: string }>()
+  } = useParams<{ electionConfigSlug: string; parentRegionSlug: string; pollingStationSlug: string }>()
 
   const electionConfigSlug = decodeURIComponent(electionConfigSlugParam ?? '')
   const parentRegionSlug = decodeURIComponent(parentRegionSlugParam ?? '')
   const pollingStationSlug = decodeURIComponent(pollingStationSlugParam ?? '')
-  const partySlug = decodeURIComponent(partySlugParam ?? '')
 
   const { data: electionConfig, isLoading: isElectionLoading } = useElectionConfig(electionConfigSlug)
   const { data: region, isLoading: isRegionLoading, isError: isRegionError, refetch } = useRegion(electionConfigSlug, parentRegionSlug)
   const { data: pollingStation, isLoading: isPollingStationLoading } = useRegion(electionConfigSlug, pollingStationSlug)
-
-
-  const currentPartyVoteCounts = useMemo(
-    () =>
-      (pollingStation?.vote_counts.filter(
-        (voteCount) => voteCount.party.slug === partySlug && voteCount.result_level === 'CANDIDATE',
-      ) ?? []).sort((a, b) => (a.candidate?.position ?? 0) - (b.candidate?.position ?? 0)),
-    [pollingStation?.vote_counts, partySlug],
-  )
 
   const partyLevelVoteCounts = useMemo(
     () => pollingStation?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
     [pollingStation?.vote_counts],
   )
 
-  const partyVoteCount = useMemo(
-    () => partyLevelVoteCounts.find((voteCount) => voteCount.party.slug === partySlug),
-    [partyLevelVoteCounts, partySlug],
-  )
-
-  const partyListNumber = useMemo(
-    () => partyLevelVoteCounts.findIndex((voteCount) => voteCount.party.slug === partySlug) + 1,
-    [partyLevelVoteCounts, partySlug],
-  )
-
-  const municipalityDetailRoute = appRoutes.municipalityDetail(electionConfigSlug, parentRegionSlug)
-  const pollingStationDetailRoute = appRoutes.pollingStationDetail(electionConfigSlug, parentRegionSlug, pollingStationSlug)
+  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, parentRegionSlug)
+  const pollingStationResultsRoute = appRoutes.pollingStationResults(electionConfigSlug, parentRegionSlug, pollingStationSlug)
   const reportHref = appRoutes.reportError(parentRegionSlug, pollingStationSlug)
-
 
   const pageTitle = pollingStation
     ? `Telresultaten stembureau\n${pollingStation.region_name}`
@@ -85,8 +66,6 @@ export default function PollingStationPartyDetailPage() {
     )
   }
 
-  const partyName = partyVoteCount?.party.registered_name ?? 'Lijst'
-
   return (
     <Layout
       title={`Telresultaten stembureau – ${pollingStation.region_name}`}
@@ -97,9 +76,9 @@ export default function PollingStationPartyDetailPage() {
         subtitle="Geplaatst op: 10 december 2025 - 12:17"
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
-          { href: appRoutes.electionConfigDetailMunicipality(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },
-          { href: municipalityDetailRoute, label: `Gemeente ${region.region_name}` },
-          { href: pollingStationDetailRoute, label: pollingStation.region_name },
+          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },
+          { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
+          { href: pollingStationResultsRoute, label: pollingStation.region_name },
         ]}
       />
       <div className="page-main page-main-two-columns">
@@ -112,14 +91,28 @@ export default function PollingStationPartyDetailPage() {
           />
 
           <section id="telresultaten">
-            <h2 className="result-how-title mb-0 semibold">Telresultaten lijst {partyListNumber || '?'}</h2>
-            <h3 className="party-level-title mb-2">{partyName}</h3>
-            <CandidatesVoteList
-              voteCounts={currentPartyVoteCounts}
-              partyVote={partyVoteCount}
-              partyListNumber={partyListNumber}
-            />
+            <h3 className="mb-2">Telresultaten</h3>
+            <p>De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware.</p>
           </section>
+
+          <VotesResume type='admittedVoters' votes={pollingStation.voter_turnout_counts} />
+
+          <section className="votes-cast">
+            <h4 className="mb-2">Uitgebrachte stemmen</h4>
+            <p className="mb-4">Klik op een lijst om de stemmen per kandidaat te zien</p>
+            <VotesList voteCounts={partyLevelVoteCounts} />
+          </section>
+
+          <VotesResume
+            type='votesCast'
+            votes={pollingStation.voter_turnout_counts}
+          />
+
+          <ResultsTimeline
+            title="Hoe komt de uitslag tot stand?"
+            description="Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
+            entries={pollingStation.timeline_entries ?? []}
+          />
 
           <IssueNotice id="fout-melden" reportHref={reportHref} />
         </div>

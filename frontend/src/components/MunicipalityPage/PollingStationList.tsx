@@ -35,7 +35,7 @@ export default function PollingStationList({ region, electionConfigSlug, regionS
   )
 
   function navigateToPollingStation(option: SearchListOption) {
-    navigate(appRoutes.pollingStationDetail(electionConfigSlug, regionSlug, option.id))
+    navigate(appRoutes.pollingStationResults(electionConfigSlug, regionSlug, option.id))
   }
 
   return (
@@ -65,7 +65,7 @@ export default function PollingStationList({ region, electionConfigSlug, regionS
         {(pollingStations ?? []).map((pollingStation) => (
           <Link
             key={pollingStation.slug}
-            to={appRoutes.pollingStationDetail(electionConfigSlug, regionSlug, pollingStation.slug)}
+            to={appRoutes.pollingStationResults(electionConfigSlug, regionSlug, pollingStation.slug)}
           >
             <span>{pollingStation.region_name}</span>
             <span className="gemeente-chevron">{'>'}</span>

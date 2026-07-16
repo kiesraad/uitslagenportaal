@@ -1,16 +1,15 @@
 import { useParams } from 'react-router-dom'
-import { Layout } from '../../components/Layout'
-import PageTop from '../../components/DetailPage/PageTop.tsx'
-import SharedTabs from '../../components/DetailPage/SharedTabs.tsx'
-import { useElectionConfig, useRegion } from '../../hooks/queries'
-import { appRoutes } from '../../utils/routes'
-import PollingStationList from '../../components/MunicipalityDetailPage/PollingStationList.tsx'
-import './municipality-detail-page.css'
-
-export function MunicipalityDetailPage() {
+import { Layout } from '../../components/Layout.tsx'
+import PageTop from '../../components/PageTop.tsx'
+import SharedTabs from '../../components/SharedTabs.tsx'
+import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
+import { appRoutes } from '../../utils/routes.ts'
+import PollingStationList from '../../components/MunicipalityPage/PollingStationList.tsx'
+export function MunicipalityPollingstationListPage() {
   const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
   const regionSlug = decodeURIComponent(regionSlugParam ?? '')
-  const municipalityDetailRoute = appRoutes.municipalityDetail(electionConfigSlug ?? '', regionSlug)
+  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug)
+  const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? '', regionSlug)
 
   const { data: electionConfig } = useElectionConfig(electionConfigSlug)
   const { data: region, isLoading, isError, refetch } = useRegion(electionConfigSlug, regionSlug)
@@ -44,22 +43,22 @@ export function MunicipalityDetailPage() {
         subtitle="Geplaatst op: 10 december 2025 - 12:17"
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
-          { href: appRoutes.electionConfigDetailMunicipality(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
-          { href: municipalityDetailRoute, label: `Gemeente ${region.region_name}` },
+          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
+          { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
         ]}
         tabs={
           <SharedTabs
             tabs={[
               {
                 label: 'Resultaten per stembureau',
-                value: municipalityDetailRoute,
-                activePatterns: [municipalityDetailRoute, `${municipalityDetailRoute}/*`],
+                value: municipalityPollingstationListRoute,
+                activePatterns: [municipalityPollingstationListRoute],
               },
-              // {
-              //   label: 'Hele gemeente',
-              //   value: municipalityResultsRoute,
-              //   activePatterns: [municipalityResultsRoute],
-              // },
+              {
+                label: 'Hele gemeente',
+                value: municipalityResultsRoute,
+                activePatterns: [municipalityResultsRoute],
+              },
             ]}
           />
         }

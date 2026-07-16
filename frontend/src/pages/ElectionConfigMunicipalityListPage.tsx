@@ -1,14 +1,14 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Layout } from '../components/Layout.tsx'
-import PageTop from '../components/DetailPage/PageTop.tsx'
-import SharedTabs from '../components/DetailPage/SharedTabs.tsx'
+import PageTop from '../components/PageTop.tsx'
+import SharedTabs from '../components/SharedTabs.tsx'
 import SearchBar from '../components/SearchBar.tsx'
 import type { SearchListOption } from '../components/SearchBar.tsx'
 import { appRoutes } from '../utils/routes.ts'
 import { useElectionConfig, useRegions } from '../hooks/queries.ts'
 
 
-export function ElectionConfigDetailPage() {
+export function ElectionConfigMunicipalityListPage() {
   
   const navigate = useNavigate()
   const { electionConfigSlug} = useParams<{ electionConfigSlug: string }>()
@@ -18,7 +18,7 @@ export function ElectionConfigDetailPage() {
   const electionLabel = electionConfig?.label ?? 'Verkiezing laden…'
 
   function navigateToGemeente(option: SearchListOption) {
-    navigate(appRoutes.municipalityDetail(electionConfigSlug ?? '', option.id))
+    navigate(appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', option.id))
   }
 
   if (isLoading) {
@@ -63,10 +63,10 @@ export function ElectionConfigDetailPage() {
         subtitle={`Verkiezingsdag: ${electionConfig.date ? new Date(electionConfig.date).toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}`}
         breadcrumb={[
           { href: '/', label: 'Home' },
-          { href: appRoutes.electionConfigDetailMunicipality(electionConfigSlug ?? ''), label: electionConfig.label},
+          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig.label},
         ]}
         tabs={<SharedTabs tabs={[
-          { label: 'Gemeente', value: appRoutes.electionConfigDetailMunicipality(electionConfig.slug), activePatterns: ['/:electionConfigSlug/gemeente'] },
+          { label: 'Gemeente', value: appRoutes.electionConfigMunicipalityList(electionConfig.slug), activePatterns: ['/:electionConfigSlug/gsb'] },
         ]} />}
 
       />
@@ -86,7 +86,7 @@ export function ElectionConfigDetailPage() {
           <div key={letter} className="searchlist-section">
             <div className="searchlist-letter">{letter}</div>
             {municipalities.map((municipality) => (
-              <Link key={municipality.id} to={appRoutes.municipalityDetail(electionConfig.slug, municipality.id)}>
+              <Link key={municipality.id} to={appRoutes.municipalityPollingstationList(electionConfig.slug, municipality.id)}>
                 <span>{municipality.label}</span>
                 <span className="gemeente-chevron">{'>'}</span>
               </Link>
