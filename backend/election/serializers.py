@@ -1,12 +1,15 @@
+from django.utils import timezone
 from rest_framework import serializers
 
-from election.models import Contest, TimelineEntry, ElectionConfig
+from election.models import Contest, TimelineEntry, ElectionConfig, TimelineEntryStatus
 from mainsite.serializers import (
     RegionSummarySerializer,
     ElectionSummarySerializer,
 )
 
 class TimelineEntrySerializer(serializers.ModelSerializer):
+    status = serializers.SerializerMethodField()
+
     class Meta:
         model = TimelineEntry
         fields = (
@@ -15,6 +18,17 @@ class TimelineEntrySerializer(serializers.ModelSerializer):
             "date",
             "body",
         )
+
+    def get_status(self, obj):
+        now = timezone.localtime(timezone.now())
+        entry_date = timezone.localtime(obj.date)
+
+        if entry_date.date() == now.date():
+            return TimelineEntryStatus.IN_PROGRESS
+        elif entry_date.date() < now.date():
+            return TimelineEntryStatus.DONE
+        else:
+            return TimelineEntryStatus.PENDING
 
 
 class ElectionConfigSerializer(serializers.ModelSerializer):
