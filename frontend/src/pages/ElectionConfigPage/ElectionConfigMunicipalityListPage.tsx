@@ -1,25 +1,20 @@
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout.tsx'
 import PageTop from '../../components/PageTop.tsx'
 import SharedTabs from '../../components/SharedTabs.tsx'
-import SearchBar from '../../components/SearchBar.tsx'
 import type { SearchListOption } from '../../components/SearchBar.tsx'
+import { RegionList } from '../../components/ListPage/RegionList.tsx'
 import { appRoutes } from '../../utils/routes.ts'
 import { useElectionConfig, useRegions } from '../../hooks/queries.ts'
-
+import { getRegionLabel } from '../../utils/region.ts'
 
 export function ElectionConfigMunicipalityListPage() {
   
-  const navigate = useNavigate()
   const { electionConfigSlug} = useParams<{ electionConfigSlug: string }>()
   const { data: electionConfig, isLoading, isError, refetch } = useElectionConfig(electionConfigSlug)
   const { data: regions } = useRegions(electionConfigSlug, undefined, 'GEMEENTE')
 
   const electionLabel = electionConfig?.label ?? 'Verkiezing laden…'
-
-  function navigateToGemeente(option: SearchListOption) {
-    navigate(appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', option.id))
-  }
 
   if (isLoading) {
     return (
@@ -67,33 +62,17 @@ export function ElectionConfigMunicipalityListPage() {
         ]}
         tabs={<SharedTabs tabs={[
           { label: 'Gemeente', value: appRoutes.electionConfigMunicipalityList(electionConfig.slug), activePatterns: ['/:electionConfigSlug/gsb'] },
+          { label: getRegionLabel(electionConfig.csb_type, true), value: appRoutes.electionConfigCSBList(electionConfig.slug), activePatterns: ['/:electionConfigSlug/csb'] },
         ]} />}
 
       />
+      <RegionList
+        electionConfig={electionConfig}
+        electionConfigSlug={electionConfigSlug ?? ''}
+        regionOptions={regionOptions}
+        regionsByLetter={regionsByLetter}
+      />
 
-      <div className="page-main">
-        <SearchBar
-          inputId="gemeente-search"
-          label="Zoek plaats of gemeente"
-          options={regionOptions}
-          placeholder="Bijv. Zoetermeer"
-          onSelect={navigateToGemeente}
-        />
-
-        <h2 className="searchlist-title">Vind een gemeente van A tot Z</h2>
-
-        {Object.entries(regionsByLetter).map(([letter, municipalities]) => (
-          <div key={letter} className="searchlist-section">
-            <div className="searchlist-letter">{letter}</div>
-            {municipalities.map((municipality) => (
-              <Link key={municipality.id} to={appRoutes.municipalityPollingstationList(electionConfig.slug, municipality.id)}>
-                <span>{municipality.label}</span>
-                <span className="gemeente-chevron">{'>'}</span>
-              </Link>
-            ))}
-          </div>
-        ))}
-      </div>
     </Layout>
   )
 }

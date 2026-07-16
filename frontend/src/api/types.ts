@@ -2,6 +2,7 @@ export type ElectionConfig = {
   slug: string
   label: string
   date: string
+  csb_type: RegionCategory
   timeline_entries?: TimelineEntry[]
 }
 

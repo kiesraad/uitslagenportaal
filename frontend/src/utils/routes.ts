@@ -1,6 +1,7 @@
 export const appRoutes = {
   home: () => '/',
   electionConfigMunicipalityList: (electionConfigSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/gsb`,
+  electionConfigCSBList: (electionConfigSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/csb`,
   municipalityPollingstationList: (electionConfigSlug: string, regionSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/gsb/${encodeURIComponent(regionSlug)}`,
   municipalityResults: (electionConfigSlug: string, regionSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/gsb/${encodeURIComponent(regionSlug)}/resultaten`,
   municipalityPartyResults: (electionConfigSlug: string, regionSlug: string, partySlug: string) =>
