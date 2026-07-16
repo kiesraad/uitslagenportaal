@@ -2,15 +2,12 @@ import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import type { Region } from '../../api/types.ts'
-import { InfoBox } from '../InfoBox.tsx'
 import SearchBar from '../SearchBar.tsx'
 import type { SearchListOption } from '../SearchBar.tsx'
-import { appRoutes } from '../../utils/routes.ts'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-// import { faMap } from '@fortawesome/free-regular-svg-icons'
-import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
 
+import { appRoutes } from '../../utils/routes.ts'
 import { useRegions } from '../../hooks/queries.ts'
+import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 
 
 type Props = {
@@ -73,18 +70,8 @@ export default function PollingStationList({ region, electionConfigSlug, regionS
         ))}
       </div>
 
-      <InfoBox>
-        <h4>Klopt er iets niet?</h4>
-        <span>
-          Soms gaat er iets mis bij het tellen, opschrijven of overtypen van de
-          stemmen. Fouten die na 14 december 10:00 worden gemeld, kunnen we nog
-          onderzoeken en herstellen. Dan kan de juiste informatie mee in de
-          officiele uitslag.
-        </span>
-        <p>
-          <Link to={appRoutes.reportError(regionSlug)}>Meld een fout of iets dat niet klopt <FontAwesomeIcon icon={faArrowRight} /></Link>
-        </p>
-      </InfoBox>
+      <IssueNotice id="fout-melden" reportHref={appRoutes.reportError(regionSlug, undefined)} />
+
     </div>
   )
 }
