@@ -8,7 +8,7 @@ from mainsite.serializers import (
 
 
 class ElectionDocumentSerializer(serializers.ModelSerializer):
-    url = serializers.CharField(read_only=True)
+    url = serializers.SerializerMethodField()
     storage_key = serializers.CharField(read_only=True)
     content_type = serializers.CharField(read_only=True)
     size = serializers.IntegerField(read_only=True)
