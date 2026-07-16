@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: uitslagenportaal
       POSTGRES_USER: uitslagenportaal_user
-      POSTGRES_PASSWORD: rlA7TQ44WT69wn
+      POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
     volumes:
@@ -22,10 +22,10 @@ services:
     environment:
       DB_NAME: uitslagenportaal
       DB_USER: uitslagenportaal_user
-      DB_PASSWORD: rlA7TQ44WT69wn
+      DB_PASSWORD: password
       DB_HOST: db
       DB_PORT: "5432"
-      SECRET_KEY: GnNxQ84iFNP4Hm
+      SECRET_KEY: super-secret
       CORS_ALLOWED_ORIGINS: http://localhost:8080
     volumes:
       - ./backend:/app
