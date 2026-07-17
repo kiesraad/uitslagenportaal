@@ -55,7 +55,10 @@ class RegionDetailView(RetrieveAPIView):
             raise ValidationError({"region": "This query parameter is required."})
 
         try:
-            return Region.objects.prefetch_related(
+            return Region.objects.select_related(
+                "parent",
+                "election__election_config",
+            ).prefetch_related(
                 "vote_counts__party",
                 "vote_counts__candidate",
                 "voter_turnout_counts",

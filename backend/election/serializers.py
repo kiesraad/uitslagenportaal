@@ -1,7 +1,13 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from election.models import Contest, TimelineEntry, ElectionConfig, TimelineEntryStatus
+from election.models import (
+    Contest,
+    TimelineEntry,
+    ElectionConfig,
+    TimelineEntryStatus,
+    TimelineVariant,
+)
 from mainsite.serializers import (
     RegionSummarySerializer,
     ElectionSummarySerializer,
@@ -32,7 +38,7 @@ class TimelineEntrySerializer(serializers.ModelSerializer):
 
 
 class ElectionConfigSerializer(serializers.ModelSerializer):
-    timeline_entries = TimelineEntrySerializer(many=True, read_only=True)
+    timeline_entries = serializers.SerializerMethodField()
 
     class Meta:
         model = ElectionConfig
@@ -42,6 +48,14 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
             "date",
             'timeline_entries'
         )
+
+    def get_timeline_entries(self, obj):
+        entries = [
+            entry
+            for entry in obj.timeline_entries.all()
+            if entry.variant == TimelineVariant.DEFAULT
+        ]
+        return TimelineEntrySerializer(entries, many=True).data
 
 
 class ContestListSerializer(serializers.ModelSerializer):
