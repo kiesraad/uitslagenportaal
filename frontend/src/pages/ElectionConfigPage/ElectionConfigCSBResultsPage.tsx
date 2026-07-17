@@ -17,6 +17,7 @@ export function ElectionConfigCSBResultsPage() {
     const regionSlug = decodeURIComponent(regionSlugParam ?? '')
     // const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug)
     const csbResultsRoute = appRoutes.csbResults(electionConfigSlug ?? '', regionSlug)
+    const csbMunicipalityListRoute = appRoutes.csbMunicipalityList(electionConfigSlug ?? '', regionSlug)
 
 
     const { data: electionConfig } = useElectionConfig(electionConfigSlug)
@@ -70,11 +71,11 @@ export function ElectionConfigCSBResultsPage() {
                                 value: csbResultsRoute,
                                 activePatterns: [csbResultsRoute],
                             },
-                            // {
-                            //     label: 'Per gemeente',
-                            //     value: municipalityPollingstationListRoute,
-                            //     activePatterns: [municipalityPollingstationListRoute],
-                            // },
+                            {
+                                label: 'Per gemeente',
+                                value: csbMunicipalityListRoute,
+                                activePatterns: [csbMunicipalityListRoute],
+                            },
                         ]}
                     />
                 }
