@@ -12,7 +12,7 @@ export type SearchListOption = {
   content?: ReactNode
 }
 
-type SearchRegionCategory = Extract<RegionCategory, 'GEMEENTE' | 'STEMBUREAU'>
+type SearchRegionCategory = Extract<RegionCategory, 'GEMEENTE' | 'STEMBUREAU' | 'WATERSCHAP'>
 
 type Props = {
   regionCategory: SearchRegionCategory
@@ -44,6 +44,13 @@ export default function SearchBar({
       submitBehavior: 'exact-match' as const,
       inputId: 'gemeente-search',
     },
+    WATERSCHAP: {
+      label: `Zoek ${getRegionLabel('WATERSCHAP').toLowerCase()}`,
+      placeholder: 'Bijv. De Stichtse Rijnlanden',
+      submitBehavior: 'exact-match' as const,
+      inputId: 'waterschap-search',
+    },
+
   } as const
 
   const config = SEARCH_CONFIG[regionCategory]
