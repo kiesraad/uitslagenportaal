@@ -59,7 +59,7 @@ export function ElectionConfigCSBResultsPage() {
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },
                     { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
-                    // { href: municipalityPollingstationListRoute, label: `${regionLabel} ${region.region_name}` },
+                    { href: appRoutes.csbResults(electionConfigSlug ?? '', regionSlug), label: `${regionLabel} ${region.region_name}` },
 
                 ]}
                 tabs={
