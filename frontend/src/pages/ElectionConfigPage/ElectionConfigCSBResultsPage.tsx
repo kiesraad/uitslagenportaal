@@ -9,16 +9,20 @@ import ReportsWithResults from '../../components/ResultsPage/ReportsWithResults.
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
+import { getRegionLabel } from '../../utils/region'
 
 
 export function ElectionConfigCSBResultsPage() {
     const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
     const regionSlug = decodeURIComponent(regionSlugParam ?? '')
-    const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug)
+    // const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug)
     const csbResultsRoute = appRoutes.csbResults(electionConfigSlug ?? '', regionSlug)
+
 
     const { data: electionConfig } = useElectionConfig(electionConfigSlug)
     const { data: region, isLoading, isError, refetch } = useRegion(electionConfigSlug, regionSlug)
+
+    const regionLabel = getRegionLabel(electionConfig?.csb_type)
 
     const partyLevelVoteCounts = useMemo(
         () => region?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
@@ -27,16 +31,17 @@ export function ElectionConfigCSBResultsPage() {
 
     if (isLoading) {
         return (
-            <Layout title="Gemeente laden…" description="Gemeente laden…">
-                <p>Gemeente laden…</p>
+            <Layout title={`${regionLabel} laden…`} description={`${regionLabel} laden…`}>
+
+                <p>${regionLabel.toLowerCase()} laden…</p>
             </Layout>
         )
     }
 
     if (isError || !region) {
         return (
-            <Layout title="Gemeente niet gevonden" description="Kan gemeente niet laden.">
-                <p>Kan gemeente niet laden.</p>
+            <Layout title={`${regionLabel} niet gevonden`} description={`Kan ${regionLabel.toLowerCase()} niet laden`}>
+                <p>Kan ${regionLabel.toLowerCase()} niet laden.</p>
                 <button type="button" onClick={() => refetch()}>
                     Opnieuw proberen
                 </button>
@@ -47,15 +52,14 @@ export function ElectionConfigCSBResultsPage() {
     return (
         <Layout
             title="Resultaten"
-            description="Resultaten per stembureau"
         >
             <PageTop
-                title={`Gemeente ${region.region_name}`}
+                title={`${regionLabel} ${region.region_name}`}
                 subtitle="Geplaatst op: 10 december 2025 - 12:17"
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },
                     { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
-                    { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
+                    // { href: municipalityPollingstationListRoute, label: `${regionLabel} ${region.region_name}` },
 
                 ]}
                 tabs={
@@ -89,7 +93,7 @@ export function ElectionConfigCSBResultsPage() {
 
                     <ReportsWithResults
                         title="Brondocumenten"
-                        description="Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
+                        description={`Onderstaande documenten bevatten de laatste telresultaten van de ${regionLabel.toLowerCase()}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`}
                         documents={region.documents}
                     />
 
