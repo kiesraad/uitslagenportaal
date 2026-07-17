@@ -11,8 +11,9 @@ export function getElectionConfigBySlug(slug: string) {
 
 export function getRegions(
   electionConfigSlug: string,
+  skipNode: Boolean,
   parentRegionSlug?: string,
-  regionCategory?: RegionCategory
+  regionCategory?: RegionCategory,
 ) {
   if (!electionConfigSlug || (!parentRegionSlug && !regionCategory)) {
     throw new Error('getRegions: electionConfigSlug and one of parentRegionSlug or regionCategory are required.')
@@ -25,6 +26,7 @@ export function getRegions(
   if (regionCategory) {
     url += `&region_category=${encodeURIComponent(regionCategory)}`;
   }
+  url += `&skip_node=${skipNode ? 1 : 0}`;
   return apiGet<RegionResponse>(url);
 }
 

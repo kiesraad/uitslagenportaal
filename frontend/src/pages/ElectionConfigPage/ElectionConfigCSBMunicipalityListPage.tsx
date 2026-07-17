@@ -16,7 +16,7 @@ export function ElectionConfigCSBMunicipalityListPage() {
     const { data: electionConfig, isLoading, isError, refetch: refetch } = useElectionConfig(electionConfigSlug)
     const { data: region } = useRegion(electionConfigSlug, regionSlug)
     
-    const { data: regions } = useRegions(electionConfigSlug, regionSlug, 'GEMEENTE')
+    const { data: regions } = useRegions(electionConfigSlug, regionSlug, 'GEMEENTE', true)
     
     const electionLabel = electionConfig?.label ?? 'Verkiezing laden…'
     const regionLabel = getRegionLabel(electionConfig?.csb_type)
