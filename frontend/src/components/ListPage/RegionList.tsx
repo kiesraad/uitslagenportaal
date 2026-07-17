@@ -11,7 +11,7 @@ import type { Region, RegionCategory } from '../../api/types'
 type Props = {
   electionConfig: ElectionConfig
   regions: Region[] | undefined
-  regionCategory: Extract<RegionCategory, 'GEMEENTE' | 'STEMBUREAU'>
+  regionCategory: Extract<RegionCategory, 'GEMEENTE' | 'STEMBUREAU' | 'WATERSCHAP'>
   parentRegionSlug?: string
 }
 
@@ -28,22 +28,33 @@ export function RegionList({
   function navigateToGemeente(option: SearchListOption) {
     navigate(appRoutes.municipalityPollingstationList(electionConfig.slug ?? '', option.id))
   }
-
+  
   function navigateToPollingStation(option: SearchListOption) {
     if (!parentRegionSlug) return
-
     navigate(appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id))
   }
+  
+  function navigateToWaterschap(option: SearchListOption) {
+    navigate(appRoutes.csbResults(electionConfig.slug ?? '', option.id))
+  }
 
-  const navigateToRegion =
-    regionCategory === 'STEMBUREAU'
-      ? navigateToPollingStation
-      : navigateToGemeente
+  let navigateToRegion: (option: SearchListOption) => void;
+  if (regionCategory === 'STEMBUREAU') {
+    navigateToRegion = navigateToPollingStation;
+  } else if (regionCategory === 'WATERSCHAP') {
+    navigateToRegion = navigateToWaterschap;
+  } else {
+    navigateToRegion = navigateToGemeente;
+  }
 
   function getRegionRoute(option: SearchListOption) {
-    return regionCategory === 'STEMBUREAU' && parentRegionSlug
-      ? appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id)
-      : appRoutes.municipalityPollingstationList(electionConfig.slug, option.id)
+    if (regionCategory === 'STEMBUREAU' && parentRegionSlug) {
+      return appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id)
+    } else if (regionCategory === 'WATERSCHAP') {
+      return appRoutes.csbResults(electionConfig.slug, option.id)
+    } else {
+      return appRoutes.municipalityPollingstationList(electionConfig.slug, option.id)
+    }
   }
 
   const regionOptions: SearchListOption[] = (regions ?? [])
