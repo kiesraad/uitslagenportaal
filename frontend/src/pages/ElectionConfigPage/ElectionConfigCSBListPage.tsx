@@ -12,7 +12,7 @@ export function ElectionConfigCSBListPage() {
 
   const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>()
   const { data: electionConfig, isLoading, isError, refetch } = useElectionConfig(electionConfigSlug)
-  const { data: regions } = useRegions(electionConfigSlug, undefined, 'KIESKRING')
+  const { data: regions } = useRegions(electionConfigSlug, undefined, electionConfig?.csb_type)
 
   const electionLabel = electionConfig?.label ?? 'Verkiezing laden…'
 
