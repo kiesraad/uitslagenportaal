@@ -21,7 +21,8 @@ export function getRegions(
   let url = `/api/regions?election_config=${encodeURIComponent(electionConfigSlug)}`;
   if (parentRegionSlug) {
     url += `&parent_region=${encodeURIComponent(parentRegionSlug)}`;
-  } else if (regionCategory) {
+  }
+  if (regionCategory) {
     url += `&region_category=${encodeURIComponent(regionCategory)}`;
   }
   return apiGet<RegionResponse>(url);
