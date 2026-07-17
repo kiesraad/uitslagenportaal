@@ -3,14 +3,10 @@ import { InfoBox } from '../InfoBox'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
 
-type Props = {
-  reportHref: string
-  id?: string
-}
 
-export default function IssueNotice({ reportHref, id }: Props) {
+export default function IssueNotice() {
   return (
-    <section id={id}>
+    <section id='fout-melden'>
       <InfoBox>
         <h4>Klopt er iets niet?</h4>
         <span>
@@ -20,7 +16,7 @@ export default function IssueNotice({ reportHref, id }: Props) {
           officiele uitslag.
         </span>
         <p>
-          <Link to={reportHref}>Meld een fout of iets dat niet klopt<FontAwesomeIcon icon={faArrowRight} /></Link>
+          <Link to={'https://www.kiesraad.nl/'}>Meld een fout of iets dat niet klopt<FontAwesomeIcon icon={faArrowRight} /></Link>
         </p>
       </InfoBox>
     </section>

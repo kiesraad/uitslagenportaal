@@ -52,7 +52,6 @@ export default function PollingStationPartyResultsPage() {
   const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, parentRegionSlug)
   const pollingStationResultsRoute = appRoutes.pollingStationResults(electionConfigSlug, parentRegionSlug, pollingStationSlug)
   const pollingStationPartyResultsRoute = appRoutes.pollingStationPartyResults(electionConfigSlug, parentRegionSlug, pollingStationSlug, partySlug)
-  const reportHref = appRoutes.reportError(parentRegionSlug, pollingStationSlug)
 
 
   const pageTitle = pollingStation
@@ -123,7 +122,7 @@ export default function PollingStationPartyResultsPage() {
             />
           </section>
 
-          <IssueNotice id="fout-melden" reportHref={reportHref} />
+          <IssueNotice />
         </div>
       </div>
     </Layout>

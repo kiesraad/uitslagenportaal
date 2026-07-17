@@ -1,12 +1,11 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { HomePage } from './pages/HomePage'
-import { ElectionConfigMunicipalityListPage } from './pages/ElectionConfigMunicipalityListPage'
+import { ElectionConfigMunicipalityListPage } from './pages/ElectionConfigPage/ElectionConfigMunicipalityListPage'
 import { MunicipalityPollingstationListPage } from './pages/MunicipalityPage/MunicipalityPollingstationListPage'
 import { MunicipalityPartyResultsPage } from './pages/MunicipalityPage/MunicipalityPartyResultsPage'
 import { MunicipalityResultsPage } from './pages/MunicipalityPage/MunicipalityResultsPage'
 import PollingStationResultsPage from './pages/PollingStationPage/PollingStationResultsPage.tsx'
 import PollingStationPartyResultsPage from './pages/PollingStationPage/PollingStationPartyResultsPage.tsx'
-
 
 
 function App() {

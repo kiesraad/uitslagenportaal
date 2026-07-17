@@ -70,7 +70,7 @@ export default function PollingStationList({ region, electionConfigSlug, regionS
         ))}
       </div>
 
-      <IssueNotice id="fout-melden" reportHref={appRoutes.reportError(regionSlug, undefined)} />
+      <IssueNotice />
 
     </div>
   )

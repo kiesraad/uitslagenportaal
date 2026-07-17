@@ -93,14 +93,12 @@ export function HomePage() {
             <div className="home-info-box">
               <div className="home-info-body">
                 <h3>Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?</h3>
-                <p>
                   {election_configs.map((election_config) => (
                     <div key={election_config.slug} className={'home-hero-card-link'}>
                       <span className="gemeente-chevron">›</span>
                       <Link to={appRoutes.electionConfigMunicipalityList(election_config.slug)}>Bekijk de tellingen per stembureau voor {election_config.label}</Link>
                     </div>
                   ))}
-                </p>
               </div>
             </div>
 
