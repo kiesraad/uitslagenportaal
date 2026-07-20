@@ -1,6 +1,6 @@
 from django.db import models
 
-from mainsite.models import BaseModel, RegionCategory
+from mainsite.models import BaseModel, CountingMethod, RegionCategory
 from mainsite.utils.utils import name_to_slug
 
 
@@ -24,6 +24,14 @@ class Region(BaseModel):
         choices=RegionCategory.choices,
     )
     region_name = models.CharField(max_length=255, db_index=True)
+
+    counting_method = models.CharField(
+        max_length=3,
+        choices=CountingMethod.choices,
+        default=CountingMethod.CSO,
+        null=True,
+        blank=True,
+    )
 
     # This slug is not unique, as it is used in combination with election
     # and the region type to retrieve it as opposed to only using the slug

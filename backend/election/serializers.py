@@ -1,6 +1,14 @@
+from django.utils import timezone
 from rest_framework import serializers
 
-from election.models import Contest, TimelineEntry, ElectionConfig, ElectionDocument
+from election.models import (
+    Contest,
+    TimelineEntry,
+    ElectionConfig,
+    TimelineEntryStatus,
+    TimelineVariant,
+    ElectionDocument
+)
 from mainsite.serializers import (
     RegionSummarySerializer,
     ElectionSummarySerializer,
@@ -33,6 +41,8 @@ class ElectionDocumentSerializer(serializers.ModelSerializer):
 
 
 class TimelineEntrySerializer(serializers.ModelSerializer):
+    status = serializers.SerializerMethodField()
+
     class Meta:
         model = TimelineEntry
         fields = (
@@ -42,13 +52,32 @@ class TimelineEntrySerializer(serializers.ModelSerializer):
             "body",
         )
 
+    def get_status(self, obj):
+        now = timezone.localtime(timezone.now())
+        entry_date = timezone.localtime(obj.date)
+
+        if entry_date.date() == now.date():
+            return TimelineEntryStatus.IN_PROGRESS
+        elif entry_date.date() < now.date():
+            return TimelineEntryStatus.DONE
+        else:
+            return TimelineEntryStatus.PENDING
+
 
 class ElectionConfigSerializer(serializers.ModelSerializer):
-    timeline_entries = TimelineEntrySerializer(many=True, read_only=True)
+    timeline_entries = serializers.SerializerMethodField()
 
     class Meta:
         model = ElectionConfig
         fields = ("slug", "label", "date", "timeline_entries")
+
+    def get_timeline_entries(self, obj):
+        entries = [
+            entry
+            for entry in obj.timeline_entries.all()
+            if entry.variant == TimelineVariant.DEFAULT
+        ]
+        return TimelineEntrySerializer(entries, many=True).data
 
 
 class ContestListSerializer(serializers.ModelSerializer):
