@@ -43,12 +43,23 @@ class TimelineEntryStatus(models.TextChoices):
     DONE = "done", "Done"
 
 
+class TimelineVariant(models.TextChoices):
+    CSO = "CSO", "Centrale Stemopname"
+    DSO = "DSO", "Decentrale Stemopname"
+    DEFAULT = "DEFAULT", "Default"
+
+
 class TimelineEntry(BaseModel):
 
     election_config = models.ForeignKey(
         "election.ElectionConfig",
         on_delete=models.CASCADE,
         related_name="timeline_entries",
+    )
+    variant = models.CharField(
+        max_length=8,
+        choices=TimelineVariant.choices,
+        default=TimelineVariant.DEFAULT,
     )
     status = models.CharField(max_length=16, choices=TimelineEntryStatus.choices)
     title = models.CharField(max_length=255)
@@ -60,7 +71,7 @@ class TimelineEntry(BaseModel):
         ordering = ("date",)
 
     def __str__(self):
-        return f"{self.election_config.identifier}: {self.title}"
+        return f"{self.election_config.identifier} [{self.variant}]: {self.title}"
 
 
 class Contest(BaseModel):
