@@ -8,7 +8,7 @@ import { appRoutes } from '../../utils/routes.ts'
 import { useElectionConfig, useRegions, useRegion } from '../../hooks/queries.ts'
 import { getRegionLabel } from '../../utils/region.ts'
 
-export function ElectionConfigCSBMunicipalityListPage() {
+export function CSBMunicipalityListPage() {
 
     const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>()
     const { regionSlug } = useParams<{ regionSlug: string }>()

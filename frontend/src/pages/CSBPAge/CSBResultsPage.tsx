@@ -9,10 +9,10 @@ import ReportsWithResults from '../../components/ResultsPage/ReportsWithResults.
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
-import { getRegionLabel } from '../../utils/region'
+import { getRegionLabel } from '../../utils/region.ts'
 
 
-export function ElectionConfigCSBResultsPage() {
+export function CSBResultsPage() {
     const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
     const regionSlug = decodeURIComponent(regionSlugParam ?? '')
     // const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug)

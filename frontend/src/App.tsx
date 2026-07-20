@@ -2,8 +2,8 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { HomePage } from './pages/HomePage'
 import { ElectionConfigMunicipalityListPage } from './pages/ElectionConfigPage/ElectionConfigMunicipalityListPage'
 import { ElectionConfigCSBListPage } from './pages/ElectionConfigPage/ElectionConfigCSBListPage'
-import { ElectionConfigCSBResultsPage } from './pages/ElectionConfigPage/ElectionConfigCSBResultsPage'
-import { ElectionConfigCSBMunicipalityListPage } from './pages/ElectionConfigPage/ElectionConfigCSBMunicipalityListPage'
+import { CSBResultsPage } from './pages/CSBPAge/CSBResultsPage.tsx'
+import { CSBMunicipalityListPage } from './pages/CSBPAge/CSBMunicipalityListPage.tsx'
 import { MunicipalityPollingstationListPage } from './pages/MunicipalityPage/MunicipalityPollingstationListPage'
 import { MunicipalityPartyResultsPage } from './pages/MunicipalityPage/MunicipalityPartyResultsPage'
 import { MunicipalityResultsPage } from './pages/MunicipalityPage/MunicipalityResultsPage'
@@ -17,8 +17,8 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/:electionConfigSlug/csb" element={<ElectionConfigCSBListPage />} />
-        <Route path="/:electionConfigSlug/csb/:regionSlug" element={<ElectionConfigCSBMunicipalityListPage />} />
-        <Route path="/:electionConfigSlug/csb/:regionSlug/resultaten" element={<ElectionConfigCSBResultsPage />} />
+        <Route path="/:electionConfigSlug/csb/:regionSlug" element={<CSBMunicipalityListPage />} />
+        <Route path="/:electionConfigSlug/csb/:regionSlug/resultaten" element={<CSBResultsPage />} />
         <Route path="/:electionConfigSlug/gsb" element={<ElectionConfigMunicipalityListPage />} />
         <Route path="/:electionConfigSlug/gsb/:regionSlug" element={<MunicipalityPollingstationListPage />} />
         <Route path="/:electionConfigSlug/gsb/:regionSlug/resultaten" element={<MunicipalityResultsPage />} />
