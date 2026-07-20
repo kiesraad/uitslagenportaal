@@ -22,11 +22,15 @@ const VOTES_CAST: VoterTurnoutRow[] = [
 
 
 function getAdmittedVoterVotes(voterTurnoutCounts: VoterTurnoutCount[] | undefined, rows: VoterTurnoutRow[]) {
-    return rows.map(({ reason_code, label, bold }) => ({
-        name: label,
-        count: voterTurnoutCounts?.find((entry) => entry.reason_code === reason_code)?.votes ?? 0,
-        ...(bold ? { bold: true as const } : {}),
-    }))
+    return rows.flatMap(({ reason_code, label, bold }) => {
+        const voteCount = voterTurnoutCounts?.find((entry) => entry.reason_code === reason_code)
+
+        return voteCount ? [{
+            name: label,
+            count: voteCount.votes,
+            ...(bold ? { bold: true as const } : {}),
+        }] : []
+    })
 }
 
 
