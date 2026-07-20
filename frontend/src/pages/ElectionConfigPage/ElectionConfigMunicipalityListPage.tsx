@@ -1,11 +1,11 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Layout } from '../components/Layout.tsx'
-import PageTop from '../components/PageTop.tsx'
-import SharedTabs from '../components/SharedTabs.tsx'
-import SearchBar from '../components/SearchBar.tsx'
-import type { SearchListOption } from '../components/SearchBar.tsx'
-import { appRoutes } from '../utils/routes.ts'
-import { useElectionConfig, useRegions } from '../hooks/queries.ts'
+import { Layout } from '../../components/Layout.tsx'
+import PageTop from '../../components/PageTop.tsx'
+import SharedTabs from '../../components/SharedTabs.tsx'
+import SearchBar from '../../components/SearchBar.tsx'
+import type { SearchListOption } from '../../components/SearchBar.tsx'
+import { appRoutes } from '../../utils/routes.ts'
+import { useElectionConfig, useRegions } from '../../hooks/queries.ts'
 
 
 export function ElectionConfigMunicipalityListPage() {

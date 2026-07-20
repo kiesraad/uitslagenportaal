@@ -1,11 +1,17 @@
+from pathlib import Path
+
+from django.conf import settings
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 
-from election.models import Contest, ElectionConfig
+from election.models import Contest, ElectionConfig, ElectionDocument
 from election.serializers import (
     ContestDetailSerializer,
     ContestListSerializer,
     ElectionConfigSerializer,
 )
+
 
 class ElectionConfigViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ElectionConfig.objects.all()
@@ -32,3 +38,19 @@ class ContestViewSet(viewsets.ReadOnlyModelViewSet):
             return ContestDetailSerializer
         return ContestListSerializer
 
+
+def download_document(request, pk):
+    document = get_object_or_404(ElectionDocument, pk=pk)
+
+    data_root = (settings.BASE_DIR / ".data").resolve()
+    file_path = (data_root / document.storage_key).resolve()
+
+    if not file_path.is_relative_to(data_root) or not file_path.is_file():
+        raise Http404("Document not found")
+
+    return FileResponse(
+        file_path.open("rb"),
+        content_type=document.content_type,
+        as_attachment=True,
+        filename=Path(document.storage_key).name,
+    )
