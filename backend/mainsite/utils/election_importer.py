@@ -2,6 +2,7 @@ from pathlib import Path
 from datetime import datetime
 from tqdm import tqdm
 from django.utils import timezone
+from django.conf import settings
 from pyeml_bindings import Eml110a, Eml510, Eml230
 from xml.etree import ElementTree as ET
 from xsdata.formats.dataclass.parsers import XmlParser
@@ -10,6 +11,7 @@ from xsdata.formats.dataclass.parsers.config import ParserConfig
 from election.models import (
     ElectionConfig,
     Election,
+    ElectionDocument,
     Contest,
     VoteCount,
     VoterTurnoutCount,
@@ -20,9 +22,11 @@ from mainsite.models import RegionCategory
 
 
 class EMLBaseImporter:
-    def __init__(self, eml):
+    def __init__(self, eml, file_path):
         self.eml = eml
+        self.file_path = file_path
         self.election_config = None
+        self.linked_region = None
         self._parse_election()
 
     def _parse_election(self) -> Election:
@@ -73,6 +77,7 @@ class EMLBaseImporter:
                         party=current_party,
                         result_level=VoteCount.RESULT_LEVEL_PARTY,
                         valid_votes=votes_item.valid_votes,
+                        eml_type=self.eml_type,
                     )
                 )
             if votes_item.candidate:
@@ -92,6 +97,7 @@ class EMLBaseImporter:
                         candidate=candidate,
                         result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
                         valid_votes=votes_item.valid_votes,
+                        eml_type=self.eml_type,
                     )
                 )
 
@@ -230,6 +236,8 @@ class EML230bImporter(EMLBaseImporter):
 class EML510bImporter(EMLBaseImporter):
     """Telling"""
 
+    eml_type = "510b"
+
     def _get_election_ientifier_data(self):
         return self.eml.count.election.election_identifier
 
@@ -240,6 +248,15 @@ class EML510bImporter(EMLBaseImporter):
             election=self.election,
             region_number=int(self.eml.managing_authority.authority_identifier.id),
             region_name=managing_authority_name,
+        )
+        ElectionDocument.objects.create(
+            storage_key=self.file_path.relative_to(
+                f"{settings.BASE_DIR}/.data"
+            ).as_posix(),
+            region=region,
+            content_type="application/xml",
+            size=len(self.file_path.read_bytes()),
+            file_type=ElectionDocument.FILE_TYPE_EML510B,
         )
 
         # Preload party names dict
@@ -300,6 +317,8 @@ class EML510bImporter(EMLBaseImporter):
 
 class EML510dImporter(EMLBaseImporter):
     """Totaaltelling."""
+
+    eml_type = "510d"
 
     def _get_election_ientifier_data(self):
         return self.eml.count.election.election_identifier
@@ -401,7 +420,7 @@ class ElectionImporter:
             bar_format="{l_bar}{bar:40}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
         ):
             eml = self._parser.from_path(xml_file_path, binding)
-            importer_cls(eml).parse()
+            importer_cls(eml, xml_file_path).parse()
 
     def _classify_files(self) -> dict[str, list[Path]]:
         xml_files: dict[str, list[Path]] = {key: [] for key in self._DOCUMENT_TYPES}

@@ -60,6 +60,7 @@ class RegionDetailView(RetrieveAPIView):
                 "vote_counts__candidate",
                 "voter_turnout_counts",
                 "election__election_config__timeline_entries",
+                "documents",
             ).get(
                 election__election_config__slug=election_config_slug,
                 slug=region_slug,

@@ -103,6 +103,14 @@ class VoteCount(BaseModel):
         default=RESULT_LEVEL_CANDIDATE,
     )
 
+    EML_TYPE_510B = "EML510b"
+    EML_TYPE_510D = "EML510d"
+    EML_TYPE_CHOICES = [
+        (EML_TYPE_510B, "EML510b"),
+        (EML_TYPE_510D, "EML510d"),
+    ]
+    eml_type = models.CharField(max_length=32, choices=EML_TYPE_CHOICES, null=True)
+
     # TODO: create unique contstraint
     # class Meta:
     #     constraints = [
@@ -111,6 +119,30 @@ class VoteCount(BaseModel):
     #             name="unique_vote_count_per_contest_region_party_candidate",
     #         )
     #     ]
+
+
+class ElectionDocument(BaseModel):
+
+    region = models.ForeignKey(
+        "region.Region",
+        on_delete=models.CASCADE,
+        related_name="documents",
+        null=True,
+        blank=True,
+    )
+    storage_key = models.CharField(max_length=512, unique=True)
+    content_type = models.CharField(max_length=128, default="application/xml")
+    size = models.PositiveIntegerField()
+    FILE_TYPE_EML510B = "EML510b"
+    FILE_TYPE_CHOICES = [
+        (FILE_TYPE_EML510B, "EML510b"),
+    ]
+    file_type = models.CharField(
+        max_length=32,
+        choices=FILE_TYPE_CHOICES,
+        default=FILE_TYPE_EML510B,
+        help_text="Type of the election document",
+    )
 
 
 class VoterTurnoutCount(BaseModel):
