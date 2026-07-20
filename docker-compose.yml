@@ -1,0 +1,70 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: uitslagenportaal
+      POSTGRES_USER: uitslagenportaal_user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./.docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uitslagenportaal_user -d uitslagenportaal"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      DB_NAME: uitslagenportaal
+      DB_USER: uitslagenportaal_user
+      DB_PASSWORD: password
+      DB_HOST: db
+      DB_PORT: "5432"
+      SECRET_KEY: super-secret
+      CORS_ALLOWED_ORIGINS: http://localhost:8080
+    volumes:
+      - ./backend:/app
+      - ./backend/.data:/app/.data
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # For running one-off scripts/management commands, e.g.:
+  #   docker compose run --rm backend-scripts python manage.py <command>
+  backend-scripts:
+    extends:
+      service: backend
+    command: sleep infinity
+
+  frontend:
+    build: ./frontend
+    environment:
+      # Empty base URL -> requests go to the same origin the page was loaded
+      # from, which the proxy then routes to the backend.
+      VITE_API_BASE_URL: ""
+      # Lets Vite's HMR websocket reconnect through the proxy's published
+      # port instead of the (unpublished) internal dev-server port.
+      VITE_HMR_CLIENT_PORT: "8080"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  proxy:
+    image: nginx:alpine
+    volumes:
+      - ./.docker/proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  db_data:

@@ -1,10 +1,11 @@
-from pathlib import Path
 from datetime import datetime
-from tqdm import tqdm
+from pathlib import Path
+from xml.etree import ElementTree as ET
+
 from django.utils import timezone
 from django.conf import settings
 from pyeml_bindings import Eml110a, Eml510, Eml230
-from xml.etree import ElementTree as ET
+from tqdm import tqdm
 from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.formats.dataclass.parsers.config import ParserConfig
 
@@ -16,9 +17,9 @@ from election.models import (
     VoteCount,
     VoterTurnoutCount,
 )
+from mainsite.models import RegionCategory
 from party.models import Candidate, Party
 from region.models import Region
-from mainsite.models import RegionCategory
 
 
 class EMLBaseImporter:
@@ -226,10 +227,6 @@ class EML230bImporter(EMLBaseImporter):
                     last_name=candidate.candidate_full_name.person_name.last_name.content[
                         0
                     ],
-                    # gender=candidate.gender.value,
-                    locality_name=candidate.qualifying_address.locality.locality_name.content[
-                        0
-                    ],
                 )
 
 
@@ -244,20 +241,26 @@ class EML510bImporter(EMLBaseImporter):
     def _parse_data(self) -> None:
         authority_el = self.eml.managing_authority.authority_identifier
         managing_authority_name = (authority_el.value or "").strip()
-        region = Region.objects.get(
-            election=self.election,
-            region_number=int(self.eml.managing_authority.authority_identifier.id),
-            region_name=managing_authority_name,
-        )
-        ElectionDocument.objects.create(
-            storage_key=self.file_path.relative_to(
-                f"{settings.BASE_DIR}/.data"
-            ).as_posix(),
-            region=region,
-            content_type="application/xml",
-            size=len(self.file_path.read_bytes()),
-            file_type=ElectionDocument.FILE_TYPE_EML510B,
-        )
+
+        try:
+            region = Region.objects.get(
+                election=self.election,
+                region_number=int(self.eml.managing_authority.authority_identifier.id),
+                region_name=managing_authority_name,
+            )
+            ElectionDocument.objects.create(
+                storage_key=self.file_path.relative_to(
+                    f"{settings.BASE_DIR}/.data"
+                ).as_posix(),
+                region=region,
+                content_type="application/xml",
+                size=len(self.file_path.read_bytes()),
+                file_type=ElectionDocument.FILE_TYPE_EML510B,
+            )
+
+        except Region.DoesNotExist:
+            # Municipality does not exist in the election definition, so we shouldn't import it's results
+            return
 
         # Preload party names dict
         party_by_name = {
@@ -374,7 +377,11 @@ class EML510dImporter(EMLBaseImporter):
             # Breakdown per GSB
             for unit in contest_data.reporting_unit_votes:
                 gsb_number = int(unit.reporting_unit_identifier.id)
-                gsb_region = gsb_by_number[gsb_number]
+                gsb_region = gsb_by_number.get(gsb_number)
+                if gsb_region is None:
+                    # GSB does not exist in the current election, skip import of data
+                    continue
+
                 self._parse_party_candidate_votecounts(
                     contest,
                     gsb_region,
