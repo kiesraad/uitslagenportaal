@@ -45,6 +45,7 @@ export type Region = {
   voter_turnout_counts?: VoterTurnoutCount[]
   timeline_entries?: TimelineEntry[]
   documents?: ElectionDocument[]
+  region_category: RegionCategory
 }
 
 export type RegionResponse = Region[]

@@ -1,20 +1,20 @@
 import { InfoBox } from '../../components/InfoBox'
-import type { ElectionConfig } from '../../api/types'
+import type { Region } from '../../api/types'
 
 type Props = {
-    electionConfig?: ElectionConfig;
+    region: Region;
 }
 export default function ResultsNotPublished({ region }: Props) {
     return (
         <>
             <h2 className="result-unpublished">
-                De telresultaten van Kieskring {'kieskringNr'} zijn nog niet gepubliceerd
+                {`De telresultaten van ${region.region_category.toLowerCase()} ${region.region_name} zijn nog niet gepubliceerd`}
             </h2>
 
             <InfoBox>
                 <span>
-                    De telresultaten en processen-verbaal van de gemeente {'kieskring'} zijn hier
-                    te zien zodra de gemeente ze publiceert.
+                    {`De telresultaten en processen-verbaal van de gemeente ${region.region_category} ${region.region_name} 
+                    zijn hier te zien zodra de ${region.region_category} ze publiceert.`}
                 </span>
             </InfoBox>
 

@@ -101,7 +101,7 @@ export function MunicipalityResultsPage() {
       <div className="page-main page-main-two-columns">
         <div className="page-space-3">
           {!hasResults ? (
-            <ResultsNotPublished electionConfig={electionConfig} />
+            <ResultsNotPublished region={region} />
           ) : (
             resultsPageContent
           )}
