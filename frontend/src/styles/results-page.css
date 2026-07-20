@@ -153,6 +153,15 @@
 
 .results-reports-content-title {
     color: var(--c-blue);
+    text-decoration: none;
+}
+
+.results-reports-content-title:hover {
+    text-decoration: underline;
+}
+
+.results-reports-description-text {
+    color: inherit;
 }
 
 .results-image-container {

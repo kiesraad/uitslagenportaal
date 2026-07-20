@@ -14,7 +14,7 @@ export default function VotesList({ voteCounts, total, columns = ['Lijst', 'Aant
 
   return (
     <div className="votes-cast-list-container">
-      <div className="votes-cast-list-header bold" style={{ paddingRight: '3.25rem'}}>
+      <div className="votes-cast-list-header bold" style={{ paddingRight: '3.25rem' }}>
         {columns.map((column, i) => (
           <span key={i}>{column}</span>
         ))}
@@ -56,7 +56,7 @@ export default function VotesList({ voteCounts, total, columns = ['Lijst', 'Aant
       {total && (
         <div className="votes-cast-list-total bold">
           <span>{total.label}</span>
-          <span style={{ marginRight: '2rem'}}>{total.value}</span>
+          <span style={{ marginRight: '2rem' }}>{total.value}</span>
         </div>
       )}
     </div>
