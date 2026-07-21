@@ -1,0 +1,101 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DB_NAME: uitslagenportaal
+  DB_USER: uitslagenportaal_user
+  DB_PASSWORD: password
+  DB_HOST: localhost
+  DB_PORT: "5432"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+      - run: uv sync
+        working-directory: backend
+      - run: uv run ruff check .
+        working-directory: backend
+      - run: uv run ruff format --check .
+        working-directory: backend
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: uitslagenportaal
+          POSTGRES_USER: uitslagenportaal_user
+          POSTGRES_PASSWORD: password
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd "pg_isready -U uitslagenportaal_user -d uitslagenportaal"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+      - run: uv sync
+        working-directory: backend
+      - run: uv run python manage.py migrate
+        working-directory: backend
+      - run: uv run pytest
+        working-directory: backend
+
+  migrations-check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: uitslagenportaal
+          POSTGRES_USER: uitslagenportaal_user
+          POSTGRES_PASSWORD: password
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd "pg_isready -U uitslagenportaal_user -d uitslagenportaal"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+      - run: uv sync
+        working-directory: backend
+      - run: uv run python manage.py makemigrations --check --dry-run
+        working-directory: backend
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f backend/Dockerfile backend/

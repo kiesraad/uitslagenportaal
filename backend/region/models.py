@@ -54,6 +54,4 @@ class Region(BaseModel):
         from django.core.exceptions import ValidationError
 
         if self.parent_id and self.parent.election_id != self.election_id:
-            raise ValidationError(
-                {"parent": "Parent region must belong to the same election."}
-            )
+            raise ValidationError({"parent": "Parent region must belong to the same election."})
