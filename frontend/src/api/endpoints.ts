@@ -11,7 +11,7 @@ export function getElectionConfigBySlug(slug: string) {
 
 export function getRegions(
   electionConfigSlug: string,
-  skipNode: Boolean,
+  skipNode: boolean,
   parentRegionSlug?: string,
   regionCategory?: RegionCategory,
 ) {

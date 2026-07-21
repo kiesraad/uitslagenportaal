@@ -32,7 +32,7 @@ export function useRegions(
   electionConfigSlug: string | undefined,
   parentRegionSlug?: string,
   regionCategory?: RegionCategory,
-  skipNode?: Boolean
+  skipNode?: boolean
 ) {
   // Validation: Either regionCategory or parentRegionSlug must be present (with electionConfigSlug), but not both undefined.
   const enabled =
