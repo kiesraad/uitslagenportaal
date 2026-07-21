@@ -120,13 +120,13 @@ export default function PollingStationPartyResultsPage() {
         <div className="page-space-3">
           <PageIndex
             links={[
-              { label: <><span className="bold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
-              { label: <span className="bold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
+              { label: <><span className="font-semibold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
+              { label: <span className="font-semibold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
             ]}
           />
 
           <section id="telresultaten">
-            <h2 className="result-how-title mb-0 semibold">Telresultaten lijst {partyListNumber || '?'}</h2>
+            <h2 className="text-lg mb-4.5 font-medium">Telresultaten lijst {partyListNumber || '?'}</h2>
             <h3 className="party-level-title mb-2">{partyName}</h3>
             <CandidatesVoteList
               voteCounts={currentPartyVoteCounts}

@@ -17,7 +17,7 @@ export default function CandidatesVoteList({ voteCounts, partyVote, partyListNum
 
   return (
     <div className="votes-cast-list-container">
-      <div className="votes-cast-list-header bold" style={{ paddingRight: '3.25rem'}}>
+      <div className="flex justify-between font-semibold pl-4.5 pr-13 py-3">
         {columns.map((column, i) => (
           <span key={i}>{column}</span>
         ))}
@@ -30,25 +30,25 @@ export default function CandidatesVoteList({ voteCounts, partyVote, partyListNum
               <span>{formatCandidateName(voteCount.candidate!)}</span>
             </div>
             <div className="votes-cast-list-item-child">
-              <span className="votes-cast-list-item-votes bold">{voteCount.valid_votes ? voteCount.valid_votes : '-'}</span>
+              <span className="font-semibold">{voteCount.valid_votes ? voteCount.valid_votes : '-'}</span>
             </div>
           </div>
         ))}
         {partyVote && (
           <div className="votes-cast-list-item votes-cast-list-item-static">
             <div className="votes-cast-list-item-child">
-              <span className="bold">Totaal stemmen lijst {partyListNumber}</span>
+              <span className="font-semibold">Totaal stemmen lijst {partyListNumber}</span>
             </div>
             <div className="votes-cast-list-item-child">
-              <span className="votes-cast-list-item-votes bold">{partyVote.valid_votes ? partyVote.valid_votes : '-'}</span>
+              <span className="font-semibold">{partyVote.valid_votes ? partyVote.valid_votes : '-'}</span>
             </div>
           </div>
         )}
       </div>
       {total && (
-        <div className="votes-cast-list-total bold">
+        <div className="flex font-semibold items-center justify-between">
           <span>{total.label}</span>
-          <span style={{ marginRight: '2rem'}}>{total.value}</span>
+          <span className="mr-8">{total.value}</span>
         </div>
       )}
     </div>

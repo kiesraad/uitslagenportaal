@@ -93,6 +93,7 @@ cover/
 # IDE/generic
 .claude
 claude.md
+.mcp.json
 
 !.vscode/extensions.json
 .DS_Store

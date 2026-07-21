@@ -100,9 +100,9 @@ export default function PollingStationResultsPage() {
         <div className="page-space-3">
           <PageIndex
             links={[
-              { label: <><span className="bold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
-              { label: <><span className="bold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>, url: '#results-timeline' },
-              { label: <span className="bold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
+              { label: <><span className="font-semibold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
+              { label: <><span className="font-semibold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>, url: '#results-timeline' },
+              { label: <span className="font-semibold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
             ]}
           />
 

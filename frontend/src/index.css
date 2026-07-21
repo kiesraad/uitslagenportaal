@@ -1,4 +1,4 @@
-@import './reusable.css';
+@import "tailwindcss";
 @import './styles/results-page.css';
 
 /* Fonts */
@@ -18,14 +18,22 @@
   font-display: swap;
 }
 
+/**
+ * TailwindCSS config
+ */
+@theme {
+  /* font-sans is the default font used by Tailwind */
+  --font-sans: 'DM Sans', 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
+  --font-title: 'Space Grotesk', 'Segoe UI', Arial, sans-serif;
 
-/* Reset */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+  --color-*: initial;
+  /* Some colors are not defined in the Figma designs, so there are gaps in the number */
+  --color-blue-50: #F4F7FA;
+  --color-blue-100: #E5EBF4;
+  --color-blue-200: #EBF3F7;
+  --color-blue-500: #01689B;
+  --color-blue-700: #1B3764;
+  --color-blue-800: #113051;
 }
 
 /* Palette and fontnames */
@@ -56,7 +64,6 @@ html {
 }
 
 body {
-  font-family: var(--f-body);
   color: var(--c-text);
   background: var(--c-white);
   min-height: 100vh;

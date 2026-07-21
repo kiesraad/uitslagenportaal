@@ -82,7 +82,7 @@ export default function ReportsWithResults({ title, subtitle, description, docum
                                 className={'results-reports-content-title'}
                                 download
                             >
-                                <span className={'bold'}>
+                                <span className="font-semibold">
                                     {FILE_TYPE_MAPPINGS[file.file_type]?.name ?? file.name}
                                 </span> ({FILE_TYPE_MAPPINGS[file.file_type]?.fileType ?? file.type}, {formatFileSize(file.size)})
 
