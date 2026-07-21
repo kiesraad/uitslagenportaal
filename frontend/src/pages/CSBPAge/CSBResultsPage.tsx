@@ -12,6 +12,7 @@ import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import { getRegionLabel } from '../../utils/region.ts'
+import { formatDate } from '../../utils/date.ts'
 
 
 export function CSBResultsPage() {
@@ -79,7 +80,7 @@ export function CSBResultsPage() {
         >
             <PageTop
                 title={`${regionLabel} ${region.region_name}`}
-                subtitle="Geplaatst op: 10 december 2025 - 12:17"
+                subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },
                     { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },

@@ -8,6 +8,7 @@ import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import CandidatesVoteList from '../../components/ResultsPage/CandidatesVoteList.tsx'
 import PageIndex from '../../components/PageIndex'
+import { formatDate } from '../../utils/date.ts'
 
 export function MunicipalityPartyResultsPage() {
   const {
@@ -91,7 +92,7 @@ export function MunicipalityPartyResultsPage() {
     >
       <PageTop
         title={pageTitle}
-        subtitle="Geplaatst op: 10 december 2025 - 12:17"
+        subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },

@@ -17,7 +17,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         folder = Path(options["folder"]).resolve()
-        call_command("migrate")
         call_command("wipe_db")
         call_command("seed")
         call_command("import_election", str(folder))

@@ -32,6 +32,7 @@ class Region(BaseModel):
         null=True,
         blank=True,
     )
+    results_available_at = models.DateTimeField(null=True)
 
     # This slug is not unique, as it is used in combination with election
     # and the region type to retrieve it as opposed to only using the slug

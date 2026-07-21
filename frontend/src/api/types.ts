@@ -46,6 +46,7 @@ export type Region = {
   timeline_entries?: TimelineEntry[]
   documents?: ElectionDocument[]
   region_category: RegionCategory
+  results_available_at: string
 }
 
 export type RegionResponse = Region[]

@@ -7,6 +7,7 @@ import { Layout } from '../../components/Layout'
 import { useElectionConfig, useRegion } from '../../hooks/queries'
 import { appRoutes } from '../../utils/routes'
 import PageIndex from '../../components/PageIndex'
+import { formatDate } from '../../utils/date'
 
 export default function PollingStationPartyResultsPage() {
   const {
@@ -94,7 +95,7 @@ export default function PollingStationPartyResultsPage() {
     >
       <PageTop
         title={pageTitle}
-        subtitle="Geplaatst op: 10 december 2025 - 12:17"
+        subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },
