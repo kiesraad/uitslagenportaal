@@ -1,8 +1,7 @@
 from rest_framework import serializers
 
 from election.models import TimelineVariant
-from election.serializers import TimelineEntrySerializer, ElectionDocumentSerializer
-from region.models import Region
+from election.serializers import ElectionDocumentSerializer, TimelineEntrySerializer
 from mainsite.models import RegionCategory
 from mainsite.serializers import (
     VoteCountSummarySerializer,

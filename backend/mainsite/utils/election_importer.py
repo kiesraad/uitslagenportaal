@@ -2,20 +2,18 @@ from datetime import datetime
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from django.utils import timezone
 from django.conf import settings
+from django.utils import timezone
 from pyeml_bindings import Eml110a, Eml230, Eml510
 from tqdm import tqdm
 from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.formats.dataclass.parsers.config import ParserConfig
 
 from election.models import (
-    ElectionConfig,
-    Election,
-    ElectionDocument,
     Contest,
     Election,
     ElectionConfig,
+    ElectionDocument,
     VoteCount,
     VoterTurnoutCount,
 )

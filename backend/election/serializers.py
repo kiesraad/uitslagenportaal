@@ -3,11 +3,11 @@ from rest_framework import serializers
 
 from election.models import (
     Contest,
-    TimelineEntry,
     ElectionConfig,
+    ElectionDocument,
+    TimelineEntry,
     TimelineEntryStatus,
     TimelineVariant,
-    ElectionDocument,
 )
 from mainsite.serializers import (
     ElectionSummarySerializer,
