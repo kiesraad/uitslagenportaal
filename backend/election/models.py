@@ -132,7 +132,6 @@ class VoteCount(BaseModel):
 
 
 class ElectionDocument(BaseModel):
-
     region = models.ForeignKey(
         "region.Region",
         on_delete=models.CASCADE,

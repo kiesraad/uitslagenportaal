@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from election.models import TimelineVariant
-from election.serializers import TimelineEntrySerializer,ElectionDocumentSerializer
+from election.serializers import TimelineEntrySerializer, ElectionDocumentSerializer
 from region.models import Region
 from mainsite.models import RegionCategory
 from mainsite.serializers import (
@@ -47,16 +47,12 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         )
 
     def _effective_variant(self, region) -> str:
-        counting_method = region.counting_method or (
-            region.parent.counting_method if region.parent else None
-        )
+        counting_method = region.counting_method or (region.parent.counting_method if region.parent else None)
         return counting_method or TimelineVariant.DEFAULT
 
     def get_timeline_entries(self, region):
         variant = self._effective_variant(region)
         entries = [
-            entry
-            for entry in region.election.election_config.timeline_entries.all()
-            if entry.variant == variant
+            entry for entry in region.election.election_config.timeline_entries.all() if entry.variant == variant
         ]
         return TimelineEntrySerializer(entries, many=True).data

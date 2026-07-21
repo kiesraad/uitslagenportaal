@@ -207,14 +207,10 @@ class EML230bImporter(EMLBaseImporter):
                     contest=contest,
                     identifier=candidate.candidate_identifier.id,
                     position=candidate.candidate_identifier.id,
-                    initials=candidate.candidate_full_name.person_name.name_line.content[
-                        0
-                    ],
+                    initials=candidate.candidate_full_name.person_name.name_line.content[0],
                     first_name=first_name,
                     name_prefix=name_prefix,
-                    last_name=candidate.candidate_full_name.person_name.last_name.content[
-                        0
-                    ],
+                    last_name=candidate.candidate_full_name.person_name.last_name.content[0],
                 )
 
 
@@ -237,9 +233,7 @@ class EML510bImporter(EMLBaseImporter):
                 region_name=managing_authority_name,
             )
             ElectionDocument.objects.create(
-                storage_key=self.file_path.relative_to(
-                    f"{settings.BASE_DIR}/.data"
-                ).as_posix(),
+                storage_key=self.file_path.relative_to(f"{settings.BASE_DIR}/.data").as_posix(),
                 region=region,
                 content_type="application/xml",
                 size=len(self.file_path.read_bytes()),

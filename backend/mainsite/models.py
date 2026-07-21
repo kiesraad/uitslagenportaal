@@ -17,6 +17,7 @@ class RegionCategory(models.TextChoices):
     PROVINCIE = "PROVINCIE", "Provincie"
     STEMBUREAU = "STEMBUREAU", "Stembureau"
 
+
 class CountingMethod(models.TextChoices):
     # TODO: DSO: each SB has per-candidate votes, CSO: SB only has per-list totals
     CSO = "CSO", "Centrale Stemopname"

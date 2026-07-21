@@ -49,18 +49,22 @@ class RegionDetailView(RetrieveAPIView):
             raise ValidationError({"region": "This query parameter is required."})
 
         try:
-            return Region.objects.select_related(
-                "parent",
-                "election__election_config",
-            ).prefetch_related(
-                "vote_counts__party",
-                "vote_counts__candidate",
-                "voter_turnout_counts",
-                "election__election_config__timeline_entries",
-                "documents",
-            ).get(
-                election__election_config__slug=election_config_slug,
-                slug=region_slug,
+            return (
+                Region.objects.select_related(
+                    "parent",
+                    "election__election_config",
+                )
+                .prefetch_related(
+                    "vote_counts__party",
+                    "vote_counts__candidate",
+                    "voter_turnout_counts",
+                    "election__election_config__timeline_entries",
+                    "documents",
+                )
+                .get(
+                    election__election_config__slug=election_config_slug,
+                    slug=region_slug,
+                )
             )
         except Region.DoesNotExist:
             raise ValidationError({"detail": "Region not found for this election."})
