@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import RegionListView, RegionDetailView
+from .views import RegionDetailView, RegionListView
 
 urlpatterns = [
     path("region/", RegionDetailView.as_view(), name="region-detail"),

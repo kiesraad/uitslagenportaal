@@ -50,7 +50,6 @@ class TimelineVariant(models.TextChoices):
 
 
 class TimelineEntry(BaseModel):
-
     election_config = models.ForeignKey(
         "election.ElectionConfig",
         on_delete=models.CASCADE,
@@ -139,7 +138,6 @@ class VoteCount(BaseModel):
 
 
 class ElectionDocument(BaseModel):
-
     region = models.ForeignKey(
         "region.Region",
         on_delete=models.CASCADE,

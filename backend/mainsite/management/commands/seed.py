@@ -6,7 +6,6 @@ from django.utils import timezone
 
 from election.models import ElectionConfig, TimelineEntry, TimelineVariant
 
-
 WS2023_ELECTION_SEED = [
     {
         "election": {
@@ -14,7 +13,7 @@ WS2023_ELECTION_SEED = [
             "label": "Waterschappen 2023",
             "category": "WS",
             "date": "2023-12-15T11:00:00",
-            "csb_type": "WATERSCHAP"
+            "csb_type": "WATERSCHAP",
         },
         "timeline_entries_cso": [
             {
@@ -199,9 +198,7 @@ class Command(BaseCommand):
                         election_config=election_config,
                         variant=variant,
                         title=entry_data["title"],
-                        date=timezone.make_aware(
-                            datetime.fromisoformat(entry_data["date"])
-                        ),
+                        date=timezone.make_aware(datetime.fromisoformat(entry_data["date"])),
                         body=entry_data["body"],
                     )
-            self.stdout.write(f"Elections seeded")
+            self.stdout.write("Elections seeded")

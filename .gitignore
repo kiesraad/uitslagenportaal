@@ -1,72 +1,4 @@
 ### Frontend
-__pycache__/
-*.py[cod]
-*$py.class
-
-*.so
-*.DS_Store
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-*.manifest
-*.spec
-
-*.mo
-*.pot
-
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-instance/
-.webassets-cache
-.scrapy
-
-docs/_build/
-.pybuilder/
-target/
-.ipynb_checkpoints
-
-profile_default/
-ipython_config.py
-.python-version
-Pipfile.lock
-uv.lock
-poetry.lock
-
-__pypackages__/
-celerybeat-schedule
-celerybeat.pid
-
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-.spyderproject
-.spyproject
-.idea/
-
 logs
 *.log
 npm-debug.log*
@@ -80,14 +12,6 @@ dist
 dist-ssr
 *.local
 
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
 
 ### Backend
 __pycache__/
@@ -122,7 +46,6 @@ MANIFEST
 *.mo
 *.pot
 
-*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -139,14 +62,10 @@ target/
 profile_default/
 ipython_config.py
 .python-version
-Pipfile.lock
-uv.lock
-poetry.lock
 
 __pypackages__/
 celerybeat-schedule
 celerybeat.pid
-
 
 .env
 .venv
@@ -156,34 +75,34 @@ ENV/
 env.bak/
 venv.bak/
 
-.spyderproject
-.spyproject
-.idea/
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
 
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
+# IDE/generic
+.claude
+claude.md
 
 !.vscode/extensions.json
-.idea
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
 *.bat
 
-# Claude
-.claude
-claude.md
+
+
+
