@@ -13,7 +13,7 @@ WS2023_ELECTION_SEED = [
             "label": "Waterschappen 2023",
             "category": "WS",
             "date": "2023-12-15T11:00:00",
-            "csb_type": "WATERSCHAP"
+            "csb_type": "WATERSCHAP",
         },
         "timeline_entries_cso": [
             {

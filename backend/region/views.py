@@ -19,7 +19,7 @@ class RegionListView(ListAPIView):
 
         # optional
         region_slug = self.request.query_params.get("parent_region")
-        skip_node = bool(int(self.request.query_params.get("skip_node", '0')))
+        skip_node = bool(int(self.request.query_params.get("skip_node", "0")))
 
         if region_category:
             if region_category not in RegionCategory.values:
