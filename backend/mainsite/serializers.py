@@ -10,13 +10,9 @@ class ElectionSummarySerializer(serializers.ModelSerializer):
         model = Election
         fields = (
             "id",
-            "identifier",
             "name",
-            "category",
+            "subcategory",
             "date",
-            "nomination_date",
-            "number_of_seats",
-            "preference_threshold",
         )
 
 
@@ -27,11 +23,10 @@ class RegionSummarySerializer(serializers.ModelSerializer):
             "id",
             "election_id",
             "parent_id",
-            "number",
-            "category",
-            "name",
-            "level",
-            "display_order",
+            "region_number",
+            "region_category",
+            "region_name",
+            "slug",
         )
 
 
