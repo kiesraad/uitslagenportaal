@@ -1,15 +1,12 @@
 import pytest
 
-from election.models import ElectionConfig, TimelineEntry
+from election.models import ElectionConfig
+from election.tests.factories import ElectionConfigFactory, TimelineEntryFactory
 
 
 @pytest.mark.django_db
 def test_election_config_slug_is_generated_from_identifier():
-    config = ElectionConfig.objects.create(
-        identifier="Gemeenteraadsverkiezingen 2026",
-        category="GR",
-        date="2026-03-18T00:00:00Z",
-    )
+    config = ElectionConfigFactory(identifier="Gemeenteraadsverkiezingen 2026")
 
     assert config.slug == "gemeenteraadsverkiezingen"
 
@@ -28,24 +25,8 @@ def test_election_config_slug_is_not_overwritten_if_already_set():
 
 @pytest.mark.django_db
 def test_timeline_entries_are_ordered_chronologically():
-    config = ElectionConfig.objects.create(
-        identifier="AB2023",
-        category="AB",
-        date="2023-03-15T00:00:00Z",
-    )
-    later = TimelineEntry.objects.create(
-        election_config=config,
-        status="pending",
-        title="Later entry",
-        date="2023-03-20T00:00:00Z",
-        body="",
-    )
-    earlier = TimelineEntry.objects.create(
-        election_config=config,
-        status="done",
-        title="Earlier entry",
-        date="2023-03-10T00:00:00Z",
-        body="",
-    )
+    config = ElectionConfigFactory()
+    later = TimelineEntryFactory(election_config=config, date="2023-03-20T00:00:00Z")
+    earlier = TimelineEntryFactory(election_config=config, date="2023-03-10T00:00:00Z")
 
     assert list(config.timeline_entries.all()) == [earlier, later]

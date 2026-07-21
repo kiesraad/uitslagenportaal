@@ -2,7 +2,7 @@ import pytest
 from django.http import Http404
 from django.test import RequestFactory
 
-from election.models import ElectionDocument
+from election.tests.factories import ElectionDocumentFactory
 from election.views import download_document
 
 
@@ -17,11 +17,7 @@ def data_root(tmp_path, settings):
 @pytest.mark.django_db
 def test_download_document_returns_file_for_valid_storage_key(data_root):
     (data_root / "document.xml").write_bytes(b"<eml>ok</eml>")
-    document = ElectionDocument.objects.create(
-        storage_key="document.xml",
-        content_type="application/xml",
-        size=13,
-    )
+    document = ElectionDocumentFactory(storage_key="document.xml", content_type="application/xml", size=13)
 
     response = download_document(RequestFactory().get("/"), document.pk)
 
@@ -33,11 +29,7 @@ def test_download_document_returns_file_for_valid_storage_key(data_root):
 def test_download_document_rejects_path_traversal(data_root):
     secret = data_root.parent / "secret.txt"
     secret.write_bytes(b"top secret")
-    document = ElectionDocument.objects.create(
-        storage_key="../secret.txt",
-        content_type="text/plain",
-        size=10,
-    )
+    document = ElectionDocumentFactory(storage_key="../secret.txt", content_type="text/plain", size=10)
 
     # download_document is a plain function view, so calling it directly
     # (bypassing Django's outer exception-to-response handler) means Http404

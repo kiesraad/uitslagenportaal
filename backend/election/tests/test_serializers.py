@@ -4,18 +4,13 @@ import pytest
 from django.test import RequestFactory
 from django.utils import timezone
 
-from election.models import (
-    ElectionConfig,
-    ElectionDocument,
-    TimelineEntry,
-    TimelineEntryStatus,
-    TimelineVariant,
-)
+from election.models import TimelineEntryStatus, TimelineVariant
 from election.serializers import (
     ElectionConfigSerializer,
     ElectionDocumentSerializer,
     TimelineEntrySerializer,
 )
+from election.tests.factories import ElectionConfigFactory, ElectionDocumentFactory, TimelineEntryFactory
 
 
 @pytest.mark.django_db
@@ -28,18 +23,7 @@ from election.serializers import (
     ],
 )
 def test_timeline_entry_serializer_status(offset_days, expected_status):
-    config = ElectionConfig.objects.create(
-        identifier="AB2023",
-        category="AB",
-        date="2023-03-15T00:00:00Z",
-    )
-    entry = TimelineEntry.objects.create(
-        election_config=config,
-        status="pending",
-        title="Some entry",
-        date=timezone.now() + timedelta(days=offset_days),
-        body="",
-    )
+    entry = TimelineEntryFactory(date=timezone.now() + timedelta(days=offset_days))
 
     data = TimelineEntrySerializer(entry).data
 
@@ -48,35 +32,10 @@ def test_timeline_entry_serializer_status(offset_days, expected_status):
 
 @pytest.mark.django_db
 def test_election_config_serializer_only_returns_default_variant_timeline_entries():
-    config = ElectionConfig.objects.create(
-        identifier="AB2023",
-        category="AB",
-        date="2023-03-15T00:00:00Z",
-    )
-    TimelineEntry.objects.create(
-        election_config=config,
-        variant=TimelineVariant.CSO,
-        status="pending",
-        title="CSO entry",
-        date=timezone.now(),
-        body="",
-    )
-    TimelineEntry.objects.create(
-        election_config=config,
-        variant=TimelineVariant.DSO,
-        status="pending",
-        title="DSO entry",
-        date=timezone.now(),
-        body="",
-    )
-    default_entry = TimelineEntry.objects.create(
-        election_config=config,
-        variant=TimelineVariant.DEFAULT,
-        status="pending",
-        title="Default entry",
-        date=timezone.now(),
-        body="",
-    )
+    config = ElectionConfigFactory()
+    TimelineEntryFactory(election_config=config, variant=TimelineVariant.CSO)
+    TimelineEntryFactory(election_config=config, variant=TimelineVariant.DSO)
+    default_entry = TimelineEntryFactory(election_config=config, variant=TimelineVariant.DEFAULT)
 
     data = ElectionConfigSerializer(config).data
 
@@ -86,10 +45,7 @@ def test_election_config_serializer_only_returns_default_variant_timeline_entrie
 
 @pytest.mark.django_db
 def test_election_document_serializer_url_is_absolute_with_request_context():
-    document = ElectionDocument.objects.create(
-        storage_key="some/document.xml",
-        size=123,
-    )
+    document = ElectionDocumentFactory()
     request = RequestFactory().get("/")
 
     data = ElectionDocumentSerializer(document, context={"request": request}).data
@@ -99,10 +55,7 @@ def test_election_document_serializer_url_is_absolute_with_request_context():
 
 @pytest.mark.django_db
 def test_election_document_serializer_url_is_relative_path_without_request_context():
-    document = ElectionDocument.objects.create(
-        storage_key="some/document.xml",
-        size=123,
-    )
+    document = ElectionDocumentFactory()
 
     data = ElectionDocumentSerializer(document).data
 

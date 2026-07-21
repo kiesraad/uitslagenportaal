@@ -1,24 +1,14 @@
 import pytest
 
-from election.models import Election, ElectionConfig
+from election.tests.factories import ElectionFactory
 from mainsite.models import RegionCategory
 from mainsite.serializers import ElectionSummarySerializer, RegionSummarySerializer
-from region.models import Region
+from region.tests.factories import RegionFactory
 
 
 @pytest.mark.django_db
 def test_election_summary_serializer_matches_real_model_fields():
-    election_config = ElectionConfig.objects.create(
-        identifier="AB2023",
-        category="AB",
-        date="2023-03-15T00:00:00Z",
-    )
-    election = Election.objects.create(
-        election_config=election_config,
-        name="Waterschappen 2023",
-        subcategory="AB",
-        date="2023-03-15",
-    )
+    election = ElectionFactory(name="Waterschappen 2023", subcategory="AB", date="2023-03-15")
 
     data = ElectionSummarySerializer(election).data
 
@@ -32,18 +22,8 @@ def test_election_summary_serializer_matches_real_model_fields():
 
 @pytest.mark.django_db
 def test_region_summary_serializer_matches_real_model_fields():
-    election_config = ElectionConfig.objects.create(
-        identifier="AB2023",
-        category="AB",
-        date="2023-03-15T00:00:00Z",
-    )
-    election = Election.objects.create(
-        election_config=election_config,
-        name="Waterschappen 2023",
-        subcategory="AB",
-        date="2023-03-15",
-    )
-    region = Region.objects.create(
+    election = ElectionFactory()
+    region = RegionFactory(
         election=election,
         region_number="7",
         region_category=RegionCategory.GEMEENTE,

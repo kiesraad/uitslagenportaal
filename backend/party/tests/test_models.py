@@ -1,35 +1,20 @@
 import pytest
 
-from election.models import Election, ElectionConfig
+from election.tests.factories import ElectionFactory
 from party.models import Party
 
 
-@pytest.fixture
-def election():
-    config = ElectionConfig.objects.create(
-        identifier="AB2023",
-        category="AB",
-        date="2023-03-15T00:00:00Z",
-    )
-    return Election.objects.create(
-        election_config=config,
-        name="Waterschappen 2023",
-        subcategory="AB",
-        date="2023-03-15",
-    )
-
-
 @pytest.mark.django_db
-def test_party_slug_is_generated_from_registered_name(election):
-    party = Party.objects.create(election=election, registered_name="Café Île Partij")
+def test_party_slug_is_generated_from_registered_name():
+    party = Party.objects.create(election=ElectionFactory(), registered_name="Café Île Partij")
 
     assert party.slug == "cafe_ile_partij"
 
 
 @pytest.mark.django_db
-def test_party_slug_is_not_overwritten_if_already_set(election):
+def test_party_slug_is_not_overwritten_if_already_set():
     party = Party.objects.create(
-        election=election,
+        election=ElectionFactory(),
         registered_name="Café Île Partij",
         slug="custom-slug",
     )

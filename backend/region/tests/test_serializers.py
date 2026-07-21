@@ -1,70 +1,31 @@
 import pytest
 
-from election.models import Contest, Election, ElectionConfig, VoteCount
+from election.models import VoteCount
+from election.tests.factories import ContestFactory
 from mainsite.models import CountingMethod, RegionCategory
-from party.models import Party
-from region.models import Region
+from party.tests.factories import PartyFactory
 from region.serializers import RegionDetailSerializer
-
-
-@pytest.fixture
-def election():
-    config = ElectionConfig.objects.create(
-        identifier="AB2023",
-        category="AB",
-        date="2023-03-15T00:00:00Z",
-    )
-    return Election.objects.create(
-        election_config=config,
-        name="Waterschappen 2023",
-        subcategory="AB",
-        date="2023-03-15",
-    )
+from region.tests.factories import RegionFactory
 
 
 @pytest.mark.django_db
-def test_effective_variant_prefers_own_counting_method(election):
-    region = Region.objects.create(
-        election=election,
-        region_number="1",
-        region_category=RegionCategory.GEMEENTE,
-        region_name="Own method",
-        counting_method=CountingMethod.DSO,
-    )
+def test_effective_variant_prefers_own_counting_method():
+    region = RegionFactory(counting_method=CountingMethod.DSO)
 
     assert RegionDetailSerializer()._effective_variant(region) == CountingMethod.DSO
 
 
 @pytest.mark.django_db
-def test_effective_variant_falls_back_to_parent_counting_method(election):
-    parent = Region.objects.create(
-        election=election,
-        region_number="1",
-        region_category=RegionCategory.WATERSCHAP,
-        region_name="Parent",
-        counting_method=CountingMethod.CSO,
-    )
-    child = Region.objects.create(
-        election=election,
-        parent=parent,
-        region_number="2",
-        region_category=RegionCategory.GEMEENTE,
-        region_name="Child",
-        counting_method=None,
-    )
+def test_effective_variant_falls_back_to_parent_counting_method():
+    parent = RegionFactory(region_category=RegionCategory.WATERSCHAP, counting_method=CountingMethod.CSO)
+    child = RegionFactory(election=parent.election, parent=parent, counting_method=None)
 
     assert RegionDetailSerializer()._effective_variant(child) == CountingMethod.CSO
 
 
 @pytest.mark.django_db
-def test_effective_variant_defaults_when_no_counting_method_available(election):
-    region = Region.objects.create(
-        election=election,
-        region_number="1",
-        region_category=RegionCategory.GEMEENTE,
-        region_name="No method",
-        counting_method=None,
-    )
+def test_effective_variant_defaults_when_no_counting_method_available():
+    region = RegionFactory(counting_method=None)
 
     assert RegionDetailSerializer()._effective_variant(region) == "DEFAULT"
 
@@ -78,25 +39,9 @@ def test_region_detail_serializer_vote_counts_are_not_deduplicated_for_gemeente(
     never calls `get_vote_counts`). This test pins today's actual
     (undeduplicated) behavior; it is not asserting the intended behavior.
     """
-    config = ElectionConfig.objects.create(
-        identifier="AB2023",
-        category="AB",
-        date="2023-03-15T00:00:00Z",
-    )
-    election = Election.objects.create(
-        election_config=config,
-        name="Waterschappen 2023",
-        subcategory="AB",
-        date="2023-03-15",
-    )
-    contest = Contest.objects.create(election=election, identifier="contest-1")
-    party = Party.objects.create(election=election, registered_name="Some Party")
-    region = Region.objects.create(
-        election=election,
-        region_number="7",
-        region_category=RegionCategory.GEMEENTE,
-        region_name="Wassenaar",
-    )
+    contest = ContestFactory()
+    party = PartyFactory(election=contest.election)
+    region = RegionFactory(election=contest.election, region_category=RegionCategory.GEMEENTE)
     VoteCount.objects.create(
         contest=contest,
         region=region,
