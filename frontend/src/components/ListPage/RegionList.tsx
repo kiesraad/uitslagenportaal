@@ -62,6 +62,7 @@ export function RegionList({
     .map(({ slug, region_name }) => ({ id: slug, label: region_name }))
 
   const regionsByLetter = regionOptions.reduce<Record<string, SearchListOption[]>>((grouped, option) => {
+    // handle 's-Gravenhage and 's-Hertogenbosch
     const name = option.label.startsWith("'s-") ? option.label.slice(3) : option.label
     const letter = name[0].toUpperCase()
       ; (grouped[letter] ??= []).push(option)
