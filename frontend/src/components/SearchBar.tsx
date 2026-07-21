@@ -2,6 +2,9 @@ import { type ChangeEvent, type KeyboardEvent, type ReactNode, useEffect, useMem
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
+import type { RegionCategory } from '../api/types'
+import { getRegionLabel } from '../utils/region'
+
 export type SearchListOption = {
   id: string
   label: string
@@ -9,27 +12,49 @@ export type SearchListOption = {
   content?: ReactNode
 }
 
+type SearchRegionCategory = Extract<RegionCategory, 'GEMEENTE' | 'STEMBUREAU' | 'WATERSCHAP'>
+
 type Props = {
-  inputId: string
-  label: string
+  regionCategory: SearchRegionCategory
   options: SearchListOption[]
-  placeholder: string
   onSelect: (option: SearchListOption) => void
-  submitBehavior?: 'exact-match' | 'first-match'
   maxSuggestions?: number
   children?: ReactNode
 }
 
 export default function SearchBar({
-  inputId,
-  label,
+  regionCategory,
   options,
-  placeholder,
   onSelect,
-  submitBehavior = 'exact-match',
   maxSuggestions = 8,
   children,
 }: Props) {
+
+
+  const SEARCH_CONFIG = {
+    STEMBUREAU: {
+      label: 'Zoek op naam, adres of stembureau-nummer',
+      placeholder: 'Bijv. Gymzaal de Boom',
+      submitBehavior: 'first-match' as const,
+      inputId: 'stembureau-search',
+    },
+    GEMEENTE: {
+      label: `Zoek ${getRegionLabel('GEMEENTE').toLowerCase()}`,
+      placeholder: 'Bijv. Zoetermeer',
+      submitBehavior: 'exact-match' as const,
+      inputId: 'gemeente-search',
+    },
+    WATERSCHAP: {
+      label: `Zoek ${getRegionLabel('WATERSCHAP').toLowerCase()}`,
+      placeholder: 'Bijv. De Stichtse Rijnlanden',
+      submitBehavior: 'exact-match' as const,
+      inputId: 'waterschap-search',
+    },
+
+  } as const
+
+  const config = SEARCH_CONFIG[regionCategory]
+  const { label, placeholder, submitBehavior, inputId } = config
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(-1)
   const [open, setOpen] = useState(false)
@@ -158,7 +183,7 @@ export default function SearchBar({
           aria-label="Zoeken"
           onClick={handleSubmit}
         >
-          <FontAwesomeIcon icon={faMagnifyingGlass} style={{ }} />
+          <FontAwesomeIcon icon={faMagnifyingGlass} style={{}} />
         </button>
         {children}
       </div>

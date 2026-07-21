@@ -19,6 +19,7 @@ class RegionListView(ListAPIView):
 
         # optional
         region_slug = self.request.query_params.get("parent_region")
+        skip_node = bool(int(self.request.query_params.get("skip_node", "0")))
 
         if region_category:
             if region_category not in RegionCategory.values:
@@ -30,7 +31,10 @@ class RegionListView(ListAPIView):
             election__election_config__slug=election_config_slug,
         ).order_by("region_name")
         if region_slug:
-            result = result.filter(parent__slug=region_slug)
+            if skip_node:
+                result = result.filter(parent__parent__slug=region_slug)
+            else:
+                result = result.filter(parent__slug=region_slug)
         if region_category:
             result = result.filter(region_category=region_category)
         return result

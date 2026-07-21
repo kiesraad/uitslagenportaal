@@ -1,6 +1,6 @@
 from django.db import models
 
-from mainsite.models import BaseModel
+from mainsite.models import BaseModel, RegionCategory
 from mainsite.utils.utils import name_to_slug
 
 
@@ -10,6 +10,12 @@ class ElectionConfig(BaseModel):
     label = models.CharField(max_length=255, default="")
     slug = models.SlugField(unique=True, db_index=True)
     date = models.DateTimeField()
+    csb_type = models.CharField(
+        max_length=32,
+        choices=RegionCategory.choices,
+        blank=True,
+        null=True,
+    )
 
     def save(self, *args, **kwargs):
         if not self.slug:

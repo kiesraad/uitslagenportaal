@@ -32,6 +32,7 @@ export function useRegions(
   electionConfigSlug: string | undefined,
   parentRegionSlug?: string,
   regionCategory?: RegionCategory,
+  skipNode?: boolean
 ) {
   // Validation: Either regionCategory or parentRegionSlug must be present (with electionConfigSlug), but not both undefined.
   const enabled =
@@ -44,8 +45,9 @@ export function useRegions(
       electionConfigSlug,
       parentRegionSlug ?? null,
       regionCategory ?? null,
+      skipNode ?? false,
     ],
-    queryFn: () => getRegions(electionConfigSlug!, parentRegionSlug, regionCategory),
+    queryFn: () => getRegions(electionConfigSlug!, skipNode!, parentRegionSlug, regionCategory),
     enabled,
   });
 }

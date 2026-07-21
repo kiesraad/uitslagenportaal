@@ -13,7 +13,7 @@ from region.models import Region
 class RegionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region
-        fields = ("region_name", "slug")
+        fields = ("region_name", "slug", "region_category")
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):
@@ -28,7 +28,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         We need both, but on GSB level the UI only needs the GSB (510b) results. That's why
         we filter it here to avoid duplication in the response data.
         """
-        vote_counts = obj.vote_counts.filter(region=obj)
+        vote_counts = obj.vote_counts.filter()
         if obj.region_category == RegionCategory.GEMEENTE:
             vote_counts = vote_counts.filter(eml_type="510b")
         serializer = VoteCountSummarySerializer(vote_counts, many=True, read_only=True)

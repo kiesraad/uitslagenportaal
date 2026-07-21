@@ -8,11 +8,11 @@ import { appRoutes } from '../../utils/routes.ts'
 import { useElectionConfig, useRegions } from '../../hooks/queries.ts'
 import { getRegionLabel } from '../../utils/region.ts'
 
-export function ElectionConfigMunicipalityListPage() {
+export function ElectionConfigCSBListPage() {
 
   const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>()
   const { data: electionConfig, isLoading, isError, refetch } = useElectionConfig(electionConfigSlug)
-  const { data: regions } = useRegions(electionConfigSlug, undefined, 'GEMEENTE')
+  const { data: regions } = useRegions(electionConfigSlug, undefined, electionConfig?.csb_type)
 
   const electionLabel = electionConfig?.label ?? 'Verkiezing laden…'
 
@@ -56,7 +56,7 @@ export function ElectionConfigMunicipalityListPage() {
       <RegionList
         electionConfig={electionConfig}
         regions={regions}
-        regionCategory='GEMEENTE'
+        regionCategory='WATERSCHAP'
       />
 
     </Layout>

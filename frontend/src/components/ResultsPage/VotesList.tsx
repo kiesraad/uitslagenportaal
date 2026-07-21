@@ -30,7 +30,7 @@ export default function VotesList({ voteCounts, total, columns = ['Lijst', 'Aant
                 <span className={isClickable ? 'votes-cast-list-item-link' : undefined}>{voteCount.party.registered_name}</span>
               </div>
               <div className="votes-cast-list-item-child">
-                <span className="votes-cast-list-item-votes bold">{voteCount.valid_votes}</span>
+                <span className="votes-cast-list-item-votes bold">{voteCount.valid_votes.toLocaleString('nl-NL')}</span>
                 {isClickable && <span className="gemeente-chevron">{'>'}</span>}
               </div>
             </>
