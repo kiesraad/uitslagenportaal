@@ -3,15 +3,15 @@ from rest_framework import serializers
 
 from election.models import (
     Contest,
-    TimelineEntry,
     ElectionConfig,
+    ElectionDocument,
+    TimelineEntry,
     TimelineEntryStatus,
     TimelineVariant,
-    ElectionDocument
 )
 from mainsite.serializers import (
-    RegionSummarySerializer,
     ElectionSummarySerializer,
+    RegionSummarySerializer,
 )
 
 
@@ -72,11 +72,7 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
         fields = ("slug", "label", "date", "timeline_entries")
 
     def get_timeline_entries(self, obj):
-        entries = [
-            entry
-            for entry in obj.timeline_entries.all()
-            if entry.variant == TimelineVariant.DEFAULT
-        ]
+        entries = [entry for entry in obj.timeline_entries.all() if entry.variant == TimelineVariant.DEFAULT]
         return TimelineEntrySerializer(entries, many=True).data
 
 

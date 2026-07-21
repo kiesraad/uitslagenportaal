@@ -14,3 +14,14 @@ The `backend-scripts` service can be used for one-off commands, like migrating t
 ```bash
 docker compose run --rm backend-scripts python manage.py migrate
 ```
+
+Common commands:
+- Ruff format: 
+  ```bash
+  docker compose run --rm backend-scripts ruff format
+  ```
+
+- Eslint format:
+  ```bash
+  docker compose run --rm frontend npm run lint
+  ```

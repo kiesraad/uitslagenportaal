@@ -1,8 +1,8 @@
 from rest_framework import serializers
 
 from election.models import Election, VoteCount, VoterTurnoutCount
-from region.models import Region
 from party.models import Candidate, Party
+from region.models import Region
 
 
 class ElectionSummarySerializer(serializers.ModelSerializer):
@@ -10,13 +10,9 @@ class ElectionSummarySerializer(serializers.ModelSerializer):
         model = Election
         fields = (
             "id",
-            "identifier",
             "name",
-            "category",
+            "subcategory",
             "date",
-            "nomination_date",
-            "number_of_seats",
-            "preference_threshold",
         )
 
 
@@ -27,11 +23,10 @@ class RegionSummarySerializer(serializers.ModelSerializer):
             "id",
             "election_id",
             "parent_id",
-            "number",
-            "category",
-            "name",
-            "level",
-            "display_order",
+            "region_number",
+            "region_category",
+            "region_name",
+            "slug",
         )
 
 
@@ -63,7 +58,6 @@ class VoteCountSummarySerializer(serializers.ModelSerializer):
 
 
 class VoterTurnoutCountSummarySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = VoterTurnoutCount
         fields = ("category", "reason_code", "votes")
