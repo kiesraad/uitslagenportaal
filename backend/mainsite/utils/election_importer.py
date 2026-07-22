@@ -269,7 +269,8 @@ class EML510bImporter(EMLBaseImporter):
             self._collect_turnout_counts(contest, region, contest_data.total_votes, turnout_counts)
             for unit in contest_data.reporting_unit_votes:
                 polling_station_name = unit.reporting_unit_identifier.value.split(" (postcode:")[0]
-                # Strip leading Stembureau if present, do recursively for eg 'Stembureau Stembureau Nutsgebouw Zwammerdam'
+                # Strip leading Stembureau if present, do recursively for
+                # eg 'Stembureau Stembureau Nutsgebouw Zwammerdam'
                 while polling_station_name.startswith("Stembureau "):
                     polling_station_name = polling_station_name[len("Stembureau ") :]
 
