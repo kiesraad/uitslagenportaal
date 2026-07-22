@@ -44,7 +44,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "documents",
             "timeline_entries",
             "region_category",
-            "results_available_at"
+            "results_available_at",
         )
 
     def _effective_variant(self, region) -> str:
