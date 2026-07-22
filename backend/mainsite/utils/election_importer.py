@@ -237,6 +237,8 @@ class EML510bImporter(EMLBaseImporter):
                 size=len(self.file_path.read_bytes()),
                 file_type=ElectionDocument.FILE_TYPE_EML510B,
             )
+            region.results_available_at = timezone.now()
+            region.save()
 
         except Region.DoesNotExist:
             # Municipality does not exist in the election definition, so we shouldn't import it's results

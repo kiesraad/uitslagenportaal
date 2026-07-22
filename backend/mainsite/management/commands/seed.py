@@ -13,7 +13,6 @@ WS2023_ELECTION_SEED = [
             "label": "Waterschappen 2023",
             "category": "WS",
             "date": "2023-12-15T11:00:00",
-            "csb_type": "WATERSCHAP",
         },
         "timeline_entries_cso": [
             {
@@ -185,7 +184,6 @@ class Command(BaseCommand):
                 identifier=election_data["id"],
                 category=election_data["category"],
                 label=election_data["label"],
-                csb_type=election_data["csb_type"],
                 date=timezone.make_aware(
                     datetime.fromisoformat(
                         election_data["date"],

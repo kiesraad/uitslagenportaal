@@ -7,6 +7,7 @@ import { RegionList } from '../../components/ListPage/RegionList.tsx'
 import { appRoutes } from '../../utils/routes.ts'
 import { useElectionConfig, useRegions, useRegion } from '../../hooks/queries.ts'
 import { getRegionLabel } from '../../utils/region.ts'
+import { formatDate } from '../../utils/date.ts'
 
 export function CSBMunicipalityListPage() {
 
@@ -51,7 +52,7 @@ export function CSBMunicipalityListPage() {
         >
             <PageTop
                 title={`${regionLabel} ${region?.region_name}`}
-                subtitle="Geplaatst op: 10 december 2025 - 12:17"
+                subtitle={region ? `Geplaatst op: ${formatDate(region.results_available_at)}` : ''}
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },
                     { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
