@@ -10,12 +10,10 @@ class ElectionConfig(BaseModel):
     label = models.CharField(max_length=255, default="")
     slug = models.SlugField(unique=True, db_index=True)
     date = models.DateTimeField()
-    csb_type = models.CharField(
-        max_length=32,
-        choices=RegionCategory.choices,
-        blank=True,
-        null=True,
-    )
+
+    @property
+    def csb_type(self):
+        return self.elections.first().regions.first().region_category
 
     def save(self, *args, **kwargs):
         if not self.slug:
