@@ -40,7 +40,9 @@ class Region(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = f"{self.region_number}-{name_to_slug(self.region_name)}"[:49]
+            # region_number can contain "::" (e.g. stembureau ids); keep URL-safe
+            number_slug = "-".join(part for part in str(self.region_number).split(":") if part)
+            self.slug = f"{number_slug}-{name_to_slug(self.region_name)}"[:49]
         super().save(*args, **kwargs)
 
     class Meta:
