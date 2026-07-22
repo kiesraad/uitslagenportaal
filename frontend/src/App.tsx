@@ -25,6 +25,11 @@ function App() {
         <Route path="/:electionConfigSlug/gsb/:regionSlug/resultaten/:partySlug" element={<MunicipalityPartyResultsPage />} />
         <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/:pollingStationSlug" element={<PollingStationResultsPage />} />
         <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/:pollingStationSlug/:partySlug" element={<PollingStationPartyResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug" element={<MunicipalityPollingstationListPage />} />
+        <Route path="/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/resultaten" element={<MunicipalityResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/resultaten/:partySlug" element={<MunicipalityPartyResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/csb/:csbSlug/:pollingStationSlug" element={<PollingStationResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/csb/:csbSlug/:pollingStationSlug/:partySlug" element={<PollingStationPartyResultsPage />} />
       </Routes>
     </BrowserRouter>
   )

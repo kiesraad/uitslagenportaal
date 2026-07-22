@@ -79,12 +79,12 @@ export function CSBResultsPage() {
             title="Resultaten"
         >
             <PageTop
-                title={`${regionLabel} ${region.region_name}`}
+                title={region.region_name}
                 subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },
                     { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
-                    { href: appRoutes.csbResults(electionConfigSlug ?? '', regionSlug), label: `${regionLabel} ${region.region_name}` },
+                    { href: appRoutes.csbResults(electionConfigSlug ?? '', regionSlug), label: region.region_name },
 
                 ]}
                 tabs={
@@ -107,7 +107,7 @@ export function CSBResultsPage() {
             <div className="page-main page-main-two-columns">
                 <div className="page-space-3">
                     {!hasResults ? (
-                        <ResultsNotPublished regionLabel={`het waterschap ${region.region_name}`} />
+                        <ResultsNotPublished regionLabel={region.region_name} />
                     ) : (
                         resultsPageContent
                     )}

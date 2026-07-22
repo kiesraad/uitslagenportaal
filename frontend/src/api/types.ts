@@ -47,6 +47,8 @@ export type Region = {
   documents?: ElectionDocument[]
   region_category: RegionCategory
   results_available_at: string
+  csb_name?: string | null
+  csb_slug?: string | null
 }
 
 export type RegionResponse = Region[]

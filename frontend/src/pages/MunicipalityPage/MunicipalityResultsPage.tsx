@@ -12,16 +12,18 @@ import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import { formatDate } from '../../utils/date.ts'
+import { getCsbCrumb } from '../../utils/region.ts'
 
 
 export function MunicipalityResultsPage() {
-  const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
+  const { electionConfigSlug, regionSlug: regionSlugParam, csbSlug: csbSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string; csbSlug?: string }>()
   const regionSlug = decodeURIComponent(regionSlugParam ?? '')
-  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug)
-  const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? '', regionSlug)
+  const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined
+  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug, csbSlug)
+  const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? '', regionSlug, csbSlug)
 
   const { data: electionConfig } = useElectionConfig(electionConfigSlug)
-  const { data: region, isLoading, isError, refetch } = useRegion(electionConfigSlug, regionSlug)
+  const { data: region, isLoading, isError, refetch } = useRegion(electionConfigSlug, regionSlug, csbSlug)
 
   const hasResults = Array.isArray(region?.vote_counts) && region.vote_counts.length > 0
 
@@ -49,6 +51,8 @@ export function MunicipalityResultsPage() {
     )
   }
 
+  const municipalityTitle = region.region_name
+
   const resultsPageContent = (
     <>
       <VotesResume type='admittedVoters' votes={region.voter_turnout_counts} />
@@ -74,12 +78,13 @@ export function MunicipalityResultsPage() {
       description="Resultaten per stembureau"
     >
       <PageTop
-        title={`Gemeente ${region.region_name}`}
+        title={municipalityTitle}
         subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
-          { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
+          getCsbCrumb(region, electionConfigSlug ?? ''),
+          { href: municipalityPollingstationListRoute, label: municipalityTitle },
 
         ]}
         tabs={
@@ -102,7 +107,7 @@ export function MunicipalityResultsPage() {
       <div className="page-main page-main-two-columns">
         <div className="page-space-3">
           {!hasResults ? (
-            <ResultsNotPublished regionLabel={`de gemeente ${region.region_name}`} />
+            <ResultsNotPublished regionLabel={region.region_name} />
           ) : (
             resultsPageContent
           )}

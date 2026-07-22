@@ -11,9 +11,12 @@ from region.models import Region
 
 
 class RegionListSerializer(serializers.ModelSerializer):
+    csb_name = serializers.CharField(source="parent.parent.region_name", default=None, read_only=True)
+    csb_slug = serializers.SlugField(source="parent.parent.slug", default=None, read_only=True)
+
     class Meta:
         model = Region
-        fields = ("region_name", "slug", "region_category")
+        fields = ("region_name", "slug", "region_category", "csb_name", "csb_slug")
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):
@@ -21,6 +24,8 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     vote_counts = VoteCountSummarySerializer(many=True, read_only=True)
     timeline_entries = serializers.SerializerMethodField()
     documents = ElectionDocumentSerializer(many=True, read_only=True)
+    csb_name = serializers.CharField(source="parent.parent.region_name", default=None, read_only=True)
+    csb_slug = serializers.SlugField(source="parent.parent.slug", default=None, read_only=True)
 
     def get_vote_counts(self, obj):
         """
@@ -45,6 +50,8 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "timeline_entries",
             "region_category",
             "results_available_at",
+            "csb_name",
+            "csb_slug",
         )
 
     def _effective_variant(self, region) -> str:
