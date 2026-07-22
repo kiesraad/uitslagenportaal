@@ -1,6 +1,6 @@
 from django.db import models
 
-from mainsite.models import BaseModel, RegionCategory
+from mainsite.models import BaseModel
 from mainsite.utils.utils import name_to_slug
 
 
