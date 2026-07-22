@@ -82,6 +82,20 @@
                 "DJANGO_SETTINGS_MODULE": "mainsite.settings"
             },
             "justMyCode": true
+        },
+        {
+            "name": "Django: pytest",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
         }
     ]
 }

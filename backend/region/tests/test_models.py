@@ -16,6 +16,13 @@ def test_region_slug_is_generated_from_number_and_name():
 
 
 @pytest.mark.django_db
+def test_region_slug_replaces_colons_in_region_number():
+    region = RegionFactory(region_number="0484::SB6", region_name="Nutsgebouw Zwammerdam")
+
+    assert region.slug == "0484-SB6-nutsgebouw_zwammerdam"
+
+
+@pytest.mark.django_db
 def test_region_slug_is_truncated_to_49_characters():
     name = "A Very Long Region Name That Exceeds The Slug Field Limit"
     region = RegionFactory(region_number="1", region_name=name)
