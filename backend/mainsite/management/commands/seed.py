@@ -196,9 +196,7 @@ class Command(BaseCommand):
                         election_config=election_config,
                         variant=variant,
                         title=entry_data["title"],
-                        date=timezone.make_aware(
-                            datetime.fromisoformat(entry_data["date"])
-                        ),
+                        date=timezone.make_aware(datetime.fromisoformat(entry_data["date"])),
                         body=entry_data["body"],
                     )
             self.stdout.write("Elections seeded")
