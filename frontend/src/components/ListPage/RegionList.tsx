@@ -96,7 +96,9 @@ export function RegionList({
 
       <h2 className="searchlist-title">Vind een {getRegionLabel(regionCategory).toLowerCase()} van A tot Z</h2>
 
-      {Object.entries(regionsByLetter).map(([letter, municipalities]) => (
+      {Object.entries(regionsByLetter)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([letter, municipalities]) => (
         <div key={letter} className="searchlist-section">
           <div className="searchlist-letter">{letter}</div>
           {municipalities.map((municipality) => (
