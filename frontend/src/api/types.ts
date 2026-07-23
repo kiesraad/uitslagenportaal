@@ -49,6 +49,7 @@ export type Region = {
   results_available_at: string
   csb_name?: string | null
   csb_slug?: string | null
+  station_number?: number | null
 }
 
 export type RegionResponse = Region[]

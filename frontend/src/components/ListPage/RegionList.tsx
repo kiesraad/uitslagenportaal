@@ -67,15 +67,26 @@ export function RegionList({
     return counts
   }, {})
 
+  const isPollingStationList = regionCategory === 'STEMBUREAU'
+
   const regionOptions: SearchListOption[] = visibleRegions.map((region) => {
     const isAmbiguous = nameCounts[region.region_name] > 1 && Boolean(region.csb_name)
+    const baseLabel = isAmbiguous ? `${region.region_name} - ${region.csb_name}` : region.region_name
+    const hasStationNumber = isPollingStationList && region.station_number != null
     return {
       id: region.slug,
-      label: isAmbiguous ? `${region.region_name} - ${region.csb_name}` : region.region_name,
+      label: hasStationNumber ? `${region.station_number} ${baseLabel}` : baseLabel,
       sortName: region.region_name,
+      sortNumber: hasStationNumber ? region.station_number ?? undefined : undefined,
       csbSlug: region.csb_slug ?? undefined,
     }
   })
+
+  function compareByStationNumber(a: SearchListOption, b: SearchListOption): number {
+    return (a.sortNumber ?? 0) - (b.sortNumber ?? 0)
+  }
+
+  const sortedPollingStations = regionOptions.slice().sort(compareByStationNumber)
 
   const regionsByLetter = regionOptions.reduce<Record<string, SearchListOption[]>>((grouped, option) => {
     const sortName = option.sortName ?? option.label
@@ -94,24 +105,42 @@ export function RegionList({
         onSelect={navigateToRegion}
       />
 
-      <h2 className="searchlist-title">Vind een {getRegionLabel(regionCategory).toLowerCase()} van A tot Z</h2>
+      <h2 className="searchlist-title">
+        {isPollingStationList
+          ? `Vind een ${getRegionLabel(regionCategory).toLowerCase()}`
+          : `Vind een ${getRegionLabel(regionCategory).toLowerCase()} van A tot Z`}
+      </h2>
 
-      {Object.entries(regionsByLetter)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([letter, municipalities]) => (
-        <div key={letter} className="searchlist-section">
-          <div className="searchlist-letter">{letter}</div>
-          {municipalities.map((municipality) => (
+      {isPollingStationList ? (
+        <div className="searchlist-section">
+          {sortedPollingStations.map((station) => (
             <Link
-              key={`${municipality.id}-${municipality.csbSlug ?? ''}`}
-              to={getRegionRoute(municipality)}
+              key={`${station.id}-${station.csbSlug ?? ''}`}
+              to={getRegionRoute(station)}
             >
-              <span>{municipality.label}</span>
+              <span>{station.label}</span>
               <span className="gemeente-chevron">{'>'}</span>
             </Link>
           ))}
         </div>
-      ))}
+      ) : (
+        Object.entries(regionsByLetter)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([letter, municipalities]) => (
+            <div key={letter} className="searchlist-section">
+              <div className="searchlist-letter">{letter}</div>
+              {municipalities.map((municipality) => (
+                <Link
+                  key={`${municipality.id}-${municipality.csbSlug ?? ''}`}
+                  to={getRegionRoute(municipality)}
+                >
+                  <span>{municipality.label}</span>
+                  <span className="gemeente-chevron">{'>'}</span>
+                </Link>
+              ))}
+            </div>
+          ))
+      )}
     </div>
   )
 }

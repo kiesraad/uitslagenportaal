@@ -12,6 +12,7 @@ export type SearchListOption = {
   content?: ReactNode
   csbSlug?: string
   sortName?: string
+  sortNumber?: number
 }
 
 type SearchRegionCategory = Extract<RegionCategory, 'GEMEENTE' | 'STEMBUREAU' | 'WATERSCHAP'>

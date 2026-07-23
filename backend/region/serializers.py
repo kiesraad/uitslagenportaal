@@ -13,10 +13,17 @@ from region.models import Region
 class RegionListSerializer(serializers.ModelSerializer):
     csb_name = serializers.CharField(source="parent.parent.region_name", default=None, read_only=True)
     csb_slug = serializers.SlugField(source="parent.parent.slug", default=None, read_only=True)
+    station_number = serializers.SerializerMethodField()
 
     class Meta:
         model = Region
-        fields = ("region_name", "slug", "region_category", "csb_name", "csb_slug")
+        fields = ("region_name", "slug", "region_category", "csb_name", "csb_slug", "station_number")
+
+    def get_station_number(self, region) -> int | None:
+        if region.region_category != RegionCategory.STEMBUREAU:
+            return None
+        station = str(region.region_number).split("::")[-1].removeprefix("SB")
+        return int(station) if station.isdigit() else None
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):
@@ -28,11 +35,6 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     csb_slug = serializers.SlugField(source="parent.parent.slug", default=None, read_only=True)
 
     def get_vote_counts(self, obj):
-        """
-        GSB counts are present in 510d and 510b, which duplicates them in the backend.
-        We need both, but on GSB level the UI only needs the GSB (510b) results. That's why
-        we filter it here to avoid duplication in the response data.
-        """
         vote_counts = obj.vote_counts.filter()
         if obj.region_category == RegionCategory.GEMEENTE:
             vote_counts = vote_counts.filter(eml_type="510b")
