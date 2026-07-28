@@ -10,6 +10,7 @@ import ResultsNotPublished from '../../components/ResultsPage/ResultsNotPublishe
 import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline'
 import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
+import PageIndex from '../../components/PageIndex'
 import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import { formatDate } from '../../utils/date.ts'
@@ -64,6 +65,21 @@ export function MunicipalityResultsPage() {
 
   const resultsPageContent = (
     <>
+      <PageIndex
+        links={[
+          { label: <><span className="bold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
+          { label: <><span className="bold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>, url: '#results-timeline' },
+          { label: <span className="bold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
+        ]}
+      />
+      <section id="telresultaten">
+        <h3 className="mb-2">Telresultaten</h3>
+        <p>
+          Het gemeentelijk stembureau heeft de telresultaten van alle stembureaus in {region.region_name} gecontroleerd,
+          overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn
+          opgenomen in het proces-verbaal van de gemeente.
+        </p>
+      </section>
       <VotesResume type='admittedVoters' votes={region.voter_turnout_counts} />
 
       <section className="votes-cast">
