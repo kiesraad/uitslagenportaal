@@ -7,13 +7,15 @@ import { appRoutes } from '../../utils/routes.ts'
 import { useRegions } from '../../hooks/queries.ts'
 import { RegionList } from '../../components/ListPage/RegionList.tsx'
 import { formatDate } from '../../utils/date.ts'
+import { getCsbCrumb } from '../../utils/region.ts'
 
 
 export function MunicipalityPollingstationListPage() {
-  const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
+  const { electionConfigSlug, regionSlug: regionSlugParam, csbSlug: csbSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string; csbSlug?: string }>()
   const regionSlug = decodeURIComponent(regionSlugParam ?? '')
-  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug)
-  const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? '', regionSlug)
+  const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined
+  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug, csbSlug)
+  const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? '', regionSlug, csbSlug)
 
   const {
     data: electionConfig,
@@ -26,8 +28,8 @@ export function MunicipalityPollingstationListPage() {
     isLoading: isRegionLoading,
     isError: isRegionError,
     refetch: refetchRegion,
-  } = useRegion(electionConfigSlug, regionSlug)
-  const { data: pollingStations } = useRegions(electionConfigSlug, regionSlug, 'STEMBUREAU')
+  } = useRegion(electionConfigSlug, regionSlug, csbSlug)
+  const { data: pollingStations } = useRegions(electionConfigSlug, regionSlug, 'STEMBUREAU', false, csbSlug)
 
   if (isElectionConfigLoading || isRegionLoading) {
     return (
@@ -51,18 +53,21 @@ export function MunicipalityPollingstationListPage() {
     )
   }
 
+  const municipalityTitle = region.region_name
+
   return (
     <Layout
       title="Resultaten per stembureau"
       description="Resultaten per stembureau"
     >
       <PageTop
-        title={`Gemeente ${region.region_name}`}
+        title={municipalityTitle}
         subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig.label },
-          { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
+          getCsbCrumb(region, electionConfigSlug ?? ''),
+          { href: municipalityPollingstationListRoute, label: municipalityTitle },
         ]}
         tabs={
           <SharedTabs
@@ -85,6 +90,7 @@ export function MunicipalityPollingstationListPage() {
         electionConfig={electionConfig}
         regions={pollingStations}
         parentRegionSlug={regionSlug}
+        parentCsbSlug={csbSlug}
         regionCategory='STEMBUREAU'
       />
 

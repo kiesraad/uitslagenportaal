@@ -114,7 +114,7 @@ WS2023_ELECTION_SEED = [
         "timeline_entries_default": [
             {
                 "title": "De Kiesraad publiceert de uitslag",
-                "date": "2023-12-15T11:00:00",
+                "date": "2026-12-15T11:00:00",
                 "body": (
                     "In de uitslag staat hoeveel stemmen elke kandidaat heeft gekregen, "
                     "hoeveel zetels elke partij krijgt en welke mensen in de Tweede Kamer komen."

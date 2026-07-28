@@ -9,20 +9,23 @@ import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import CandidatesVoteList from '../../components/ResultsPage/CandidatesVoteList.tsx'
 import PageIndex from '../../components/PageIndex'
 import { formatDate } from '../../utils/date.ts'
+import { getCsbCrumb } from '../../utils/region.ts'
 
 export function MunicipalityPartyResultsPage() {
   const {
     electionConfigSlug: electionConfigSlugParam,
     regionSlug: parentRegionSlugParam,
     partySlug: partySlugParam,
-  } = useParams<{ electionConfigSlug: string; regionSlug: string; partySlug: string }>()
+    csbSlug: csbSlugParam,
+  } = useParams<{ electionConfigSlug: string; regionSlug: string; partySlug: string; csbSlug?: string }>()
 
   const electionConfigSlug = decodeURIComponent(electionConfigSlugParam ?? '')
   const regionSlug = decodeURIComponent(parentRegionSlugParam ?? '')
   const partySlug = decodeURIComponent(partySlugParam ?? '')
+  const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined
 
   const { data: electionConfig, isLoading: isElectionLoading } = useElectionConfig(electionConfigSlug)
-  const { data: region, isLoading: isRegionLoading, isError: isRegionError, refetch } = useRegion(electionConfigSlug, regionSlug)
+  const { data: region, isLoading: isRegionLoading, isError: isRegionError, refetch } = useRegion(electionConfigSlug, regionSlug, csbSlug)
 
 
   const currentPartyVoteCounts = useMemo(
@@ -48,9 +51,9 @@ export function MunicipalityPartyResultsPage() {
     [partyLevelVoteCounts, partySlug],
   )
 
-  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, regionSlug)
-  const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug, regionSlug)
-  const municipalityPartyResultsRoute = appRoutes.municipalityPartyResults(electionConfigSlug, regionSlug, partySlug)
+  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, regionSlug, csbSlug)
+  const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug, regionSlug, csbSlug)
+  const municipalityPartyResultsRoute = appRoutes.municipalityPartyResults(electionConfigSlug, regionSlug, partySlug, csbSlug)
 
   const pageTitle = region
     ? `Telresultaten gemeente\n${region.region_name}`
@@ -96,7 +99,8 @@ export function MunicipalityPartyResultsPage() {
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },
-          { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
+          getCsbCrumb(region, electionConfigSlug),
+          { href: municipalityPollingstationListRoute, label: region.region_name },
           { href: municipalityResultsRoute, label: 'Hele gemeente' },
           { href: municipalityPartyResultsRoute, label: partyName },
         ]}

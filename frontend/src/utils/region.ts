@@ -1,5 +1,6 @@
 // Helper mapping from csb_type to singular and plural camelcase versions
 import type { RegionCategory } from '../api/types'
+import { appRoutes } from './routes'
 
 const regionTypeMapping: Record<
   string,
@@ -21,4 +22,12 @@ export function getRegionLabel(
   const mapping = regionTypeMapping[regionType]
   if (!mapping) return ""
   return plural ? mapping.plural : mapping.singular
+}
+
+export function getCsbCrumb(
+  region: { csb_name?: string | null; csb_slug?: string | null } | undefined,
+  electionConfigSlug: string,
+): { href: string; label: string } | null {
+  if (!region?.csb_name || !region.csb_slug) return null
+  return { href: appRoutes.csbMunicipalityList(electionConfigSlug, region.csb_slug), label: region.csb_name }
 }

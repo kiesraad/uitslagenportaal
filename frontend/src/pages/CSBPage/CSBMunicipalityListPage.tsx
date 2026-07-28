@@ -6,7 +6,6 @@ import SharedTabs from '../../components/SharedTabs.tsx'
 import { RegionList } from '../../components/ListPage/RegionList.tsx'
 import { appRoutes } from '../../utils/routes.ts'
 import { useElectionConfig, useRegions, useRegion } from '../../hooks/queries.ts'
-import { getRegionLabel } from '../../utils/region.ts'
 import { formatDate } from '../../utils/date.ts'
 
 export function CSBMunicipalityListPage() {
@@ -20,7 +19,6 @@ export function CSBMunicipalityListPage() {
     const { data: regions } = useRegions(electionConfigSlug, regionSlug, 'GEMEENTE', true)
     
     const electionLabel = electionConfig?.label ?? 'Verkiezing laden…'
-    const regionLabel = getRegionLabel(electionConfig?.csb_type)
 
     const csbResultsRoute = appRoutes.csbResults(electionConfigSlug ?? '', regionSlug ?? '')
     const csbMunicipalityListRoute = appRoutes.csbMunicipalityList(electionConfigSlug ?? '', regionSlug ?? '')
@@ -51,12 +49,12 @@ export function CSBMunicipalityListPage() {
             description={`Bekijk de telresultaten per gemeente van de ${electionConfig.label}.`}
         >
             <PageTop
-                title={`${regionLabel} ${region?.region_name}`}
+                title={region?.region_name ?? ""}
                 subtitle={region ? `Geplaatst op: ${formatDate(region.results_available_at)}` : ''}
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },
                     { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
-                    { href: appRoutes.csbResults(electionConfigSlug ?? '', regionSlug ?? ''), label: `${regionLabel} ${region?.region_name}` },
+                    { href: appRoutes.csbResults(electionConfigSlug ?? '', regionSlug ?? ''), label: region?.region_name ?? "" },
 
                 ]}
                 tabs={

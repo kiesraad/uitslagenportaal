@@ -7,7 +7,7 @@ import VotesResume from '../../components/ResultsPage/VotesResume.tsx'
 import VotesList from '../../components/ResultsPage/VotesList.tsx'
 import ReportsWithResults from '../../components/ResultsPage/ReportsWithResults.tsx'
 import ResultsNotPublished from '../../components/ResultsPage/ResultsNotPublished.tsx'
-import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline'
+import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
@@ -79,12 +79,12 @@ export function CSBResultsPage() {
             title="Resultaten"
         >
             <PageTop
-                title={`${regionLabel} ${region.region_name}`}
+                title={region.region_name}
                 subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },
                     { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
-                    { href: appRoutes.csbResults(electionConfigSlug ?? '', regionSlug), label: `${regionLabel} ${region.region_name}` },
+                    { href: appRoutes.csbResults(electionConfigSlug ?? '', regionSlug), label: region.region_name },
 
                 ]}
                 tabs={
@@ -107,7 +107,7 @@ export function CSBResultsPage() {
             <div className="page-main page-main-two-columns">
                 <div className="page-space-3">
                     {!hasResults ? (
-                        <ResultsNotPublished regionLabel={`het waterschap ${region.region_name}`} />
+                        <ResultsNotPublished regionLabel={region.region_name} />
                     ) : (
                         resultsPageContent
                     )}

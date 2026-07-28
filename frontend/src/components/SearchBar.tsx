@@ -10,6 +10,9 @@ export type SearchListOption = {
   label: string
   searchText?: string
   content?: ReactNode
+  csbSlug?: string
+  sortName?: string
+  sortNumber?: number
 }
 
 type SearchRegionCategory = Extract<RegionCategory, 'GEMEENTE' | 'STEMBUREAU' | 'WATERSCHAP'>
@@ -163,7 +166,7 @@ export default function SearchBar({
             >
               {suggestions.map((option, index) => (
                 <li
-                  key={option.id}
+                  key={`${option.id}-${option.csbSlug ?? ''}`}
                   id={`${suggestionsId}-${index}`}
                   role="option"
                   aria-selected={index === activeIndex}

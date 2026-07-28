@@ -10,6 +10,7 @@ import { appRoutes } from '../../utils/routes'
 import PageIndex from '../../components/PageIndex'
 import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline'
 import { formatDate } from '../../utils/date'
+import { getCsbCrumb } from '../../utils/region'
 
 
 export default function PollingStationResultsPage() {
@@ -17,14 +18,16 @@ export default function PollingStationResultsPage() {
     electionConfigSlug: electionConfigSlugParam,
     parentRegionSlug: parentRegionSlugParam,
     pollingStationSlug: pollingStationSlugParam,
-  } = useParams<{ electionConfigSlug: string; parentRegionSlug: string; pollingStationSlug: string }>()
+    csbSlug: csbSlugParam,
+  } = useParams<{ electionConfigSlug: string; parentRegionSlug: string; pollingStationSlug: string; csbSlug?: string }>()
 
   const electionConfigSlug = decodeURIComponent(electionConfigSlugParam ?? '')
   const parentRegionSlug = decodeURIComponent(parentRegionSlugParam ?? '')
   const pollingStationSlug = decodeURIComponent(pollingStationSlugParam ?? '')
+  const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined
 
   const { data: electionConfig, isLoading: isElectionLoading } = useElectionConfig(electionConfigSlug)
-  const { data: region, isLoading: isRegionLoading, isError: isRegionError, refetch } = useRegion(electionConfigSlug, parentRegionSlug)
+  const { data: region, isLoading: isRegionLoading, isError: isRegionError, refetch } = useRegion(electionConfigSlug, parentRegionSlug, csbSlug)
   const { data: pollingStation, isLoading: isPollingStationLoading } = useRegion(electionConfigSlug, pollingStationSlug)
 
   const partyLevelVoteCounts = useMemo(
@@ -32,8 +35,8 @@ export default function PollingStationResultsPage() {
     [pollingStation?.vote_counts],
   )
 
-  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, parentRegionSlug)
-  const pollingStationResultsRoute = appRoutes.pollingStationResults(electionConfigSlug, parentRegionSlug, pollingStationSlug)
+  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, parentRegionSlug, csbSlug)
+  const pollingStationResultsRoute = appRoutes.pollingStationResults(electionConfigSlug, parentRegionSlug, pollingStationSlug, csbSlug)
 
   const pageTitle = pollingStation
     ? `Telresultaten stembureau\n${pollingStation.region_name}`
@@ -77,7 +80,8 @@ export default function PollingStationResultsPage() {
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },
-          { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
+          getCsbCrumb(region, electionConfigSlug),
+          { href: municipalityPollingstationListRoute, label: region.region_name },
           { href: pollingStationResultsRoute, label: pollingStation.region_name },
         ]}
       />

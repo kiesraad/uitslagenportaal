@@ -14,6 +14,7 @@ export function getRegions(
   skipNode: boolean,
   parentRegionSlug?: string,
   regionCategory?: RegionCategory,
+  csbSlug?: string,
 ) {
   if (!electionConfigSlug || (!parentRegionSlug && !regionCategory)) {
     throw new Error('getRegions: electionConfigSlug and one of parentRegionSlug or regionCategory are required.')
@@ -27,11 +28,20 @@ export function getRegions(
   if (regionCategory) {
     url.searchParams.append('region_category', regionCategory)
   }
+  if (csbSlug) {
+    url.searchParams.append('csb', csbSlug)
+  }
   url.searchParams.append('skip_node', skipNode ? '1' : '0')
   return apiGet<RegionResponse>(`${url.pathname}${url.search}`)
 }
 
-export function getRegion(electionConfigSlug: string, regionSlug: string) {
-  return apiGet<Region>(`/api/region?election_config=${electionConfigSlug}&region=${regionSlug}`)
+export function getRegion(electionConfigSlug: string, regionSlug: string, csbSlug?: string) {
+  const url = new URL('/api/region', window.location.origin)
+  url.searchParams.append('election_config', electionConfigSlug)
+  url.searchParams.append('region', regionSlug)
+  if (csbSlug) {
+    url.searchParams.append('csb', csbSlug)
+  }
+  return apiGet<Region>(`${url.pathname}${url.search}`)
 }
 

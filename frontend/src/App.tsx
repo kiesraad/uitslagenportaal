@@ -2,8 +2,8 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { HomePage } from './pages/HomePage'
 import { ElectionConfigMunicipalityListPage } from './pages/ElectionConfigPage/ElectionConfigMunicipalityListPage'
 import { ElectionConfigCSBListPage } from './pages/ElectionConfigPage/ElectionConfigCSBListPage'
-import { CSBResultsPage } from './pages/CSBPAge/CSBResultsPage.tsx'
-import { CSBMunicipalityListPage } from './pages/CSBPAge/CSBMunicipalityListPage.tsx'
+import { CSBResultsPage } from './pages/CSBPage/CSBResultsPage.tsx'
+import { CSBMunicipalityListPage } from './pages/CSBPage/CSBMunicipalityListPage.tsx'
 import { MunicipalityPollingstationListPage } from './pages/MunicipalityPage/MunicipalityPollingstationListPage'
 import { MunicipalityPartyResultsPage } from './pages/MunicipalityPage/MunicipalityPartyResultsPage'
 import { MunicipalityResultsPage } from './pages/MunicipalityPage/MunicipalityResultsPage'
@@ -25,6 +25,11 @@ function App() {
         <Route path="/:electionConfigSlug/gsb/:regionSlug/resultaten/:partySlug" element={<MunicipalityPartyResultsPage />} />
         <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/:pollingStationSlug" element={<PollingStationResultsPage />} />
         <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/:pollingStationSlug/:partySlug" element={<PollingStationPartyResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug" element={<MunicipalityPollingstationListPage />} />
+        <Route path="/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/resultaten" element={<MunicipalityResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/resultaten/:partySlug" element={<MunicipalityPartyResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/csb/:csbSlug/:pollingStationSlug" element={<PollingStationResultsPage />} />
+        <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/csb/:csbSlug/:pollingStationSlug/:partySlug" element={<PollingStationPartyResultsPage />} />
       </Routes>
     </BrowserRouter>
   )

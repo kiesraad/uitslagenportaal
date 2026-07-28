@@ -8,7 +8,7 @@ from election.tests.factories import ElectionConfigFactory, TimelineEntryFactory
 def test_election_config_slug_is_generated_from_identifier():
     config = ElectionConfigFactory(identifier="Gemeenteraadsverkiezingen 2026")
 
-    assert config.slug == "gemeenteraadsverkiezingen"
+    assert config.slug == "gemeenteraadsverkiezingen_2026"
 
 
 @pytest.mark.django_db
