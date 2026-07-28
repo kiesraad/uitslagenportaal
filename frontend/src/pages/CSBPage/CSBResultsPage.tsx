@@ -8,6 +8,7 @@ import VotesList from '../../components/ResultsPage/VotesList.tsx'
 import ReportsWithResults from '../../components/ResultsPage/ReportsWithResults.tsx'
 import ResultsNotPublished from '../../components/ResultsPage/ResultsNotPublished.tsx'
 import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline.tsx'
+import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
@@ -18,15 +19,26 @@ import { formatDate } from '../../utils/date.ts'
 export function CSBResultsPage() {
     const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string }>()
     const regionSlug = decodeURIComponent(regionSlugParam ?? '')
-    // const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug)
     const csbResultsRoute = appRoutes.csbResults(electionConfigSlug ?? '', regionSlug)
     const csbMunicipalityListRoute = appRoutes.csbMunicipalityList(electionConfigSlug ?? '', regionSlug)
 
+    const {
+        data: electionConfig,
+        isLoading: isElectionLoading,
+        isError: isElectionError,
+        refetch: refetchElection,
+    } = useElectionConfig(electionConfigSlug)
+    const {
+        data: region,
+        isLoading: isRegionLoading,
+        isError: isRegionError,
+        refetch: refetchRegion,
+    } = useRegion(electionConfigSlug, regionSlug)
 
-    const { data: electionConfig } = useElectionConfig(electionConfigSlug)
-    const { data: region, isLoading, isError, refetch } = useRegion(electionConfigSlug, regionSlug)
+    const regionLabel = getRegionLabel(electionConfig?.csb_type) || 'Regio'
 
-    const regionLabel = getRegionLabel(electionConfig?.csb_type)
+    const isLoading = isElectionLoading || isRegionLoading
+    const isError = isElectionError || isRegionError || !electionConfig || !region
 
     const hasResults = Array.isArray(region?.vote_counts) && region.vote_counts.length > 0
 
@@ -35,26 +47,19 @@ export function CSBResultsPage() {
         [region?.vote_counts],
     )
 
-    if (isLoading) {
+    if (isLoading || isError) {
         return (
-            <Layout title={`${regionLabel} laden…`} description={`${regionLabel} laden…`}>
-
-                <p>${regionLabel.toLowerCase()} laden…</p>
-            </Layout>
+            <PageQueryBoundary
+                isLoading={isLoading}
+                isError={isError}
+                onRetry={() => {
+                    void refetchElection()
+                    void refetchRegion()
+                }}
+                entityLabel={regionLabel}
+            />
         )
     }
-
-    if (isError || !region) {
-        return (
-            <Layout title={`${regionLabel} niet gevonden`} description={`Kan ${regionLabel.toLowerCase()} niet laden`}>
-                <p>Kan ${regionLabel.toLowerCase()} niet laden.</p>
-                <button type="button" onClick={() => refetch()}>
-                    Opnieuw proberen
-                </button>
-            </Layout>
-        )
-    }
-
 
     const resultsPageContent = (
         <>
@@ -73,7 +78,6 @@ export function CSBResultsPage() {
         </>
     )
 
-
     return (
         <Layout
             title="Resultaten"
@@ -83,9 +87,8 @@ export function CSBResultsPage() {
                 subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },
-                    { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
+                    { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig.label },
                     { href: appRoutes.csbResults(electionConfigSlug ?? '', regionSlug), label: region.region_name },
-
                 ]}
                 tabs={
                     <SharedTabs
@@ -114,7 +117,7 @@ export function CSBResultsPage() {
                     <ResultsTimeline
                         title="Hoe komt de uitslag tot stand?"
                         description="TBD."
-                        entries={electionConfig?.timeline_entries ?? []}
+                        entries={electionConfig.timeline_entries ?? []}
                     />
                     <IssueNotice />
                 </div>

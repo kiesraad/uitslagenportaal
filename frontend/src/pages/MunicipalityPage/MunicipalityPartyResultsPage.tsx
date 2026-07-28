@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout.tsx'
 import PageTop from '../../components/PageTop.tsx'
+import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 
@@ -24,9 +25,21 @@ export function MunicipalityPartyResultsPage() {
   const partySlug = decodeURIComponent(partySlugParam ?? '')
   const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined
 
-  const { data: electionConfig, isLoading: isElectionLoading } = useElectionConfig(electionConfigSlug)
-  const { data: region, isLoading: isRegionLoading, isError: isRegionError, refetch } = useRegion(electionConfigSlug, regionSlug, csbSlug)
+  const {
+    data: electionConfig,
+    isLoading: isElectionLoading,
+    isError: isElectionError,
+    refetch: refetchElection,
+  } = useElectionConfig(electionConfigSlug)
+  const {
+    data: region,
+    isLoading: isRegionLoading,
+    isError: isRegionError,
+    refetch: refetchRegion,
+  } = useRegion(electionConfigSlug, regionSlug, csbSlug)
 
+  const isLoading = isElectionLoading || isRegionLoading
+  const isError = isElectionError || isRegionError || !electionConfig || !region
 
   const currentPartyVoteCounts = useMemo(
     () =>
@@ -55,38 +68,22 @@ export function MunicipalityPartyResultsPage() {
   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug, regionSlug, csbSlug)
   const municipalityPartyResultsRoute = appRoutes.municipalityPartyResults(electionConfigSlug, regionSlug, partySlug, csbSlug)
 
-  const pageTitle = region
-    ? `Telresultaten gemeente\n${region.region_name}`
-    : 'Telresultaten gemeente'
-
-  if (isElectionLoading || isRegionLoading) {
+  if (isLoading || isError) {
     return (
-      <Layout title="Gemeente laden…" description="Gemeente laden…">
-        <p>Gemeente laden…</p>
-      </Layout>
-    )
-  }
-
-  if (isRegionError || !region) {
-    return (
-      <Layout title="Gemeente niet gevonden" description="Kan gemeente niet laden.">
-        <p>Kan gemeente niet laden.</p>
-        <button type="button" onClick={() => refetch()}>
-          Opnieuw proberen
-        </button>
-      </Layout>
-    )
-  }
-
-  if (!region) {
-    return (
-      <Layout title="Gemeente niet gevonden" description="Gemeente niet gevonden.">
-        <p>Gemeente niet gevonden.</p>
-      </Layout>
+      <PageQueryBoundary
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={() => {
+          void refetchElection()
+          void refetchRegion()
+        }}
+        entityLabel="Gemeente"
+      />
     )
   }
 
   const partyName = partyVoteCount?.party.registered_name ?? 'Lijst'
+  const pageTitle = `Telresultaten gemeente\n${region.region_name}`
 
   return (
     <Layout
@@ -98,7 +95,7 @@ export function MunicipalityPartyResultsPage() {
         subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
-          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },
+          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig.label },
           getCsbCrumb(region, electionConfigSlug),
           { href: municipalityPollingstationListRoute, label: region.region_name },
           { href: municipalityResultsRoute, label: 'Hele gemeente' },
