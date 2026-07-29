@@ -101,6 +101,7 @@ export default function PollingStationResultsPage() {
           <PageIndex
             links={[
               { label: <><span className="bold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
+              { label: <><span className="bold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>, url: '#results-timeline' },
               { label: <span className="bold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
             ]}
           />
