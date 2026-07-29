@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout.tsx'
 import PageTop from '../../components/PageTop.tsx'
 import SharedTabs from '../../components/SharedTabs.tsx'
+import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
 
 import { RegionList } from '../../components/ListPage/RegionList.tsx'
 import { appRoutes } from '../../utils/routes.ts'
@@ -11,27 +12,33 @@ import { getRegionLabel } from '../../utils/region.ts'
 export function ElectionConfigMunicipalityListPage() {
 
   const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>()
-  const { data: electionConfig, isLoading, isError, refetch } = useElectionConfig(electionConfigSlug)
-  const { data: regions } = useRegions(electionConfigSlug, undefined, 'GEMEENTE')
+  const {
+    data: electionConfig,
+    isLoading: isElectionLoading,
+    isError: isElectionError,
+    refetch: refetchElection,
+  } = useElectionConfig(electionConfigSlug)
+  const {
+    data: regions,
+    isLoading: isRegionsLoading,
+    isError: isRegionsError,
+    refetch: refetchRegions,
+  } = useRegions(electionConfigSlug, undefined, 'GEMEENTE')
 
-  const electionLabel = electionConfig?.label ?? 'Verkiezing laden…'
+  const isLoading = isElectionLoading || isRegionsLoading
+  const isError = isElectionError || isRegionsError || !electionConfig || !regions
 
-  if (isLoading) {
+  if (isLoading || isError) {
     return (
-      <Layout title={electionLabel} description="Telresultaten laden…">
-        <p>Verkiezing laden…</p>
-      </Layout>
-    )
-  }
-
-  if (isError || !electionConfig) {
-    return (
-      <Layout title="Verkiezing niet gevonden" description="Kan verkiezing niet laden.">
-        <p>Kan verkiezing niet laden.</p>
-        <button type="button" onClick={() => refetch()}>
-          Opnieuw proberen
-        </button>
-      </Layout>
+      <PageQueryBoundary
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={() => {
+          void refetchElection()
+          void refetchRegions()
+        }}
+        entityLabel="Verkiezing"
+      />
     )
   }
 

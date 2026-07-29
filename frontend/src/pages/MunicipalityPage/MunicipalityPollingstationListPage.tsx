@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout.tsx'
 import PageTop from '../../components/PageTop.tsx'
 import SharedTabs from '../../components/SharedTabs.tsx'
+import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
 import { useRegions } from '../../hooks/queries.ts'
@@ -29,27 +30,34 @@ export function MunicipalityPollingstationListPage() {
     isError: isRegionError,
     refetch: refetchRegion,
   } = useRegion(electionConfigSlug, regionSlug, csbSlug)
-  const { data: pollingStations } = useRegions(electionConfigSlug, regionSlug, 'STEMBUREAU', false, csbSlug)
+  const {
+    data: pollingStations,
+    isLoading: isPollingStationsLoading,
+    isError: isPollingStationsError,
+    refetch: refetchPollingStations,
+  } = useRegions(electionConfigSlug, regionSlug, 'STEMBUREAU', false, csbSlug)
 
-  if (isElectionConfigLoading || isRegionLoading) {
-    return (
-      <Layout title="Gemeente laden…" description="Gemeente laden…">
-        <p>Gemeente laden…</p>
-      </Layout>
-    )
-  }
+  const isLoading = isElectionConfigLoading || isRegionLoading || isPollingStationsLoading
+  const isError =
+    isElectionConfigError ||
+    isRegionError ||
+    isPollingStationsError ||
+    !electionConfig ||
+    !region ||
+    !pollingStations
 
-  if (isElectionConfigError || isRegionError || !electionConfig || !region) {
+  if (isLoading || isError) {
     return (
-      <Layout title="Gemeente niet gevonden" description="Kan gemeente niet laden.">
-        <p>Kan gemeente niet laden.</p>
-        <button type="button" onClick={() => {
-          refetchElectionConfig()
-          refetchRegion()
-        }}>
-          Opnieuw proberen
-        </button>
-      </Layout>
+      <PageQueryBoundary
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={() => {
+          void refetchElectionConfig()
+          void refetchRegion()
+          void refetchPollingStations()
+        }}
+        entityLabel="Gemeente"
+      />
     )
   }
 

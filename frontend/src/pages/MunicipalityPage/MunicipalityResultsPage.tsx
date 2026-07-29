@@ -8,7 +8,9 @@ import VotesList from '../../components/ResultsPage/VotesList.tsx'
 import ReportsWithResults from '../../components/ResultsPage/ReportsWithResults.tsx'
 import ResultsNotPublished from '../../components/ResultsPage/ResultsNotPublished.tsx'
 import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline'
+import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
+import PageIndex from '../../components/PageIndex'
 import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import { formatDate } from '../../utils/date.ts'
@@ -22,8 +24,21 @@ export function MunicipalityResultsPage() {
   const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug, csbSlug)
   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? '', regionSlug, csbSlug)
 
-  const { data: electionConfig } = useElectionConfig(electionConfigSlug)
-  const { data: region, isLoading, isError, refetch } = useRegion(electionConfigSlug, regionSlug, csbSlug)
+  const {
+    data: electionConfig,
+    isLoading: isElectionLoading,
+    isError: isElectionError,
+    refetch: refetchElection,
+  } = useElectionConfig(electionConfigSlug)
+  const {
+    data: region,
+    isLoading: isRegionLoading,
+    isError: isRegionError,
+    refetch: refetchRegion,
+  } = useRegion(electionConfigSlug, regionSlug, csbSlug)
+
+  const isLoading = isElectionLoading || isRegionLoading
+  const isError = isElectionError || isRegionError || !electionConfig || !region
 
   const hasResults = Array.isArray(region?.vote_counts) && region.vote_counts.length > 0
 
@@ -32,22 +47,17 @@ export function MunicipalityResultsPage() {
     [region?.vote_counts],
   )
 
-  if (isLoading) {
+  if (isLoading || isError) {
     return (
-      <Layout title="Gemeente laden…" description="Gemeente laden…">
-        <p>Gemeente laden…</p>
-      </Layout>
-    )
-  }
-
-  if (isError || !region) {
-    return (
-      <Layout title="Gemeente niet gevonden" description="Kan gemeente niet laden.">
-        <p>Kan gemeente niet laden.</p>
-        <button type="button" onClick={() => refetch()}>
-          Opnieuw proberen
-        </button>
-      </Layout>
+      <PageQueryBoundary
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={() => {
+          void refetchElection()
+          void refetchRegion()
+        }}
+        entityLabel="Gemeente"
+      />
     )
   }
 
@@ -55,6 +65,21 @@ export function MunicipalityResultsPage() {
 
   const resultsPageContent = (
     <>
+      <PageIndex
+        links={[
+          { label: <><span className="bold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
+          { label: <><span className="bold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>, url: '#results-timeline' },
+          { label: <span className="bold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
+        ]}
+      />
+      <section id="telresultaten">
+        <h3 className="mb-2">Telresultaten</h3>
+        <p>
+          Het gemeentelijk stembureau heeft de telresultaten van alle stembureaus in {region.region_name} gecontroleerd,
+          overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn
+          opgenomen in het proces-verbaal van de gemeente.
+        </p>
+      </section>
       <VotesResume type='admittedVoters' votes={region.voter_turnout_counts} />
 
       <section className="votes-cast">
@@ -71,7 +96,6 @@ export function MunicipalityResultsPage() {
     </>
   );
 
-
   return (
     <Layout
       title="Resultaten"
@@ -82,10 +106,9 @@ export function MunicipalityResultsPage() {
         subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
-          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
+          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig.label },
           getCsbCrumb(region, electionConfigSlug ?? ''),
           { href: municipalityPollingstationListRoute, label: municipalityTitle },
-
         ]}
         tabs={
           <SharedTabs
@@ -114,7 +137,7 @@ export function MunicipalityResultsPage() {
           <ResultsTimeline
             title="Hoe komt de uitslag tot stand?"
             description="TBD."
-            entries={electionConfig?.timeline_entries ?? []}
+            entries={electionConfig.timeline_entries ?? []}
           />
           <IssueNotice />
         </div>

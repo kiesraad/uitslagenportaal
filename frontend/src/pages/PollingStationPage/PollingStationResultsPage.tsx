@@ -5,6 +5,7 @@ import PageTop from '../../components/PageTop'
 import VotesList from '../../components/ResultsPage/VotesList'
 import VotesResume from '../../components/ResultsPage/VotesResume'
 import { Layout } from '../../components/Layout'
+import { PageQueryBoundary } from '../../components/PageQueryBoundary'
 import { useElectionConfig, useRegion } from '../../hooks/queries'
 import { appRoutes } from '../../utils/routes'
 import PageIndex from '../../components/PageIndex'
@@ -26,9 +27,33 @@ export default function PollingStationResultsPage() {
   const pollingStationSlug = decodeURIComponent(pollingStationSlugParam ?? '')
   const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined
 
-  const { data: electionConfig, isLoading: isElectionLoading } = useElectionConfig(electionConfigSlug)
-  const { data: region, isLoading: isRegionLoading, isError: isRegionError, refetch } = useRegion(electionConfigSlug, parentRegionSlug, csbSlug)
-  const { data: pollingStation, isLoading: isPollingStationLoading } = useRegion(electionConfigSlug, pollingStationSlug)
+  const {
+    data: electionConfig,
+    isLoading: isElectionLoading,
+    isError: isElectionError,
+    refetch: refetchElection,
+  } = useElectionConfig(electionConfigSlug)
+  const {
+    data: region,
+    isLoading: isRegionLoading,
+    isError: isRegionError,
+    refetch: refetchRegion,
+  } = useRegion(electionConfigSlug, parentRegionSlug, csbSlug)
+  const {
+    data: pollingStation,
+    isLoading: isPollingStationLoading,
+    isError: isPollingStationError,
+    refetch: refetchPollingStation,
+  } = useRegion(electionConfigSlug, pollingStationSlug)
+
+  const isLoading = isElectionLoading || isRegionLoading || isPollingStationLoading
+  const isError =
+    isElectionError ||
+    isRegionError ||
+    isPollingStationError ||
+    !electionConfig ||
+    !region ||
+    !pollingStation
 
   const partyLevelVoteCounts = useMemo(
     () => pollingStation?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
@@ -38,36 +63,22 @@ export default function PollingStationResultsPage() {
   const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, parentRegionSlug, csbSlug)
   const pollingStationResultsRoute = appRoutes.pollingStationResults(electionConfigSlug, parentRegionSlug, pollingStationSlug, csbSlug)
 
-  const pageTitle = pollingStation
-    ? `Telresultaten stembureau\n${pollingStation.region_name}`
-    : 'Telresultaten stembureau'
-
-  if (isElectionLoading || isRegionLoading || isPollingStationLoading) {
+  if (isLoading || isError) {
     return (
-      <Layout title="Stembureau laden…" description="Stembureau laden…">
-        <p>Stembureau laden…</p>
-      </Layout>
+      <PageQueryBoundary
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={() => {
+          void refetchElection()
+          void refetchRegion()
+          void refetchPollingStation()
+        }}
+        entityLabel="Stembureau"
+      />
     )
   }
 
-  if (isRegionError || !region) {
-    return (
-      <Layout title="Stembureau niet gevonden" description="Kan stembureau niet laden.">
-        <p>Kan stembureau niet laden.</p>
-        <button type="button" onClick={() => refetch()}>
-          Opnieuw proberen
-        </button>
-      </Layout>
-    )
-  }
-
-  if (!pollingStation) {
-    return (
-      <Layout title="Stembureau niet gevonden" description="Stembureau niet gevonden.">
-        <p>Stembureau niet gevonden.</p>
-      </Layout>
-    )
-  }
+  const pageTitle = `Telresultaten stembureau\n${pollingStation.region_name}`
 
   return (
     <Layout
@@ -79,7 +90,7 @@ export default function PollingStationResultsPage() {
         subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
         breadcrumb={[
           { href: appRoutes.home(), label: 'Home' },
-          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig?.label ?? 'Verkiezing laden…' },
+          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig.label },
           getCsbCrumb(region, electionConfigSlug),
           { href: municipalityPollingstationListRoute, label: region.region_name },
           { href: pollingStationResultsRoute, label: pollingStation.region_name },
@@ -90,6 +101,7 @@ export default function PollingStationResultsPage() {
           <PageIndex
             links={[
               { label: <><span className="bold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
+              { label: <><span className="bold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>, url: '#results-timeline' },
               { label: <span className="bold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
             ]}
           />

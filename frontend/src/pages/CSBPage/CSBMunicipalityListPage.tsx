@@ -2,44 +2,64 @@ import { useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout.tsx'
 import PageTop from '../../components/PageTop.tsx'
 import SharedTabs from '../../components/SharedTabs.tsx'
+import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
 
 import { RegionList } from '../../components/ListPage/RegionList.tsx'
 import { appRoutes } from '../../utils/routes.ts'
 import { useElectionConfig, useRegions, useRegion } from '../../hooks/queries.ts'
+import { getRegionLabel } from '../../utils/region.ts'
 import { formatDate } from '../../utils/date.ts'
 
 export function CSBMunicipalityListPage() {
 
     const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>()
     const { regionSlug } = useParams<{ regionSlug: string }>()
-    
-    const { data: electionConfig, isLoading, isError, refetch: refetch } = useElectionConfig(electionConfigSlug)
-    const { data: region } = useRegion(electionConfigSlug, regionSlug)
-    
-    const { data: regions } = useRegions(electionConfigSlug, regionSlug, 'GEMEENTE', true)
-    
-    const electionLabel = electionConfig?.label ?? 'Verkiezing laden…'
+
+    const {
+        data: electionConfig,
+        isLoading: isElectionLoading,
+        isError: isElectionError,
+        refetch: refetchElection,
+    } = useElectionConfig(electionConfigSlug)
+    const {
+        data: region,
+        isLoading: isRegionLoading,
+        isError: isRegionError,
+        refetch: refetchRegion,
+    } = useRegion(electionConfigSlug, regionSlug)
+    const {
+        data: regions,
+        isLoading: isRegionsLoading,
+        isError: isRegionsError,
+        refetch: refetchRegions,
+    } = useRegions(electionConfigSlug, regionSlug, 'GEMEENTE', true)
+
+    const regionLabel = getRegionLabel(electionConfig?.csb_type) || 'Regio'
+
+    const isLoading = isElectionLoading || isRegionLoading || isRegionsLoading
+    const isError =
+        isElectionError ||
+        isRegionError ||
+        isRegionsError ||
+        !electionConfig ||
+        !region ||
+        !regions
 
     const csbResultsRoute = appRoutes.csbResults(electionConfigSlug ?? '', regionSlug ?? '')
     const csbMunicipalityListRoute = appRoutes.csbMunicipalityList(electionConfigSlug ?? '', regionSlug ?? '')
 
-
-    if (isLoading) {
+    if (isLoading || isError) {
         return (
-            <Layout title={electionLabel} description="Telresultaten laden…">
-                <p>Verkiezing laden…</p>
-            </Layout>
-        )
-    }
-
-    if (isError || !electionConfig) {
-        return (
-            <Layout title="Verkiezing niet gevonden" description="Kan verkiezing niet laden.">
-                <p>Kan verkiezing niet laden.</p>
-                <button type="button" onClick={() => refetch()}>
-                    Opnieuw proberen
-                </button>
-            </Layout>
+            <PageQueryBoundary
+                isLoading={isLoading}
+                isError={isError}
+                onRetry={() => {
+                    void refetchElection()
+                    void refetchRegion()
+                    void refetchRegions()
+                }}
+                entityLabel={regionLabel}
+            />
         )
     }
 
@@ -49,13 +69,12 @@ export function CSBMunicipalityListPage() {
             description={`Bekijk de telresultaten per gemeente van de ${electionConfig.label}.`}
         >
             <PageTop
-                title={region?.region_name ?? ""}
-                subtitle={region ? `Geplaatst op: ${formatDate(region.results_available_at)}` : ''}
+                title={region.region_name}
+                subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },
-                    { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig?.label ?? 'Verkiezing laden…' },
-                    { href: appRoutes.csbResults(electionConfigSlug ?? '', regionSlug ?? ''), label: region?.region_name ?? "" },
-
+                    { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig.label },
+                    { href: appRoutes.csbResults(electionConfigSlug ?? '', regionSlug ?? ''), label: region.region_name },
                 ]}
                 tabs={
                     <SharedTabs
