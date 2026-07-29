@@ -90,9 +90,15 @@ export type PartyVoteMatrixRow = {
   votes: Record<string, number | null>
 }
 
+export type PartyVoteMatrixTotals = {
+  total: number
+  votes: Record<string, number | null>
+}
+
 export type PartyVoteMatrix = {
   party: Party
   csb: Pick<Region, 'region_name' | 'slug'>
   columns: PartyVoteMatrixColumn[]
   rows: PartyVoteMatrixRow[]
+  totals: PartyVoteMatrixTotals
 }

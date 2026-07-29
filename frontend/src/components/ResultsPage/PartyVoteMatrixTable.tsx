@@ -47,6 +47,17 @@ export default function PartyVoteMatrixTable({ matrix }: Props) {
               ))}
             </tr>
           ))}
+          <tr className="party-vote-matrix-totals-row">
+            <td className="party-vote-matrix-candidate">
+              <span className="bold">Totaal</span>
+            </td>
+            <td className="party-vote-matrix-total bold">{formatVotes(matrix.totals.total)}</td>
+            {matrix.columns.map((column) => (
+              <td key={column.slug} className="party-vote-matrix-votes">
+                {formatVotes(matrix.totals.votes[column.slug])}
+              </td>
+            ))}
+          </tr>
         </tbody>
       </table>
     </div>

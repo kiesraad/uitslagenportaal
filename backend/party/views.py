@@ -52,11 +52,17 @@ class PartyResultMatrixView(APIView):
         vote_counts = VoteCount.objects.filter(
             party=party,
             region__in=gemeentes,
-            result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
             eml_type="510d",
         )
         votes_by_candidate_and_region = {
-            (vote_count.candidate_id, vote_count.region_id): vote_count.valid_votes for vote_count in vote_counts
+            (vote_count.candidate_id, vote_count.region_id): vote_count.valid_votes
+            for vote_count in vote_counts
+            if vote_count.result_level == VoteCount.RESULT_LEVEL_CANDIDATE
+        }
+        party_votes_by_region = {
+            vote_count.region_id: vote_count.valid_votes
+            for vote_count in vote_counts
+            if vote_count.result_level == VoteCount.RESULT_LEVEL_PARTY
         }
 
         rows = []
@@ -71,12 +77,21 @@ class PartyResultMatrixView(APIView):
                 }
             )
 
+        totals_by_gemeente = {
+            gemeente.slug: party_votes_by_region.get(gemeente.id) for gemeente in gemeentes
+        }
+        total_votes = sum(votes for votes in totals_by_gemeente.values() if votes is not None)
+
         return Response(
             {
                 "party": {"registered_name": party.registered_name, "slug": party.slug},
                 "csb": {"region_name": csb.region_name, "slug": csb.slug},
                 "columns": [{"slug": gemeente.slug, "region_name": gemeente.region_name} for gemeente in gemeentes],
                 "rows": rows,
+                "totals": {
+                    "total": total_votes,
+                    "votes": totals_by_gemeente,
+                },
             }
         )
 

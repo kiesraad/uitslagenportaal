@@ -112,6 +112,22 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
         result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
         eml_type="510d",
     )
+    VoteCount.objects.create(
+        contest=contest,
+        region=gemeente_a,
+        party=party,
+        valid_votes=11,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type="510d",
+    )
+    VoteCount.objects.create(
+        contest=contest,
+        region=gemeente_b,
+        party=party,
+        valid_votes=55,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type="510d",
+    )
 
     response = PartyResultMatrixView.as_view()(
         _matrix_request(election.slug, party.slug, csb.slug)
@@ -126,3 +142,10 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
     assert response.data["rows"][0]["votes"][gemeente_b.slug] == 22
     assert response.data["rows"][1]["votes"][gemeente_a.slug] is None
     assert response.data["rows"][1]["votes"][gemeente_b.slug] == 33
+    assert response.data["totals"] == {
+        "total": 66,
+        "votes": {
+            gemeente_a.slug: 11,
+            gemeente_b.slug: 55,
+        },
+    }
