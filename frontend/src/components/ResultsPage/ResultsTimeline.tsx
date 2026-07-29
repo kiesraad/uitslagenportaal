@@ -28,7 +28,7 @@ export default function ResultsTimeline({ title, description, entries }: Props )
     }
 
     return (
-        <div>
+        <div id='results-timeline'>
             <h2 className="result-how-title">{title}</h2>
             {description ? <p className={'mb-4'}>{description}</p> : null}
             <p className="result-order-hint">
