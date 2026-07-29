@@ -13,12 +13,12 @@ from region.models import Region
 
 class PartyResultMatrixView(APIView):
     def get(self, request):
-        election_config_slug = request.query_params.get("election_config")
+        election_slug = request.query_params.get("election")
         party_slug = request.query_params.get("party")
         csb_slug = request.query_params.get("csb")
 
-        if not election_config_slug:
-            raise ValidationError({"election_config": "This query parameter is required."})
+        if not election_slug:
+            raise ValidationError({"election": "This query parameter is required."})
         if not party_slug:
             raise ValidationError({"party": "This query parameter is required."})
         if not csb_slug:
@@ -27,18 +27,18 @@ class PartyResultMatrixView(APIView):
         try:
             party = Party.objects.get(
                 slug=party_slug,
-                election__election_config__slug=election_config_slug,
+                election__slug=election_slug,
             )
         except Party.DoesNotExist:
             raise ValidationError({"party": "Party not found for this election."})
 
-        csb = Region.objects.get(
-            slug=csb_slug,
-            election__election_config__slug=election_config_slug,
-        )
-
-        if party.election_id != csb.election_id:
-            raise ValidationError({"detail": "Party and waterschap belong to different elections."})
+        try:
+            csb = Region.objects.get(
+                slug=csb_slug,
+                election__slug=election_slug,
+            )
+        except Region.DoesNotExist:
+            raise ValidationError({"csb": "CSB not found for this election."})
 
         gemeentes = list(
             Region.objects.filter(

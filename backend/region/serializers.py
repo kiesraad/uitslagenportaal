@@ -33,6 +33,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     documents = ElectionDocumentSerializer(many=True, read_only=True)
     csb_name = serializers.CharField(source="parent.parent.region_name", default=None, read_only=True)
     csb_slug = serializers.SlugField(source="parent.parent.slug", default=None, read_only=True)
+    election_slug = serializers.CharField(source="election.slug", read_only=True)
 
     def get_vote_counts(self, obj):
         vote_counts = obj.vote_counts.filter()
@@ -54,6 +55,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "results_available_at",
             "csb_name",
             "csb_slug",
+            "election_slug",
         )
 
     def _effective_variant(self, region) -> str:

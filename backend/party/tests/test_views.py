@@ -11,11 +11,11 @@ from region.tests.factories import RegionFactory
 factory = APIRequestFactory()
 
 
-def _matrix_request(election_config_slug, party_slug, csb_slug):
+def _matrix_request(election_slug, party_slug, csb_slug):
     return factory.get(
         "/api/party-result-matrix/",
         {
-            "election_config": election_config_slug,
+            "election": election_slug,
             "party": party_slug,
             "csb": csb_slug,
         },
@@ -35,7 +35,7 @@ def test_party_result_matrix_returns_400_for_unknown_party():
     csb = RegionFactory(election=election, region_category=RegionCategory.WATERSCHAP)
 
     response = PartyResultMatrixView.as_view()(
-        _matrix_request(election.election_config.slug, "unknown-party", csb.slug)
+        _matrix_request(election.slug, "unknown-party", csb.slug)
     )
 
     assert response.status_code == 400
@@ -43,19 +43,20 @@ def test_party_result_matrix_returns_400_for_unknown_party():
 
 
 @pytest.mark.django_db
-def test_party_result_matrix_returns_400_when_party_and_csb_belong_to_different_elections():
+def test_party_result_matrix_selects_party_for_specific_election():
     election_config = ElectionFactory().election_config
-    party_election = ElectionFactory(election_config=election_config)
-    csb_election = ElectionFactory(election_config=election_config)
-    party = PartyFactory(election=party_election)
-    csb = RegionFactory(election=csb_election, region_category=RegionCategory.WATERSCHAP)
+    election_a = ElectionFactory(election_config=election_config, subcategory="WSA")
+    election_b = ElectionFactory(election_config=election_config, subcategory="WSB")
+    party_a = PartyFactory(election=election_a, registered_name="Same List")
+    PartyFactory(election=election_b, registered_name="Same List")
+    csb = RegionFactory(election=election_a, region_category=RegionCategory.WATERSCHAP)
 
     response = PartyResultMatrixView.as_view()(
-        _matrix_request(election_config.slug, party.slug, csb.slug)
+        _matrix_request(election_a.slug, party_a.slug, csb.slug)
     )
 
-    assert response.status_code == 400
-    assert response.data["detail"] == "Party and waterschap belong to different elections."
+    assert response.status_code == 200
+    assert response.data["party"]["slug"] == party_a.slug
 
 
 @pytest.mark.django_db
@@ -113,7 +114,7 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
     )
 
     response = PartyResultMatrixView.as_view()(
-        _matrix_request(election.election_config.slug, party.slug, csb.slug)
+        _matrix_request(election.slug, party.slug, csb.slug)
     )
 
     assert response.status_code == 200
