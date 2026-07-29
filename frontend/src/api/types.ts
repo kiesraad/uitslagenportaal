@@ -49,6 +49,7 @@ export type Region = {
   results_available_at: string
   csb_name?: string | null
   csb_slug?: string | null
+  election_slug?: string
   station_number?: number | null
 }
 
@@ -78,3 +79,20 @@ export type VoteCount = {
 }
 
 export type VoteCounts = VoteCount[]
+
+export type PartyVoteMatrixColumn = {
+  slug: string
+  region_name: string
+}
+
+export type PartyVoteMatrixRow = {
+  candidate: Candidate
+  votes: Record<string, number | null>
+}
+
+export type PartyVoteMatrix = {
+  party: Party
+  csb: Pick<Region, 'region_name' | 'slug'>
+  columns: PartyVoteMatrixColumn[]
+  rows: PartyVoteMatrixRow[]
+}

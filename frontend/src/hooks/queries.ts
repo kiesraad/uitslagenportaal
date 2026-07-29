@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { getElectionConfigBySlug, getElectionConfigs, getRegion, getRegions } from '../api/endpoints'
-import type { Region, RegionCategory } from '../api/types'
+import { getElectionConfigBySlug, getElectionConfigs, getPartyVoteMatrix, getRegion, getRegions } from '../api/endpoints'
+import type { PartyVoteMatrix, Region, RegionCategory } from '../api/types'
 
 export function useElectionConfig(slug: string | undefined) {
   return useQuery({
@@ -53,4 +53,16 @@ export function useRegions(
     queryFn: () => getRegions(electionConfigSlug!, skipNode!, parentRegionSlug, regionCategory, csbSlug),
     enabled,
   });
+}
+
+export function usePartyVoteMatrix(
+  electionSlug: string | undefined,
+  csbSlug: string | undefined,
+  partySlug: string | undefined,
+) {
+  return useQuery<PartyVoteMatrix>({
+    queryKey: ['party-vote-matrix', electionSlug, csbSlug, partySlug],
+    queryFn: () => getPartyVoteMatrix(electionSlug!, partySlug!, csbSlug!),
+    enabled: Boolean(electionSlug) && Boolean(csbSlug) && Boolean(partySlug),
+  })
 }
