@@ -94,7 +94,7 @@ export function CSBPartyResultsPage() {
             title="Resultaten"
         >
             <PageTop
-                title={`Telresultaten ${regionLabel}\n ${partyName}`}
+                title={`Telresultaten ${regionLabel} ${region.region_name}\n ${partyName}`}
                 subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },

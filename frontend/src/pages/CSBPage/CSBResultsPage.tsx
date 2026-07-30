@@ -99,7 +99,7 @@ export function CSBResultsPage() {
             title="Resultaten"
         >
             <PageTop
-                title={region.region_name}
+                title={`${regionLabel} - ${region.region_name}`}
                 subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },
