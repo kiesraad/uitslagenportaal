@@ -34,9 +34,7 @@ def test_party_result_matrix_returns_400_for_unknown_party():
     election = ElectionFactory()
     csb = RegionFactory(election=election, region_category=RegionCategory.WATERSCHAP)
 
-    response = PartyResultMatrixView.as_view()(
-        _matrix_request(election.slug, "unknown-party", csb.slug)
-    )
+    response = PartyResultMatrixView.as_view()(_matrix_request(election.slug, "unknown-party", csb.slug))
 
     assert response.status_code == 400
     assert response.data["party"] == "Party not found for this election."
@@ -51,9 +49,7 @@ def test_party_result_matrix_selects_party_for_specific_election():
     PartyFactory(election=election_b, registered_name="Same List")
     csb = RegionFactory(election=election_a, region_category=RegionCategory.WATERSCHAP)
 
-    response = PartyResultMatrixView.as_view()(
-        _matrix_request(election_a.slug, party_a.slug, csb.slug)
-    )
+    response = PartyResultMatrixView.as_view()(_matrix_request(election_a.slug, party_a.slug, csb.slug))
 
     assert response.status_code == 200
     assert response.data["party"]["slug"] == party_a.slug
@@ -155,9 +151,7 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
         eml_type="510d",
     )
 
-    response = PartyResultMatrixView.as_view()(
-        _matrix_request(election.slug, party.slug, csb.slug)
-    )
+    response = PartyResultMatrixView.as_view()(_matrix_request(election.slug, party.slug, csb.slug))
 
     assert response.status_code == 200
     assert response.data["party"] == {"registered_name": party.registered_name, "slug": party.slug}

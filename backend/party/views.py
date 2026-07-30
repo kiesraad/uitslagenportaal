@@ -86,9 +86,7 @@ class PartyResultMatrixView(APIView):
                 "rows": rows,
                 "totals": {
                     "total": party_votes_by_region.get(csb.id),
-                    "votes": {
-                        gemeente.slug: party_votes_by_region.get(gemeente.id) for gemeente in gemeentes
-                    },
+                    "votes": {gemeente.slug: party_votes_by_region.get(gemeente.id) for gemeente in gemeentes},
                 },
             }
         )
