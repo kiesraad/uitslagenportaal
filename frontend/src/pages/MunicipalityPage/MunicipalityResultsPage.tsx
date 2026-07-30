@@ -67,9 +67,9 @@ export function MunicipalityResultsPage() {
     <>
       <PageIndex
         links={[
-          { label: <><span className="bold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
-          { label: <><span className="bold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>, url: '#results-timeline' },
-          { label: <span className="bold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
+          { label: <><span className="semibold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
+          { label: <><span className="semibold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>, url: '#results-timeline' },
+          { label: <span className="semibold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
         ]}
       />
       <section id="telresultaten">
