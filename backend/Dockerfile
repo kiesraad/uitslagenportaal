@@ -6,10 +6,12 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 
+ENV PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
-COPY pyproject.toml README.md ./
-RUN uv lock && uv pip install --system -e . --group dev
+COPY pyproject.toml uv.lock ./
+RUN uv pip install --system -e . --group dev
 
 COPY . .
 

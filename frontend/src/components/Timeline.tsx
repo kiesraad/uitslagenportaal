@@ -52,7 +52,7 @@ export default function Timeline({ entries }: Props) {
                                     <a href={file.url} key={i} className={'tl-files-item'}>
                                         <FontAwesomeIcon icon={faFile} />
                                         <div className={'tl-files-content'}>
-                                            <span className={'tl-files-content-title mb-1'}><span className={'bold'}>{file.name}</span> ({file.type}, {file.size})</span>
+                                            <span className={'tl-files-content-title mb-1'}><span className="font-semibold">{file.name}</span> ({file.type}, {file.size})</span>
                                             <span className={'tl-files-content-desc'}>{file.description}</span>
                                         </div>
                                     </a>

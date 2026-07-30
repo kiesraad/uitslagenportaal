@@ -51,7 +51,7 @@ export default function VotesResume({ votes, type }: Props & { type: VotesResume
             {type === 'admittedVoters' && <h4 className="mb-2">Toegelaten kiezers</h4>}
             <div className={'admitted-voters-box'}>
                 {boxVotes.map((vote) => (
-                    <div key={vote.name} className={`admitted-voters-item ${vote.bold ? 'bold' : ''}`}>
+                    <div key={vote.name} className={`admitted-voters-item ${vote.bold ? 'font-semibold' : ''}`}>
                         <span>{vote.name}</span>
                         <span>{vote.count.toLocaleString('nl-NL')}</span>
                     </div>
