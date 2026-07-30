@@ -12,8 +12,7 @@ def populate_election_slugs(apps, schema_editor):
     used_slugs = set()
 
     for election in Election.objects.order_by("id"):
-        config_identifier = config_identifiers[election.election_config_id]
-        base_slug = name_to_slug(f"{config_identifier}-{election.subcategory}")[:49]
+        base_slug = name_to_slug(election.name)[:49]
         slug = base_slug
         suffix = 2
         while slug in used_slugs:
