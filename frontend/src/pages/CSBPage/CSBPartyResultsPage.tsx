@@ -1,7 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout.tsx'
 import PageTop from '../../components/PageTop.tsx'
-import SharedTabs from '../../components/SharedTabs.tsx'
 import ResultsNotPublished from '../../components/ResultsPage/ResultsNotPublished.tsx'
 import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline.tsx'
 import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
@@ -21,8 +20,6 @@ export function CSBPartyResultsPage() {
         partySlug: partySlugParam,
     } = useParams<{ electionConfigSlug: string; regionSlug: string, partySlug: string }>()
     const regionSlug = decodeURIComponent(regionSlugParam ?? '')
-    const csbResultsRoute = appRoutes.csbResults(electionConfigSlug ?? '', regionSlug)
-    const csbMunicipalityListRoute = appRoutes.csbMunicipalityList(electionConfigSlug ?? '', regionSlug)
     const partySlug = decodeURIComponent(partySlugParam ?? '')
 
     const {
