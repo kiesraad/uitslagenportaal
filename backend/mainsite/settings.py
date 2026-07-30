@@ -116,3 +116,38 @@ CORS_ALLOWED_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
+
+
+# Logging
+# https://docs.djangoproject.com/en/6.0/topics/logging/
+
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "DEBUG" if DEBUG else "INFO")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "{asctime} {levelname:8} {name}: {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "stdout": {
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+            "formatter": "simple",
+        },
+    },
+    # Handler on the root logger, so every app logger is covered without
+    # having to list them here.
+    "root": {
+        "handlers": ["stdout"],
+        "level": LOG_LEVEL,
+    },
+    "loggers": {
+        # Keep Django itself at INFO even when our own code runs at DEBUG,
+        # otherwise every SQL query gets logged.
+        "django": {"level": "INFO"},
+    },
+}
