@@ -1,11 +1,13 @@
-from datetime import datetime
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
+import logging
+from abc import ABC, abstractmethod
 from django.conf import settings
 from django.utils import timezone
-from pyeml_bindings import Eml110a, Eml230, Eml510
+from pyeml_bindings import Eml110a, Eml230, Eml510, ElectionIdentifierStructureKr
 from tqdm import tqdm
+from typing import TypeVar, Generic
 from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.formats.dataclass.parsers.config import ParserConfig
 
@@ -21,33 +23,36 @@ from mainsite.models import RegionCategory
 from party.models import Candidate, Party
 from region.models import Region
 
+T = TypeVar("T")
 
-class EMLBaseImporter:
-    def __init__(self, eml, file_path):
+
+class EMLBaseImporter(Generic[T], ABC):
+    eml_type = None
+
+    def __init__(self, eml: T, file_path):
         self.eml = eml
         self.file_path = file_path
+
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.election_config = None
         self.linked_region = None
         self._parse_election()
 
-    def _parse_election(self) -> Election:
-        election_identifier = self._get_election_ientifier_data().id.split("_")[0]
+    @abstractmethod
+    def _get_election_identifier_data(self) -> ElectionIdentifierStructureKr: ...
+
+    @abstractmethod
+    def _parse_data(self): ...
+
+    def _parse_election(self) -> None:
+        election_identifier = self._get_election_identifier_data().id.split("_")[0]
         self.election_config = ElectionConfig.objects.get(identifier=election_identifier)
-        election_identifier_object = self._get_election_ientifier_data()
-        date_str = str(election_identifier_object.election_date[0])
-        # election_subcategory can sometimes be a list
-        try:
-            election_subcategory = election_identifier_object.election_subcategory.value
-        except AttributeError:
-            assert len(election_identifier_object.election_subcategory) == 1, (
-                "More than one election_subcategory, cannot parse"
-            )
-            election_subcategory = election_identifier_object.election_subcategory[0].value
+        election_identifier_object = self._get_election_identifier_data()
         election, _ = Election.objects.get_or_create(
             election_config=self.election_config,
             name=election_identifier_object.election_name,
-            subcategory=election_subcategory,
-            date=timezone.make_aware(datetime.strptime(date_str, "%Y-%m-%d")),
+            subcategory=election_identifier_object.election_subcategory[0].value.value,
+            date=election_identifier_object.election_date[0].value.to_date(),
         )
         self.election = election
 
@@ -55,7 +60,7 @@ class EMLBaseImporter:
         try:
             self._parse_data()
         except ElectionConfig.DoesNotExist:
-            print("Election is not configured, skipping 110a data import")
+            self.logger.warning("Election is not configured, skipping 110a data import")
 
     def _parse_party_candidate_votecounts(
         self, contest, region, items, party_by_name, candidate_by_key, vote_counts
@@ -137,16 +142,16 @@ class EMLBaseImporter:
         )
 
 
-class EML110aImporter(EMLBaseImporter):
+class EML110aImporter(EMLBaseImporter[Eml110a]):
     """Verkiezingsdefinitie"""
 
-    def _get_election_ientifier_data(self):
+    def _get_election_identifier_data(self):
         return self.eml.election_event.election.election_identifier
 
     def _parse_data(self):
         self._parse_regions()
         self._parse_registered_parties()
-        print("Successfully imported data for Election")
+        self.logger.info("Successfully imported data for Election")
 
     def _parse_regions(self) -> None:
         region_nodes = self.eml.election_event.election.election_tree.region
@@ -161,24 +166,24 @@ class EML110aImporter(EMLBaseImporter):
             Region.objects.update_or_create(
                 election=self.election,
                 parent=parent_region,
-                region_name=node.region_name,
+                region_name=node.region_name.value,
                 region_category=node.region_category.value,
                 region_number=node.region_number,
             )
 
-    def _parse_registered_parties(self) -> list[Party]:
+    def _parse_registered_parties(self) -> None:
         party_nodes = self.eml.election_event.election.registered_parties.registered_party
         for node in party_nodes:
             Party.objects.get_or_create(
                 election=self.election,
-                registered_name=node.registered_appellation,
+                registered_name=node.registered_appellation.value,
             )
 
 
-class EML230bImporter(EMLBaseImporter):
+class EML230bImporter(EMLBaseImporter[Eml230]):
     """Kandidatenlijst"""
 
-    def _get_election_ientifier_data(self):
+    def _get_election_identifier_data(self):
         return self.eml.candidate_list.election.election_identifier
 
     def _parse_data(self):
@@ -212,12 +217,12 @@ class EML230bImporter(EMLBaseImporter):
                 )
 
 
-class EML510bImporter(EMLBaseImporter):
+class EML510bImporter(EMLBaseImporter[Eml510]):
     """Telling"""
 
     eml_type = "510b"
 
-    def _get_election_ientifier_data(self):
+    def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
 
     def _parse_data(self) -> None:
@@ -297,16 +302,16 @@ class EML510bImporter(EMLBaseImporter):
             VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=4000)
 
 
-class EML510dImporter(EMLBaseImporter):
+class EML510dImporter(EMLBaseImporter[Eml510]):
     """Totaaltelling."""
 
     eml_type = "510d"
 
-    def _get_election_ientifier_data(self):
+    def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
 
     def _parse_data(self) -> None:
-        election_domain = self._get_election_ientifier_data().election_domain
+        election_domain = self._get_election_identifier_data().election_domain
         if not isinstance(election_domain, list):
             election_domain = [election_domain]
         assert len(election_domain) == 1, "More than one election domain, cannot parse"
@@ -373,6 +378,8 @@ class EML510dImporter(EMLBaseImporter):
 class ElectionImporter:
     def __init__(self, folder: Path):
         self.folder = folder
+
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._region_map: dict[tuple[str, str], Region] = {}
         self._parser = XmlParser(ParserConfig(fail_on_unknown_properties=True))
 
@@ -391,6 +398,8 @@ class ElectionImporter:
 
     def _import_files(self, parser_type: str, xml_files: list[Path]) -> None:
         binding, importer_cls = self._DOCUMENT_TYPES[parser_type]
+        files_str = ", ".join([str(path) for path in xml_files])
+        self.logger.info(f"Importing {parser_type} files {files_str} using {importer_cls.__name__}...")
         for xml_file_path in tqdm(
             xml_files,
             desc="Processing XML",
