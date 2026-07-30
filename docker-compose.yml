@@ -50,7 +50,6 @@ services:
       VITE_HMR_CLIENT_PORT: "8080"
     volumes:
       - ./frontend:/app
-      - /app/node_modules
     depends_on:
       - backend
 

@@ -2,6 +2,7 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from "@tailwindcss/vite";
 
 // Set when running behind the reverse proxy (see docker-compose.yml) so the
 // HMR websocket reconnects through the proxy's published port rather than
@@ -12,7 +13,10 @@ const hmrClientPort = process.env.VITE_HMR_CLIENT_PORT
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+      react(),
+      tailwindcss(),
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
