@@ -102,22 +102,6 @@ export function CSBPartyResultsPage() {
                     { href: appRoutes.csbResults(electionConfigSlug ?? '', regionSlug), label: region.region_name },
                     { href: appRoutes.csbPartyResults(electionConfigSlug ?? '', regionSlug, partySlug), label: partyName },
                 ]}
-                tabs={
-                    <SharedTabs
-                        tabs={[
-                            {
-                                label: 'Heel waterschap',
-                                value: csbResultsRoute,
-                                activePatterns: [csbResultsRoute],
-                            },
-                            {
-                                label: 'Per gemeente',
-                                value: csbMunicipalityListRoute,
-                                activePatterns: [csbMunicipalityListRoute],
-                            },
-                        ]}
-                    />
-                }
             />
             <div className="page-main page-main-two-columns">
                 <div className="page-space-3 party-vote-matrix-page">
