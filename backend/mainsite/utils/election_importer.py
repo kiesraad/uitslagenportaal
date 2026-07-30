@@ -1,13 +1,12 @@
+import logging
+from abc import ABC, abstractmethod
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-import logging
-from abc import ABC, abstractmethod
 from django.conf import settings
 from django.utils import timezone
-from pyeml_bindings import Eml110a, Eml230, Eml510, ElectionIdentifierStructureKr
+from pyeml_bindings import ElectionIdentifierStructureKr, Eml110a, Eml230, Eml510
 from tqdm import tqdm
-from typing import TypeVar, Generic
 from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.formats.dataclass.parsers.config import ParserConfig
 
@@ -23,10 +22,8 @@ from mainsite.models import RegionCategory
 from party.models import Candidate, Party
 from region.models import Region
 
-T = TypeVar("T")
 
-
-class EMLBaseImporter(Generic[T], ABC):
+class EMLBaseImporter[T](ABC):
     eml_type = None
 
     def __init__(self, eml: T, file_path):
@@ -67,7 +64,7 @@ class EMLBaseImporter(Generic[T], ABC):
     ) -> None:
         current_party = None
         for votes_item in items:
-            if votes_item.affiliation_identifier:
+            if votes_item.affiliation_identifier and votes_item.affiliation_identifier.registered_name:
                 # get party from pre-saved data
                 current_party = party_by_name[votes_item.affiliation_identifier.registered_name]
                 vote_counts.append(
@@ -194,10 +191,14 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             election=self.election,
         )
         for affiliation in contest_data.affiliation:
-            party = Party.objects.get(
-                election=self.election,
-                registered_name=affiliation.affiliation_identifier.registered_name,
-            )
+            try:
+                party = Party.objects.get(
+                    election=self.election,
+                    registered_name=affiliation.affiliation_identifier.registered_name,
+                )
+            except Party.DoesNotExist:
+                continue
+
             for candidate in affiliation.candidate:
                 first_name = None
                 if candidate.candidate_full_name.person_name.first_name:
