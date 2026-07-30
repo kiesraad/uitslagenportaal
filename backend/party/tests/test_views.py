@@ -114,6 +114,24 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
     )
     VoteCount.objects.create(
         contest=contest,
+        region=csb,
+        party=party,
+        candidate=candidate_one,
+        valid_votes=33,
+        result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
+        eml_type="510d",
+    )
+    VoteCount.objects.create(
+        contest=contest,
+        region=csb,
+        party=party,
+        candidate=candidate_two,
+        valid_votes=33,
+        result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
+        eml_type="510d",
+    )
+    VoteCount.objects.create(
+        contest=contest,
         region=gemeente_a,
         party=party,
         valid_votes=11,
@@ -128,6 +146,14 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
         result_level=VoteCount.RESULT_LEVEL_PARTY,
         eml_type="510d",
     )
+    VoteCount.objects.create(
+        contest=contest,
+        region=csb,
+        party=party,
+        valid_votes=66,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type="510d",
+    )
 
     response = PartyResultMatrixView.as_view()(
         _matrix_request(election.slug, party.slug, csb.slug)
@@ -138,8 +164,10 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
     assert response.data["csb"] == {"region_name": csb.region_name, "slug": csb.slug}
     assert [column["region_name"] for column in response.data["columns"]] == ["Alpha", "Bravo"]
     assert [row["candidate"]["last_name"] for row in response.data["rows"]] == ["Jansen", "Bakker"]
+    assert response.data["rows"][0]["total"] == 33
     assert response.data["rows"][0]["votes"][gemeente_a.slug] == 11
     assert response.data["rows"][0]["votes"][gemeente_b.slug] == 22
+    assert response.data["rows"][1]["total"] == 33
     assert response.data["rows"][1]["votes"][gemeente_a.slug] is None
     assert response.data["rows"][1]["votes"][gemeente_b.slug] == 33
     assert response.data["totals"] == {

@@ -13,10 +13,6 @@ function formatVotes(value: number | null | undefined): string {
   return value.toLocaleString('nl-NL')
 }
 
-function rowTotal(votes: Record<string, number | null>): number {
-  return Object.values(votes).reduce<number>((sum, value) => sum + (value ?? 0), 0)
-}
-
 export default function PartyVoteMatrixTable({ matrix }: Props) {
   return (
     <div className="party-vote-matrix-scroll">
@@ -33,13 +29,13 @@ export default function PartyVoteMatrixTable({ matrix }: Props) {
           </tr>
         </thead>
         <tbody>
-          {matrix.rows.map(({ candidate, votes }) => (
+          {matrix.rows.map(({ candidate, total, votes }) => (
             <tr key={candidate.position}>
               <td className="party-vote-matrix-candidate">
                 <span className="party-vote-matrix-position">{candidate.position}</span>
                 <span>{formatCandidateName(candidate)}</span>
               </td>
-              <td className="party-vote-matrix-total bold">{formatVotes(rowTotal(votes))}</td>
+              <td className="party-vote-matrix-total bold">{formatVotes(total)}</td>
               {matrix.columns.map((column) => (
                 <td key={column.slug} className="party-vote-matrix-votes">
                   {formatVotes(votes[column.slug])}

@@ -87,11 +87,12 @@ export type PartyVoteMatrixColumn = {
 
 export type PartyVoteMatrixRow = {
   candidate: Candidate
+  total: number | null
   votes: Record<string, number | null>
 }
 
 export type PartyVoteMatrixTotals = {
-  total: number
+  total: number | null
   votes: Record<string, number | null>
 }
 
