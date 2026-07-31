@@ -32,8 +32,8 @@ export default function ResultsTimeline({ description, entries }: Props ) {
             {description ? <p className={'mb-4'}>{description}</p> : null}
             <p className="result-order-hint">
                 <span>
-                    <FontAwesomeIcon icon={faArrowUp} color={direction === 'asc' ? 'Black' : 'Grey'} />
-                    <FontAwesomeIcon icon={faArrowDown} color={direction === 'desc' ? 'Black' : 'Grey'} />
+                    <FontAwesomeIcon icon={faArrowUp} color={direction === 'desc' ? 'Black' : 'Grey'} />
+                    <FontAwesomeIcon icon={faArrowDown} color={direction === 'asc' ? 'Black' : 'Grey'} />
                 </span>
                 <a href="#" onClick={toggleDirection}>
                     {direction === 'desc' ? 'Laatste stap bovenaan' : 'Eerste stap bovenaan'}
