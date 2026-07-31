@@ -191,6 +191,7 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             election=self.election,
         )
         for affiliation in contest_data.affiliation:
+            # TODO: investigate candidates without parties
             try:
                 party = Party.objects.get(
                     election=self.election,

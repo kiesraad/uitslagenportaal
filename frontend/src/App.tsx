@@ -22,11 +22,6 @@ function App() {
         <Route path="/:electionConfigSlug/csb/:regionSlug/resultaten" element={<CSBResultsPage />} />
         <Route path="/:electionConfigSlug/csb/:regionSlug/resultaten/:partySlug" element={<CSBPartyResultsPage />} />
         <Route path="/:electionConfigSlug/gsb" element={<ElectionConfigMunicipalityListPage />} />
-        <Route path="/:electionConfigSlug/gsb/:regionSlug" element={<MunicipalityPollingstationListPage />} />
-        <Route path="/:electionConfigSlug/gsb/:regionSlug/resultaten" element={<MunicipalityResultsPage />} />
-        <Route path="/:electionConfigSlug/gsb/:regionSlug/resultaten/:partySlug" element={<MunicipalityPartyResultsPage />} />
-        <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/:pollingStationSlug" element={<PollingStationResultsPage />} />
-        <Route path="/:electionConfigSlug/gsb/:parentRegionSlug/:pollingStationSlug/:partySlug" element={<PollingStationPartyResultsPage />} />
         <Route path="/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug" element={<MunicipalityPollingstationListPage />} />
         <Route path="/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/resultaten" element={<MunicipalityResultsPage />} />
         <Route path="/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/resultaten/:partySlug" element={<MunicipalityPartyResultsPage />} />
