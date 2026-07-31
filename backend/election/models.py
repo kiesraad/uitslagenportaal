@@ -1,3 +1,6 @@
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from django.db import models
 
 from mainsite.models import BaseModel
@@ -10,6 +13,9 @@ class ElectionConfig(BaseModel):
     label = models.CharField(max_length=255, default="")
     slug = models.SlugField(unique=True, db_index=True)
     date = models.DateTimeField()
+    issue_report_deadline = models.DateTimeField(
+        default=datetime(2026, 12, 14, 10, 0, tzinfo=ZoneInfo("Europe/Amsterdam")),
+    )
 
     @property
     def csb_type(self):

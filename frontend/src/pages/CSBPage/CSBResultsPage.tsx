@@ -131,11 +131,10 @@ export function CSBResultsPage() {
                         resultsPageContent
                     )}
                     <ResultsTimeline
-                        title="Hoe komt de uitslag tot stand?"
                         description="TBD."
                         entries={electionConfig.timeline_entries ?? []}
                     />
-                    <IssueNotice />
+                    <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
                 </div>
             </div>
         </Layout>

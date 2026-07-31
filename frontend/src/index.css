@@ -448,7 +448,7 @@ p {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--c-text);
-  margin-bottom: 34px;
+  margin-bottom: 1rem;
   line-height: 1.35;
 }
 

@@ -135,7 +135,7 @@ export default function PollingStationPartyResultsPage() {
             />
           </section>
 
-          <IssueNotice />
+          <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
         </div>
       </div>
     </Layout>

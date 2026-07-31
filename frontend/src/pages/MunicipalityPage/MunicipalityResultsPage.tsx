@@ -111,35 +111,36 @@ export function MunicipalityResultsPage() {
           { href: municipalityPollingstationListRoute, label: municipalityTitle },
         ]}
         tabs={
-          <SharedTabs
-            tabs={[
-              {
-                label: 'Resultaten per stembureau',
-                value: municipalityPollingstationListRoute,
-                activePatterns: [municipalityPollingstationListRoute],
-              },
-              {
-                label: 'Hele gemeente',
-                value: municipalityResultsRoute,
-                activePatterns: [municipalityResultsRoute],
-              },
-            ]}
-          />
+          hasResults ? (
+            <SharedTabs
+              tabs={[
+                {
+                  label: 'Resultaten per stembureau',
+                  value: municipalityPollingstationListRoute,
+                  activePatterns: [municipalityPollingstationListRoute],
+                },
+                {
+                  label: 'Hele gemeente',
+                  value: municipalityResultsRoute,
+                  activePatterns: [municipalityResultsRoute],
+                },
+              ]}
+            />
+          ) : undefined
         }
       />
       <div className="page-main page-main-two-columns">
         <div className="page-space-3">
-          {!hasResults ? (
-            <ResultsNotPublished regionLabel={region.region_name} />
-          ) : (
+          {hasResults ? (
             resultsPageContent
+          ) : (
+            <ResultsNotPublished regionLabel={region.region_name} />
           )}
           <ResultsTimeline
-            title="Hoe komt de uitslag tot stand?"
             description="TBD."
             entries={electionConfig.timeline_entries ?? []}
           />
-          <IssueNotice />
+          <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
         </div>
       </div>
     </Layout>
