@@ -121,7 +121,7 @@ export function MunicipalityPartyResultsPage() {
             />
           </section>
 
-          <IssueNotice />
+          <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
         </div>
       </div>
     </Layout>

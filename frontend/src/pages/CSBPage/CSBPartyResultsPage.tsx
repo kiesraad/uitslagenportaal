@@ -112,7 +112,7 @@ export function CSBPartyResultsPage() {
                         description="TBD."
                         entries={electionConfig.timeline_entries ?? []}
                     />
-                    <IssueNotice />
+                    <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
                 </div>
             </div>
         </Layout>

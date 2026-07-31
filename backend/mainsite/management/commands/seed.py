@@ -13,6 +13,7 @@ WS2023_ELECTION_SEED = [
             "label": "Waterschappen 2023",
             "category": "WS",
             "date": "2023-12-15T11:00:00",
+            "issue_report_deadline": "2026-12-14T10:00:00",
         },
         "timeline_entries_cso": [
             {
@@ -187,6 +188,11 @@ class Command(BaseCommand):
                 date=timezone.make_aware(
                     datetime.fromisoformat(
                         election_data["date"],
+                    )
+                ),
+                issue_report_deadline=timezone.make_aware(
+                    datetime.fromisoformat(
+                        election_data["issue_report_deadline"],
                     )
                 ),
             )
