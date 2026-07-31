@@ -229,6 +229,88 @@
     padding-left: 0.9rem;
 }
 
+.party-vote-matrix-page {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.party-vote-matrix-section {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.party-vote-matrix-scroll {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    margin-top: 1rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.party-vote-matrix {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.party-vote-matrix th,
+.party-vote-matrix td {
+    padding: 0.85rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.party-vote-matrix thead th {
+    font-weight: 700;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.party-vote-matrix-total-header {
+    border-top: 3px solid var(--c-border);
+}
+
+.party-vote-matrix-candidate-header {
+    border-right: 1px solid var(--c-border);
+}
+
+.party-vote-matrix-candidate {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    border-right: 1px solid var(--c-border);
+}
+
+.party-vote-matrix-position {
+    min-width: 1.4rem;
+    color: var(--c-muted);
+}
+
+.party-vote-matrix tbody tr:nth-child(odd) {
+    background: var(--c-box-bg);
+}
+
+.party-vote-matrix-total {
+    min-width: 5rem;
+}
+
+.party-vote-matrix-votes {
+    min-width: 4rem;
+}
+
+.party-vote-matrix-region-header {
+    min-width: 6rem;
+}
+
+.party-vote-matrix-totals-row td {
+    border-top: 1px solid var(--c-border);
+}
+
+.party-vote-matrix-totals-row .party-vote-matrix-votes {
+    font-weight: 400;
+}
+
 .report-error-page {
     display: flex;
     flex-direction: column;

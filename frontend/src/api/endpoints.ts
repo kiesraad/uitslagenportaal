@@ -1,5 +1,12 @@
 import { apiGet } from './client'
-import type { ElectionConfig, ElectionConfigsResponse, Region, RegionCategory, RegionResponse } from './types'
+import type {
+  ElectionConfig,
+  ElectionConfigsResponse,
+  PartyVoteMatrix,
+  Region,
+  RegionCategory,
+  RegionResponse,
+} from './types'
 
 export function getElectionConfigs() {
   return apiGet<ElectionConfigsResponse>('/api/election_configs/')
@@ -43,5 +50,17 @@ export function getRegion(electionConfigSlug: string, regionSlug: string, csbSlu
     url.searchParams.append('csb', csbSlug)
   }
   return apiGet<Region>(`${url.pathname}${url.search}`)
+}
+
+export function getPartyVoteMatrix(
+  electionSlug: string,
+  partySlug: string,
+  csbSlug: string,
+) {
+  const url = new URL('/api/party-result-matrix/', window.location.origin)
+  url.searchParams.append('election', electionSlug)
+  url.searchParams.append('party', partySlug)
+  url.searchParams.append('csb', csbSlug)
+  return apiGet<PartyVoteMatrix>(`${url.pathname}${url.search}`)
 }
 

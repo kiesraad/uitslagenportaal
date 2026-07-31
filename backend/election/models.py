@@ -28,11 +28,17 @@ class Election(BaseModel):
     name = models.CharField(max_length=255)
     subcategory = models.CharField(max_length=8)
     date = models.DateField()
+    slug = models.CharField(max_length=64, unique=True, db_index=True)
     election_config = models.ForeignKey(
         "election.ElectionConfig",
         on_delete=models.CASCADE,
         related_name="elections",
     )
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = name_to_slug(self.name)[:49]
+        super().save(*args, **kwargs)
 
 
 class TimelineEntryStatus(models.TextChoices):

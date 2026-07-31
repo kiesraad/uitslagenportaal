@@ -69,7 +69,7 @@ export function CSBMunicipalityListPage() {
             description={`Bekijk de telresultaten per gemeente van de ${electionConfig.label}.`}
         >
             <PageTop
-                title={region.region_name}
+                title={`${regionLabel} - ${region.region_name}`}
                 subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },
