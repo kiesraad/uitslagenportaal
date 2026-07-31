@@ -108,7 +108,6 @@ export function CSBPartyResultsPage() {
                         resultsPageContent
                     )}
                     <ResultsTimeline
-                        title="Hoe komt de uitslag tot stand?"
                         description="TBD."
                         entries={electionConfig.timeline_entries ?? []}
                     />

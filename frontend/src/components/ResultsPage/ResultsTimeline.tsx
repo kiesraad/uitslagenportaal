@@ -7,11 +7,10 @@ import { faArrowDown, faArrowUp } from "@fortawesome/free-solid-svg-icons";
 type SortDirection = 'desc' | 'asc'
 
 type Props = {
-    title: string;
     description?: string;
     entries: TimelineEntry[]
 }
-export default function ResultsTimeline({ title, description, entries }: Props ) {
+export default function ResultsTimeline({ description, entries }: Props ) {
     // 'desc' shows the most recent entry on top ("Laatste stap bovenaan").
     const [direction, setDirection] = useState<SortDirection>('desc')
 
@@ -29,7 +28,7 @@ export default function ResultsTimeline({ title, description, entries }: Props )
 
     return (
         <div id='results-timeline'>
-            <h2 className="result-how-title">{title}</h2>
+            <h2 className="result-how-title">Hoe zijn de resultaten tot stand gekomen?</h2>
             {description ? <p className={'mb-4'}>{description}</p> : null}
             <p className="result-order-hint">
                 <span>

@@ -125,7 +125,6 @@ export default function PollingStationResultsPage() {
           />
 
           <ResultsTimeline
-            title="Hoe komt de uitslag tot stand?"
             description="Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
             entries={pollingStation.timeline_entries ?? []}
           />
