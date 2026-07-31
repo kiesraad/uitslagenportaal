@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { Navigate, useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout.tsx'
 import PageTop from '../../components/PageTop.tsx'
 import SharedTabs from '../../components/SharedTabs.tsx'
@@ -59,6 +59,11 @@ export function MunicipalityPollingstationListPage() {
         entityLabel="Gemeente"
       />
     )
+  }
+
+  const hasResults = Array.isArray(region.vote_counts) && region.vote_counts.length > 0
+  if (!hasResults) {
+    return <Navigate to={municipalityResultsRoute} replace />
   }
 
   const municipalityTitle = region.region_name
