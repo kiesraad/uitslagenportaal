@@ -116,15 +116,15 @@ export function RegionList({
       </h2>)}
 
       {isPollingStationList ? (
-        <div className="mb-5 max-w-2xl">
+        <div className="mb-5 max-w-2xl grid grid-cols-[max-content_auto_max-content]">
           {sortedPollingStations.map((station) => (
             <Link
               key={`${station.id}-${station.csbSlug ?? ''}`}
               to={getRegionRoute(station)}
-              className="flex items-center gap-4 hover:no-underline! odd:bg-blue-50 hover:bg-blue-100 py-4 px-6"
+              className="items-center gap-4 hover:no-underline! odd:bg-blue-50 hover:bg-blue-100 py-4 px-6 grid col-span-3 grid-cols-subgrid"
             >
-              <span className="w-6 font-light text-gray-700">{station.stationNumber}</span>
-              <span className="grow underline">{station.label}</span>
+              <span className="font-light text-gray-700">{station.stationNumber}</span>
+              <span className="underline">{station.label}</span>
               <span className="gemeente-chevron">{'>'}</span>
             </Link>
           ))}

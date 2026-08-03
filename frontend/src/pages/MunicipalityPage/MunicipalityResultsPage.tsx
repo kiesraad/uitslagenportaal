@@ -1,35 +1,31 @@
-import { useMemo } from 'react'
-import { useParams } from 'react-router-dom'
-import { Layout } from '../../components/Layout.tsx'
-import PageTop from '../../components/PageTop.tsx'
-import SharedTabs from '../../components/SharedTabs.tsx'
+import {useMemo} from 'react'
+import {useParams} from 'react-router-dom'
 import VotesResume from '../../components/ResultsPage/VotesResume.tsx'
 import VotesList from '../../components/ResultsPage/VotesList.tsx'
 import ReportsWithResults from '../../components/ResultsPage/ReportsWithResults.tsx'
 import ResultsNotPublished from '../../components/ResultsPage/ResultsNotPublished.tsx'
 import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline'
-import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
-import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
+import {PageQueryBoundary} from '../../components/PageQueryBoundary.tsx'
+import {useRegion} from '../../hooks/queries.ts'
 import PageIndex from '../../components/PageIndex'
-import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
-import { formatDate } from '../../utils/date.ts'
-import { getCsbCrumb } from '../../utils/region.ts'
+import {useOutletContext} from "react-router";
+import type {ElectionConfig} from "@/api/types.ts";
+import HtmlHead from "@/components/HtmlHead.tsx";
 
 
 export function MunicipalityResultsPage() {
-  const { electionConfigSlug, regionSlug: regionSlugParam, csbSlug: csbSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string; csbSlug?: string }>()
-  const regionSlug = decodeURIComponent(regionSlugParam ?? '')
-  const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined
-  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug, csbSlug)
-  const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? '', regionSlug, csbSlug)
+  const {electionConfigSlug, regionSlug, csbSlug} = useParams<{
+    electionConfigSlug: string;
+    regionSlug: string;
+    csbSlug?: string
+  }>()
+  const {electionConfig, municipalityTitle} = useOutletContext<{
+    electionConfig: ElectionConfig,
+    municipalityTitle: string
+  }>();
 
-  const {
-    data: electionConfig,
-    isLoading: isElectionLoading,
-    isError: isElectionError,
-    refetch: refetchElection,
-  } = useElectionConfig(electionConfigSlug)
+
   const {
     data: region,
     isLoading: isRegionLoading,
@@ -37,8 +33,8 @@ export function MunicipalityResultsPage() {
     refetch: refetchRegion,
   } = useRegion(electionConfigSlug, regionSlug, csbSlug)
 
-  const isLoading = isElectionLoading || isRegionLoading
-  const isError = isElectionError || isRegionError || !electionConfig || !region
+  const isLoading = isRegionLoading
+  const isError = isRegionError || !electionConfig || !region
 
   const hasResults = Array.isArray(region?.vote_counts) && region.vote_counts.length > 0
 
@@ -53,7 +49,6 @@ export function MunicipalityResultsPage() {
         isLoading={isLoading}
         isError={isError}
         onRetry={() => {
-          void refetchElection()
           void refetchRegion()
         }}
         entityLabel="Gemeente"
@@ -61,15 +56,19 @@ export function MunicipalityResultsPage() {
     )
   }
 
-  const municipalityTitle = region.region_name
-
   const resultsPageContent = (
     <>
       <PageIndex
         links={[
-          { label: <><span className="semibold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
-          { label: <><span className="semibold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>, url: '#results-timeline' },
-          { label: <span className="semibold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
+          {
+            label: <><span className="semibold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>,
+            url: '#telresultaten'
+          },
+          {
+            label: <><span className="semibold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>,
+            url: '#results-timeline'
+          },
+          {label: <span className="semibold">Hoe u een fout kunt melden</span>, url: '#fout-melden'},
         ]}
       />
       <section id="telresultaten">
@@ -80,14 +79,14 @@ export function MunicipalityResultsPage() {
           opgenomen in het proces-verbaal van de gemeente.
         </p>
       </section>
-      <VotesResume type='admittedVoters' votes={region.voter_turnout_counts} />
+      <VotesResume type='admittedVoters' votes={region.voter_turnout_counts}/>
 
       <section className="votes-cast">
         <h4 className="mb-2">Uitgebrachte stemmen</h4>
         <p className="mb-4">Klik op een lijst om de stemmen per kandidaat te zien</p>
-        <VotesList voteCounts={partyLevelVoteCounts} />
+        <VotesList voteCounts={partyLevelVoteCounts}/>
       </section>
-      <VotesResume type='votesCast' votes={region.voter_turnout_counts} />
+      <VotesResume type='votesCast' votes={region.voter_turnout_counts}/>
       <ReportsWithResults
         title="Brondocumenten"
         description="Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
@@ -97,52 +96,22 @@ export function MunicipalityResultsPage() {
   );
 
   return (
-    <Layout
-      title="Resultaten"
-      description="Resultaten per stembureau"
-    >
-      <PageTop
-        title={municipalityTitle}
-        subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
-        breadcrumb={[
-          { href: appRoutes.home(), label: 'Home' },
-          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig.label },
-          getCsbCrumb(region, electionConfigSlug ?? ''),
-          { href: municipalityPollingstationListRoute, label: municipalityTitle },
-        ]}
-        tabs={
-          hasResults ? (
-            <SharedTabs
-              tabs={[
-                {
-                  label: 'Resultaten per stembureau',
-                  value: municipalityPollingstationListRoute,
-                  activePatterns: [municipalityPollingstationListRoute],
-                },
-                {
-                  label: 'Hele gemeente',
-                  value: municipalityResultsRoute,
-                  activePatterns: [municipalityResultsRoute],
-                },
-              ]}
-            />
-          ) : undefined
-        }
-      />
+    <>
+      <HtmlHead title={`Resultaten ${municipalityTitle}`}/>
       <div className="page-main page-main-two-columns">
         <div className="page-space-3">
           {hasResults ? (
             resultsPageContent
           ) : (
-            <ResultsNotPublished regionLabel={region.region_name} />
+            <ResultsNotPublished regionLabel={region.region_name}/>
           )}
           <ResultsTimeline
             description="TBD."
             entries={electionConfig.timeline_entries ?? []}
           />
-          <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
+          <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline}/>
         </div>
       </div>
-    </Layout>
+    </>
   )
 }

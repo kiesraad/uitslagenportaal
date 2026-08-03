@@ -97,7 +97,7 @@ export function MunicipalityPartyResultsPage() {
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig.label },
           getCsbCrumb(region, electionConfigSlug),
-          { href: municipalityPollingstationListRoute, label: region.region_name },
+          { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
           { href: municipalityResultsRoute, label: 'Hele gemeente' },
           { href: municipalityPartyResultsRoute, label: partyName },
         ]}

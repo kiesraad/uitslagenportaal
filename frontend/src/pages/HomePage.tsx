@@ -36,8 +36,8 @@ export function HomePage() {
     >
       <section className={'page-top home-page-hero'}>
         <div className={'home-page-hero-left'}>
-          <h1 className="page-title">De telresultaten van alle <br /> stembureaus in Nederland.</h1>
-          <p className="page-subtitle">Op deze website publiceert de Kiesraad de telresultaten van alle gemeenten en stembureaus. Je vindt hier ook de brondocumenten waarin stembureaus hun tellingen hebben opgeschreven. Zo kan iedereen controleren of de stemmen goed zijn geteld en in de definitieve uitslag terecht zijn gekomen.</p>
+          <h1 className="text-3xl sm:text-4xl font-title font-bold">De telresultaten van alle <br /> stembureaus in Nederland.</h1>
+          <p>Op deze website publiceert de Kiesraad de telresultaten van alle gemeenten en stembureaus. Je vindt hier ook de brondocumenten waarin stembureaus hun tellingen hebben opgeschreven. Zo kan iedereen controleren of de stemmen goed zijn geteld en in de definitieve uitslag terecht zijn gekomen.</p>
 
           {isLoading ? (
             <div className={'home-hero-card'}>
@@ -57,8 +57,10 @@ export function HomePage() {
               <h2>Bekijk de telresultaten</h2>
               {election_configs.map((election_config) => (
                 <div key={election_config.slug} className={'home-hero-card-link'}>
-                  <span className="gemeente-chevron">›</span>
-                  <Link to={appRoutes.electionConfigMunicipalityList(election_config.slug)}>{election_config.label}</Link>
+                  <span className="gemeente-chevron mb-1">›</span>
+                  <Link to={appRoutes.electionConfigMunicipalityList(election_config.slug)} className="font-semibold">
+                    {election_config.label}
+                  </Link>
                 </div>
               ))}
             </div>

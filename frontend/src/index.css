@@ -200,7 +200,6 @@ a:hover {
   flex-wrap: wrap;
   align-items: center;
   gap: 5px;
-  font-size: .8125rem;
 }
 
 .platform-breadcrumb-item {
@@ -386,7 +385,6 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   padding: 18px 24px;
-  font-size: .875rem;
   color: var(--c-blue);
   text-decoration: none;
   background: var(--c-white);
@@ -480,7 +478,6 @@ a:hover {
 
 .result-order-hint {
   background: var(--c-row-alt);
-  font-size: .8125rem;
   color: var(--c-muted);
   margin-bottom: 14px;
   display: flex;
@@ -595,7 +592,6 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: .8125rem;
   color: var(--c-muted);
   margin-top: 6px;
 }
@@ -656,7 +652,6 @@ a:hover {
 }
 
 .tl-date {
-  font-size: .8125rem;
   color: var(--c-muted);
   margin-bottom: 6px;
 }
@@ -830,7 +825,6 @@ a:hover {
 }
 
 .home-external-links {
-  font-size: .8125rem;
   line-height: 1.6;
   color: var(--c-text);
 }
@@ -1037,12 +1031,10 @@ a:hover {
 }
 
 .footer-collab {
-  font-size: .8125rem;
   color: var(--c-faq-bg);
 }
 
 .footer-copy {
-  font-size: .8125rem;
   color: var(--c-faq-bg);
   white-space: nowrap;
   flex-shrink: 0;
@@ -1060,7 +1052,6 @@ a:hover {
 }
 
 .footer-lang-label {
-  font-size: .8125rem;
   color: var(--c-text);
   margin-bottom: 8px;
 }
@@ -1521,10 +1512,6 @@ a:hover {
     font-size: 1.1rem;
   }
 
-  .home-hero-card-link {
-    font-size: .85rem;
-  }
-
   .home-bottom-info {
     padding: 1.25rem;
   }
@@ -1567,7 +1554,6 @@ a:hover {
 
 .search-suggestion-item {
   padding: 10px 16px;
-  font-size: .875rem;
   font-family: var(--f-body);
   color: var(--c-text);
   cursor: pointer;
