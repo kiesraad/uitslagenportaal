@@ -66,7 +66,7 @@ export function MunicipalityPollingstationListPage() {
     return <Navigate to={municipalityResultsRoute} replace />
   }
 
-  const municipalityTitle = region.region_name
+  const municipalityTitle = `Gemeente ${region.region_name}`
 
   return (
     <Layout
@@ -104,6 +104,7 @@ export function MunicipalityPollingstationListPage() {
         regions={pollingStations}
         parentRegionSlug={regionSlug}
         parentCsbSlug={csbSlug}
+        regionTitle={municipalityTitle}
         regionCategory='STEMBUREAU'
       />
 

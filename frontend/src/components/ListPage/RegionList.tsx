@@ -15,6 +15,7 @@ type Props = {
   regionCategory: Extract<RegionCategory, 'GEMEENTE' | 'STEMBUREAU' | 'WATERSCHAP'>
   parentRegionSlug?: string
   parentCsbSlug?: string
+  regionTitle?: string
 }
 
 export function RegionList({
@@ -23,6 +24,7 @@ export function RegionList({
   regionCategory,
   parentRegionSlug,
   parentCsbSlug,
+  regionTitle
 }: Props) {
 
 
@@ -31,12 +33,12 @@ export function RegionList({
   function navigateToGemeente(option: SearchListOption) {
     navigate(appRoutes.municipalityPollingstationList(electionConfig.slug ?? '', option.id, option.csbSlug))
   }
-  
+
   function navigateToPollingStation(option: SearchListOption) {
     if (!parentRegionSlug) return
     navigate(appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id, parentCsbSlug))
   }
-  
+
   function navigateToWaterschap(option: SearchListOption) {
     navigate(appRoutes.csbResults(electionConfig.slug ?? '', option.id))
   }
@@ -71,19 +73,18 @@ export function RegionList({
 
   const regionOptions: SearchListOption[] = visibleRegions.map((region) => {
     const isAmbiguous = nameCounts[region.region_name] > 1 && Boolean(region.csb_name)
-    const baseLabel = isAmbiguous ? `${region.region_name} - ${region.csb_name}` : region.region_name
-    const hasStationNumber = isPollingStationList && region.station_number != null
+    const label = isAmbiguous ? `${region.region_name} - ${region.csb_name}` : region.region_name
     return {
       id: region.slug,
-      label: hasStationNumber ? `${region.station_number} ${baseLabel}` : baseLabel,
+      label,
       sortName: region.region_name,
-      sortNumber: hasStationNumber ? region.station_number ?? undefined : undefined,
+      stationNumber: isPollingStationList ? region.station_number ?? undefined : undefined,
       csbSlug: region.csb_slug ?? undefined,
     }
   })
 
   function compareByStationNumber(a: SearchListOption, b: SearchListOption): number {
-    return (a.sortNumber ?? 0) - (b.sortNumber ?? 0)
+    return (a.stationNumber ?? 0) - (b.stationNumber ?? 0)
   }
 
   const sortedPollingStations = regionOptions.slice().sort(compareByStationNumber)
@@ -99,26 +100,31 @@ export function RegionList({
 
   return (
     <div className="page-main">
+
+      {isPollingStationList && (<h2 className="mb-4 text-2xl font-bold font-title">
+          {sortedPollingStations.length} stembureaus in {regionTitle}
+      </h2>)}
+
       <SearchBar
         regionCategory={regionCategory}
         options={regionOptions}
         onSelect={navigateToRegion}
       />
 
-      <h2 className="searchlist-title">
-        {isPollingStationList
-          ? `Vind een ${getRegionLabel(regionCategory).toLowerCase()}`
-          : `Vind een ${getRegionLabel(regionCategory).toLowerCase()} van A tot Z`}
-      </h2>
+      {!isPollingStationList && (<h2 className="mb-4 text-2xl font-bold font-title">
+        Vind een {getRegionLabel(regionCategory).toLowerCase()} van A tot Z
+      </h2>)}
 
       {isPollingStationList ? (
-        <div className="searchlist-section">
+        <div className="mb-5 max-w-2xl">
           {sortedPollingStations.map((station) => (
             <Link
               key={`${station.id}-${station.csbSlug ?? ''}`}
               to={getRegionRoute(station)}
+              className="flex items-center gap-4 hover:no-underline! odd:bg-blue-50 hover:bg-blue-100 py-4 px-6"
             >
-              <span>{station.label}</span>
+              <span className="w-6 font-light text-gray-700">{station.stationNumber}</span>
+              <span className="grow underline">{station.label}</span>
               <span className="gemeente-chevron">{'>'}</span>
             </Link>
           ))}

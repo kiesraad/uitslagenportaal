@@ -27,13 +27,26 @@
   --font-title: 'Space Grotesk', 'Segoe UI', Arial, sans-serif;
 
   --color-*: initial;
-  /* Some colors are not defined in the Figma designs, so there are gaps in the number */
+  /* Some colors are not defined in the Figma designs, so there are gaps in the numbers */
   --color-blue-50: #F4F7FA;
   --color-blue-100: #E5EBF4;
   --color-blue-200: #EBF3F7;
   --color-blue-500: #01689B;
   --color-blue-700: #1B3764;
   --color-blue-800: #113051;
+
+  /* TailwindCSS 'slate' color */
+  --color-gray-50: oklch(98.4% 0.003 247.858);
+  --color-gray-100: oklch(96.8% 0.007 247.896);
+  --color-gray-200: oklch(92.9% 0.013 255.508);
+  --color-gray-300: oklch(86.9% 0.022 252.894);
+  --color-gray-400: oklch(70.4% 0.04 256.788);
+  --color-gray-500: oklch(55.4% 0.046 257.417);
+  --color-gray-600: oklch(44.6% 0.043 257.281);
+  --color-gray-700: oklch(37.2% 0.044 257.287);
+  --color-gray-800: oklch(27.9% 0.041 260.031);
+  --color-gray-900: oklch(20.8% 0.042 265.755);
+  --color-gray-950: oklch(12.9% 0.042 264.695);
 }
 
 /* Palette and fontnames */
@@ -42,7 +55,7 @@
   --c-blue: #00619c;
   --c-blue-hov: #0f52a0;
   --c-row-alt: #ebf2fb;
-  --c-text: #1a1a2e;
+  --c-text: var(--color-gray-900);
   --c-muted: #696f78;
   --c-border: #d0d7de;
   --c-info-bg: #dce8f8;
@@ -59,7 +72,6 @@
 }
 
 html {
-  font-size: 22px;
   scroll-behavior: smooth;
 }
 
@@ -80,10 +92,6 @@ a {
 
 a:hover {
   text-decoration: underline;
-}
-
-p {
-  font-size: 0.85rem;
 }
 
 /* Header */
@@ -168,7 +176,6 @@ p {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: .8125rem;
   margin-top: 14px;
   margin-bottom: 38px;
 }
@@ -211,22 +218,6 @@ p {
   font-size: .75rem;
 }
 
-/* PageTitle */
-.page-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--c-text);
-  font-family: var(--f-title);
-  margin-bottom: 8px;
-}
-
-.page-subtitle {
-  font-size: .8125rem;
-  color: var(--c-muted);
-  margin-bottom: 42px;
-}
-
 .platform-page-title {
   font-size: 1.75rem;
   font-weight: 700;
@@ -245,7 +236,6 @@ p {
 .tab {
   display: inline-block;
   padding: 0.7rem 1.3rem;
-  font-size: .875rem;
   font-family: var(--f-body);
   font-weight: 400;
   color: var(--c-blue);
@@ -304,7 +294,6 @@ p {
 /* SearchField */
 .search-label {
   display: block;
-  font-size: .8125rem;
   font-weight: 600;
   color: var(--c-text);
   margin-bottom: 5px;
@@ -380,14 +369,6 @@ p {
 }
 
 /* SearchList */
-.searchlist-title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--c-text);
-  font-family: var(--f-title);
-  margin-bottom: 16px;
-}
-
 .searchlist-section {
   margin-bottom: 20px;
 }
@@ -1244,10 +1225,6 @@ p {
 
 /* Responsive – Tablet (≤ 1024px) */
 @media (max-width: 1024px) {
-  html {
-    font-size: 18px;
-  }
-
   .header-inner {
     padding: 0 2.5rem;
   }
@@ -1361,10 +1338,6 @@ p {
 
 /* Responsive – Mobile (≤ 640px) */
 @media (max-width: 640px) {
-  html {
-    font-size: 16px;
-  }
-
   .header {
     height: 48px;
   }
@@ -1411,17 +1384,8 @@ p {
   }
 
   /* Title */
-  .page-title {
-    font-size: 1.35rem;
-    font-family: var(--f-title);
-  }
-
   .platform-page-title {
     font-size: 1.35rem;
-  }
-
-  .page-subtitle {
-    margin-bottom: 24px;
   }
 
   .breadcrumb {
