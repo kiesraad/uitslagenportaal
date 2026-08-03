@@ -49,6 +49,8 @@ export function MunicipalityPollingstationListPage() {
     return <Navigate to={municipalityResultsRoute} replace/>
   }
 
+  const municipalityTitle = `Gemeente ${region.region_name}`
+
   return (
     <>
       <HtmlHead title={`Resultaten ${municipalityTitle} per stembureau`}/>
