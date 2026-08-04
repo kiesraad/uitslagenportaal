@@ -64,7 +64,6 @@ export function MunicipalityPartyResultsPage() {
     [partyLevelVoteCounts, partySlug],
   )
 
-  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, regionSlug, csbSlug)
   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug, regionSlug, csbSlug)
   const municipalityPartyResultsRoute = appRoutes.municipalityPartyResults(electionConfigSlug, regionSlug, partySlug, csbSlug)
 
@@ -97,8 +96,7 @@ export function MunicipalityPartyResultsPage() {
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig.label },
           getCsbCrumb(region, electionConfigSlug),
-          { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
-          { href: municipalityResultsRoute, label: 'Hele gemeente' },
+          { href: municipalityResultsRoute, label: `Gemeente ${region.region_name}` },
           { href: municipalityPartyResultsRoute, label: partyName },
         ]}
       />
