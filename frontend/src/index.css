@@ -366,41 +366,6 @@ a:hover {
   stroke-linejoin: round;
 }
 
-/* SearchList */
-.searchlist-section {
-  margin-bottom: 20px;
-}
-
-.searchlist-letter {
-  font-size: .925rem;
-  font-weight: 700;
-  color: var(--c-text);
-  padding: 6px 0 4px;
-  margin-bottom: 0.25rem;
-}
-
-.searchlist-section>a {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 24px;
-  color: var(--c-blue);
-  text-decoration: none;
-  background: var(--c-white);
-}
-
-.searchlist-section>a>span {
-  text-decoration: underline;
-}
-
-.searchlist-section>a:nth-of-type(odd) {
-  background: var(--c-row-alt);
-}
-
-.searchlist-section>a:nth-of-type(even) {
-  background: var(--c-white);
-}
-
 .gemeente-chevron {
   font-size: 1.8rem;
   color: var(--c-blue);
@@ -1263,11 +1228,6 @@ a:hover {
     padding-left: 0;
   }
 
-  /* Gemeente rows */
-  .searchlist-section>a {
-    padding: 14px 18px;
-  }
-
   .gemeente-chevron {
     font-size: 1.4rem;
   }
@@ -1393,11 +1353,6 @@ a:hover {
   .search-btn svg {
     width: 20px;
     height: 20px;
-  }
-
-  /* Gemeente rows */
-  .searchlist-section>a {
-    padding: 12px 14px;
   }
 
   .gemeente-chevron {
