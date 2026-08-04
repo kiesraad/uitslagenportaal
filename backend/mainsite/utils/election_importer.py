@@ -10,7 +10,7 @@ from pyeml_bindings import (
     ElectionIdentifierStructureKr,
     Eml110a,
     Eml230,
-    Eml510,
+    Eml510, Emlstructure,
 )
 from tqdm import tqdm
 from xsdata.formats.dataclass.parsers import XmlParser
@@ -450,7 +450,7 @@ class ElectionImporter:
         self._region_map: dict[tuple[str, str], Region] = {}
         self._parser = XmlParser(ParserConfig(fail_on_unknown_properties=True))
 
-    _DOCUMENT_TYPES = {
+    _DOCUMENT_TYPES: dict[str, tuple[type[Emlstructure], type[EMLBaseImporter]]] = {
         "110a": (Eml110a, EML110aImporter),  # Verkiezingsdefinitie
         "230b": (Eml230, EML230bImporter),  # Kandidatenlijst
         VoteCount.EML_TYPE_510B: (Eml510, EML510bImporter),  # Telling
@@ -458,7 +458,7 @@ class ElectionImporter:
     }
 
     @staticmethod
-    def _document_id(xml_file_path: Path) -> str | None:
+    def _document_id(xml_file_path: Path | bytes) -> str | None:
         for _, element in ET.iterparse(xml_file_path, events=("start",)):
             return element.get("Id")
         return None
@@ -489,3 +489,18 @@ class ElectionImporter:
         xml_files = self._classify_files()
         for parser_type in self._DOCUMENT_TYPES:
             self._import_files(parser_type, xml_files[parser_type])
+
+    @classmethod
+    def import_single(cls, file_content: bytes):
+        document_id = cls._document_id(file_content)
+        if document_id is None:
+            return
+
+        importer_cls: type[EMLBaseImporter] | None
+        binding, importer_cls = cls._DOCUMENT_TYPES.get(document_id, (None, None))
+        if importer_cls is None:
+            return
+
+        parser = XmlParser(ParserConfig(fail_on_unknown_properties=True))
+        eml = parser.from_bytes(file_content, binding)
+        importer_cls(eml, "test.xml").parse()  # todo: save file to storage

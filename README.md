@@ -62,6 +62,7 @@ The `backend-scripts` service can run management commands while the stack keeps 
 ```bash
 docker compose run --rm backend-scripts python manage.py migrate
 docker compose run --rm backend-scripts python manage.py seed
+docker compose run --rm backend-scripts python manage.py import_next_eml_commit
 ```
 
 ### Common commands

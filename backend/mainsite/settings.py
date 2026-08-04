@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     "election.apps.ElectionConfig",
     "region.apps.RegionConfig",
     "party.apps.PartyConfig",
+    "eml_import.apps.EmlImportConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -116,6 +117,12 @@ CORS_ALLOWED_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
+
+
+# GitHub EML ingress
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+GITHUB_INGRESS_REPO = os.environ.get("GITHUB_INGRESS_REPO")  # "owner/repo"
+GITHUB_INGRESS_BRANCH = os.environ.get("GITHUB_INGRESS_BRANCH", "main")
 
 
 # Object storage
