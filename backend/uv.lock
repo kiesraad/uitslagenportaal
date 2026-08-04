@@ -221,9 +221,13 @@ wheels = [
 [[package]]
 name = "pyeml-bindings"
 version = "1.3.0"
-source = { git = "https://github.com/kiesraad/pyeml_bindings.git#619294790c0434235d7336636e3818bdf76a3d76" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "xsdata" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4a/bb/9902909ae7a15e99da764438f3246b68073163ef56febea98adc937d5b9b/pyeml_bindings-1.3.0.tar.gz", hash = "sha256:b875125b5f1bbf64dd9630801ca611c15dcdbedc768d6feeb55a7ea3a66b15e9", size = 51343, upload-time = "2026-08-03T07:47:30.371Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d4/bd/6e256237f5f3166b64fa121745ede9360b1ef0c8d292df1abb6ac5d85bec/pyeml_bindings-1.3.0-py3-none-any.whl", hash = "sha256:4e1db52baf688e3fce438e76931aa0f526fdad29f6343f4020469896814887a6", size = 61911, upload-time = "2026-08-03T07:47:29.301Z" },
 ]
 
 [[package]]
@@ -383,7 +387,7 @@ requires-dist = [
     { name = "django-extensions", specifier = ">=4.1" },
     { name = "djangorestframework", specifier = ">=3.16.1" },
     { name = "psycopg2-binary", specifier = ">=2.9.12" },
-    { name = "pyeml-bindings", git = "https://github.com/kiesraad/pyeml_bindings.git" },
+    { name = "pyeml-bindings", specifier = ">=1.3.0" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "tqdm", specifier = ">=4.68.2" },
