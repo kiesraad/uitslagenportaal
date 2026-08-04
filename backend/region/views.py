@@ -59,6 +59,7 @@ class RegionDetailView(RetrieveAPIView):
         region_slug = self.request.query_params.get("region")
         # optional
         csb_slug = self.request.query_params.get("csb")
+        parent_region_slug = self.request.query_params.get("parent_region")
 
         if not election_config_slug:
             raise ValidationError({"election_config": "This query parameter is required."})
@@ -82,6 +83,8 @@ class RegionDetailView(RetrieveAPIView):
                 slug=region_slug,
             )
         )
+        if parent_region_slug:
+            queryset = queryset.filter(parent__slug=parent_region_slug)
         if csb_slug:
             queryset = queryset.filter(**{f"{CSB_LOOKUP_PREFIX}slug": csb_slug})
 
@@ -92,7 +95,7 @@ class RegionDetailView(RetrieveAPIView):
         except Region.MultipleObjectsReturned:
             raise ValidationError(
                 {
-                    "detail": "Multiple regions match this slug. Specify the 'csb' query parameter.",
+                    "detail": "Multiple regions match this slug. Specify the 'parent_region' or 'csb' query parameter.",
                     "options": [
                         {
                             "csb": csb_slug,

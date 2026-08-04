@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom'
-import type { VoteCounts } from '../../api/types'
+import {Link} from 'react-router-dom'
+import type {VoteCounts} from '../../api/types'
+import {twMerge} from "tailwind-merge";
 
 type Props = {
   voteCounts: VoteCounts
@@ -10,47 +11,33 @@ type Props = {
   columns?: string[]
 }
 
-export default function VotesList({ voteCounts, total, columns = ['Lijst', 'Aantal stemmen'] }: Props) {
+export default function VotesList({voteCounts, total, columns = ['Lijst', 'Aantal stemmen']}: Props) {
 
   return (
     <div className="votes-cast-list-container">
-      <div className="flex justify-between font-semibold pl-4.5 pr-13 py-3">
-        {columns.map((column, i) => (
-          <span key={i}>{column}</span>
-        ))}
-      </div>
-      <div className="votes-cast-list">
+
+      <div className="grid grid-cols-[max-content_auto_max-content_max-content] gap-x-4">
+        <div className="flex justify-between font-semibold pl-4.5 py-3 col-span-3">
+          {columns.map((column, i) => (
+            <span key={i}>{column}</span>
+          ))}
+        </div>
+
         {voteCounts.map((voteCount, i) => {
           const isClickable = voteCount.valid_votes > 0
+          const ListItem = isClickable
+            ? ({...props}) => <Link to={`${location.pathname}/${voteCount.party.slug}`} {...props} />
+            : ({...props}) => <div {...props} />
 
-          const content = (
-            <>
-              <div className="flex items-center gap-3">
-                <span>{i + 1}</span>
-                <span className="in-[a]:text-(--c-blue) in-[a]:underline">{voteCount.party.registered_name}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="votes-cast-list-item-votes bold">{voteCount.valid_votes.toLocaleString('nl-NL')}</span>
-                {isClickable && <span className="gemeente-chevron mb-1">{'>'}</span>}
-              </div>
-            </>
-          )
-
-          if (!isClickable) {
-            return (
-              <div key={voteCount.id} className="votes-cast-list-item votes-cast-list-item-static">
-                {content}
-              </div>
-            )
-          }
-
-          return (
-            <Link key={voteCount.party.registered_name}
-              to={`${location.pathname}/${voteCount.party.slug}`}
-              className="votes-cast-list-item">
-              {content}
-            </Link>
-          )
+          return <ListItem className={twMerge(
+            "items-center hover:no-underline! even:bg-blue-50 h-18 px-6 grid col-span-4 grid-cols-subgrid",
+            isClickable && "hover:bg-blue-100"
+          )}>
+            <span className="font-light text-gray-700">{i + 1}</span>
+            <span className="in-[a]:text-(--c-blue) in-[a]:underline">{voteCount.party.registered_name}</span>
+            <span className="text-right bold">{voteCount.valid_votes.toLocaleString('nl-NL')}</span>
+            <span>{isClickable && <span className="gemeente-chevron mb-1">{'>'}</span>}</span>
+          </ListItem>
         })}
       </div>
       {total && (

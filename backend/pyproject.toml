@@ -10,7 +10,7 @@ dependencies = [
     "django-extensions>=4.1",
     "djangorestframework>=3.16.1",
     "psycopg2-binary>=2.9.12",
-    "pyeml-bindings",
+    "pyeml-bindings>=1.3.0",
     "python-dotenv>=1.2.2",
     "requests>=2.32.5",
     "tqdm>=4.68.2",
@@ -27,9 +27,6 @@ dev = [
 
 [tool.setuptools]
 py-modules = []
-
-[tool.uv.sources]
-pyeml-bindings = { git = "https://github.com/kiesraad/pyeml_bindings.git" }
 
 [tool.ruff]
 target-version = "py314"

@@ -5,7 +5,13 @@ from xml.etree import ElementTree as ET
 
 from django.conf import settings
 from django.utils import timezone
-from pyeml_bindings import ElectionIdentifierStructureKr, Eml110a, Eml230, Eml510
+from pyeml_bindings import (
+    CountingMethodMethodCode,
+    ElectionIdentifierStructureKr,
+    Eml110a,
+    Eml230,
+    Eml510,
+)
 from tqdm import tqdm
 from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.formats.dataclass.parsers.config import ParserConfig
@@ -18,7 +24,7 @@ from election.models import (
     VoteCount,
     VoterTurnoutCount,
 )
-from mainsite.models import RegionCategory
+from mainsite.models import CountingMethod, RegionCategory
 from party.models import Candidate, Party
 from region.models import Region
 
@@ -58,6 +64,16 @@ class EMLBaseImporter[T](ABC):
             self._parse_data()
         except ElectionConfig.DoesNotExist:
             self.logger.warning("Election is not configured, skipping 110a data import")
+
+    @staticmethod
+    def _counting_method(count) -> str | None:
+        counting_method = getattr(count, "counting_method", None)
+        if counting_method is None:
+            return None
+        return {
+            CountingMethodMethodCode.CENTRALE_STEMOPNEMING: CountingMethod.CSO,
+            CountingMethodMethodCode.DECENTRALE_STEMOPNEMING: CountingMethod.DSO,
+        }.get(counting_method.method_code)
 
     def _parse_party_candidate_votecounts(
         self, contest, region, items, party_by_name, candidate_by_key, vote_counts
@@ -191,6 +207,7 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             election=self.election,
         )
         for affiliation in contest_data.affiliation:
+            # TODO: investigate candidates without parties.
             try:
                 party = Party.objects.get(
                     election=self.election,
@@ -244,6 +261,9 @@ class EML510bImporter(EMLBaseImporter[Eml510]):
                 file_type=ElectionDocument.FILE_TYPE_EML510B,
             )
             region.results_available_at = timezone.now()
+            counting_method = self._counting_method(self.eml.count)
+            if counting_method is not None:
+                region.counting_method = counting_method
             region.save()
 
         except Region.DoesNotExist:
@@ -333,6 +353,11 @@ class EML510dImporter(EMLBaseImporter[Eml510]):
                 region_number=region_number,
                 region_name=region_name,
             )
+
+        counting_method = self._counting_method(self.eml.count)
+        if counting_method is not None and region.counting_method != counting_method:
+            region.counting_method = counting_method
+            region.save(update_fields=["counting_method", "updated_at"])
 
         # Preload party names dict
         party_by_name = {party.registered_name: party for party in Party.objects.filter(election=self.election)}

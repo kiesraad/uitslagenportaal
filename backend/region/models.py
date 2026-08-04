@@ -40,15 +40,17 @@ class Region(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            # region_number can contain "::" (e.g. stembureau ids); keep URL-safe
-            number_slug = "-".join(part for part in str(self.region_number).split(":") if part)
+            number_slug = str(self.region_number)
+            if "::" in number_slug:
+                # region_number can contain "::" (e.g. stembureau ids); keep URL-safe
+                number_slug = number_slug.split("::")[1]
             self.slug = f"{number_slug}-{name_to_slug(self.region_name)}"[:49]
         super().save(*args, **kwargs)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["election", "slug", "region_category"],
+                fields=["election", "slug", "region_category", "parent"],
                 name="unique_region_identifier_per_election",
             )
         ]

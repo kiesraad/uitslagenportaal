@@ -1,13 +1,17 @@
-import { useNavigate } from 'react-router-dom'
-
-import { Link } from 'react-router-dom'
+import {Link, useNavigate} from 'react-router-dom'
+import type {SearchListOption} from '../SearchBar'
 import SearchBar from '../SearchBar'
-import type { SearchListOption } from '../SearchBar'
-import type { ElectionConfig } from '../../api/types'
 import { appRoutes } from '../../utils/routes'
 import { getRegionLabels } from '../../utils/region'
-import type { Region, RegionCategory } from '../../api/types'
+import type {ElectionConfig, Region, RegionCategory} from '../../api/types'
+import {type PropsWithChildren, useMemo} from "react";
+import {twMerge} from "tailwind-merge";
 
+
+
+function compareByStationNumber(a: SearchListOption, b: SearchListOption): number {
+  return (a.stationNumber ?? 0) - (b.stationNumber ?? 0)
+}
 
 type Props = {
   electionConfig: ElectionConfig
@@ -15,6 +19,7 @@ type Props = {
   regionCategory: Extract<RegionCategory, 'GEMEENTE' | 'STEMBUREAU' | 'WATERSCHAP'>
   parentRegionSlug?: string
   parentCsbSlug?: string
+  regionTitle?: string
 }
 
 export function RegionList({
@@ -23,6 +28,7 @@ export function RegionList({
   regionCategory,
   parentRegionSlug,
   parentCsbSlug,
+  regionTitle
 }: Props) {
 
 
@@ -31,12 +37,12 @@ export function RegionList({
   function navigateToGemeente(option: SearchListOption) {
     navigate(appRoutes.municipalityPollingstationList(electionConfig.slug ?? '', option.id, option.csbSlug))
   }
-  
+
   function navigateToPollingStation(option: SearchListOption) {
     if (!parentRegionSlug) return
     navigate(appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id, parentCsbSlug))
   }
-  
+
   function navigateToWaterschap(option: SearchListOption) {
     navigate(appRoutes.csbResults(electionConfig.slug ?? '', option.id))
   }
@@ -60,87 +66,115 @@ export function RegionList({
     }
   }
 
-  const visibleRegions = (regions ?? []).filter((region) => region.region_name)
-
-  const nameCounts = visibleRegions.reduce<Record<string, number>>((counts, region) => {
-    counts[region.region_name] = (counts[region.region_name] ?? 0) + 1
-    return counts
-  }, {})
-
   const isPollingStationList = regionCategory === 'STEMBUREAU'
 
-  const regionOptions: SearchListOption[] = visibleRegions.map((region) => {
-    const isAmbiguous = nameCounts[region.region_name] > 1 && Boolean(region.csb_name)
-    const baseLabel = isAmbiguous ? `${region.region_name} - ${region.csb_name}` : region.region_name
-    const hasStationNumber = isPollingStationList && region.station_number != null
-    return {
-      id: region.slug,
-      label: hasStationNumber ? `${region.station_number} ${baseLabel}` : baseLabel,
-      sortName: region.region_name,
-      sortNumber: hasStationNumber ? region.station_number ?? undefined : undefined,
-      csbSlug: region.csb_slug ?? undefined,
-    }
-  })
+  const regionOptions: SearchListOption[] = useMemo(() => {
+    const visibleRegions = (regions ?? []).filter((region) => region.region_name)
 
-  function compareByStationNumber(a: SearchListOption, b: SearchListOption): number {
-    return (a.sortNumber ?? 0) - (b.sortNumber ?? 0)
-  }
+    const nameCounts = visibleRegions.reduce<Record<string, number>>((counts, region) => {
+      counts[region.region_name] = (counts[region.region_name] ?? 0) + 1
+      return counts
+    }, {})
 
-  const sortedPollingStations = regionOptions.slice().sort(compareByStationNumber)
+    return visibleRegions.map((region) => {
+      const isAmbiguous = nameCounts[region.region_name] > 1 && Boolean(region.csb_name)
+      const label = isAmbiguous ? `${region.region_name} - ${region.csb_name}` : region.region_name
+      return {
+        id: region.slug,
+        label,
+        sortName: region.region_name,
+        stationNumber: isPollingStationList ? region.station_number ?? undefined : undefined,
+        csbSlug: region.csb_slug ?? undefined,
+      }
+    })
+  }, [regions, isPollingStationList])
 
-  const regionsByLetter = regionOptions.reduce<Record<string, SearchListOption[]>>((grouped, option) => {
-    const sortName = option.sortName ?? option.label
-    // handle 's-Gravenhage and 's-Hertogenbosch
-    const name = sortName.startsWith("'s-") ? sortName.slice(3) : sortName
-    const letter = name[0].toUpperCase()
-      ; (grouped[letter] ??= []).push(option)
-    return grouped
-  }, {})
+  const sortedPollingStations = useMemo(
+    () => regionOptions.slice().sort(compareByStationNumber),
+    [regionOptions]
+  )
+
+  const regionsByLetter = useMemo(() => {
+    const grouped = regionOptions.reduce<Record<string, SearchListOption[]>>((grouped, option) => {
+      const sortName = option.sortName ?? option.label
+      // handle 's-Gravenhage and 's-Hertogenbosch
+      const name = sortName.startsWith("'s-") ? sortName.slice(3) : sortName
+      const letter = name[0].toUpperCase()
+      ;(grouped[letter] ??= []).push(option)
+      return grouped
+    }, {})
+
+    return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b))
+  }, [regionOptions])
 
   return (
     <div className="page-main">
+
+      {isPollingStationList && (<h2 className="mb-4 text-2xl font-bold font-title">
+        {sortedPollingStations.length} stembureaus in {regionTitle}
+      </h2>)}
+
       <SearchBar
         regionCategory={regionCategory}
         options={regionOptions}
         onSelect={navigateToRegion}
       />
 
-      <h2 className="searchlist-title">
-        {isPollingStationList
-          ? `Vind een ${getRegionLabels(regionCategory).singular.toLowerCase()}`
-          : `Vind een ${getRegionLabels(regionCategory).singular.toLowerCase()} van A tot Z`}
-      </h2>
+
+      {!isPollingStationList && (<h2 className="mb-4 text-2xl font-bold font-title">
+        Vind een {getRegionLabels(regionCategory).singular.toLowerCase()} van A tot Z
+      </h2>)}
 
       {isPollingStationList ? (
-        <div className="searchlist-section">
+        <SearchList>
           {sortedPollingStations.map((station) => (
-            <Link
+            <ListOptionLink
               key={`${station.id}-${station.csbSlug ?? ''}`}
+              listOption={station}
               to={getRegionRoute(station)}
-            >
-              <span>{station.label}</span>
-              <span className="gemeente-chevron">{'>'}</span>
-            </Link>
+            />
           ))}
-        </div>
+        </SearchList>
       ) : (
-        Object.entries(regionsByLetter)
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([letter, municipalities]) => (
-            <div key={letter} className="searchlist-section">
-              <div className="searchlist-letter">{letter}</div>
+        regionsByLetter.map(([letter, municipalities]) => (
+          <div key={letter} className="mb-6">
+            <div className="font-bold my-2 text-xl">{letter}</div>
+            <SearchList>
               {municipalities.map((municipality) => (
-                <Link
+                <ListOptionLink
                   key={`${municipality.id}-${municipality.csbSlug ?? ''}`}
+                  listOption={municipality}
                   to={getRegionRoute(municipality)}
-                >
-                  <span>{municipality.label}</span>
-                  <span className="gemeente-chevron">{'>'}</span>
-                </Link>
+                />
               ))}
-            </div>
-          ))
+            </SearchList>
+          </div>
+        ))
       )}
     </div>
+  )
+}
+
+function SearchList({children}: PropsWithChildren) {
+  return (
+    <div className="mb-5 max-w-2xl grid grid-cols-[max-content_auto_max-content]">
+      {children}
+    </div>
+  )
+}
+
+function ListOptionLink({listOption, to}: {
+  listOption: SearchListOption,
+  to: string
+}) {
+  return (
+    <Link
+      to={to}
+      className="items-center hover:no-underline! odd:bg-blue-50 hover:bg-blue-100 py-4 px-6 grid col-span-3 grid-cols-subgrid"
+    >
+      <span className={twMerge(listOption.stationNumber && "font-light text-gray-700 pr-2")}>{listOption.stationNumber}</span>
+      <span className="underline">{listOption.label}</span>
+      <span className="gemeente-chevron">{'>'}</span>
+    </Link>
   )
 }

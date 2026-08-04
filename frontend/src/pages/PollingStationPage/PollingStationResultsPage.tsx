@@ -44,7 +44,7 @@ export default function PollingStationResultsPage() {
     isLoading: isPollingStationLoading,
     isError: isPollingStationError,
     refetch: refetchPollingStation,
-  } = useRegion(electionConfigSlug, pollingStationSlug)
+  } = useRegion(electionConfigSlug, pollingStationSlug, csbSlug, parentRegionSlug)
 
   const isLoading = isElectionLoading || isRegionLoading || isPollingStationLoading
   const isError =
@@ -92,7 +92,7 @@ export default function PollingStationResultsPage() {
           { href: appRoutes.home(), label: 'Home' },
           { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig.label },
           getCsbCrumb(region, electionConfigSlug),
-          { href: municipalityPollingstationListRoute, label: region.region_name },
+          { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
           { href: pollingStationResultsRoute, label: pollingStation.region_name },
         ]}
       />
