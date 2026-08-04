@@ -42,12 +42,20 @@ export function getRegions(
   return apiGet<RegionResponse>(`${url.pathname}${url.search}`)
 }
 
-export function getRegion(electionConfigSlug: string, regionSlug: string, csbSlug?: string) {
+export function getRegion(
+  electionConfigSlug: string,
+  regionSlug: string,
+  csbSlug?: string,
+  parentRegionSlug?: string,
+) {
   const url = new URL('/api/region', window.location.origin)
   url.searchParams.append('election_config', electionConfigSlug)
   url.searchParams.append('region', regionSlug)
   if (csbSlug) {
     url.searchParams.append('csb', csbSlug)
+  }
+  if (parentRegionSlug) {
+    url.searchParams.append('parent_region', parentRegionSlug)
   }
   return apiGet<Region>(`${url.pathname}${url.search}`)
 }
