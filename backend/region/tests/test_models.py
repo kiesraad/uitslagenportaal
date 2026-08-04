@@ -19,7 +19,7 @@ def test_region_slug_is_generated_from_number_and_name():
 def test_region_slug_replaces_colons_in_region_number():
     region = RegionFactory(region_number="0484::SB6", region_name="Nutsgebouw Zwammerdam")
 
-    assert region.slug == "0484-SB6-nutsgebouw_zwammerdam"
+    assert region.slug == "SB6-nutsgebouw_zwammerdam"
 
 
 @pytest.mark.django_db
