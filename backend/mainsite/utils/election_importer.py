@@ -316,17 +316,29 @@ class EML510dImporter(EMLBaseImporter[Eml510]):
         if not isinstance(election_domain, list):
             election_domain = [election_domain]
         assert len(election_domain) == 1, "More than one election domain, cannot parse"
-        region = Region.objects.get(
-            election=self.election,
-            region_category=RegionCategory.WATERSCHAP,
-            region_number=int(election_domain[0].id),
-        )
+        region_number = int(election_domain[0].id) if election_domain[0].id else None
+        region_name = election_domain[0].value
+        if not region_number:
+            # Allow for the case when the election domain has no region number attached,
+            # this is the case in PS and region number is in that case not needed for retrieval
+            region = Region.objects.get(
+                election=self.election,
+                # region_category=RegionCategory.WATERSCHAP,
+                region_name=region_name,
+            )
+        else:
+            region = Region.objects.get(
+                election=self.election,
+                # region_category=RegionCategory.WATERSCHAP,
+                region_number=region_number,
+                region_name=region_name,
+            )
 
         # Preload party names dict
         party_by_name = {party.registered_name: party for party in Party.objects.filter(election=self.election)}
 
-        gsb_by_number = {
-            int(region.region_number): region
+        gsb_by_name = {
+            region.region_name: region
             for region in Region.objects.filter(election=self.election, region_category=RegionCategory.GEMEENTE)
         }
 
@@ -354,8 +366,8 @@ class EML510dImporter(EMLBaseImporter[Eml510]):
 
             # Breakdown per GSB
             for unit in contest_data.reporting_unit_votes:
-                gsb_number = int(unit.reporting_unit_identifier.id)
-                gsb_region = gsb_by_number.get(gsb_number)
+                gsb_name = unit.reporting_unit_identifier.value
+                gsb_region = gsb_by_name.get(gsb_name)
                 if gsb_region is None:
                     # GSB does not exist in the current election, skip import of data
                     continue
