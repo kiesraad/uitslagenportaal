@@ -66,8 +66,8 @@
   --c-white: #ffffff;
   --c-footer-bg: #1f3165;
 
-  --f-body: 'DM Sans', 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
-  --f-title: 'Space Grotesk', 'Segoe UI', Arial, sans-serif;
+  --f-body: var(--font-sans);
+  --f-title: var(--font-title);
   --max-w: 1366px;
 }
 
@@ -265,7 +265,7 @@ a:hover {
 
 .page-main {
   padding: 2rem 6rem;
-  min-height: 100vh;
+  flex: 1;
 }
 
 .page-main-two-columns {
@@ -315,7 +315,6 @@ a:hover {
   flex: 1;
   width: 100%;
   padding: 12px 16px;
-  font-size: .875rem;
   font-family: var(--f-body);
   color: var(--c-text);
   background: var(--c-white);
@@ -438,7 +437,6 @@ a:hover {
   background: #e3e9f4;
   border-radius: 0 2px 2px 0;
   padding: 18px 22px;
-  font-size: .875rem;
   line-height: 1.5;
   color: var(--c-text);
 }
@@ -504,7 +502,6 @@ a:hover {
   background: #e3e9f4;
   border-radius: 0 2px 2px 0;
   padding: 18px 22px;
-  font-size: .875rem;
   line-height: 1.5;
   color: var(--c-text);
   margin-bottom: 42px;
@@ -660,14 +657,12 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  font-size: .875rem;
   line-height: 1.55;
   color: var(--c-text);
 }
 
 .tl-link {
   margin-top: 6px;
-  font-size: .875rem;
 }
 
 .tl-files {
@@ -720,7 +715,6 @@ a:hover {
 }
 
 .result-faq p {
-  font-size: .875rem;
   line-height: 1.55;
   color: var(--c-text);
   margin-bottom: 8px;
@@ -754,7 +748,6 @@ a:hover {
 }
 
 .home-hero-desc {
-  font-size: .875rem;
   line-height: 1.65;
   color: #c8d6e5;
   margin-bottom: 2.5rem;
@@ -777,7 +770,6 @@ a:hover {
   align-items: center;
   gap: 8px;
   color: var(--c-white);
-  font-size: .875rem;
   text-decoration: underline;
 }
 
@@ -807,7 +799,6 @@ a:hover {
 }
 
 .home-process-intro {
-  font-size: .875rem;
   line-height: 1.65;
   color: var(--c-text);
   margin-bottom: 2rem;
@@ -986,7 +977,6 @@ a:hover {
   align-items: center;
   gap: 10px;
   color: var(--c-white);
-  font-size: .875rem;
   margin-bottom: 18px;
   text-decoration: none;
 }
@@ -1023,7 +1013,6 @@ a:hover {
 }
 
 .footer-tagline {
-  font-size: .875rem;
   font-weight: 700;
   color: var(--c-white);
   line-height: 1.4;
@@ -1061,7 +1050,6 @@ a:hover {
   border: 1px solid var(--c-blue);
   color: var(--c-blue);
   font-family: var(--f-body);
-  font-size: .875rem;
   padding: 12px 16px;
   border-radius: 3px;
   cursor: pointer;
