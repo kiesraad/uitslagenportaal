@@ -44,7 +44,7 @@ export default function PollingStationResultsPage() {
     isLoading: isPollingStationLoading,
     isError: isPollingStationError,
     refetch: refetchPollingStation,
-  } = useRegion(electionConfigSlug, pollingStationSlug)
+  } = useRegion(electionConfigSlug, pollingStationSlug, csbSlug, parentRegionSlug)
 
   const isLoading = isElectionLoading || isRegionLoading || isPollingStationLoading
   const isError =

@@ -71,3 +71,56 @@ def test_region_detail_returns_400_for_nonexistent_region():
 
     assert response.status_code == 400
     assert response.data["detail"] == "Region not found for this election."
+
+
+@pytest.mark.django_db
+def test_region_detail_disambiguates_by_parent_region():
+    election = ElectionFactory()
+    municipality_a = RegionFactory(
+        election=election,
+        region_category=RegionCategory.GEMEENTE,
+        region_name="Alkmaar",
+        slug="alkmaar",
+    )
+    municipality_b = RegionFactory(
+        election=election,
+        region_category=RegionCategory.GEMEENTE,
+        region_name="Bergen",
+        slug="bergen",
+    )
+    RegionFactory(
+        election=election,
+        parent=municipality_a,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name="School Alkmaar",
+        region_number="SB1",
+        slug="SB1-basisschool",
+    )
+    RegionFactory(
+        election=election,
+        parent=municipality_b,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name="School Bergen",
+        region_number="SB1",
+        slug="SB1-basisschool",
+    )
+
+    ambiguous_request = factory.get(
+        "/api/region/",
+        {"election_config": election.election_config.slug, "region": "SB1-basisschool"},
+    )
+    ambiguous_response = RegionDetailView.as_view()(ambiguous_request)
+    assert ambiguous_response.status_code == 400
+
+    request = factory.get(
+        "/api/region/",
+        {
+            "election_config": election.election_config.slug,
+            "region": "SB1-basisschool",
+            "parent_region": "bergen",
+        },
+    )
+    response = RegionDetailView.as_view()(request)
+
+    assert response.status_code == 200
+    assert response.data["region_name"] == "School Bergen"

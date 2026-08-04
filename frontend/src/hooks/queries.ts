@@ -20,11 +20,12 @@ export function useElectionConfigs() {
 export function useRegion(
   electionConfigSlug: string | undefined,
   regionSlug: string | undefined,
-  csbSlug?: string
+  csbSlug?: string,
+  parentRegionSlug?: string,
 ) {
   return useQuery<Region>({
-    queryKey: ['region', electionConfigSlug, regionSlug, csbSlug ?? null],
-    queryFn: () => getRegion(electionConfigSlug!, regionSlug!, csbSlug),
+    queryKey: ['region', electionConfigSlug, regionSlug, csbSlug ?? null, parentRegionSlug ?? null],
+    queryFn: () => getRegion(electionConfigSlug!, regionSlug!, csbSlug, parentRegionSlug),
     enabled: Boolean(electionConfigSlug) && Boolean(regionSlug),
   })
 }

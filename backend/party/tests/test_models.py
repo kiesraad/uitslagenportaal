@@ -8,7 +8,7 @@ from party.models import Party
 def test_party_slug_is_generated_from_registered_name():
     party = Party.objects.create(election=ElectionFactory(), registered_name="Café Île Partij")
 
-    assert party.slug == "cafe_ile_partij"
+    assert party.slug == "cafe-ile-partij"
 
 
 @pytest.mark.django_db
