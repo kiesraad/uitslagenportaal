@@ -13,7 +13,7 @@ import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import PageIndex from '../../components/PageIndex'
 import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
-import { getRegionLabel } from '../../utils/region.ts'
+import { getRegionLabels } from '../../utils/region.ts'
 import { formatDate } from '../../utils/date.ts'
 
 
@@ -36,7 +36,7 @@ export function CSBResultsPage() {
         refetch: refetchRegion,
     } = useRegion(electionConfigSlug, regionSlug)
 
-    const regionLabel = getRegionLabel(electionConfig?.csb_type) || 'Regio'
+    const regionLabels = getRegionLabels(electionConfig?.csb_type)
 
     const isLoading = isElectionLoading || isRegionLoading
     const isError = isElectionError || isRegionError || !electionConfig || !region
@@ -57,7 +57,7 @@ export function CSBResultsPage() {
                     void refetchElection()
                     void refetchRegion()
                 }}
-                entityLabel={regionLabel}
+                entityLabel={regionLabels.singular}
             />
         )
     }
@@ -88,7 +88,7 @@ export function CSBResultsPage() {
             <VotesResume type='votesCast' votes={region.voter_turnout_counts} />
             <ReportsWithResults
                 title="Brondocumenten"
-                description={`Onderstaande documenten bevatten de laatste telresultaten van de ${regionLabel.toLowerCase()}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`}
+                description={`Onderstaande documenten bevatten de laatste telresultaten van ${regionLabels.article} ${regionLabels.singular.toLowerCase()}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`}
                 documents={region.documents}
             />
         </>
@@ -99,7 +99,7 @@ export function CSBResultsPage() {
             title="Resultaten"
         >
             <PageTop
-                title={`${regionLabel} - ${region.region_name}`}
+                title={`${regionLabels.singular} - ${region.region_name}`}
                 subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },
@@ -110,7 +110,7 @@ export function CSBResultsPage() {
                     <SharedTabs
                         tabs={[
                             {
-                                label: 'Heel waterschap',
+                                label: `${regionLabels.whole} ${regionLabels.singular.toLowerCase()}`,
                                 value: csbResultsRoute,
                                 activePatterns: [csbResultsRoute],
                             },

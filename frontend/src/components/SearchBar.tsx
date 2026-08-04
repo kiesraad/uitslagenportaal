@@ -3,7 +3,7 @@ import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import type { RegionCategory } from '../api/types'
-import { getRegionLabel } from '../utils/region'
+import { getRegionLabels } from '../utils/region'
 
 export type SearchListOption = {
   id: string
@@ -42,13 +42,13 @@ export default function SearchBar({
       inputId: 'stembureau-search',
     },
     GEMEENTE: {
-      label: `Zoek ${getRegionLabel('GEMEENTE').toLowerCase()}`,
+      label: `Zoek ${getRegionLabels('GEMEENTE').singular.toLowerCase()}`,
       placeholder: 'Bijv. Zoetermeer',
       submitBehavior: 'exact-match' as const,
       inputId: 'gemeente-search',
     },
     WATERSCHAP: {
-      label: `Zoek ${getRegionLabel('WATERSCHAP').toLowerCase()}`,
+      label: `Zoek ${getRegionLabels('WATERSCHAP').singular.toLowerCase()}`,
       placeholder: 'Bijv. De Stichtse Rijnlanden',
       submitBehavior: 'exact-match' as const,
       inputId: 'waterschap-search',

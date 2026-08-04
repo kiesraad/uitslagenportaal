@@ -5,7 +5,7 @@ import SearchBar from '../SearchBar'
 import type { SearchListOption } from '../SearchBar'
 import type { ElectionConfig } from '../../api/types'
 import { appRoutes } from '../../utils/routes'
-import { getRegionLabel } from '../../utils/region'
+import { getRegionLabels } from '../../utils/region'
 import type { Region, RegionCategory } from '../../api/types'
 
 
@@ -107,8 +107,8 @@ export function RegionList({
 
       <h2 className="searchlist-title">
         {isPollingStationList
-          ? `Vind een ${getRegionLabel(regionCategory).toLowerCase()}`
-          : `Vind een ${getRegionLabel(regionCategory).toLowerCase()} van A tot Z`}
+          ? `Vind een ${getRegionLabels(regionCategory).singular.toLowerCase()}`
+          : `Vind een ${getRegionLabels(regionCategory).singular.toLowerCase()} van A tot Z`}
       </h2>
 
       {isPollingStationList ? (

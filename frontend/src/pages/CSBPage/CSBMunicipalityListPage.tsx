@@ -7,7 +7,7 @@ import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
 import { RegionList } from '../../components/ListPage/RegionList.tsx'
 import { appRoutes } from '../../utils/routes.ts'
 import { useElectionConfig, useRegions, useRegion } from '../../hooks/queries.ts'
-import { getRegionLabel } from '../../utils/region.ts'
+import { getRegionLabels } from '../../utils/region.ts'
 import { formatDate } from '../../utils/date.ts'
 
 export function CSBMunicipalityListPage() {
@@ -34,7 +34,7 @@ export function CSBMunicipalityListPage() {
         refetch: refetchRegions,
     } = useRegions(electionConfigSlug, regionSlug, 'GEMEENTE', true)
 
-    const regionLabel = getRegionLabel(electionConfig?.csb_type) || 'Regio'
+    const regionLabels = getRegionLabels(electionConfig?.csb_type)
 
     const isLoading = isElectionLoading || isRegionLoading || isRegionsLoading
     const isError =
@@ -58,7 +58,7 @@ export function CSBMunicipalityListPage() {
                     void refetchRegion()
                     void refetchRegions()
                 }}
-                entityLabel={regionLabel}
+                entityLabel={regionLabels.singular}
             />
         )
     }
@@ -69,7 +69,7 @@ export function CSBMunicipalityListPage() {
             description={`Bekijk de telresultaten per gemeente van de ${electionConfig.label}.`}
         >
             <PageTop
-                title={`${regionLabel} - ${region.region_name}`}
+                title={`${regionLabels.singular} - ${region.region_name}`}
                 subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },
@@ -80,7 +80,7 @@ export function CSBMunicipalityListPage() {
                     <SharedTabs
                         tabs={[
                             {
-                                label: 'Heel waterschap',
+                                label: `${regionLabels.whole} ${regionLabels.singular.toLowerCase()}`,
                                 value: csbResultsRoute,
                                 activePatterns: [csbResultsRoute],
                             },

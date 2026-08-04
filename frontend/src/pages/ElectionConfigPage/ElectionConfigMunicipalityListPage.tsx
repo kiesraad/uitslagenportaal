@@ -7,7 +7,7 @@ import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
 import { RegionList } from '../../components/ListPage/RegionList.tsx'
 import { appRoutes } from '../../utils/routes.ts'
 import { useElectionConfig, useRegions } from '../../hooks/queries.ts'
-import { getRegionLabel } from '../../utils/region.ts'
+import { getRegionLabels } from '../../utils/region.ts'
 
 export function ElectionConfigMunicipalityListPage() {
 
@@ -56,7 +56,7 @@ export function ElectionConfigMunicipalityListPage() {
         ]}
         tabs={<SharedTabs tabs={[
           { label: 'Gemeente', value: appRoutes.electionConfigMunicipalityList(electionConfig.slug), activePatterns: ['/:electionConfigSlug/gsb'] },
-          { label: getRegionLabel(electionConfig.csb_type, true), value: appRoutes.electionConfigCSBList(electionConfig.slug), activePatterns: ['/:electionConfigSlug/csb'] },
+          { label: getRegionLabels(electionConfig.csb_type).plural, value: appRoutes.electionConfigCSBList(electionConfig.slug), activePatterns: ['/:electionConfigSlug/csb'] },
         ]} />}
 
       />
