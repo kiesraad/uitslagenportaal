@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
-import type { ReactNode } from 'react'
-import { Header } from './Header'
-import { Footer } from './Footer'
+import type {ReactNode} from 'react'
+import {Header} from './Header'
+import {Footer} from './Footer'
+import HtmlHead from "@/components/HtmlHead.tsx";
 
 interface LayoutProps {
   children: ReactNode
@@ -9,21 +9,13 @@ interface LayoutProps {
   description?: string
 }
 
-export function Layout({ children, title, description }: LayoutProps) {
-  useEffect(() => {
-    if (title) document.title = `${title} – Kiesraad`
-  }, [title])
-
-  useEffect(() => {
-    const el = document.querySelector('meta[name="description"]')
-    if (el && description) el.setAttribute('content', description)
-  }, [description])
-
+export function Layout({children, title, description}: LayoutProps) {
   return (
     <>
-      <Header />
+      <HtmlHead title={title} description={description} />
+      <Header/>
       <main className="layout-main">{children}</main>
-      <Footer />
+      <Footer/>
     </>
   )
 }

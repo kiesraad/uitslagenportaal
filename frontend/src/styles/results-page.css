@@ -60,7 +60,6 @@
 .admitted-voters-box {
     padding: 1.25rem 1.25rem;
     background-color: var(--c-box-bg);
-    font-size: 0.85rem;
 }
 
 .admitted-voters-item {
@@ -75,10 +74,6 @@
 
 .admitted-voters-item:not(:last-child) {
     padding-bottom: 0.5rem;
-}
-
-.votes-cast-list-container {
-    font-size: 0.85rem;
 }
 
 .votes-cast-list-item {
@@ -106,10 +101,6 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-}
-
-.results-reports-files {
-    font-size: 0.85rem;
 }
 
 .results-reports-icon {
@@ -183,10 +174,6 @@
     margin-bottom: 1rem;
 }
 
-.candidate-results-table {
-    font-size: 0.85rem;
-}
-
 .candidate-results-table-header,
 .candidate-results-table-row {
     display: flex;
@@ -251,7 +238,6 @@
     width: max-content;
     min-width: 100%;
     border-collapse: collapse;
-    font-size: 0.85rem;
     white-space: nowrap;
 }
 
@@ -356,7 +342,6 @@
 .report-error-checklist li {
     position: relative;
     padding-left: 2rem;
-    font-size: 0.85rem;
     line-height: 1.65;
 }
 

@@ -25,6 +25,9 @@ export default defineConfig({
   server: {
     host: true,
     hmr: hmrClientPort ? { clientPort: hmrClientPort } : undefined,
+    watch: {
+      usePolling: true,
+    },
   },
   test: {
     environment: 'jsdom',

@@ -26,7 +26,7 @@ export default function SharedTabs({ tabs }: Props) {
           <Link
             key={tab.value}
             to={tab.value}
-            className={`tab${isActive ? ' active' : ''}`}
+            className={`tab${isActive ? ' active' : ''} text-lg`}
           >
             {tab.label}
           </Link>

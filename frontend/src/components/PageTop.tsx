@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom'
-import type { ReactNode } from 'react'
+import {Link} from 'react-router-dom'
+import type {ReactNode} from 'react'
 
 type Props = {
   title: string
@@ -11,7 +11,7 @@ type Props = {
   tabs?: ReactNode
 }
 
-export default function PageTop({ title, subtitle, breadcrumb, tabs }: Props) {
+export default function PageTop({title, subtitle, breadcrumb, tabs}: Props) {
   // entries may be null when a crumb does not apply, e.g. a region without a CSB
   const breadcrumbItems = breadcrumb?.filter((item) => item !== null)
 
@@ -28,10 +28,12 @@ export default function PageTop({ title, subtitle, breadcrumb, tabs }: Props) {
         </nav>
       ) : null}
 
-      <h1 className="page-title">
-        {title.split('\n').map((line, i) => <span key={i}>{line}<br /></span>)}
-      </h1>
-      {subtitle && <p className="page-subtitle">{subtitle}</p>}
+      <div className="pb-12">
+        <h1 className="mb-3 text-3xl sm:text-4xl font-title font-bold">
+          {title.split('\n').map((line, i) => <span key={i}>{line}<br/></span>)}
+        </h1>
+        {subtitle && <p>{subtitle}</p>}
+      </div>
 
       {tabs || null}
     </div>
