@@ -343,13 +343,11 @@ class EML510dImporter(EMLBaseImporter[Eml510]):
             # this is the case in PS and region number is in that case not needed for retrieval
             region = Region.objects.get(
                 election=self.election,
-                # region_category=RegionCategory.WATERSCHAP,
                 region_name=region_name,
             )
         else:
             region = Region.objects.get(
                 election=self.election,
-                # region_category=RegionCategory.WATERSCHAP,
                 region_number=region_number,
                 region_name=region_name,
             )
