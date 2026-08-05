@@ -45,7 +45,7 @@ class CandidateSummarySerializer(serializers.ModelSerializer):
 class PartySummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Party
-        fields = ("registered_name", "slug")
+        fields = ("registered_name", "slug", "list_number")
 
 
 class VoteCountSummarySerializer(serializers.ModelSerializer):

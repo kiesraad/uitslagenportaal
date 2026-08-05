@@ -229,6 +229,12 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             except Party.DoesNotExist:
                 continue
 
+            assert affiliation.affiliation_identifier.id, (
+                f"AffiliationIdentifier/@Id missing for party {party.registered_name}"
+            )
+            party.list_number = int(affiliation.affiliation_identifier.id)
+            party.save(update_fields=["list_number", "updated_at"])
+
             for candidate in affiliation.candidate:
                 first_name = None
                 if candidate.candidate_full_name.person_name.first_name:

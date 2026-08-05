@@ -11,6 +11,7 @@ class Party(BaseModel):
         related_name="parties",
     )
     registered_name = models.CharField(max_length=255)
+    list_number = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         constraints = [

@@ -11,6 +11,7 @@ class PartyListSerializer(serializers.ModelSerializer):
             "id",
             "election_id",
             "registered_name",
+            "list_number",
         )
 
 
@@ -22,5 +23,6 @@ class PartyDetailSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "registered_name",
+            "list_number",
             "election",
         )
