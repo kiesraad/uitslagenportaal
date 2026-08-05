@@ -11,8 +11,8 @@ from region.models import Region
 
 
 class RegionListSerializer(serializers.ModelSerializer):
-    csb_name = serializers.CharField(source="parent.parent.region_name", default=None, read_only=True)
-    csb_slug = serializers.SlugField(source="parent.parent.slug", default=None, read_only=True)
+    csb_name = serializers.CharField(source="csb.region_name", default=None, read_only=True)
+    csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
     station_number = serializers.SerializerMethodField()
 
     class Meta:
@@ -31,8 +31,8 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     vote_counts = VoteCountSummarySerializer(many=True, read_only=True)
     timeline_entries = serializers.SerializerMethodField()
     documents = ElectionDocumentSerializer(many=True, read_only=True)
-    csb_name = serializers.CharField(source="parent.parent.region_name", default=None, read_only=True)
-    csb_slug = serializers.SlugField(source="parent.parent.slug", default=None, read_only=True)
+    csb_name = serializers.CharField(source="csb.region_name", default=None, read_only=True)
+    csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
     election_slug = serializers.CharField(source="election.slug", read_only=True)
 
     def get_vote_counts(self, obj):

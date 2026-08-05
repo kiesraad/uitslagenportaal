@@ -5,8 +5,6 @@ from mainsite.models import RegionCategory
 from region.models import Region
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
-CSB_LOOKUP_PREFIX = "parent__parent__"
-
 
 class RegionListView(ListAPIView):
     serializer_class = RegionListSerializer
@@ -36,16 +34,17 @@ class RegionListView(ListAPIView):
             Region.objects.filter(
                 election__election_config__slug=election_config_slug,
             )
-            .select_related("parent__parent")
+            .select_related("csb")
             .order_by("region_name")
         )
         if region_slug:
             if skip_node:
-                result = result.filter(parent__parent__slug=region_slug)
+                # parent_region is a CSB slug; list descendants under that CSB (e.g. gemeentes).
+                result = result.filter(csb__slug=region_slug)
             else:
                 result = result.filter(parent__slug=region_slug)
                 if csb_slug:
-                    result = result.filter(**{f"parent__{CSB_LOOKUP_PREFIX}slug": csb_slug})
+                    result = result.filter(csb__slug=csb_slug)
         if region_category:
             result = result.filter(region_category=region_category)
         return result
@@ -68,7 +67,8 @@ class RegionDetailView(RetrieveAPIView):
 
         queryset = (
             Region.objects.select_related(
-                "parent__parent",
+                "csb",
+                "parent",
                 "election__election_config",
             )
             .prefetch_related(
@@ -86,7 +86,7 @@ class RegionDetailView(RetrieveAPIView):
         if parent_region_slug:
             queryset = queryset.filter(parent__slug=parent_region_slug)
         if csb_slug:
-            queryset = queryset.filter(**{f"{CSB_LOOKUP_PREFIX}slug": csb_slug})
+            queryset = queryset.filter(csb__slug=csb_slug)
 
         try:
             return queryset.get()

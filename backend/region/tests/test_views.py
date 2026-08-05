@@ -147,6 +147,7 @@ def test_region_detail_disambiguates_waterschap_polling_station_by_csb_and_paren
     kieskring = RegionFactory(
         election=election,
         parent=waterschap,
+        csb=waterschap,
         region_category=RegionCategory.KIESKRING,
         region_name="Kieskring Noord",
         slug="kieskring-noord",
@@ -154,6 +155,7 @@ def test_region_detail_disambiguates_waterschap_polling_station_by_csb_and_paren
     gemeente = RegionFactory(
         election=election,
         parent=kieskring,
+        csb=waterschap,
         region_category=RegionCategory.GEMEENTE,
         region_name="Asten",
         slug="743-asten",
@@ -161,6 +163,7 @@ def test_region_detail_disambiguates_waterschap_polling_station_by_csb_and_paren
     stembureau = RegionFactory(
         election=election,
         parent=gemeente,
+        csb=waterschap,
         region_category=RegionCategory.STEMBUREAU,
         region_name="Soosgebouw DN Dissel",
         region_number="SB1",
