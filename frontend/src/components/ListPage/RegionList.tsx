@@ -16,7 +16,7 @@ function compareByStationNumber(a: SearchListOption, b: SearchListOption): numbe
 type Props = {
   electionConfig: ElectionConfig
   regions: Region[] | undefined
-  regionCategory: Extract<RegionCategory, 'GEMEENTE' | 'STEMBUREAU' | 'WATERSCHAP'>
+  regionCategory: RegionCategory
   parentRegionSlug?: string
   parentCsbSlug?: string
   regionTitle?: string
@@ -43,15 +43,15 @@ export function RegionList({
     navigate(appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id, parentCsbSlug))
   }
 
-  function navigateToWaterschap(option: SearchListOption) {
+  function navigateToCSB(option: SearchListOption) {
     navigate(appRoutes.csbResults(electionConfig.slug ?? '', option.id))
   }
 
   let navigateToRegion: (option: SearchListOption) => void;
   if (regionCategory === 'STEMBUREAU') {
     navigateToRegion = navigateToPollingStation;
-  } else if (regionCategory === 'WATERSCHAP') {
-    navigateToRegion = navigateToWaterschap;
+  } else if (['WATERSCHAP', 'PROVINCIE'].includes(regionCategory)) {
+    navigateToRegion = navigateToCSB;
   } else {
     navigateToRegion = navigateToGemeente;
   }
@@ -59,7 +59,7 @@ export function RegionList({
   function getRegionRoute(option: SearchListOption) {
     if (regionCategory === 'STEMBUREAU' && parentRegionSlug) {
       return appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id, parentCsbSlug)
-    } else if (regionCategory === 'WATERSCHAP') {
+    } else if (['WATERSCHAP', 'PROVINCIE'].includes(regionCategory)) {
       return appRoutes.csbResults(electionConfig.slug, option.id)
     } else {
       return appRoutes.municipalityPollingstationList(electionConfig.slug, option.id, option.csbSlug)

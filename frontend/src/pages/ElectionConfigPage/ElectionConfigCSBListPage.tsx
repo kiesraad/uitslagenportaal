@@ -63,7 +63,7 @@ export function ElectionConfigCSBListPage() {
       <RegionList
         electionConfig={electionConfig}
         regions={regions}
-        regionCategory='WATERSCHAP'
+        regionCategory={electionConfig.csb_type}
       />
 
     </Layout>
