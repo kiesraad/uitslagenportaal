@@ -216,6 +216,8 @@ class Command(BaseCommand):
                 report_error_url=election_data.get("report_error_url", ""),
                 counting_info_url=election_data.get("counting_info_url", ""),
                 voting_url=election_data.get("voting_url", ""),
+                gh_counting_results_branch=election_data.get("gh_counting_results_branch"),
+                gh_exchange_branch=election_data("gh_exchange_branch"),
             )
             for seed_key, variant in self._TIMELINE_VARIANTS.items():
                 for entry_data in item.get(seed_key, []):

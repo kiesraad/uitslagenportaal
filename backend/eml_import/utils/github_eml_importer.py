@@ -9,46 +9,89 @@ from github import Auth, Github
 from github.ContentFile import ContentFile
 from github.File import File
 
-from eml_import.models import ImportedCommit
+from election.models import ElectionConfig
+from eml_import.models import BranchType, ImportedCommit
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.utils.election_importer import ElectionImporter
 
-COMMIT_BATCH_SIZE = 10
+COMMIT_BATCH_SIZE = 25
+
+# The branches to import, in import order, mapped to the ElectionConfig field holding the branch name
+BRANCH_FIELDS: dict[BranchType, str] = {
+    BranchType.EXCHANGE: "gh_exchange_branch",
+    BranchType.COUNTING_RESULTS: "gh_counting_results_branch",
+}
 
 
 class GithubEmlImporter:
-    def __init__(self) -> None:
+    def __init__(self, election_config: ElectionConfig) -> None:
+        self.election_config = election_config
         self.gh = Github(auth=Auth.Token(settings.GITHUB_TOKEN))
         self.repo = self.gh.get_repo(settings.GITHUB_INGRESS_REPO)
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def run(self) -> int:
-        last_imported = ImportedCommit.objects.order_by("-created_at").first()
-        self.logger.info(
-            "Starting GitHub importer at %s",
-            last_imported.commit_sha if last_imported else "first commit",
-        )
+        """
+        Import the next batch of commits from the first branch that still has commits left.
+        :return: the number of imported files
+        """
+        for branch_type, branch in self._iterate_branches():
+            last_imported = (
+                ImportedCommit.objects.filter(election_config=self.election_config, branch_type=branch_type)
+                .order_by("-created_at")
+                .first()
+            )
+            self.logger.info(
+                "Starting GitHub importer for %s on branch %s at %s",
+                self.election_config.identifier,
+                branch,
+                last_imported.commit_sha if last_imported else "first commit",
+            )
 
-        batch_head_sha, files = self._get_next_batch_of_files(last_imported.commit_sha if last_imported else None)
-        if batch_head_sha is None:
-            return 0
+            batch_head_sha, files = self._get_next_batch_of_files(
+                last_imported.commit_sha if last_imported else None, branch
+            )
+            # This branch is fully imported, so continue with the next one
+            if batch_head_sha is None:
+                self.logger.info(
+                    "No commits remaining on %s!",
+                    branch,
+                )
+                continue
 
-        files = list(self._iterate_all_xml_files(files, batch_head_sha))
-        ElectionImporter().import_files(files)
-        ImportedCommit.objects.create(commit_sha=batch_head_sha)
+            files = list(self._iterate_all_xml_files(files, batch_head_sha))
+            ElectionImporter().import_files(files)
+            ImportedCommit.objects.create(
+                election_config=self.election_config,
+                branch_type=branch_type,
+                commit_sha=batch_head_sha,
+            )
 
-        return len(files)
+            return len(files)
 
-    def _get_next_batch_of_files(self, base_sha: str | None) -> tuple[str | None, list[File]]:
+        return 0
+
+    def _iterate_branches(self) -> Iterator[tuple[BranchType, str]]:
+        """
+        Iterate the configured branches of the election config, in import order.
+        :return:
+        """
+        for branch_type, field in BRANCH_FIELDS.items():
+            branch = getattr(self.election_config, field)
+            if branch:
+                yield branch_type, branch
+
+            else:
+                self.logger.info("No %s branch configured for %s", branch_type, self.election_config.identifier)
+
+    def _get_next_batch_of_files(self, base_sha: str | None, branch: str) -> tuple[str | None, list[File]]:
         if base_sha is not None:
             # Get the commits ahead of the base_sha ref, so commits[0] is the first commit after base_Sha
-            ahead = self.repo.compare(base_sha, settings.GITHUB_INGRESS_BRANCH)
+            ahead = self.repo.compare(base_sha, branch)
             commits = list(itertools.islice(ahead.commits, COMMIT_BATCH_SIZE))
         else:
-            # Get the first commits of the repo, so commits[0] is the first ever commit
-            commits = list(
-                itertools.islice(self.repo.get_commits(sha=settings.GITHUB_INGRESS_BRANCH).reversed, COMMIT_BATCH_SIZE)
-            )
+            # Get the first commits of the branch, so commits[0] is the first ever commit
+            commits = list(itertools.islice(self.repo.get_commits(sha=branch).reversed, COMMIT_BATCH_SIZE))
 
         if not commits:
             return None, []

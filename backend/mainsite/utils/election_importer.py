@@ -286,13 +286,13 @@ class EML510bImporter(EMLBaseImporter[Eml510]):
                 region_number=int(self.eml.managing_authority.authority_identifier.id),
                 region_name=managing_authority_name,
             )
-            ElectionDocument.objects.create(
-                storage_key=self.file_path.relative_to(f"{settings.BASE_DIR}/.data").as_posix(),
-                region=region,
-                content_type="application/xml",
-                size=len(self.file_path.read_bytes()),
-                file_type=ElectionDocument.FILE_TYPE_EML510B,
-            )
+            # ElectionDocument.objects.create(
+            #     storage_key=self.file_path.relative_to(f"{settings.BASE_DIR}/.data").as_posix(),
+            #     region=region,
+            #     content_type="application/xml",
+            #     size=len(self.file_path.read_bytes()),
+            #     file_type=ElectionDocument.FILE_TYPE_EML510B,
+            # )
             region.results_available_at = timezone.now()
             counting_method = self._counting_method(self.eml.count)
             if counting_method is not None:
@@ -496,6 +496,6 @@ class ElectionImporter:
         xml_files = self._classify_files(files)
         for parser_type, (binding, importer_cls) in self._DOCUMENT_TYPES.items():
             for file in xml_files[parser_type]:
-                self.logger.info(f"Importing {parser_type} file: {file.filename}")
+                self.logger.info(f"Importing {parser_type} file {file.filename}")
                 eml = self._parser.from_bytes(file.getvalue(), binding)
                 importer_cls(eml, "test.xml").parse()  # todo: save file to storage

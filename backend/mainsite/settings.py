@@ -122,7 +122,6 @@ CORS_ALLOWED_ORIGINS = [
 # GitHub EML ingress
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_INGRESS_REPO = os.environ.get("GITHUB_INGRESS_REPO")  # "owner/repo"
-GITHUB_INGRESS_BRANCH = os.environ.get("GITHUB_INGRESS_BRANCH", "main")
 
 
 # Object storage
