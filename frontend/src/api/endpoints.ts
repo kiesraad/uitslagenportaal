@@ -18,13 +18,14 @@ export function getElectionConfigBySlug(slug: string) {
 
 export function getRegions(
   electionConfigSlug: string,
-  skipNode: boolean,
   parentRegionSlug?: string,
   regionCategory?: RegionCategory,
   csbSlug?: string,
 ) {
-  if (!electionConfigSlug || (!parentRegionSlug && !regionCategory)) {
-    throw new Error('getRegions: electionConfigSlug and one of parentRegionSlug or regionCategory are required.')
+  if (!electionConfigSlug || (!parentRegionSlug && !regionCategory && !csbSlug)) {
+    throw new Error(
+      'getRegions: electionConfigSlug and one of parentRegionSlug, regionCategory, or csbSlug are required.',
+    )
   }
 
   const url = new URL('/api/regions', window.location.origin)
@@ -38,7 +39,6 @@ export function getRegions(
   if (csbSlug) {
     url.searchParams.append('csb', csbSlug)
   }
-  url.searchParams.append('skip_node', skipNode ? '1' : '0')
   return apiGet<RegionResponse>(`${url.pathname}${url.search}`)
 }
 
@@ -71,4 +71,3 @@ export function getPartyVoteMatrix(
   url.searchParams.append('csb', csbSlug)
   return apiGet<PartyVoteMatrix>(`${url.pathname}${url.search}`)
 }
-

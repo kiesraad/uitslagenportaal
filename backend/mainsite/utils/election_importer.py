@@ -29,6 +29,18 @@ from party.models import Candidate, Party
 from region.models import Region
 
 
+def _csb_for_parent(parent: Region | None) -> Region | None:
+    """
+    CSB is the election-tree root.
+
+    Root regions have no parent and no csb. Children inherit the parent's csb,
+    or the parent itself when the parent is the root.
+    """
+    if parent is None:
+        return None
+    return parent.csb or parent
+
+
 class EMLBaseImporter[T](ABC):
     eml_type = None
 
@@ -182,6 +194,7 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
                 region_name=node.region_name.value,
                 region_category=node.region_category.value,
                 region_number=node.region_number,
+                defaults={"csb": _csb_for_parent(parent_region)},
             )
 
     def _parse_registered_parties(self) -> None:
@@ -305,6 +318,7 @@ class EML510bImporter(EMLBaseImporter[Eml510]):
                     region_number=unit.reporting_unit_identifier.id,
                     region_name=polling_station_name,
                     parent=region,
+                    csb=_csb_for_parent(region),
                     region_category=RegionCategory.STEMBUREAU,
                 )
                 self._parse_party_candidate_votecounts(

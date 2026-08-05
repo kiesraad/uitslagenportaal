@@ -32,7 +32,7 @@ export function CSBMunicipalityListPage() {
         isLoading: isRegionsLoading,
         isError: isRegionsError,
         refetch: refetchRegions,
-    } = useRegions(electionConfigSlug, regionSlug, 'GEMEENTE', true)
+    } = useRegions(electionConfigSlug, undefined, 'GEMEENTE', regionSlug)
 
     const regionLabels = getRegionLabels(electionConfig?.csb_type)
 

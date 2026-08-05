@@ -5,8 +5,6 @@ from mainsite.models import RegionCategory
 from region.models import Region
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
-CSB_LOOKUP_PREFIX = "parent__parent__"
-
 
 class RegionListView(ListAPIView):
     serializer_class = RegionListSerializer
@@ -19,33 +17,29 @@ class RegionListView(ListAPIView):
         # optional
         region_category = self.request.query_params.get("region_category")
 
-        # optional
-        region_slug = self.request.query_params.get("parent_region")
-        skip_node = bool(int(self.request.query_params.get("skip_node", "0")))
+        # optional — direct parent slug
+        parent_region_slug = self.request.query_params.get("parent_region")
 
-        # optional
+        # optional — CSB ancestor slug (any depth)
         csb_slug = self.request.query_params.get("csb")
 
         if region_category:
             if region_category not in RegionCategory.values:
                 raise ValidationError({f"region_category {region_category} not recognized."})
-        if not (region_category or region_slug):
-            raise ValidationError({"Either region_category or region_slug needed"})
+        if not (region_category or parent_region_slug or csb_slug):
+            raise ValidationError({"Either region_category, parent_region, or csb needed"})
 
         result = (
             Region.objects.filter(
                 election__election_config__slug=election_config_slug,
             )
-            .select_related("parent__parent")
+            .select_related("csb")
             .order_by("region_name")
         )
-        if region_slug:
-            if skip_node:
-                result = result.filter(parent__parent__slug=region_slug)
-            else:
-                result = result.filter(parent__slug=region_slug)
-                if csb_slug:
-                    result = result.filter(**{f"parent__{CSB_LOOKUP_PREFIX}slug": csb_slug})
+        if parent_region_slug:
+            result = result.filter(parent__slug=parent_region_slug)
+        if csb_slug:
+            result = result.filter(csb__slug=csb_slug)
         if region_category:
             result = result.filter(region_category=region_category)
         return result
@@ -68,7 +62,7 @@ class RegionDetailView(RetrieveAPIView):
 
         queryset = (
             Region.objects.select_related(
-                "parent__parent",
+                "csb",
                 "election__election_config",
             )
             .prefetch_related(
@@ -86,7 +80,7 @@ class RegionDetailView(RetrieveAPIView):
         if parent_region_slug:
             queryset = queryset.filter(parent__slug=parent_region_slug)
         if csb_slug:
-            queryset = queryset.filter(**{f"{CSB_LOOKUP_PREFIX}slug": csb_slug})
+            queryset = queryset.filter(csb__slug=csb_slug)
 
         try:
             return queryset.get()

@@ -68,18 +68,21 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
     kieskring = RegionFactory(
         election=election,
         parent=csb,
+        csb=csb,
         region_category=RegionCategory.KIESKRING,
         region_name="Kieskring Alpha",
     )
     gemeente_a = RegionFactory(
         election=election,
         parent=kieskring,
+        csb=csb,
         region_category=RegionCategory.GEMEENTE,
         region_name="Bravo",
     )
     gemeente_b = RegionFactory(
         election=election,
         parent=kieskring,
+        csb=csb,
         region_category=RegionCategory.GEMEENTE,
         region_name="Alpha",
     )

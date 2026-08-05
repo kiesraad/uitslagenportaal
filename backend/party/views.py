@@ -44,7 +44,7 @@ class PartyResultMatrixView(APIView):
             Region.objects.filter(
                 election=csb.election,
                 region_category=RegionCategory.GEMEENTE,
-                parent__parent=csb,  # for WS elections the order is Waterschap -> Kieskring -> Gemeente
+                csb=csb,
             ).order_by("region_name")
         )
         candidates = list(party.candidates.order_by("position"))
