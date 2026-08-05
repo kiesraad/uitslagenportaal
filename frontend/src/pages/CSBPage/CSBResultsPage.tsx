@@ -131,7 +131,7 @@ export function CSBResultsPage() {
                         resultsPageContent
                     )}
                     <ResultsTimeline
-                        description="TBD."
+                        variant={region.timeline_variant}
                         entries={electionConfig.timeline_entries ?? []}
                     />
                     <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />

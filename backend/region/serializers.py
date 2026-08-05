@@ -30,6 +30,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     voter_turnout_counts = VoterTurnoutCountSummarySerializer(many=True, read_only=True)
     vote_counts = VoteCountSummarySerializer(many=True, read_only=True)
     timeline_entries = serializers.SerializerMethodField()
+    timeline_variant = serializers.SerializerMethodField()
     documents = ElectionDocumentSerializer(many=True, read_only=True)
     csb_name = serializers.CharField(source="csb.region_name", default=None, read_only=True)
     csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
@@ -51,6 +52,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "slug",
             "documents",
             "timeline_entries",
+            "timeline_variant",
             "region_category",
             "results_available_at",
             "csb_name",
@@ -61,6 +63,9 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     def _effective_variant(self, region) -> str:
         counting_method = region.counting_method or (region.parent.counting_method if region.parent else None)
         return counting_method or TimelineVariant.DEFAULT
+
+    def get_timeline_variant(self, region) -> str:
+        return self._effective_variant(region)
 
     def get_timeline_entries(self, region):
         variant = self._effective_variant(region)
