@@ -4,7 +4,6 @@ from io import BytesIO
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from django.conf import settings
 from django.utils import timezone
 from pyeml_bindings import (
     CountingMethodMethodCode,
@@ -22,7 +21,6 @@ from election.models import (
     Contest,
     Election,
     ElectionConfig,
-    ElectionDocument,
     VoteCount,
     VoterTurnoutCount,
 )
