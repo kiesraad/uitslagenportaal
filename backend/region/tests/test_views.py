@@ -124,3 +124,62 @@ def test_region_detail_disambiguates_by_parent_region():
 
     assert response.status_code == 200
     assert response.data["region_name"] == "School Bergen"
+
+
+@pytest.mark.django_db
+def test_region_detail_disambiguates_waterschap_polling_station_by_csb_and_parent_region():
+    """
+    Waterschap elections: Waterschap -> Kieskring -> Gemeente -> Stembureau.
+
+    Polling station detail must resolve when disambiguated with both parent gemeente
+    and CSB slug (as in /gsb/{gemeente}/csb/{waterschap}/{stembureau} URLs).
+
+    The CSB is three parent hops above the stembureau, so filtering with only
+    parent__parent__slug matches the kieskring instead of the waterschap.
+    """
+    election = ElectionFactory()
+    waterschap = RegionFactory(
+        election=election,
+        region_category=RegionCategory.WATERSCHAP,
+        region_name="Aa en Maas",
+        slug="20-aa-en-maas",
+    )
+    kieskring = RegionFactory(
+        election=election,
+        parent=waterschap,
+        region_category=RegionCategory.KIESKRING,
+        region_name="Kieskring Noord",
+        slug="kieskring-noord",
+    )
+    gemeente = RegionFactory(
+        election=election,
+        parent=kieskring,
+        region_category=RegionCategory.GEMEENTE,
+        region_name="Asten",
+        slug="743-asten",
+    )
+    stembureau = RegionFactory(
+        election=election,
+        parent=gemeente,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name="Soosgebouw DN Dissel",
+        region_number="SB1",
+        slug="SB1-soosgebouw-dn-dissel",
+    )
+
+    request = factory.get(
+        "/api/region/",
+        {
+            "election_config": election.election_config.slug,
+            "region": stembureau.slug,
+            "parent_region": gemeente.slug,
+            "csb": waterschap.slug,
+        },
+    )
+    response = RegionDetailView.as_view()(request)
+
+    assert response.status_code == 200
+    assert response.data["region_name"] == stembureau.region_name
+    assert response.data["slug"] == stembureau.slug
+    assert response.data["csb_slug"] == waterschap.slug
+    assert response.data["csb_name"] == waterschap.region_name
