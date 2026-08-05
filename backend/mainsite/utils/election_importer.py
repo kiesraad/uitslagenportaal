@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from io import BytesIO
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -10,7 +11,8 @@ from pyeml_bindings import (
     ElectionIdentifierStructureKr,
     Eml110a,
     Eml230,
-    Eml510, Emlstructure,
+    Eml510,
+    Emlstructure,
 )
 from tqdm import tqdm
 from xsdata.formats.dataclass.parsers import XmlParser
@@ -24,6 +26,7 @@ from election.models import (
     VoteCount,
     VoterTurnoutCount,
 )
+from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
 from party.models import Candidate, Party
 from region.models import Region
@@ -443,10 +446,8 @@ class EML510dImporter(EMLBaseImporter[Eml510]):
 
 
 class ElectionImporter:
-    def __init__(self, folder: Path):
-        self.folder = folder
-
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+    def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
         self._region_map: dict[tuple[str, str], Region] = {}
         self._parser = XmlParser(ParserConfig(fail_on_unknown_properties=True))
 
@@ -458,7 +459,7 @@ class ElectionImporter:
     }
 
     @staticmethod
-    def _document_id(xml_file_path: Path | bytes) -> str | None:
+    def _document_id(xml_file_path: Path | BytesIO) -> str | None:
         for _, element in ET.iterparse(xml_file_path, events=("start",)):
             return element.get("Id")
         return None
@@ -477,30 +478,24 @@ class ElectionImporter:
             eml = self._parser.from_path(xml_file_path, binding)
             importer_cls(eml, xml_file_path).parse()
 
-    def _classify_files(self) -> dict[str, list[Path]]:
-        xml_files: dict[str, list[Path]] = {key: [] for key in self._DOCUMENT_TYPES}
-        for xml_file_path in sorted(self.folder.rglob("*.xml")):
+    def _classify_files[T = Path | BytesIO](self, input_files: list[T]) -> dict[str, list[T]]:
+        xml_files: dict[str, list[T]] = {key: [] for key in self._DOCUMENT_TYPES}
+        for xml_file_path in input_files:
             document_id = self._document_id(xml_file_path)
-            if document_id in xml_files:
+            if document_id and document_id in xml_files:
                 xml_files[document_id].append(xml_file_path)
         return xml_files
 
-    def run(self) -> None:
-        xml_files = self._classify_files()
+    def import_folder(self, folder: Path) -> None:
+        files = sorted(folder.rglob("*.xml"))
+        xml_files = self._classify_files(files)
         for parser_type in self._DOCUMENT_TYPES:
             self._import_files(parser_type, xml_files[parser_type])
 
-    @classmethod
-    def import_single(cls, file_content: bytes):
-        document_id = cls._document_id(file_content)
-        if document_id is None:
-            return
-
-        importer_cls: type[EMLBaseImporter] | None
-        binding, importer_cls = cls._DOCUMENT_TYPES.get(document_id, (None, None))
-        if importer_cls is None:
-            return
-
-        parser = XmlParser(ParserConfig(fail_on_unknown_properties=True))
-        eml = parser.from_bytes(file_content, binding)
-        importer_cls(eml, "test.xml").parse()  # todo: save file to storage
+    def import_files(self, files: list[NamedBytesIO]) -> None:
+        xml_files = self._classify_files(files)
+        for parser_type, (binding, importer_cls) in self._DOCUMENT_TYPES.items():
+            for file in xml_files[parser_type]:
+                self.logger.info(f"Importing {parser_type} file: {file.filename}")
+                eml = self._parser.from_bytes(file.getvalue(), binding)
+                importer_cls(eml, "test.xml").parse()  # todo: save file to storage
