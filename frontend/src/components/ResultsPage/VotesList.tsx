@@ -23,7 +23,7 @@ export default function VotesList({voteCounts, total, columns = ['Lijst', 'Aanta
           ))}
         </div>
 
-        {voteCounts.map((voteCount, i) => {
+        {voteCounts.map((voteCount) => {
           const isClickable = voteCount.valid_votes > 0
           const ListItem = isClickable
             ? ({...props}) => <Link to={`${location.pathname}/${voteCount.party.slug}`} {...props} />
@@ -33,7 +33,7 @@ export default function VotesList({voteCounts, total, columns = ['Lijst', 'Aanta
             "items-center hover:no-underline! even:bg-blue-50 h-18 px-6 grid col-span-4 grid-cols-subgrid",
             isClickable && "hover:bg-blue-100"
           )}>
-            <span className="font-light text-gray-700">{i + 1}</span>
+            <span className="font-light text-gray-700">{voteCount.party.list_number}</span>
             <span className="in-[a]:text-(--c-blue) in-[a]:underline">{voteCount.party.registered_name}</span>
             <span className="text-right bold">{voteCount.valid_votes.toLocaleString('nl-NL')}</span>
             <span>{isClickable && <span className="gemeente-chevron mb-1">{'>'}</span>}</span>
