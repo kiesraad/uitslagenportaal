@@ -68,7 +68,6 @@ class RegionDetailView(RetrieveAPIView):
         queryset = (
             Region.objects.select_related(
                 "csb",
-                "parent",
                 "election__election_config",
             )
             .prefetch_related(
