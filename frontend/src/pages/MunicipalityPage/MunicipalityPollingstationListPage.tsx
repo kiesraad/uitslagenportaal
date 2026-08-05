@@ -23,7 +23,7 @@ export function MunicipalityPollingstationListPage() {
     isLoading: isPollingStationsLoading,
     isError: isPollingStationsError,
     refetch: refetchPollingStations,
-  } = useRegions(electionConfigSlug, regionSlug, 'STEMBUREAU', false, csbSlug)
+  } = useRegions(electionConfigSlug, regionSlug, 'STEMBUREAU', csbSlug)
 
   const isLoading = isPollingStationsLoading
   const isError =

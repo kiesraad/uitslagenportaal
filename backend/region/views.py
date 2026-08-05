@@ -17,18 +17,17 @@ class RegionListView(ListAPIView):
         # optional
         region_category = self.request.query_params.get("region_category")
 
-        # optional
-        region_slug = self.request.query_params.get("parent_region")
-        skip_node = bool(int(self.request.query_params.get("skip_node", "0")))
+        # optional — direct parent slug
+        parent_region_slug = self.request.query_params.get("parent_region")
 
-        # optional
+        # optional — CSB ancestor slug (any depth)
         csb_slug = self.request.query_params.get("csb")
 
         if region_category:
             if region_category not in RegionCategory.values:
                 raise ValidationError({f"region_category {region_category} not recognized."})
-        if not (region_category or region_slug):
-            raise ValidationError({"Either region_category or region_slug needed"})
+        if not (region_category or parent_region_slug or csb_slug):
+            raise ValidationError({"Either region_category, parent_region, or csb needed"})
 
         result = (
             Region.objects.filter(
@@ -37,14 +36,10 @@ class RegionListView(ListAPIView):
             .select_related("csb")
             .order_by("region_name")
         )
-        if region_slug:
-            if skip_node:
-                # parent_region is a CSB slug; list descendants under that CSB (e.g. gemeentes).
-                result = result.filter(csb__slug=region_slug)
-            else:
-                result = result.filter(parent__slug=region_slug)
-                if csb_slug:
-                    result = result.filter(csb__slug=csb_slug)
+        if parent_region_slug:
+            result = result.filter(parent__slug=parent_region_slug)
+        if csb_slug:
+            result = result.filter(csb__slug=csb_slug)
         if region_category:
             result = result.filter(region_category=region_category)
         return result

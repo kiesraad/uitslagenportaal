@@ -34,13 +34,11 @@ export function useRegions(
   electionConfigSlug: string | undefined,
   parentRegionSlug?: string,
   regionCategory?: RegionCategory,
-  skipNode?: boolean,
   csbSlug?: string
 ) {
-  // Validation: Either regionCategory or parentRegionSlug must be present (with electionConfigSlug), but not both undefined.
   const enabled =
     Boolean(electionConfigSlug) &&
-    (Boolean(regionCategory) || Boolean(parentRegionSlug));
+    (Boolean(regionCategory) || Boolean(parentRegionSlug) || Boolean(csbSlug));
 
   return useQuery({
     queryKey: [
@@ -48,10 +46,9 @@ export function useRegions(
       electionConfigSlug,
       parentRegionSlug ?? null,
       regionCategory ?? null,
-      skipNode ?? false,
       csbSlug ?? null,
     ],
-    queryFn: () => getRegions(electionConfigSlug!, skipNode!, parentRegionSlug, regionCategory, csbSlug),
+    queryFn: () => getRegions(electionConfigSlug!, parentRegionSlug, regionCategory, csbSlug),
     enabled,
   });
 }
