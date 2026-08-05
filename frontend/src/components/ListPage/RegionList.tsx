@@ -1,11 +1,12 @@
 import {Link, useNavigate} from 'react-router-dom'
 import type {SearchListOption} from '../SearchBar'
 import SearchBar from '../SearchBar'
+import { appRoutes } from '../../utils/routes'
+import { getRegionLabels } from '../../utils/region'
 import type {ElectionConfig, Region, RegionCategory} from '../../api/types'
-import {appRoutes} from '../../utils/routes'
-import {getRegionLabel} from '../../utils/region'
 import {type PropsWithChildren, useMemo} from "react";
 import {twMerge} from "tailwind-merge";
+
 
 
 function compareByStationNumber(a: SearchListOption, b: SearchListOption): number {
@@ -15,7 +16,7 @@ function compareByStationNumber(a: SearchListOption, b: SearchListOption): numbe
 type Props = {
   electionConfig: ElectionConfig
   regions: Region[] | undefined
-  regionCategory: Extract<RegionCategory, 'GEMEENTE' | 'STEMBUREAU' | 'WATERSCHAP'>
+  regionCategory: RegionCategory
   parentRegionSlug?: string
   parentCsbSlug?: string
   regionTitle?: string
@@ -42,15 +43,15 @@ export function RegionList({
     navigate(appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id, parentCsbSlug))
   }
 
-  function navigateToWaterschap(option: SearchListOption) {
+  function navigateToCSB(option: SearchListOption) {
     navigate(appRoutes.csbResults(electionConfig.slug ?? '', option.id))
   }
 
   let navigateToRegion: (option: SearchListOption) => void;
   if (regionCategory === 'STEMBUREAU') {
     navigateToRegion = navigateToPollingStation;
-  } else if (regionCategory === 'WATERSCHAP') {
-    navigateToRegion = navigateToWaterschap;
+  } else if (['WATERSCHAP', 'PROVINCIE'].includes(regionCategory)) {
+    navigateToRegion = navigateToCSB;
   } else {
     navigateToRegion = navigateToGemeente;
   }
@@ -58,7 +59,7 @@ export function RegionList({
   function getRegionRoute(option: SearchListOption) {
     if (regionCategory === 'STEMBUREAU' && parentRegionSlug) {
       return appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id, parentCsbSlug)
-    } else if (regionCategory === 'WATERSCHAP') {
+    } else if (['WATERSCHAP', 'PROVINCIE'].includes(regionCategory)) {
       return appRoutes.csbResults(electionConfig.slug, option.id)
     } else {
       return appRoutes.municipalityPollingstationList(electionConfig.slug, option.id, option.csbSlug)
@@ -119,8 +120,9 @@ export function RegionList({
         onSelect={navigateToRegion}
       />
 
+
       {!isPollingStationList && (<h2 className="mb-4 text-2xl font-bold font-title">
-        Vind een {getRegionLabel(regionCategory).toLowerCase()} van A tot Z
+        Vind een {getRegionLabels(regionCategory).singular.toLowerCase()} van A tot Z
       </h2>)}
 
       {isPollingStationList ? (

@@ -3,7 +3,7 @@ import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import type { RegionCategory } from '../api/types'
-import { getRegionLabel } from '../utils/region'
+import { getRegionLabels } from '../utils/region'
 
 export type SearchListOption = {
   id: string
@@ -15,10 +15,8 @@ export type SearchListOption = {
   stationNumber?: number
 }
 
-type SearchRegionCategory = Extract<RegionCategory, 'GEMEENTE' | 'STEMBUREAU' | 'WATERSCHAP'>
-
 type Props = {
-  regionCategory: SearchRegionCategory
+  regionCategory: RegionCategory
   options: SearchListOption[]
   onSelect: (option: SearchListOption) => void
   maxSuggestions?: number
@@ -32,8 +30,6 @@ export default function SearchBar({
   maxSuggestions = 8,
   children,
 }: Props) {
-
-
   const SEARCH_CONFIG = {
     STEMBUREAU: {
       label: 'Zoek op naam, adres of stembureau-nummer',
@@ -42,21 +38,26 @@ export default function SearchBar({
       inputId: 'stembureau-search',
     },
     GEMEENTE: {
-      label: `Zoek ${getRegionLabel('GEMEENTE').toLowerCase()}`,
+      label: `Zoek ${getRegionLabels('GEMEENTE').singular.toLowerCase()}`,
       placeholder: 'Bijv. Zoetermeer',
       submitBehavior: 'exact-match' as const,
       inputId: 'gemeente-search',
     },
     WATERSCHAP: {
-      label: `Zoek ${getRegionLabel('WATERSCHAP').toLowerCase()}`,
+      label: `Zoek ${getRegionLabels('WATERSCHAP').singular.toLowerCase()}`,
       placeholder: 'Bijv. De Stichtse Rijnlanden',
       submitBehavior: 'exact-match' as const,
       inputId: 'waterschap-search',
     },
-
   } as const
 
-  const config = SEARCH_CONFIG[regionCategory]
+  const labels = getRegionLabels(regionCategory)
+  const config = SEARCH_CONFIG[regionCategory as keyof typeof SEARCH_CONFIG] ?? {
+    label: `Zoek ${labels.singular.toLowerCase()}`,
+    placeholder: `Bijv. ${labels.singular}`,
+    submitBehavior: 'exact-match' as const,
+    inputId: `${regionCategory.toLowerCase()}-search`,
+  }
   const { label, placeholder, submitBehavior, inputId } = config
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(-1)

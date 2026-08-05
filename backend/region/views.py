@@ -94,16 +94,5 @@ class RegionDetailView(RetrieveAPIView):
             raise ValidationError({"detail": "Region not found for this election."})
         except Region.MultipleObjectsReturned:
             raise ValidationError(
-                {
-                    "detail": "Multiple regions match this slug. Specify the 'parent_region' or 'csb' query parameter.",
-                    "options": [
-                        {
-                            "csb": csb_slug,
-                            "csb_name": csb_name,
-                        }
-                        for csb_slug, csb_name in queryset.order_by(f"{CSB_LOOKUP_PREFIX}region_name")
-                        .values_list(f"{CSB_LOOKUP_PREFIX}slug", f"{CSB_LOOKUP_PREFIX}region_name")
-                        .distinct()
-                    ],
-                }
+                {"detail": "Multiple regions match this slug. Specify the 'parent_region' or 'csb' query parameter."}
             )

@@ -9,7 +9,7 @@ import PageIndex from '../../components/PageIndex'
 import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import PartyVoteMatrixTable from '../../components/ResultsPage/PartyVoteMatrixTable.tsx'
-import { getRegionLabel } from '../../utils/region.ts'
+import { getRegionLabels } from '../../utils/region.ts'
 import { formatDate } from '../../utils/date.ts'
 
 
@@ -41,7 +41,7 @@ export function CSBPartyResultsPage() {
         refetch: refetchPartyVoteMatrix,
     } = usePartyVoteMatrix(region?.election_slug, regionSlug, partySlug)
 
-    const regionLabel = getRegionLabel(electionConfig?.csb_type) || 'Regio'
+    const regionLabels = getRegionLabels(electionConfig?.csb_type)
     const partyName = partyVoteMatrix?.party.registered_name ?? partySlug
 
     const isLoading = isElectionLoading || isRegionLoading || isPartyVoteMatrixLoading
@@ -59,7 +59,7 @@ export function CSBPartyResultsPage() {
                     void refetchRegion()
                     void refetchPartyVoteMatrix()
                 }}
-                entityLabel={regionLabel}
+                entityLabel={regionLabels.singular}
             />
         )
     }
@@ -91,7 +91,7 @@ export function CSBPartyResultsPage() {
             title="Resultaten"
         >
             <PageTop
-                title={`Telresultaten ${regionLabel} ${region.region_name}\n ${partyName}`}
+                title={`Telresultaten ${regionLabels.singular} ${region.region_name}\n ${partyName}`}
                 subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
                 breadcrumb={[
                     { href: appRoutes.home(), label: 'Home' },

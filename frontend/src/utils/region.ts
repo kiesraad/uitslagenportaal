@@ -2,26 +2,32 @@
 import type { RegionCategory } from '../api/types'
 import { appRoutes } from './routes'
 
-const regionTypeMapping: Record<
-  string,
-  { singular: string; plural: string }
-> = {
-  STAAT: { singular: "Staat", plural: "Staten" },
-  WATERSCHAP: { singular: "Waterschap", plural: "Waterschappen" },
-  KIESKRING: { singular: "Kieskring", plural: "Kieskringen" },
-  GEMEENTE: { singular: "Gemeente", plural: "Gemeenten" },
-  PROVINCIE: { singular: "Provincie", plural: "Provincies" },
-  STEMBUREAU: { singular: "Stembureau", plural: "Stembureaus" },
+export type RegionLabels = {
+  singular: string
+  plural: string
+  whole: 'Heel' | 'Hele'
+  article: 'de' | 'het'
 }
 
-export function getRegionLabel(
-  regionType?: RegionCategory,
-  plural = false
-): string {
-  if (!regionType) return ""
-  const mapping = regionTypeMapping[regionType]
-  if (!mapping) return ""
-  return plural ? mapping.plural : mapping.singular
+const regionTypeMapping: Record<string, RegionLabels> = {
+  STAAT: { singular: "Staat", plural: "Staten", whole: "Hele", article: "de" },
+  WATERSCHAP: { singular: "Waterschap", plural: "Waterschappen", whole: "Heel", article: "het" },
+  KIESKRING: { singular: "Kieskring", plural: "Kieskringen", whole: "Hele", article: "de" },
+  GEMEENTE: { singular: "Gemeente", plural: "Gemeenten", whole: "Hele", article: "de" },
+  PROVINCIE: { singular: "Provincie", plural: "Provincies", whole: "Hele", article: "de" },
+  STEMBUREAU: { singular: "Stembureau", plural: "Stembureaus", whole: "Heel", article: "het" },
+}
+
+const FALLBACK_LABELS: RegionLabels = {
+  singular: "Regio",
+  plural: "Regio's",
+  whole: "Hele",
+  article: "de",
+}
+
+export function getRegionLabels(regionType?: RegionCategory): RegionLabels {
+  if (!regionType) return FALLBACK_LABELS
+  return regionTypeMapping[regionType] ?? FALLBACK_LABELS
 }
 
 export function getCsbCrumb(

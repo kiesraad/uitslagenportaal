@@ -18,7 +18,7 @@ class Region(BaseModel):
         related_name="children",
     )
 
-    region_number = models.CharField(max_length=32)
+    region_number = models.CharField(max_length=32, null=True)
     region_category = models.CharField(
         max_length=32,
         choices=RegionCategory.choices,
