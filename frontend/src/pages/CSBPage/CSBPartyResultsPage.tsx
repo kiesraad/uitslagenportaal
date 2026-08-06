@@ -43,6 +43,9 @@ export function CSBPartyResultsPage() {
 
     const regionLabels = getRegionLabels(electionConfig?.csb_type)
     const partyName = partyVoteMatrix?.party.registered_name ?? partySlug
+    const partyListNumber = region?.vote_counts.find(
+        (voteCount) => voteCount.result_level === 'PARTY' && voteCount.party.slug === partySlug,
+    )?.party.list_number
 
     const isLoading = isElectionLoading || isRegionLoading || isPartyVoteMatrixLoading
     const isError = isElectionError || isRegionError || isPartyVoteMatrixError || !electionConfig || !region || !partyVoteMatrix
@@ -74,8 +77,8 @@ export function CSBPartyResultsPage() {
                 ]}
             />
             <section id="telresultaten" className="party-vote-matrix-section">
-                <h3 className="mb-2">Telresultaten</h3>
-                <h3 className="mb-2"><span className="bold">{partyName}</span></h3>
+                <h2 className="text-lg mb-4.5 font-medium">Telresultaten lijst {partyListNumber}</h2>
+                <h3 className="party-level-title mb-2">{partyName}</h3>
 
                 <p className="mb-4">
                     Het centraal stembureau heeft de telresultaten van alle gemeenten en kieskringen gecontroleerd, overgenomen en bij elkaar opgeteld.
