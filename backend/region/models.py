@@ -17,6 +17,13 @@ class Region(BaseModel):
         on_delete=models.CASCADE,
         related_name="children",
     )
+    csb = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="csb_descendants",
+    )
 
     region_number = models.CharField(max_length=32, null=True)
     region_category = models.CharField(
@@ -28,7 +35,6 @@ class Region(BaseModel):
     counting_method = models.CharField(
         max_length=3,
         choices=CountingMethod.choices,
-        default=CountingMethod.CSO,
         null=True,
         blank=True,
     )

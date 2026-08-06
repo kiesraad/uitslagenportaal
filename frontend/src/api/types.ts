@@ -11,6 +11,8 @@ export type ElectionConfigsResponse = ElectionConfig[]
 
 export type TimelineEntryStatus = 'pending' | 'in-progress' | 'done'
 
+export type TimelineVariant = 'CSO' | 'DSO' | 'DEFAULT'
+
 export type TimelineEntry = {
   status: TimelineEntryStatus
   title: string
@@ -45,6 +47,7 @@ export type Region = {
   vote_counts: VoteCounts
   voter_turnout_counts?: VoterTurnoutCount[]
   timeline_entries?: TimelineEntry[]
+  timeline_variant?: TimelineVariant
   documents?: ElectionDocument[]
   region_category: RegionCategory
   results_available_at: string
@@ -59,6 +62,7 @@ export type RegionResponse = Region[]
 export type Party = {
   registered_name: string
   slug: string
+  list_number: number
 }
 
 export type Candidate = {
