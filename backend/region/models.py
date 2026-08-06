@@ -35,7 +35,6 @@ class Region(BaseModel):
     counting_method = models.CharField(
         max_length=3,
         choices=CountingMethod.choices,
-        default=CountingMethod.CSO,
         null=True,
         blank=True,
     )
