@@ -128,7 +128,7 @@ class EMLBaseImporter[T](ABC):
                     self.logger.error(
                         "Candidate %s not found within party %s",
                         int(votes_item.candidate.candidate_identifier.id),
-                        current_party.registered_name
+                        current_party.registered_name,
                     )
                 vote_counts.append(
                     VoteCount(
