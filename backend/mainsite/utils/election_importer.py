@@ -220,20 +220,19 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             election=self.election,
         )
         for affiliation in contest_data.affiliation:
-            # TODO: investigate candidates without parties.
             try:
                 party = Party.objects.get(
                     election=self.election,
                     registered_name=affiliation.affiliation_identifier.registered_name,
                 )
+                assert affiliation.affiliation_identifier.id, (
+                    f"AffiliationIdentifier/@Id missing for party {party.registered_name}"
+                )
+                party.list_number = int(affiliation.affiliation_identifier.id)
+                party.save(update_fields=["list_number", "updated_at"])
             except Party.DoesNotExist:
-                continue
-
-            assert affiliation.affiliation_identifier.id, (
-                f"AffiliationIdentifier/@Id missing for party {party.registered_name}"
-            )
-            party.list_number = int(affiliation.affiliation_identifier.id)
-            party.save(update_fields=["list_number", "updated_at"])
+                # Some candidates are not affiliated to any party
+                party = None
 
             for candidate in affiliation.candidate:
                 first_name = None

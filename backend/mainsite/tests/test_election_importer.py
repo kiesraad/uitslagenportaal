@@ -34,7 +34,7 @@ def ab2023_config(db):
 
 
 @pytest.mark.django_db
-def test_import_ws_ab2023_scheldestromen_fixtures(ab2023_config, ws_import_folder):
+def test_import_ws_fixtures(ab2023_config, ws_import_folder):
     ElectionImporter(ws_import_folder).run()
 
     election = Election.objects.get(election_config=ab2023_config)
