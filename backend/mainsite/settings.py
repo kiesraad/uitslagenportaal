@@ -163,7 +163,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "simple": {
-            "format": "{asctime} {levelname:8} {name}: {message}",
+            "format": "{asctime} {levelname} \t {name} - {message}",
             "style": "{",
         },
     },

@@ -4,6 +4,7 @@ from io import BytesIO
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
+from django.conf import settings
 from django.utils import timezone
 from pyeml_bindings import (
     CountingMethodMethodCode,
@@ -21,6 +22,7 @@ from election.models import (
     Contest,
     Election,
     ElectionConfig,
+    ElectionDocument,
     VoteCount,
     VoterTurnoutCount,
 )
@@ -48,7 +50,7 @@ BLANCO_PARTY_REGISTERED_NAME = "Blanco Lijst"
 class EMLBaseImporter[T](ABC):
     eml_type = None
 
-    def __init__(self, eml: T, file_path):
+    def __init__(self, eml: T, file_path: Path | None):
         self.eml = eml
         self.file_path = file_path
 
@@ -115,12 +117,19 @@ class EMLBaseImporter[T](ABC):
             if votes_item.candidate:
                 assert current_party, "No party to tie candidate to, cannot parse"
                 # get candidate from pre-saved data
-                candidate = candidate_by_key[
-                    (
-                        current_party.id,
+                try:
+                    candidate = candidate_by_key[
+                        (
+                            current_party.id,
+                            int(votes_item.candidate.candidate_identifier.id),
+                        )
+                    ]
+                except KeyError:
+                    self.logger.error(
+                        "Candidate %s not found within party %s",
                         int(votes_item.candidate.candidate_identifier.id),
+                        current_party.registered_name
                     )
-                ]
                 vote_counts.append(
                     VoteCount(
                         region=region,
@@ -284,13 +293,15 @@ class EML510bImporter(EMLBaseImporter[Eml510]):
                 region_number=int(self.eml.managing_authority.authority_identifier.id),
                 region_name=managing_authority_name,
             )
-            # ElectionDocument.objects.create(
-            #     storage_key=self.file_path.relative_to(f"{settings.BASE_DIR}/.data").as_posix(),
-            #     region=region,
-            #     content_type="application/xml",
-            #     size=len(self.file_path.read_bytes()),
-            #     file_type=ElectionDocument.FILE_TYPE_EML510B,
-            # )
+            if self.file_path is not None:
+                ElectionDocument.objects.create(
+                    storage_key=self.file_path.relative_to(f"{settings.BASE_DIR}/.data").as_posix(),
+                    region=region,
+                    content_type="application/xml",
+                    size=len(self.file_path.read_bytes()),
+                    file_type=ElectionDocument.FILE_TYPE_EML510B,
+                )
+
             region.results_available_at = timezone.now()
             counting_method = self._counting_method(self.eml.count)
             if counting_method is not None:
@@ -331,7 +342,7 @@ class EML510bImporter(EMLBaseImporter[Eml510]):
                 while polling_station_name.startswith("Stembureau "):
                     polling_station_name = polling_station_name[len("Stembureau ") :]
 
-                polling_station = Region.objects.create(
+                polling_station, _ = Region.objects.get_or_create(
                     election=self.election,
                     region_number=unit.reporting_unit_identifier.id,
                     region_name=polling_station_name,
@@ -496,4 +507,4 @@ class ElectionImporter:
             for file in xml_files[parser_type]:
                 self.logger.info(f"Importing {parser_type} file {file.filename}")
                 eml = self._parser.from_bytes(file.getvalue(), binding)
-                importer_cls(eml, "test.xml").parse()  # todo: save file to storage
+                importer_cls(eml, None).parse()

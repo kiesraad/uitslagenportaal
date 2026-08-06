@@ -4,13 +4,16 @@ Hand-written rather than mocks so the contract with PyGithub is written down in 
 place, and so the importer asking for something that does not exist fails loudly.
 """
 
+import base64
+
 
 class FakeFile:
     """Stands in for github.File.File."""
 
-    def __init__(self, filename: str, status: str = "added") -> None:
+    def __init__(self, filename: str, status: str = "added", sha: str | None = None) -> None:
         self.filename = filename
         self.status = status
+        self.sha = sha or filename
 
 
 class FakeCommit:
@@ -29,11 +32,11 @@ class FakeComparison:
         self.files = files
 
 
-class FakeContentFile:
-    """Stands in for github.ContentFile.ContentFile."""
+class FakeGitBlob:
+    """Stands in for github.GitBlob.GitBlob."""
 
-    def __init__(self, decoded_content: bytes) -> None:
-        self.decoded_content = decoded_content
+    def __init__(self, content: bytes) -> None:
+        self.content = base64.b64encode(content).decode("ascii")
 
 
 class FakePaginatedList(list):
@@ -74,9 +77,9 @@ class FakeRepo:
         commits = self._range(base, head)
         return FakeComparison(commits, [file for commit in commits for file in commit.files])
 
-    def get_contents(self, path: str, ref: str) -> FakeContentFile:
-        self.calls.append(("get_contents", path, ref))
-        return FakeContentFile(self.contents[path])
+    def get_git_blob(self, sha: str) -> FakeGitBlob:
+        self.calls.append(("get_git_blob", sha))
+        return FakeGitBlob(self.contents[sha])
 
     def calls_named(self, name: str) -> list[tuple]:
         return [call for call in self.calls if call[0] == name]

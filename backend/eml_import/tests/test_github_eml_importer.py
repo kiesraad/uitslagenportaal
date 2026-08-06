@@ -44,7 +44,7 @@ def fake_repo(monkeypatch, settings):
     def build(commits, contents=None):
         branches = commits if isinstance(commits, dict) else {BRANCH_EXCHANGE: commits}
         repo = FakeRepo(branches, contents)
-        monkeypatch.setattr(github_eml_importer, "Github", lambda auth: FakeGithub(repo))
+        monkeypatch.setattr(github_eml_importer, "Github", lambda auth, per_page: FakeGithub(repo))
         return repo
 
     return build
@@ -91,17 +91,16 @@ def test_iterate_all_xml_files_yields_xml_and_unpacks_zip(fake_repo, election_co
         FakeFile("results/notes.txt"),
     ]
 
-    extracted = list(GithubEmlImporter(election_config)._iterate_all_xml_files(files, "head"))
+    extracted = list(GithubEmlImporter(election_config)._iterate_all_xml_files(files))
 
     assert as_pairs(extracted) == [
         ("results/telling.xml", XML_510B),
         ("inner/kandidaten.xml", XML_230B),
     ]
-    # Files with an unsupported extension are never fetched, and everything is read
-    # at the batch head ref
-    assert repo.calls_named("get_contents") == [
-        ("get_contents", "results/telling.xml", "head"),
-        ("get_contents", "results/bundle.zip", "head"),
+    # Files with an unsupported extension are never fetched
+    assert repo.calls_named("get_git_blob") == [
+        ("get_git_blob", "results/telling.xml"),
+        ("get_git_blob", "results/bundle.zip"),
     ]
 
 
@@ -109,9 +108,7 @@ def test_iterate_all_xml_files_yields_xml_and_unpacks_zip(fake_repo, election_co
 def test_iterate_all_xml_files_imports_every_status_that_leaves_a_file_behind(fake_repo, election_config, status):
     fake_repo(commits=[FakeCommit("head")], contents={"telling.xml": XML_510B})
 
-    extracted = list(
-        GithubEmlImporter(election_config)._iterate_all_xml_files([FakeFile("telling.xml", status)], "head")
-    )
+    extracted = list(GithubEmlImporter(election_config)._iterate_all_xml_files([FakeFile("telling.xml", status)]))
 
     assert as_pairs(extracted) == [("telling.xml", XML_510B)]
 
@@ -120,12 +117,10 @@ def test_iterate_all_xml_files_imports_every_status_that_leaves_a_file_behind(fa
 def test_iterate_all_xml_files_skips_removed_and_unchanged(fake_repo, election_config, status):
     repo = fake_repo(commits=[FakeCommit("head")], contents={"telling.xml": XML_510B})
 
-    extracted = list(
-        GithubEmlImporter(election_config)._iterate_all_xml_files([FakeFile("telling.xml", status)], "head")
-    )
+    extracted = list(GithubEmlImporter(election_config)._iterate_all_xml_files([FakeFile("telling.xml", status)]))
 
     assert extracted == []
-    assert repo.calls_named("get_contents") == []
+    assert repo.calls_named("get_git_blob") == []
 
 
 def test_iterate_all_xml_files_unpacks_nested_zip(fake_repo, election_config):
@@ -135,7 +130,7 @@ def test_iterate_all_xml_files_unpacks_nested_zip(fake_repo, election_config):
         contents={"outer.zip": zip_bytes({"nested/inner.zip": inner})},
     )
 
-    extracted = list(GithubEmlImporter(election_config)._iterate_all_xml_files([FakeFile("outer.zip")], "head"))
+    extracted = list(GithubEmlImporter(election_config)._iterate_all_xml_files([FakeFile("outer.zip")]))
 
     # Named after the entry inside the archive, not after the zip it arrived in
     assert as_pairs(extracted) == [("telling.xml", XML_510B)]
@@ -232,6 +227,37 @@ def test_get_next_batch_of_files_does_not_diff_a_single_commit(fake_repo, electi
     # compare() is only used to list the commits; the files come from get_commit()
     assert repo.calls_named("compare") == [("compare", "imported", BRANCH_EXCHANGE)]
     assert repo.calls_named("get_commit") == [("get_commit", "only")]
+
+
+def test_get_next_batch_of_files_uses_the_diff_when_it_has_fewer_than_300_files(fake_repo, election_config):
+    first_commit_files = [FakeFile("a.xml")]
+    diff_files = [FakeFile(f"pad_{index}.xml") for index in range(299)]
+    repo = fake_repo(commits=[FakeCommit("first", first_commit_files), FakeCommit("second", diff_files)])
+
+    head_sha, files = GithubEmlImporter(election_config)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
+
+    assert head_sha == "second"
+    assert [file.filename for file in files] == ["a.xml"] + [f"pad_{index}.xml" for index in range(299)]
+    assert repo.calls_named("compare") == [("compare", "first", "second")]
+    # The diff is small enough to use directly, without fetching each commit separately
+    assert repo.calls_named("get_commit") == [("get_commit", "first")]
+
+
+def test_get_next_batch_of_files_fetches_files_per_commit_when_the_diff_has_300_or_more_files(
+    fake_repo, election_config
+):
+    first_commit_files = [FakeFile("a.xml")]
+    diff_files = [FakeFile(f"pad_{index}.xml") for index in range(300)]
+    repo = fake_repo(commits=[FakeCommit("first", first_commit_files), FakeCommit("second", diff_files)])
+
+    head_sha, files = GithubEmlImporter(election_config)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
+
+    assert head_sha == "second"
+    assert [file.filename for file in files] == ["a.xml"] + [f"pad_{index}.xml" for index in range(300)]
+    # The diff is only used to measure its size; once it is 300 files or more, the files
+    # are fetched per commit instead, at the cost of one extra request per commit
+    assert repo.calls_named("compare") == [("compare", "first", "second")]
+    assert repo.calls_named("get_commit") == [("get_commit", "first"), ("get_commit", "second")]
 
 
 def test_run_imports_from_the_first_commit_and_records_progress(fake_repo, imported_batches, stored_election_config):

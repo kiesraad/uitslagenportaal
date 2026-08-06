@@ -35,8 +35,8 @@ uv pip install -e .
 
 - Make an .env file with: DB_NAME, DB_USER, DB_PASSWORD and DB_HOST
 - Have an .data folder for debug data and fill it with EML files from an election
-- For the GitHub EML ingress, optionally set GITHUB_TOKEN and GITHUB_INGRESS_REPO (the branches to import
-  are configured per election on the ElectionConfig)
+- For the GitHub EML ingress, optionally set GITHUB_TOKEN and GITHUB_INGRESS_REPO. 
+  Use a Personal Access Token (classic) with `repo` scope as GITHUB_TOKEN. 
 
 4. Adding new packages
 
@@ -80,7 +80,7 @@ python manage.py import_election
 python manage.py reset_and_import
 ```
 
-# Fetch the file diff for the next batch of EML commits from GitHub
+# Run the Github importer for the next batch of commits
 ```bash
 python manage.py import_next_github_commits [election identifier]
 ```
