@@ -59,10 +59,7 @@ export function MunicipalityPartyResultsPage() {
     [partyLevelVoteCounts, partySlug],
   )
 
-  const partyListNumber = useMemo(
-    () => partyLevelVoteCounts.findIndex((voteCount) => voteCount.party.slug === partySlug) + 1,
-    [partyLevelVoteCounts, partySlug],
-  )
+  const partyListNumber = partyVoteCount?.party.list_number
 
   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug, regionSlug, csbSlug)
   const municipalityPartyResultsRoute = appRoutes.municipalityPartyResults(electionConfigSlug, regionSlug, partySlug, csbSlug)
@@ -110,7 +107,7 @@ export function MunicipalityPartyResultsPage() {
           />
 
           <section id="telresultaten">
-            <h2 className="text-lg mb-4.5 font-medium">Telresultaten lijst {partyListNumber || '?'}</h2>
+            <h2 className="text-lg mb-4.5 font-medium">Telresultaten lijst {partyListNumber}</h2>
             <h3 className="party-level-title mb-2">{partyName}</h3>
             <CandidatesVoteList
               voteCounts={currentPartyVoteCounts}
