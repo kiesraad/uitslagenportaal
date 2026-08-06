@@ -1,0 +1,170 @@
+<?xml version="1.0"?>
+<EML xmlns="urn:oasis:names:tc:evs:schema:eml" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:kr="http://www.kiesraad.nl/extensions" xmlns:xal="urn:oasis:names:tc:ciq:xsdschema:xAL:2.0" xmlns:xnl="urn:oasis:names:tc:ciq:xsdschema:xNL:2.0" Id="510b" SchemaVersion="5">
+  <TransactionId>1</TransactionId>
+  <ManagingAuthority>
+    <AuthorityIdentifier Id="0654">Borsele</AuthorityIdentifier>
+    <AuthorityAddress/>
+  </ManagingAuthority>
+  <kr:CreationDateTime>2023-03-16T16:54:48.700</kr:CreationDateTime>
+  <ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"/>
+  <Count>
+    <EventIdentifier/>
+    <Election>
+      <ElectionIdentifier Id="AB2023_Scheldestromen">
+        <ElectionName>Algemeen bestuur van het waterschap Scheldestromen 2023</ElectionName>
+        <ElectionCategory>AB</ElectionCategory>
+        <kr:ElectionSubcategory>AB2</kr:ElectionSubcategory>
+        <kr:ElectionDomain Id="17">Scheldestromen</kr:ElectionDomain>
+        <kr:ElectionDate>2023-03-15</kr:ElectionDate>
+      </ElectionIdentifier>
+      <Contests>
+        <Contest>
+          <ContestIdentifier Id="geen"/>
+          <TotalVotes>
+            <Selection>
+              <AffiliationIdentifier Id="1">
+                <RegisteredName>Partij voor Zeeland</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>1779</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>1107</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>48</ValidVotes>
+            </Selection>
+            <Selection>
+              <AffiliationIdentifier Id="2">
+                <RegisteredName>CDA</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>1294</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>755</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>20</ValidVotes>
+            </Selection>
+            <Selection>
+              <AffiliationIdentifier Id="12">
+                <RegisteredName/>
+              </AffiliationIdentifier>
+              <ValidVotes>79</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>54</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>9</ValidVotes>
+            </Selection>
+            <Cast>18485</Cast>
+            <TotalCounted>12226</TotalCounted>
+            <RejectedVotes ReasonCode="ongeldig">27</RejectedVotes>
+            <RejectedVotes ReasonCode="blanco">63</RejectedVotes>
+            <UncountedVotes ReasonCode="geldige stempassen">10878</UncountedVotes>
+            <UncountedVotes ReasonCode="geldige volmachtbewijzen">1427</UncountedVotes>
+            <UncountedVotes ReasonCode="geldige kiezerspassen">11</UncountedVotes>
+            <UncountedVotes ReasonCode="toegelaten kiezers">12316</UncountedVotes>
+            <UncountedVotes ReasonCode="meer getelde stembiljetten">5</UncountedVotes>
+            <UncountedVotes ReasonCode="minder getelde stembiljetten">5</UncountedVotes>
+            <UncountedVotes ReasonCode="meegenomen stembiljetten">5</UncountedVotes>
+            <UncountedVotes ReasonCode="te weinig uitgereikte stembiljetten">0</UncountedVotes>
+            <UncountedVotes ReasonCode="te veel uitgereikte stembiljetten">1</UncountedVotes>
+            <UncountedVotes ReasonCode="geen verklaring">0</UncountedVotes>
+            <UncountedVotes ReasonCode="andere verklaring">0</UncountedVotes>
+          </TotalVotes>
+          <ReportingUnitVotes>
+            <ReportingUnitIdentifier Id="0654::SB1">Stembureau Stembureau Heinkenszand, De Stenge (postcode: 4451 CZ)</ReportingUnitIdentifier>
+            <Selection>
+              <AffiliationIdentifier Id="1">
+                <RegisteredName>Partij voor Zeeland</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>279</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>145</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>10</ValidVotes>
+            </Selection>
+            <Selection>
+              <AffiliationIdentifier Id="2">
+                <RegisteredName>CDA</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>182</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>113</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>2</ValidVotes>
+            </Selection>
+            <Selection>
+              <AffiliationIdentifier Id="12">
+                <RegisteredName/>
+              </AffiliationIdentifier>
+              <ValidVotes>15</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>8</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>3</ValidVotes>
+            </Selection>
+            <Cast>2289</Cast>
+            <TotalCounted>1535</TotalCounted>
+            <RejectedVotes ReasonCode="ongeldig">10</RejectedVotes>
+            <RejectedVotes ReasonCode="blanco">14</RejectedVotes>
+            <UncountedVotes ReasonCode="geldige stempassen">1381</UncountedVotes>
+            <UncountedVotes ReasonCode="geldige volmachtbewijzen">179</UncountedVotes>
+            <UncountedVotes ReasonCode="geldige kiezerspassen">0</UncountedVotes>
+            <UncountedVotes ReasonCode="toegelaten kiezers">1560</UncountedVotes>
+            <UncountedVotes ReasonCode="meer getelde stembiljetten">0</UncountedVotes>
+            <UncountedVotes ReasonCode="minder getelde stembiljetten">1</UncountedVotes>
+            <UncountedVotes ReasonCode="meegenomen stembiljetten">1</UncountedVotes>
+            <UncountedVotes ReasonCode="te weinig uitgereikte stembiljetten">0</UncountedVotes>
+            <UncountedVotes ReasonCode="te veel uitgereikte stembiljetten">0</UncountedVotes>
+            <UncountedVotes ReasonCode="geen verklaring">0</UncountedVotes>
+            <UncountedVotes ReasonCode="andere verklaring">0</UncountedVotes>
+          </ReportingUnitVotes>
+        </Contest>
+      </Contests>
+    </Election>
+  </Count>
+</EML>
