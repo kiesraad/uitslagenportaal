@@ -13,26 +13,23 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "weekly"
+    versioning-strategy: "increase-if-necessary"
     cooldown:
       default-days: 7
       semver-major-days: 21
       semver-minor-days: 7
       semver-patch-days: 3
     groups:
-      npm:
+      npm-minor-patch:
         patterns: ["*"]
-    allow:
-      - dependency-type: all
+        update-types:
+          - "minor"
+          - "patch"
+      npm-major:
+        patterns: ["*"]
+        update-types:
+          - "major"
     ignore:
-      # from Abacus
-      - dependency-name: "@types/node"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "eslint"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@eslint/*"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "react-router"
-        update-types: ["version-update:semver-major"]
       - dependency-name: "react"
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-dom"
@@ -40,10 +37,6 @@ updates:
       - dependency-name: "@types/react"
         update-types: ["version-update:semver-major"]
       - dependency-name: "@types/react-dom"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "vite"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@vitejs/*"
         update-types: ["version-update:semver-major"]
   - package-ecosystem: "uv"
     directory: "/backend"
