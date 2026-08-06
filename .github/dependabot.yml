@@ -29,7 +29,7 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
-      - dependency-name: "@eslint/js"
+      - dependency-name: "@eslint/*"
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-router"
         update-types: ["version-update:semver-major"]
@@ -42,6 +42,8 @@ updates:
       - dependency-name: "@types/react-dom"
         update-types: ["version-update:semver-major"]
       - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitejs/*"
         update-types: ["version-update:semver-major"]
   - package-ecosystem: "uv"
     directory: "/backend"
