@@ -4,7 +4,7 @@ import { formatCandidateName } from '../../utils/formatCandidateName'
 type Props = {
   voteCounts: VoteCounts
   partyVote?: VoteCount
-  partyListNumber?: number
+  partyListNumber?: number | null
   total?: {
     label: string;
     value: number;
@@ -37,7 +37,7 @@ export default function CandidatesVoteList({ voteCounts, partyVote, partyListNum
         {partyVote && (
           <div className="votes-cast-list-item votes-cast-list-item-static">
             <div className="votes-cast-list-item-child">
-              <span className="font-semibold">Totaal stemmen lijst {partyListNumber}</span>
+              <span className="font-semibold">Totaal stemmen lijst {partyListNumber ?? '-'}</span>
             </div>
             <div className="votes-cast-list-item-child">
               <span className="font-semibold">{partyVote.valid_votes ? partyVote.valid_votes : '-'}</span>

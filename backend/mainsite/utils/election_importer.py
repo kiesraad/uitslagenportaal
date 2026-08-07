@@ -41,6 +41,9 @@ def _csb_for_parent(parent: Region | None) -> Region | None:
     return parent.csb or parent
 
 
+BLANCO_PARTY_REGISTERED_NAME = "Blanco Lijst"
+
+
 class EMLBaseImporter[T](ABC):
     eml_type = None
 
@@ -92,9 +95,12 @@ class EMLBaseImporter[T](ABC):
     ) -> None:
         current_party = None
         for votes_item in items:
-            if votes_item.affiliation_identifier and votes_item.affiliation_identifier.registered_name:
-                # get party from pre-saved data
-                current_party = party_by_name[votes_item.affiliation_identifier.registered_name]
+            if votes_item.affiliation_identifier:
+                if votes_item.affiliation_identifier.registered_name:
+                    # get party from pre-saved data
+                    current_party = party_by_name[votes_item.affiliation_identifier.registered_name]
+                else:
+                    current_party = Party.objects.get(registered_name=BLANCO_PARTY_REGISTERED_NAME)
                 vote_counts.append(
                     VoteCount(
                         region=region,
@@ -220,20 +226,21 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             election=self.election,
         )
         for affiliation in contest_data.affiliation:
-            # TODO: investigate candidates without parties.
             try:
                 party = Party.objects.get(
                     election=self.election,
                     registered_name=affiliation.affiliation_identifier.registered_name,
                 )
+                assert affiliation.affiliation_identifier.id, (
+                    f"AffiliationIdentifier/@Id missing for party {party.registered_name}"
+                )
+                party.list_number = int(affiliation.affiliation_identifier.id)
+                party.save(update_fields=["list_number", "updated_at"])
             except Party.DoesNotExist:
-                continue
-
-            assert affiliation.affiliation_identifier.id, (
-                f"AffiliationIdentifier/@Id missing for party {party.registered_name}"
-            )
-            party.list_number = int(affiliation.affiliation_identifier.id)
-            party.save(update_fields=["list_number", "updated_at"])
+                # Some candidates are not affiliated to any party
+                party, _ = Party.objects.get_or_create(
+                    election=self.election, registered_name=BLANCO_PARTY_REGISTERED_NAME, list_number=None
+                )
 
             for candidate in affiliation.candidate:
                 first_name = None
