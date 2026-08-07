@@ -62,7 +62,7 @@ export type RegionResponse = Region[]
 export type Party = {
   registered_name: string
   slug: string
-  list_number: number
+  list_number: number | null
 }
 
 export type Candidate = {

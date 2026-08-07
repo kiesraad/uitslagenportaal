@@ -84,6 +84,23 @@
             "justMyCode": true
         },
         {
+            "name": "Django: shell_plus",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "shell_plus"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
             "name": "Django: pytest",
             "type": "debugpy",
             "request": "launch",
