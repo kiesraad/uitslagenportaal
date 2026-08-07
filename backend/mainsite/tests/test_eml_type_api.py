@@ -90,12 +90,14 @@ def test_gemeente_stores_both_eml_types_but_region_detail_returns_510b(ws_electi
 
     payload = _region_detail(ws_election.election_config.slug, borsele.slug)
     _assert_only_eml_type(payload, VoteCount.EML_TYPE_510B)
-    assert len(payload["vote_counts"]) == VoteCount.objects.filter(
-        region=borsele, eml_type=VoteCount.EML_TYPE_510B
-    ).count()
-    assert len(payload["voter_turnout_counts"]) == VoterTurnoutCount.objects.filter(
-        region=borsele, eml_type=VoterTurnoutCount.EML_TYPE_510B
-    ).count()
+    assert (
+        len(payload["vote_counts"])
+        == VoteCount.objects.filter(region=borsele, eml_type=VoteCount.EML_TYPE_510B).count()
+    )
+    assert (
+        len(payload["voter_turnout_counts"])
+        == VoterTurnoutCount.objects.filter(region=borsele, eml_type=VoterTurnoutCount.EML_TYPE_510B).count()
+    )
 
 
 @pytest.mark.django_db
