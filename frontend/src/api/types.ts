@@ -5,6 +5,9 @@ export type ElectionConfig = {
   issue_report_deadline: string
   csb_type: RegionCategory
   timeline_entries?: TimelineEntry[]
+  report_error_url: string
+  counting_info_url: string
+  voting_url: string
 }
 
 export type ElectionConfigsResponse = ElectionConfig[]

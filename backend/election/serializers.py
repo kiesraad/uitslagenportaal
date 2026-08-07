@@ -69,7 +69,17 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ElectionConfig
-        fields = ("slug", "label", "date", "issue_report_deadline", "timeline_entries", "csb_type")
+        fields = (
+            "slug",
+            "label",
+            "date",
+            "issue_report_deadline",
+            "timeline_entries",
+            "csb_type",
+            "report_error_url",
+            "counting_info_url",
+            "voting_url",
+        )
 
     def get_timeline_entries(self, obj):
         entries = [entry for entry in obj.timeline_entries.all() if entry.variant == TimelineVariant.DEFAULT]
