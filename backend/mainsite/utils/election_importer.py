@@ -92,9 +92,12 @@ class EMLBaseImporter[T](ABC):
     ) -> None:
         current_party = None
         for votes_item in items:
-            if votes_item.affiliation_identifier and votes_item.affiliation_identifier.registered_name:
-                # get party from pre-saved data
-                current_party = party_by_name[votes_item.affiliation_identifier.registered_name]
+            if votes_item.affiliation_identifier:
+                if votes_item.affiliation_identifier.registered_name:
+                    # get party from pre-saved data
+                    current_party = party_by_name[votes_item.affiliation_identifier.registered_name]
+                else:
+                    current_party = Party.objects.get(registered_name="Blanco Lijst")
                 vote_counts.append(
                     VoteCount(
                         region=region,
@@ -232,7 +235,9 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
                 party.save(update_fields=["list_number", "updated_at"])
             except Party.DoesNotExist:
                 # Some candidates are not affiliated to any party
-                party = None
+                party, _ = Party.objects.get_or_create(
+                    election=self.election, registered_name="Blanco Lijst", list_number=999
+                )
 
             for candidate in affiliation.candidate:
                 first_name = None
