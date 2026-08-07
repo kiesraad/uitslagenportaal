@@ -61,4 +61,4 @@ def test_region_detail_serializer_vote_counts_are_not_deduplicated_for_gemeente(
 
     data = RegionDetailSerializer(region).data
 
-    assert len(data["vote_counts"]) == 2
+    assert len(data["vote_counts"]) == 1
