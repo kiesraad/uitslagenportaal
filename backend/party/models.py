@@ -39,7 +39,6 @@ class Candidate(BaseModel):
     )
     party = models.ForeignKey(
         "party.Party",
-        null=True,
         on_delete=models.CASCADE,
         related_name="candidates",
     )
