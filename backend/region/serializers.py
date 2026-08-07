@@ -27,8 +27,8 @@ class RegionListSerializer(serializers.ModelSerializer):
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):
-    voter_turnout_counts = VoterTurnoutCountSummarySerializer(many=True, read_only=True)
-    vote_counts = VoteCountSummarySerializer(many=True, read_only=True)
+    voter_turnout_counts = serializers.SerializerMethodField()
+    vote_counts = serializers.SerializerMethodField()
     timeline_entries = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
     documents = ElectionDocumentSerializer(many=True, read_only=True)
@@ -37,11 +37,16 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     election_slug = serializers.CharField(source="election.slug", read_only=True)
 
     def get_vote_counts(self, obj):
-        vote_counts = obj.vote_counts.filter()
+        vote_counts = list(obj.vote_counts.all())
         if obj.region_category == RegionCategory.GEMEENTE:
-            vote_counts = vote_counts.filter(eml_type="510b")
-        serializer = VoteCountSummarySerializer(vote_counts, many=True, read_only=True)
-        return serializer.data
+            vote_counts = [vc for vc in vote_counts if vc.eml_type == "510b"]
+        return VoteCountSummarySerializer(vote_counts, many=True).data
+
+    def get_voter_turnout_counts(self, obj):
+        turnout_counts = list(obj.voter_turnout_counts.all())
+        if obj.region_category == RegionCategory.GEMEENTE:
+            turnout_counts = [tc for tc in turnout_counts if tc.eml_type == "510b"]
+        return VoterTurnoutCountSummarySerializer(turnout_counts, many=True).data
 
     class Meta:
         model = Region

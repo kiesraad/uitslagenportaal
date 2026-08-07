@@ -141,6 +141,7 @@ class EMLBaseImporter[T](ABC):
                     category=VoterTurnoutCount.CATEGORY_REJECTED,
                     reason_code=rejected.reason_code.value,
                     votes=rejected.value,
+                    eml_type=self.eml_type,
                 )
             )
         for uncounted in votes.uncounted_votes:
@@ -151,6 +152,7 @@ class EMLBaseImporter[T](ABC):
                     category=VoterTurnoutCount.CATEGORY_UNCOUNTED,
                     reason_code=uncounted.reason_code.value,
                     votes=uncounted.value,
+                    eml_type=self.eml_type,
                 )
             )
         turnout_counts.append(
@@ -160,6 +162,7 @@ class EMLBaseImporter[T](ABC):
                 category=VoterTurnoutCount.CATEGORY_TOTALS,
                 reason_code="cast",
                 votes=votes.cast,
+                eml_type=self.eml_type,
             )
         )
         turnout_counts.append(
@@ -169,6 +172,7 @@ class EMLBaseImporter[T](ABC):
                 category=VoterTurnoutCount.CATEGORY_TOTALS,
                 reason_code="total counted",
                 votes=votes.total_counted,
+                eml_type=self.eml_type,
             )
         )
 
