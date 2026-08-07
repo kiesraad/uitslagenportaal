@@ -52,7 +52,7 @@ class PartyResultMatrixView(APIView):
         vote_counts = VoteCount.objects.filter(
             party=party,
             region__in=[csb, *gemeentes],
-            eml_type="510d",
+            eml_type=VoteCount.EML_TYPE_510D,
         )
         votes_by_candidate_and_region = {
             (vote_count.candidate_id, vote_count.region_id): vote_count.valid_votes

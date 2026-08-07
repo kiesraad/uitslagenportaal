@@ -83,16 +83,18 @@ def _assert_only_eml_type(payload: dict, eml_type: str) -> None:
 def test_gemeente_stores_both_eml_types_but_region_detail_returns_510b(ws_election):
     borsele = Region.objects.get(election=ws_election, region_name="Borsele")
 
-    assert VoteCount.objects.filter(region=borsele, eml_type="510b").exists()
-    assert VoteCount.objects.filter(region=borsele, eml_type="510d").exists()
-    assert VoterTurnoutCount.objects.filter(region=borsele, eml_type="510b").exists()
-    assert VoterTurnoutCount.objects.filter(region=borsele, eml_type="510d").exists()
+    assert VoteCount.objects.filter(region=borsele, eml_type=VoteCount.EML_TYPE_510B).exists()
+    assert VoteCount.objects.filter(region=borsele, eml_type=VoteCount.EML_TYPE_510D).exists()
+    assert VoterTurnoutCount.objects.filter(region=borsele, eml_type=VoterTurnoutCount.EML_TYPE_510B).exists()
+    assert VoterTurnoutCount.objects.filter(region=borsele, eml_type=VoterTurnoutCount.EML_TYPE_510D).exists()
 
     payload = _region_detail(ws_election.election_config.slug, borsele.slug)
-    _assert_only_eml_type(payload, "510b")
-    assert len(payload["vote_counts"]) == VoteCount.objects.filter(region=borsele, eml_type="510b").count()
+    _assert_only_eml_type(payload, VoteCount.EML_TYPE_510B)
+    assert len(payload["vote_counts"]) == VoteCount.objects.filter(
+        region=borsele, eml_type=VoteCount.EML_TYPE_510B
+    ).count()
     assert len(payload["voter_turnout_counts"]) == VoterTurnoutCount.objects.filter(
-        region=borsele, eml_type="510b"
+        region=borsele, eml_type=VoterTurnoutCount.EML_TYPE_510B
     ).count()
 
 
@@ -101,10 +103,10 @@ def test_waterschap_region_detail_returns_510d(ws_election):
     csb = Region.objects.get(election=ws_election, region_category=RegionCategory.WATERSCHAP)
 
     assert VoteCount.objects.filter(region=csb).exists()
-    assert not VoteCount.objects.filter(region=csb).exclude(eml_type="510d").exists()
+    assert not VoteCount.objects.filter(region=csb).exclude(eml_type=VoteCount.EML_TYPE_510D).exists()
 
     payload = _region_detail(ws_election.election_config.slug, csb.slug)
-    _assert_only_eml_type(payload, "510d")
+    _assert_only_eml_type(payload, VoteCount.EML_TYPE_510D)
 
 
 @pytest.mark.django_db
@@ -117,14 +119,14 @@ def test_stembureau_region_detail_returns_510b(ws_election):
     )
 
     assert VoteCount.objects.filter(region=stembureau).exists()
-    assert not VoteCount.objects.filter(region=stembureau).exclude(eml_type="510b").exists()
+    assert not VoteCount.objects.filter(region=stembureau).exclude(eml_type=VoteCount.EML_TYPE_510B).exists()
 
     payload = _region_detail(
         ws_election.election_config.slug,
         stembureau.slug,
         parent_region=borsele.slug,
     )
-    _assert_only_eml_type(payload, "510b")
+    _assert_only_eml_type(payload, VoteCount.EML_TYPE_510B)
 
 
 @pytest.mark.django_db
@@ -162,7 +164,7 @@ def test_party_result_matrix_returns_510d_totaaltelling_cell(ws_election):
             party=party,
             candidate__position=CANDIDATE_POSITION,
             result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
-            eml_type="510d",
+            eml_type=VoteCount.EML_TYPE_510D,
         ).valid_votes
         == BORSELE_CANDIDATE_VOTES_510D
     )
@@ -172,7 +174,7 @@ def test_party_result_matrix_returns_510d_totaaltelling_cell(ws_election):
             party=party,
             candidate__position=CANDIDATE_POSITION,
             result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
-            eml_type="510d",
+            eml_type=VoteCount.EML_TYPE_510D,
         ).valid_votes
         == CSB_CANDIDATE_VOTES_510D
     )

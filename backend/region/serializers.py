@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from election.models import TimelineVariant
+from election.models import TimelineVariant, VoteCount, VoterTurnoutCount
 from election.serializers import ElectionDocumentSerializer, TimelineEntrySerializer
 from mainsite.models import RegionCategory
 from mainsite.serializers import (
@@ -39,13 +39,13 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     def get_vote_counts(self, obj):
         vote_counts = list(obj.vote_counts.all())
         if obj.region_category == RegionCategory.GEMEENTE:
-            vote_counts = [vc for vc in vote_counts if vc.eml_type == "510b"]
+            vote_counts = [vc for vc in vote_counts if vc.eml_type == VoteCount.EML_TYPE_510B]
         return VoteCountSummarySerializer(vote_counts, many=True).data
 
     def get_voter_turnout_counts(self, obj):
         turnout_counts = list(obj.voter_turnout_counts.all())
         if obj.region_category == RegionCategory.GEMEENTE:
-            turnout_counts = [tc for tc in turnout_counts if tc.eml_type == "510b"]
+            turnout_counts = [tc for tc in turnout_counts if tc.eml_type == VoterTurnoutCount.EML_TYPE_510B]
         return VoterTurnoutCountSummarySerializer(turnout_counts, many=True).data
 
     class Meta:

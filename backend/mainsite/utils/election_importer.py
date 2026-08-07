@@ -268,7 +268,7 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
 class EML510bImporter(EMLBaseImporter[Eml510]):
     """Telling"""
 
-    eml_type = "510b"
+    eml_type = VoteCount.EML_TYPE_510B
 
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
@@ -357,7 +357,7 @@ class EML510bImporter(EMLBaseImporter[Eml510]):
 class EML510dImporter(EMLBaseImporter[Eml510]):
     """Totaaltelling."""
 
-    eml_type = "510d"
+    eml_type = VoteCount.EML_TYPE_510D
 
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
@@ -453,8 +453,8 @@ class ElectionImporter:
     _DOCUMENT_TYPES = {
         "110a": (Eml110a, EML110aImporter),  # Verkiezingsdefinitie
         "230b": (Eml230, EML230bImporter),  # Kandidatenlijst
-        "510b": (Eml510, EML510bImporter),  # Telling
-        "510d": (Eml510, EML510dImporter),  # Totaaltelling
+        VoteCount.EML_TYPE_510B: (Eml510, EML510bImporter),  # Telling
+        VoteCount.EML_TYPE_510D: (Eml510, EML510dImporter),  # Totaaltelling
     }
 
     @staticmethod
