@@ -41,6 +41,9 @@ def _csb_for_parent(parent: Region | None) -> Region | None:
     return parent.csb or parent
 
 
+BLANCO_PARTY_REGISTERED_NAME = "Blanco Lijst"
+
+
 class EMLBaseImporter[T](ABC):
     eml_type = None
 
@@ -97,7 +100,7 @@ class EMLBaseImporter[T](ABC):
                     # get party from pre-saved data
                     current_party = party_by_name[votes_item.affiliation_identifier.registered_name]
                 else:
-                    current_party = Party.objects.get(registered_name="Blanco Lijst")
+                    current_party = Party.objects.get(registered_name=BLANCO_PARTY_REGISTERED_NAME)
                 vote_counts.append(
                     VoteCount(
                         region=region,
@@ -236,7 +239,7 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             except Party.DoesNotExist:
                 # Some candidates are not affiliated to any party
                 party, _ = Party.objects.get_or_create(
-                    election=self.election, registered_name="Blanco Lijst", list_number=999
+                    election=self.election, registered_name=BLANCO_PARTY_REGISTERED_NAME, list_number=None
                 )
 
             for candidate in affiliation.candidate:
