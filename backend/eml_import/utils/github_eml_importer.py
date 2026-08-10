@@ -64,7 +64,7 @@ class GithubEmlImporter:
                 continue
 
             xml_files = list(self._iterate_all_xml_files(files))
-            ElectionImporter().import_files(xml_files)
+            ElectionImporter().import_file_objects(xml_files)
             ImportedCommit.objects.create(
                 election_config=self.election_config,
                 branch_type=branch_type,

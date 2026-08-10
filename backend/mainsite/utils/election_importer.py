@@ -486,7 +486,10 @@ class ElectionImporter:
             return element.get("Id")
         return None
 
-    def _import_files(self, parser_type: str, xml_files: list[Path]) -> None:
+    def _process_file_paths(self, parser_type: str, xml_files: list[Path]) -> None:
+        """
+        Process the list of paths of `xml_files` using the parser for `parser_type`
+        """
         binding, importer_cls = self._DOCUMENT_TYPES[parser_type]
         self.logger.info(f"Importing {parser_type} files using {importer_cls.__name__}...")
         file_cnt = len(xml_files)
@@ -504,12 +507,18 @@ class ElectionImporter:
         return xml_files
 
     def import_folder(self, folder: Path) -> None:
+        """
+        Import all XML files from the given folder.
+        """
         files = sorted(folder.rglob("*.xml"))
         xml_files = self._classify_files(files)
         for parser_type in self._DOCUMENT_TYPES:
-            self._import_files(parser_type, xml_files[parser_type])
+            self._process_file_paths(parser_type, xml_files[parser_type])
 
-    def import_files(self, files: list[NamedBytesIO]) -> None:
+    def import_file_objects(self, files: list[NamedBytesIO]) -> None:
+        """
+        Import all given file-like objects.
+        """
         xml_files = self._classify_files(files)
         for parser_type, (binding, importer_cls) in self._DOCUMENT_TYPES.items():
             for file in xml_files[parser_type]:
