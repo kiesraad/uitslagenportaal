@@ -16,6 +16,9 @@ class ElectionConfig(BaseModel):
     issue_report_deadline = models.DateTimeField(
         default=datetime(2026, 12, 14, 10, 0, tzinfo=ZoneInfo("Europe/Amsterdam")),
     )
+    report_error_url = models.URLField(max_length=500, blank=True, default="")
+    counting_info_url = models.URLField(max_length=500, blank=True, default="")
+    voting_url = models.URLField(max_length=500, blank=True, default="")
 
     @property
     def csb_type(self):

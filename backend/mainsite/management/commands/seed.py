@@ -153,10 +153,13 @@ TIMELINE_ENTRIES = {
 WS2023_ELECTION_SEED = {
     "election": {
         "id": "AB2023",
-        "label": "Waterschappen 2023",
+        "label": "Waterschapsverkiezingen 2023",
         "category": "WS",
         "date": "2023-12-15T11:00:00",
         "issue_report_deadline": "2026-12-14T10:00:00",
+        "report_error_url": "https://www.kiesraad.nl/service/contact",
+        "counting_info_url": "https://www.kiesraad.nl/verkiezingen",
+        "voting_url": "https://www.kiesraad.nl/actueel/agenda",
     },
     **TIMELINE_ENTRIES,
 }
@@ -164,10 +167,13 @@ WS2023_ELECTION_SEED = {
 PS2023_ELECTION_SEED = {
     "election": {
         "id": "PS2023",
-        "label": "Provinciale Staten 2023",
+        "label": "Provinciale Statenverkiezingen 2023",
         "category": "PS",
         "date": "2023-12-15T11:00:00",
         "issue_report_deadline": "2026-12-14T10:00:00",
+        "report_error_url": "https://www.kiesraad.nl/service/contact",
+        "counting_info_url": "https://www.kiesraad.nl/verkiezingen",
+        "voting_url": "https://www.kiesraad.nl/actueel/agenda",
     },
     **TIMELINE_ENTRIES,
 }
@@ -207,6 +213,9 @@ class Command(BaseCommand):
                         election_data["issue_report_deadline"],
                     )
                 ),
+                report_error_url=election_data.get("report_error_url", ""),
+                counting_info_url=election_data.get("counting_info_url", ""),
+                voting_url=election_data.get("voting_url", ""),
             )
             for seed_key, variant in self._TIMELINE_VARIANTS.items():
                 for entry_data in item.get(seed_key, []):

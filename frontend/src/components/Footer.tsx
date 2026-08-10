@@ -1,5 +1,9 @@
 import { faArrowUpRightFromSquare, faChevronRight } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { useParams } from "react-router-dom"
+import { useElectionConfig, useElectionConfigs } from "../hooks/queries.ts"
+
+const KIESRAAD_URL = "https://www.kiesraad.nl/"
 
 function ExternalLinkIcon() {
   return (
@@ -9,6 +13,19 @@ function ExternalLinkIcon() {
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
+  const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>()
+
+  // On election pages the config comes from the route; elsewhere (e.g. the home
+  // page) fall back to the only election when there is exactly one.
+  const { data: routeElectionConfig } = useElectionConfig(electionConfigSlug)
+  const { data: electionConfigs } = useElectionConfigs()
+  const electionConfig =
+    routeElectionConfig ?? (electionConfigs?.length === 1 ? electionConfigs[0] : undefined)
+
+  const label = electionConfig?.label
+  const reportErrorUrl = electionConfig?.report_error_url
+  const countingInfoUrl = electionConfig?.counting_info_url
+  const votingUrl = electionConfig?.voting_url
 
   return (
     <footer className="footer">
@@ -39,22 +56,28 @@ export function Footer() {
           <div className="footer-right">
             <div className="footer-col">
               <h4>Zie je een fout?</h4>
-              <a href="#">
-                <FontAwesomeIcon icon={faChevronRight} />
-                Melding maken
-              </a>
+              {reportErrorUrl && (
+                <a href={reportErrorUrl} target="_blank" rel="noopener noreferrer">
+                  <FontAwesomeIcon icon={faChevronRight} />
+                  Melding maken
+                </a>
+              )}
             </div>
             <div className="footer-col">
-              <h4>Tweede Kamerverkiezing</h4>
-              <a href="#">
-                <ExternalLinkIcon />
-                Uitleg over telproces
-              </a>
-              <a href="#">
-                <ExternalLinkIcon />
-                Stemmen
-              </a>
-              <a href="#">
+              {label && <h4>{label}</h4>}
+              {countingInfoUrl && (
+                <a href={countingInfoUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLinkIcon />
+                  Uitleg over telproces
+                </a>
+              )}
+              {votingUrl && (
+                <a href={votingUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLinkIcon />
+                  Stemmen
+                </a>
+              )}
+              <a href={KIESRAAD_URL} target="_blank" rel="noopener noreferrer">
                 <ExternalLinkIcon />
                 Kiesraad.nl
               </a>
