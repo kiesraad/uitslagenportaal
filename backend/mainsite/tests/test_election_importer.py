@@ -35,7 +35,7 @@ def ab2023_config(db):
 
 @pytest.mark.django_db
 def test_import_ws_fixtures(ab2023_config, ws_import_folder):
-    ElectionImporter(ws_import_folder).run()
+    ElectionImporter().import_folder(ws_import_folder)
 
     election = Election.objects.get(election_config=ab2023_config)
     borsele = Region.objects.get(election=election, region_name="Borsele")

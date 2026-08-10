@@ -18,6 +18,10 @@ class Party(BaseModel):
             models.UniqueConstraint(
                 fields=["election", "registered_name"],
                 name="unique_registered_name_per_election",
+            ),
+            models.UniqueConstraint(
+                fields=["election", "list_number"],
+                name="unique_list_number_per_election",
             )
         ]
 
