@@ -4,6 +4,20 @@ from mainsite.models import BaseModel, CountingMethod, RegionCategory
 from mainsite.utils.utils import name_to_slug
 
 
+def build_region_slug(region_number, region_name: str) -> str:
+    """
+    Derive a Region slug from its number and name.
+
+    Kept separate from Region.save() so bulk_create() callers can precompute the
+    exact same slug instead of duplicating the logic.
+    """
+    number_slug = str(region_number)
+    if "::" in number_slug:
+        # region_number can contain "::" (e.g. stembureau ids); keep URL-safe
+        number_slug = number_slug.split("::")[1]
+    return f"{number_slug}-{name_to_slug(region_name)}"[:49]
+
+
 class Region(BaseModel):
     election = models.ForeignKey(
         "election.Election",
@@ -46,11 +60,7 @@ class Region(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            number_slug = str(self.region_number)
-            if "::" in number_slug:
-                # region_number can contain "::" (e.g. stembureau ids); keep URL-safe
-                number_slug = number_slug.split("::")[1]
-            self.slug = f"{number_slug}-{name_to_slug(self.region_name)}"[:49]
+            self.slug = build_region_slug(self.region_number, self.region_name)
         super().save(*args, **kwargs)
 
     class Meta:
