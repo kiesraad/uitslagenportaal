@@ -70,7 +70,7 @@ def imported_batches(monkeypatch):
     batches = []
 
     class RecordingElectionImporter:
-        def import_files(self, files):
+        def import_file_objects(self, files):
             batches.append(files)
 
     monkeypatch.setattr(github_eml_importer, "ElectionImporter", RecordingElectionImporter)
