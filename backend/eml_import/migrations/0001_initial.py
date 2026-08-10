@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('election', '0020_electionconfig_gh_counting_results_branch_and_more'),
+        ('election', '0022_electionconfig_gh_counting_results_branch_and_more'),
     ]
 
     operations = [

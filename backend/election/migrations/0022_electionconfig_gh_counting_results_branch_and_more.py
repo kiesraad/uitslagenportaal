@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('election', '0019_electionconfig_counting_info_url_and_more'),
+        ('election', '0021_merge_20260810_1229'),
     ]
 
     operations = [
