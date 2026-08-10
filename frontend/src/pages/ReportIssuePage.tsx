@@ -1,15 +1,22 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowUpRightFromSquare, faCheck } from '@fortawesome/free-solid-svg-icons'
 import type { ReactNode } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { Layout } from '../components/Layout.tsx'
 import { InfoBox } from '../components/InfoBox.tsx'
 import { PageQueryBoundary } from '../components/PageQueryBoundary.tsx'
-import { useElectionConfigs } from '../hooks/queries.ts'
+import { useElectionConfig } from '../hooks/queries.ts'
 import { formatDate } from '../utils/date.ts'
+import { appRoutes } from '../utils/routes.ts'
 
 export function ReportIssuePage() {
-  const { data: electionConfigs, isLoading, isError, refetch } = useElectionConfigs()
-  const electionConfig = electionConfigs?.[0]
+  const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>()
+  const {
+    data: electionConfig,
+    isLoading,
+    isError,
+    refetch,
+  } = useElectionConfig(electionConfigSlug)
 
   if (isLoading || isError || !electionConfig) {
     return (
@@ -28,7 +35,24 @@ export function ReportIssuePage() {
     <Layout title="Een fout melden">
       <div className="page-main">
         <div className="page-space-3 max-w-2xl">
-          <h1 className="mt-6 mb-3 text-3xl sm:text-4xl font-title font-bold">Een fout melden</h1>
+          <div>
+            <nav className="breadcrumb" aria-label="Breadcrumb">
+              <span className="breadcrumb-item">
+                <Link to={appRoutes.home()}>Home</Link>
+                <span className="breadcrumb-sep">{'>'}</span>
+              </span>
+              <span className="breadcrumb-item">
+                <Link to={appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? '')}>
+                  {electionConfig.label}
+                </Link>
+                <span className="breadcrumb-sep">{'>'}</span>
+              </span>
+              <span className="breadcrumb-item">
+                <Link to={appRoutes.reportIssue(electionConfigSlug ?? '')}>Fout melden</Link>
+              </span>
+            </nav>
+            <h1 className="mb-3 text-3xl sm:text-4xl font-title font-bold">Een fout melden</h1>
+          </div>
 
           <p>
             Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de

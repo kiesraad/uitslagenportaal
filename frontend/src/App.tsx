@@ -12,7 +12,6 @@ import {MunicipalityResultsPage} from './pages/MunicipalityPage/MunicipalityResu
 import PollingStationResultsPage from './pages/PollingStationPage/PollingStationResultsPage.tsx'
 import PollingStationPartyResultsPage from './pages/PollingStationPage/PollingStationPartyResultsPage.tsx'
 import MunicipalityPageLayout from "@/pages/MunicipalityPage/MunicipalityPageLayout.tsx";
-import { appRoutes } from './utils/routes.ts'
 
 
 function App() {
@@ -20,8 +19,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage/>}/>
-        <Route path={appRoutes.reportIssue()} element={<ReportIssuePage/>}/>
         <Route path="/:electionConfigSlug">
+          <Route path="fout-melden" element={<ReportIssuePage/>}/>
           <Route path="csb" element={<ElectionConfigCSBListPage/>}/>
           <Route path="csb/:regionSlug" element={<CSBMunicipalityListPage/>}/>
           <Route path="csb/:regionSlug/resultaten" element={<CSBResultsPage/>}/>

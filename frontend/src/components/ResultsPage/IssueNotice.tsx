@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { InfoBox } from '../InfoBox'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
@@ -11,6 +11,8 @@ type IssueNoticeProps = {
 }
 
 export default function IssueNotice({ issueReportDeadline }: IssueNoticeProps) {
+  const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>()
+
   return (
     <section id='fout-melden'>
       <InfoBox>
@@ -22,7 +24,10 @@ export default function IssueNotice({ issueReportDeadline }: IssueNoticeProps) {
           officiele uitslag.
         </span>
         <p>
-          <Link to={appRoutes.reportIssue()}>Meld een fout of iets dat niet klopt<FontAwesomeIcon icon={faArrowRight} /></Link>
+          <Link to={appRoutes.reportIssue(electionConfigSlug ?? '')}>
+            Meld een fout of iets dat niet klopt
+            <FontAwesomeIcon icon={faArrowRight} />
+          </Link>
         </p>
       </InfoBox>
     </section>

@@ -1,6 +1,7 @@
 export const appRoutes = {
   home: () => '/',
-  reportIssue: () => '/fout-melden',
+  reportIssue: (electionConfigSlug: string) =>
+    `/${encodeURIComponent(electionConfigSlug)}/fout-melden`,
   electionConfigMunicipalityList: (electionConfigSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/gsb`,
   electionConfigCSBList: (electionConfigSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/csb`,
   csbMunicipalityList:  (electionConfigSlug: string, regionSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/csb/${encodeURIComponent(regionSlug)}`,
