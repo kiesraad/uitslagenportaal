@@ -10,6 +10,7 @@ services:
       DB_PORT: "5432"
       SECRET_KEY: super-secret
       CORS_ALLOWED_ORIGINS: http://localhost:8080
+      DJANGO_SETTINGS_MODULE: "mainsite.settings"
       # The backend uploads over the compose network, but the URLs it hands to
       # the browser have to use the published port instead.
       S3_ENDPOINT_URL: http://object-storage:9000
