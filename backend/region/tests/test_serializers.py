@@ -31,13 +31,10 @@ def test_effective_variant_defaults_when_no_counting_method_available():
 
 
 @pytest.mark.django_db
-def test_region_detail_serializer_vote_counts_are_not_deduplicated_for_gemeente():
+def test_region_detail_serializer_filters_510d_vote_counts_for_gemeente():
     """
-    `get_vote_counts` documents an intent to drop duplicate 510d rows for
-    GEMEENTE regions, but it is never wired up as the `vote_counts` field
-    (that field is a plain `VoteCountSummarySerializer(many=True)`, so DRF
-    never calls `get_vote_counts`). This test pins today's actual
-    (undeduplicated) behavior; it is not asserting the intended behavior.
+    Gemeente regions store both 510b (telling) and 510d (totaaltelling) rows;
+    region detail only returns the 510b telling.
     """
     contest = ContestFactory()
     party = PartyFactory(election=contest.election)
@@ -61,4 +58,5 @@ def test_region_detail_serializer_vote_counts_are_not_deduplicated_for_gemeente(
 
     data = RegionDetailSerializer(region).data
 
-    assert len(data["vote_counts"]) == 2
+    assert len(data["vote_counts"]) == 1
+    assert data["vote_counts"][0]["eml_type"] == VoteCount.EML_TYPE_510B

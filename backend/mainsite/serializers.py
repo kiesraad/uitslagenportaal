@@ -60,4 +60,4 @@ class VoteCountSummarySerializer(serializers.ModelSerializer):
 class VoterTurnoutCountSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = VoterTurnoutCount
-        fields = ("category", "reason_code", "votes")
+        fields = ("category", "reason_code", "votes", "eml_type")
