@@ -1,17 +1,13 @@
-import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout.tsx'
 import PageTop from '../../components/PageTop.tsx'
 import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
 import { appRoutes } from '../../utils/routes.ts'
-
-import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
-import CandidatesVoteList from '../../components/ResultsPage/CandidatesVoteList.tsx'
-import ResultsPageIndex from '../../components/ResultsPage/ResultsPageIndex'
+import PartyCandidatesResultsContent from '../../components/ResultsPage/PartyCandidatesResultsContent.tsx'
 import { formatDate } from '../../utils/date.ts'
 import { getCsbCrumb } from '../../utils/region.ts'
-import { getCandidateVoteCountsForParty, getPartyVoteCount } from '../../utils/voteCounts.ts'
+import { getPartyVoteCount } from '../../utils/voteCounts.ts'
 
 export function MunicipalityPartyResultsPage() {
   const {
@@ -42,18 +38,6 @@ export function MunicipalityPartyResultsPage() {
   const isLoading = isElectionLoading || isRegionLoading
   const isError = isElectionError || isRegionError || !electionConfig || !region
 
-  const currentPartyVoteCounts = useMemo(
-    () => getCandidateVoteCountsForParty(region?.vote_counts, partySlug),
-    [region?.vote_counts, partySlug],
-  )
-
-  const partyVoteCount = useMemo(
-    () => getPartyVoteCount(region?.vote_counts, partySlug),
-    [region?.vote_counts, partySlug],
-  )
-
-  const partyListNumber = partyVoteCount?.party.list_number
-
   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug, regionSlug, csbSlug)
   const municipalityPartyResultsRoute = appRoutes.municipalityPartyResults(electionConfigSlug, regionSlug, partySlug, csbSlug)
 
@@ -71,7 +55,7 @@ export function MunicipalityPartyResultsPage() {
     )
   }
 
-  const partyName = partyVoteCount?.party.registered_name ?? 'Lijst'
+  const partyName = getPartyVoteCount(region.vote_counts, partySlug)?.party.registered_name ?? 'Lijst'
   const pageTitle = `Telresultaten gemeente\n${region.region_name}`
 
   return (
@@ -92,19 +76,11 @@ export function MunicipalityPartyResultsPage() {
       />
       <div className="page-main page-main-two-columns">
         <div className="page-space-3">
-          <ResultsPageIndex variant="party" />
-
-          <section id="telresultaten">
-            <h2 className="text-lg mb-4.5 font-medium">Telresultaten lijst {partyListNumber ?? '-'}</h2>
-            <h3 className="party-level-title mb-2">{partyName}</h3>
-            <CandidatesVoteList
-              voteCounts={currentPartyVoteCounts}
-              partyVote={partyVoteCount}
-              partyListNumber={partyListNumber}
-            />
-          </section>
-
-          <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
+          <PartyCandidatesResultsContent
+            voteCounts={region.vote_counts}
+            partySlug={partySlug}
+            issueReportDeadline={electionConfig.issue_report_deadline}
+          />
         </div>
       </div>
     </Layout>
