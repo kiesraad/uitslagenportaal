@@ -12,6 +12,7 @@ import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import {useOutletContext} from "react-router";
 import type {ElectionConfig} from "@/api/types.ts";
 import HtmlHead from "@/components/HtmlHead.tsx";
+import { getPartyLevelVoteCounts } from '../../utils/voteCounts.ts'
 
 
 export function MunicipalityResultsPage() {
@@ -39,7 +40,7 @@ export function MunicipalityResultsPage() {
   const hasResults = Array.isArray(region?.vote_counts) && region.vote_counts.length > 0
 
   const partyLevelVoteCounts = useMemo(
-    () => region?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
+    () => getPartyLevelVoteCounts(region?.vote_counts),
     [region?.vote_counts],
   )
 

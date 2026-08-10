@@ -12,6 +12,7 @@ import PageIndex from '../../components/PageIndex'
 import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline'
 import { formatDate } from '../../utils/date'
 import { getCsbCrumb } from '../../utils/region'
+import { getPartyLevelVoteCounts } from '../../utils/voteCounts'
 
 
 export default function PollingStationResultsPage() {
@@ -56,7 +57,7 @@ export default function PollingStationResultsPage() {
     !pollingStation
 
   const partyLevelVoteCounts = useMemo(
-    () => pollingStation?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
+    () => getPartyLevelVoteCounts(pollingStation?.vote_counts),
     [pollingStation?.vote_counts],
   )
 

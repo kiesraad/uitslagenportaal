@@ -10,6 +10,7 @@ import { appRoutes } from '../../utils/routes'
 import PageIndex from '../../components/PageIndex'
 import { formatDate } from '../../utils/date'
 import { getCsbCrumb } from '../../utils/region'
+import { getCandidateVoteCountsForParty, getPartyVoteCount } from '../../utils/voteCounts'
 
 export default function PollingStationPartyResultsPage() {
   const {
@@ -55,21 +56,13 @@ export default function PollingStationPartyResultsPage() {
     !pollingStation
 
   const currentPartyVoteCounts = useMemo(
-    () =>
-      (pollingStation?.vote_counts.filter(
-        (voteCount) => voteCount.party.slug === partySlug && voteCount.result_level === 'CANDIDATE',
-      ) ?? []).sort((a, b) => (a.candidate?.position ?? 0) - (b.candidate?.position ?? 0)),
+    () => getCandidateVoteCountsForParty(pollingStation?.vote_counts, partySlug),
     [pollingStation?.vote_counts, partySlug],
   )
 
-  const partyLevelVoteCounts = useMemo(
-    () => pollingStation?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
-    [pollingStation?.vote_counts],
-  )
-
   const partyVoteCount = useMemo(
-    () => partyLevelVoteCounts.find((voteCount) => voteCount.party.slug === partySlug),
-    [partyLevelVoteCounts, partySlug],
+    () => getPartyVoteCount(pollingStation?.vote_counts, partySlug),
+    [pollingStation?.vote_counts, partySlug],
   )
 
   const partyListNumber = partyVoteCount?.party.list_number

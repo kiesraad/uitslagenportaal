@@ -11,6 +11,7 @@ import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import PartyVoteMatrixTable from '../../components/ResultsPage/PartyVoteMatrixTable.tsx'
 import { getRegionLabels } from '../../utils/region.ts'
 import { formatDate } from '../../utils/date.ts'
+import { getPartyVoteCount } from '../../utils/voteCounts.ts'
 
 
 export function CSBPartyResultsPage() {
@@ -43,9 +44,7 @@ export function CSBPartyResultsPage() {
 
     const regionLabels = getRegionLabels(electionConfig?.csb_type)
     const partyName = partyVoteMatrix?.party.registered_name ?? partySlug
-    const partyListNumber = region?.vote_counts.find(
-        (voteCount) => voteCount.result_level === 'PARTY' && voteCount.party.slug === partySlug,
-    )?.party.list_number
+    const partyListNumber = getPartyVoteCount(region?.vote_counts, partySlug)?.party.list_number
 
     const isLoading = isElectionLoading || isRegionLoading || isPartyVoteMatrixLoading
     const isError = isElectionError || isRegionError || isPartyVoteMatrixError || !electionConfig || !region || !partyVoteMatrix

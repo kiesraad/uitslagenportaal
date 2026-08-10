@@ -11,6 +11,7 @@ import CandidatesVoteList from '../../components/ResultsPage/CandidatesVoteList.
 import PageIndex from '../../components/PageIndex'
 import { formatDate } from '../../utils/date.ts'
 import { getCsbCrumb } from '../../utils/region.ts'
+import { getCandidateVoteCountsForParty, getPartyVoteCount } from '../../utils/voteCounts.ts'
 
 export function MunicipalityPartyResultsPage() {
   const {
@@ -42,21 +43,13 @@ export function MunicipalityPartyResultsPage() {
   const isError = isElectionError || isRegionError || !electionConfig || !region
 
   const currentPartyVoteCounts = useMemo(
-    () =>
-      (region?.vote_counts.filter(
-        (voteCount) => voteCount.party.slug === partySlug && voteCount.result_level === 'CANDIDATE',
-      ) ?? []).sort((a, b) => (a.candidate?.position ?? 0) - (b.candidate?.position ?? 0)),
+    () => getCandidateVoteCountsForParty(region?.vote_counts, partySlug),
     [region?.vote_counts, partySlug],
   )
 
-  const partyLevelVoteCounts = useMemo(
-    () => region?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
-    [region?.vote_counts],
-  )
-
   const partyVoteCount = useMemo(
-    () => partyLevelVoteCounts.find((voteCount) => voteCount.party.slug === partySlug),
-    [partyLevelVoteCounts, partySlug],
+    () => getPartyVoteCount(region?.vote_counts, partySlug),
+    [region?.vote_counts, partySlug],
   )
 
   const partyListNumber = partyVoteCount?.party.list_number

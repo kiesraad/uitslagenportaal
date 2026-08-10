@@ -15,6 +15,7 @@ import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import { getRegionLabels } from '../../utils/region.ts'
 import { formatDate } from '../../utils/date.ts'
+import { getPartyLevelVoteCounts } from '../../utils/voteCounts.ts'
 
 
 export function CSBResultsPage() {
@@ -44,7 +45,7 @@ export function CSBResultsPage() {
     const hasResults = Array.isArray(region?.vote_counts) && region.vote_counts.length > 0
 
     const partyLevelVoteCounts = useMemo(
-        () => region?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
+        () => getPartyLevelVoteCounts(region?.vote_counts),
         [region?.vote_counts],
     )
 
