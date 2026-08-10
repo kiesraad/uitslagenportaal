@@ -1,13 +1,11 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowUpRightFromSquare, faCheck } from '@fortawesome/free-solid-svg-icons'
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
 import { Layout } from '../components/Layout.tsx'
 import { InfoBox } from '../components/InfoBox.tsx'
 import { PageQueryBoundary } from '../components/PageQueryBoundary.tsx'
 import { useElectionConfigs } from '../hooks/queries.ts'
 import { formatDate } from '../utils/date.ts'
-import { appRoutes } from '../utils/routes.ts'
 
 export function ReportIssuePage() {
   const { data: electionConfigs, isLoading, isError, refetch } = useElectionConfigs()
@@ -26,30 +24,11 @@ export function ReportIssuePage() {
     )
   }
 
-  const breadcrumbs = [
-    { href: appRoutes.home(), label: 'Home' },
-    {
-      href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
-      label: electionConfig.label,
-    },
-    { href: appRoutes.reportIssue(), label: 'Stembureau' },
-  ]
-
   return (
     <Layout title="Een fout melden">
       <div className="page-main">
         <div className="page-space-3 max-w-2xl">
-          <div>
-            <nav className="breadcrumb" aria-label="Breadcrumb">
-              {breadcrumbs.map((item, index) => (
-                <span key={`${item.href}-${item.label}`} className="breadcrumb-item">
-                  <Link to={item.href}>{item.label}</Link>
-                  {index < breadcrumbs.length - 1 && <span className="breadcrumb-sep">{'>'}</span>}
-                </span>
-              ))}
-            </nav>
-            <h1 className="mb-3 text-3xl sm:text-4xl font-title font-bold">Een fout melden</h1>
-          </div>
+          <h1 className="mt-6 mb-3 text-3xl sm:text-4xl font-title font-bold">Een fout melden</h1>
 
           <p>
             Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de
