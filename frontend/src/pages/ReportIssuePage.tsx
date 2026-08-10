@@ -3,7 +3,7 @@ import { faArrowUpRightFromSquare, faCheck } from '@fortawesome/free-solid-svg-i
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Layout } from '../components/Layout.tsx'
-import IssueReportWindowNotice from '../components/IssueReportWindowNotice.tsx'
+import { InfoBox } from '../components/InfoBox.tsx'
 import { PageQueryBoundary } from '../components/PageQueryBoundary.tsx'
 import { useElectionConfigs } from '../hooks/queries.ts'
 import { formatDate } from '../utils/date.ts'
@@ -56,10 +56,16 @@ export function ReportIssuePage() {
             stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau.
           </p>
 
-          <IssueReportWindowNotice
-            opensAt={electionConfig.issue_report_opens_at}
-            deadline={electionConfig.issue_report_deadline}
-          />
+          <InfoBox>
+            <h4 className="font-bold">U heeft nog 3 dagen om een melding te maken</h4>
+            <p>
+              Een melding aan het centraal stembureau kan van{' '}
+              {formatDate(electionConfig.issue_report_opens_at)} tot{' '}
+              {formatDate(electionConfig.issue_report_deadline)} (uiterlijk 48 uur voor de zitting
+              van het centraal stembureau). Meldingen die later binnenkomen worden niet in
+              behandeling genomen.
+            </p>
+          </InfoBox>
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-bold font-title">Waarvoor kunt u een melding maken?</h2>
