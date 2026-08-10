@@ -1,18 +1,12 @@
-import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import IssueNotice from '../../components/ResultsPage/IssueNotice'
 import PageTop from '../../components/PageTop'
-import VotesList from '../../components/ResultsPage/VotesList'
-import VotesResume from '../../components/ResultsPage/VotesResume'
+import RegionResultsContent from '../../components/ResultsPage/RegionResultsContent'
 import { Layout } from '../../components/Layout'
 import { PageQueryBoundary } from '../../components/PageQueryBoundary'
 import { useElectionConfig, useRegion } from '../../hooks/queries'
 import { appRoutes } from '../../utils/routes'
-import ResultsPageIndex from '../../components/ResultsPage/ResultsPageIndex'
-import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline'
 import { formatDate } from '../../utils/date'
 import { getCsbCrumb } from '../../utils/region'
-import { getPartyLevelVoteCounts } from '../../utils/voteCounts'
 
 
 export default function PollingStationResultsPage() {
@@ -56,11 +50,6 @@ export default function PollingStationResultsPage() {
     !region ||
     !pollingStation
 
-  const partyLevelVoteCounts = useMemo(
-    () => getPartyLevelVoteCounts(pollingStation?.vote_counts),
-    [pollingStation?.vote_counts],
-  )
-
   const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug, parentRegionSlug, csbSlug)
   const pollingStationResultsRoute = appRoutes.pollingStationResults(electionConfigSlug, parentRegionSlug, pollingStationSlug, csbSlug)
 
@@ -99,32 +88,14 @@ export default function PollingStationResultsPage() {
       />
       <div className="page-main page-main-two-columns">
         <div className="page-space-3">
-          <ResultsPageIndex />
-
-          <section id="telresultaten">
-            <h3 className="mb-2">Telresultaten</h3>
-            <p>De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware.</p>
-          </section>
-
-          <VotesResume type='admittedVoters' votes={pollingStation.voter_turnout_counts} />
-
-          <section className="votes-cast">
-            <h4 className="mb-2">Uitgebrachte stemmen</h4>
-            <p className="mb-4">Klik op een lijst om de stemmen per kandidaat te zien</p>
-            <VotesList voteCounts={partyLevelVoteCounts} />
-          </section>
-
-          <VotesResume
-            type='votesCast'
-            votes={pollingStation.voter_turnout_counts}
+          <RegionResultsContent
+            intro="De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
+            voteCounts={pollingStation.vote_counts}
+            turnoutVotes={pollingStation.voter_turnout_counts}
+            timelineVariant={pollingStation.timeline_variant}
+            timelineEntries={pollingStation.timeline_entries ?? []}
+            issueReportDeadline={electionConfig.issue_report_deadline}
           />
-
-          <ResultsTimeline
-            variant={pollingStation.timeline_variant}
-            entries={pollingStation.timeline_entries ?? []}
-          />
-
-          <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
         </div>
       </div>
     </Layout>
