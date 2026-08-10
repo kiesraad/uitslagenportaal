@@ -10,7 +10,7 @@ import ResultsNotPublished from '../../components/ResultsPage/ResultsNotPublishe
 import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline.tsx'
 import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
-import PageIndex from '../../components/PageIndex'
+import ResultsPageIndex from '../../components/ResultsPage/ResultsPageIndex'
 import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import { getRegionLabels } from '../../utils/region.ts'
@@ -65,13 +65,7 @@ export function CSBResultsPage() {
 
     const resultsPageContent = (
         <>
-            <PageIndex
-                links={[
-                    { label: <><span className="semibold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
-                    { label: <><span className="semibold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>, url: '#results-timeline' },
-                    { label: <span className="semibold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
-                ]}
-            />
+            <ResultsPageIndex />
             <section id="telresultaten">
                 <h3 className="mb-2">Telresultaten</h3>
                 <p>

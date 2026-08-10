@@ -7,7 +7,7 @@ import { Layout } from '../../components/Layout'
 import { PageQueryBoundary } from '../../components/PageQueryBoundary'
 import { useElectionConfig, useRegion } from '../../hooks/queries'
 import { appRoutes } from '../../utils/routes'
-import PageIndex from '../../components/PageIndex'
+import ResultsPageIndex from '../../components/ResultsPage/ResultsPageIndex'
 import { formatDate } from '../../utils/date'
 import { getCsbCrumb } from '../../utils/region'
 import { getCandidateVoteCountsForParty, getPartyVoteCount } from '../../utils/voteCounts'
@@ -108,12 +108,7 @@ export default function PollingStationPartyResultsPage() {
       />
       <div className="page-main page-main-two-columns">
         <div className="page-space-3">
-          <PageIndex
-            links={[
-              { label: <><span className="font-semibold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
-              { label: <span className="font-semibold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
-            ]}
-          />
+          <ResultsPageIndex variant="party" />
 
           <section id="telresultaten">
             <h2 className="text-lg mb-4.5 font-medium">Telresultaten lijst {partyListNumber ?? '-'}</h2>

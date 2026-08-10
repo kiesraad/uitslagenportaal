@@ -8,7 +8,7 @@ import { appRoutes } from '../../utils/routes.ts'
 
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import CandidatesVoteList from '../../components/ResultsPage/CandidatesVoteList.tsx'
-import PageIndex from '../../components/PageIndex'
+import ResultsPageIndex from '../../components/ResultsPage/ResultsPageIndex'
 import { formatDate } from '../../utils/date.ts'
 import { getCsbCrumb } from '../../utils/region.ts'
 import { getCandidateVoteCountsForParty, getPartyVoteCount } from '../../utils/voteCounts.ts'
@@ -92,12 +92,7 @@ export function MunicipalityPartyResultsPage() {
       />
       <div className="page-main page-main-two-columns">
         <div className="page-space-3">
-          <PageIndex
-            links={[
-              { label: <><span className="font-semibold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
-              { label: <span className="font-semibold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
-            ]}
-          />
+          <ResultsPageIndex variant="party" />
 
           <section id="telresultaten">
             <h2 className="text-lg mb-4.5 font-medium">Telresultaten lijst {partyListNumber ?? '-'}</h2>

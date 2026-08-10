@@ -8,7 +8,7 @@ import { Layout } from '../../components/Layout'
 import { PageQueryBoundary } from '../../components/PageQueryBoundary'
 import { useElectionConfig, useRegion } from '../../hooks/queries'
 import { appRoutes } from '../../utils/routes'
-import PageIndex from '../../components/PageIndex'
+import ResultsPageIndex from '../../components/ResultsPage/ResultsPageIndex'
 import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline'
 import { formatDate } from '../../utils/date'
 import { getCsbCrumb } from '../../utils/region'
@@ -99,13 +99,7 @@ export default function PollingStationResultsPage() {
       />
       <div className="page-main page-main-two-columns">
         <div className="page-space-3">
-          <PageIndex
-            links={[
-              { label: <><span className="font-semibold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
-              { label: <><span className="font-semibold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>, url: '#results-timeline' },
-              { label: <span className="font-semibold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
-            ]}
-          />
+          <ResultsPageIndex />
 
           <section id="telresultaten">
             <h3 className="mb-2">Telresultaten</h3>
