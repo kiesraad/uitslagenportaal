@@ -19,6 +19,8 @@ class ElectionConfig(BaseModel):
     report_error_url = models.URLField(max_length=500, blank=True, default="")
     counting_info_url = models.URLField(max_length=500, blank=True, default="")
     voting_url = models.URLField(max_length=500, blank=True, default="")
+    gh_counting_results_branch = models.CharField(max_length=255, null=True)
+    gh_exchange_branch = models.CharField(max_length=255, null=True)
 
     @property
     def csb_type(self):

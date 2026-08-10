@@ -1,18 +1,21 @@
 import logging
 from abc import ABC, abstractmethod
+from io import BytesIO
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
 from django.conf import settings
 from django.utils import timezone
 from pyeml_bindings import (
+    Count,
     CountingMethodMethodCode,
     ElectionIdentifierStructureKr,
     Eml110a,
     Eml230,
     Eml510,
+    Emlstructure,
+    ReportingUnitVotes,
 )
-from tqdm import tqdm
 from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.formats.dataclass.parsers.config import ParserConfig
 
@@ -24,6 +27,7 @@ from election.models import (
     VoteCount,
     VoterTurnoutCount,
 )
+from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
 from party.models import Candidate, Party
 from region.models import Region
@@ -47,7 +51,7 @@ BLANCO_PARTY_REGISTERED_NAME = "Blanco Lijst"
 class EMLBaseImporter[T](ABC):
     eml_type = None
 
-    def __init__(self, eml: T, file_path):
+    def __init__(self, eml: T, file_path: Path | None):
         self.eml = eml
         self.file_path = file_path
 
@@ -70,7 +74,10 @@ class EMLBaseImporter[T](ABC):
             election_config=self.election_config,
             name=election_identifier_object.election_name,
             subcategory=election_identifier_object.election_subcategory[0].value.value,
-            date=election_identifier_object.election_date[0].value.to_date(),
+            defaults={
+                # Date can differ between files, e.g. when there was a re-election (Gorinchem GR2026)
+                "date": election_identifier_object.election_date[0].value.to_date(),
+            },
         )
         self.election = election
 
@@ -79,102 +86,6 @@ class EMLBaseImporter[T](ABC):
             self._parse_data()
         except ElectionConfig.DoesNotExist:
             self.logger.warning("Election is not configured, skipping 110a data import")
-
-    @staticmethod
-    def _counting_method(count) -> str | None:
-        counting_method = getattr(count, "counting_method", None)
-        if counting_method is None:
-            return None
-        return {
-            CountingMethodMethodCode.CENTRALE_STEMOPNEMING: CountingMethod.CSO,
-            CountingMethodMethodCode.DECENTRALE_STEMOPNEMING: CountingMethod.DSO,
-        }.get(counting_method.method_code)
-
-    def _parse_party_candidate_votecounts(
-        self, contest, region, items, party_by_name, candidate_by_key, vote_counts
-    ) -> None:
-        current_party = None
-        for votes_item in items:
-            if votes_item.affiliation_identifier:
-                if votes_item.affiliation_identifier.registered_name:
-                    # get party from pre-saved data
-                    current_party = party_by_name[votes_item.affiliation_identifier.registered_name]
-                else:
-                    current_party = Party.objects.get(registered_name=BLANCO_PARTY_REGISTERED_NAME)
-                vote_counts.append(
-                    VoteCount(
-                        region=region,
-                        contest=contest,
-                        party=current_party,
-                        result_level=VoteCount.RESULT_LEVEL_PARTY,
-                        valid_votes=votes_item.valid_votes,
-                        eml_type=self.eml_type,
-                    )
-                )
-            if votes_item.candidate:
-                assert current_party, "No party to tie candidate to, cannot parse"
-                # get candidate from pre-saved data
-                candidate = candidate_by_key[
-                    (
-                        current_party.id,
-                        int(votes_item.candidate.candidate_identifier.id),
-                    )
-                ]
-                vote_counts.append(
-                    VoteCount(
-                        region=region,
-                        contest=contest,
-                        party=current_party,
-                        candidate=candidate,
-                        result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
-                        valid_votes=votes_item.valid_votes,
-                        eml_type=self.eml_type,
-                    )
-                )
-
-    def _collect_turnout_counts(self, contest, region, votes, turnout_counts) -> None:
-        for rejected in votes.rejected_votes:
-            turnout_counts.append(
-                VoterTurnoutCount(
-                    contest=contest,
-                    region=region,
-                    category=VoterTurnoutCount.CATEGORY_REJECTED,
-                    reason_code=rejected.reason_code.value,
-                    votes=rejected.value,
-                    eml_type=self.eml_type,
-                )
-            )
-        for uncounted in votes.uncounted_votes:
-            turnout_counts.append(
-                VoterTurnoutCount(
-                    contest=contest,
-                    region=region,
-                    category=VoterTurnoutCount.CATEGORY_UNCOUNTED,
-                    reason_code=uncounted.reason_code.value,
-                    votes=uncounted.value,
-                    eml_type=self.eml_type,
-                )
-            )
-        turnout_counts.append(
-            VoterTurnoutCount(
-                contest=contest,
-                region=region,
-                category=VoterTurnoutCount.CATEGORY_TOTALS,
-                reason_code="cast",
-                votes=votes.cast,
-                eml_type=self.eml_type,
-            )
-        )
-        turnout_counts.append(
-            VoterTurnoutCount(
-                contest=contest,
-                region=region,
-                category=VoterTurnoutCount.CATEGORY_TOTALS,
-                reason_code="total counted",
-                votes=votes.total_counted,
-                eml_type=self.eml_type,
-            )
-        )
 
 
 class EML110aImporter(EMLBaseImporter[Eml110a]):
@@ -230,20 +141,24 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             election=self.election,
         )
         for affiliation in contest_data.affiliation:
+            assert affiliation.affiliation_identifier.id, (
+                f"AffiliationIdentifier/@Id missing for party "
+                f"{affiliation.affiliation_identifier.registered_name or BLANCO_PARTY_REGISTERED_NAME}"
+            )
+            list_number = int(affiliation.affiliation_identifier.id)
             try:
                 party = Party.objects.get(
                     election=self.election,
                     registered_name=affiliation.affiliation_identifier.registered_name,
                 )
-                assert affiliation.affiliation_identifier.id, (
-                    f"AffiliationIdentifier/@Id missing for party {party.registered_name}"
-                )
-                party.list_number = int(affiliation.affiliation_identifier.id)
+                party.list_number = list_number
                 party.save(update_fields=["list_number", "updated_at"])
             except Party.DoesNotExist:
                 # Some candidates are not affiliated to any party
                 party, _ = Party.objects.get_or_create(
-                    election=self.election, registered_name=BLANCO_PARTY_REGISTERED_NAME, list_number=None
+                    election=self.election,
+                    registered_name=f"{BLANCO_PARTY_REGISTERED_NAME} {list_number}",
+                    list_number=list_number,
                 )
 
             for candidate in affiliation.candidate:
@@ -265,7 +180,115 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
                 )
 
 
-class EML510bImporter(EMLBaseImporter[Eml510]):
+class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
+    @staticmethod
+    def _counting_method(count) -> str | None:
+        counting_method = getattr(count, "counting_method", None)
+        if counting_method is None:
+            return None
+        return {
+            CountingMethodMethodCode.CENTRALE_STEMOPNEMING: CountingMethod.CSO,
+            CountingMethodMethodCode.DECENTRALE_STEMOPNEMING: CountingMethod.DSO,
+        }.get(counting_method.method_code)
+
+    def _parse_party_candidate_votecounts(
+        self,
+        contest,
+        region,
+        items: list[Count.Election.Contests.Contest.TotalVotes.Selection | ReportingUnitVotes.Selection],
+        party_by_list_nuber: dict[int, Party],
+        candidate_by_key,
+        vote_counts,
+    ) -> None:
+        current_party = None
+        for votes_item in items:
+            if votes_item.affiliation_identifier:
+                # get party from pre-saved data
+                current_party = party_by_list_nuber[int(votes_item.affiliation_identifier.id)]
+                vote_counts.append(
+                    VoteCount(
+                        region=region,
+                        contest=contest,
+                        party=current_party,
+                        result_level=VoteCount.RESULT_LEVEL_PARTY,
+                        valid_votes=votes_item.valid_votes,
+                        eml_type=self.eml_type,
+                    )
+                )
+            if votes_item.candidate:
+                assert current_party, "No party to tie candidate to, cannot parse"
+                # get candidate from pre-saved data
+                try:
+                    candidate = candidate_by_key[
+                        (
+                            current_party.id,
+                            int(votes_item.candidate.candidate_identifier.id),
+                        )
+                    ]
+                    vote_counts.append(
+                        VoteCount(
+                            region=region,
+                            contest=contest,
+                            party=current_party,
+                            candidate=candidate,
+                            result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
+                            valid_votes=votes_item.valid_votes,
+                            eml_type=self.eml_type,
+                        )
+                    )
+                except KeyError:
+                    self.logger.error(
+                        "Candidate %s not found within party %s",
+                        int(votes_item.candidate.candidate_identifier.id),
+                        current_party.registered_name,
+                    )
+
+    def _collect_turnout_counts(self, contest, region, votes, turnout_counts) -> None:
+        for rejected in votes.rejected_votes:
+            turnout_counts.append(
+                VoterTurnoutCount(
+                    contest=contest,
+                    region=region,
+                    category=VoterTurnoutCount.CATEGORY_REJECTED,
+                    reason_code=rejected.reason_code.value,
+                    votes=rejected.value,
+                    eml_type=self.eml_type,
+                )
+            )
+        for uncounted in votes.uncounted_votes:
+            turnout_counts.append(
+                VoterTurnoutCount(
+                    contest=contest,
+                    region=region,
+                    category=VoterTurnoutCount.CATEGORY_UNCOUNTED,
+                    reason_code=uncounted.reason_code.value,
+                    votes=uncounted.value,
+                    eml_type=self.eml_type,
+                )
+            )
+        turnout_counts.append(
+            VoterTurnoutCount(
+                contest=contest,
+                region=region,
+                category=VoterTurnoutCount.CATEGORY_TOTALS,
+                reason_code="cast",
+                votes=votes.cast,
+                eml_type=self.eml_type,
+            )
+        )
+        turnout_counts.append(
+            VoterTurnoutCount(
+                contest=contest,
+                region=region,
+                category=VoterTurnoutCount.CATEGORY_TOTALS,
+                reason_code="total counted",
+                votes=votes.total_counted,
+                eml_type=self.eml_type,
+            )
+        )
+
+
+class EML510bImporter(EML510BaseImporter):
     """Telling"""
 
     eml_type = VoteCount.EML_TYPE_510B
@@ -283,13 +306,15 @@ class EML510bImporter(EMLBaseImporter[Eml510]):
                 region_number=int(self.eml.managing_authority.authority_identifier.id),
                 region_name=managing_authority_name,
             )
-            ElectionDocument.objects.create(
-                storage_key=self.file_path.relative_to(f"{settings.BASE_DIR}/.data").as_posix(),
-                region=region,
-                content_type="application/xml",
-                size=len(self.file_path.read_bytes()),
-                file_type=ElectionDocument.FILE_TYPE_EML510B,
-            )
+            if self.file_path is not None:
+                ElectionDocument.objects.create(
+                    storage_key=self.file_path.relative_to(f"{settings.BASE_DIR}/.data").as_posix(),
+                    region=region,
+                    content_type="application/xml",
+                    size=len(self.file_path.read_bytes()),
+                    file_type=ElectionDocument.FILE_TYPE_EML510B,
+                )
+
             region.results_available_at = timezone.now()
             counting_method = self._counting_method(self.eml.count)
             if counting_method is not None:
@@ -301,7 +326,7 @@ class EML510bImporter(EMLBaseImporter[Eml510]):
             return
 
         # Preload party names dict
-        party_by_name = {party.registered_name: party for party in Party.objects.filter(election=self.election)}
+        party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
 
         vote_counts: list[VoteCount] = []
         turnout_counts: list[VoterTurnoutCount] = []
@@ -318,7 +343,7 @@ class EML510bImporter(EMLBaseImporter[Eml510]):
                 contest,
                 region,
                 contest_data.total_votes.selection,
-                party_by_name,
+                party_by_list_number,
                 candidate_by_key,
                 vote_counts,
             )
@@ -330,7 +355,7 @@ class EML510bImporter(EMLBaseImporter[Eml510]):
                 while polling_station_name.startswith("Stembureau "):
                     polling_station_name = polling_station_name[len("Stembureau ") :]
 
-                polling_station = Region.objects.create(
+                polling_station, _ = Region.objects.get_or_create(
                     election=self.election,
                     region_number=unit.reporting_unit_identifier.id,
                     region_name=polling_station_name,
@@ -342,7 +367,7 @@ class EML510bImporter(EMLBaseImporter[Eml510]):
                     contest,
                     polling_station,
                     unit.selection,
-                    party_by_name,
+                    party_by_list_number,
                     candidate_by_key,
                     vote_counts,
                 )
@@ -354,7 +379,7 @@ class EML510bImporter(EMLBaseImporter[Eml510]):
             VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=4000)
 
 
-class EML510dImporter(EMLBaseImporter[Eml510]):
+class EML510dImporter(EML510BaseImporter):
     """Totaaltelling."""
 
     eml_type = VoteCount.EML_TYPE_510D
@@ -389,7 +414,7 @@ class EML510dImporter(EMLBaseImporter[Eml510]):
             region.save(update_fields=["counting_method", "updated_at"])
 
         # Preload party names dict
-        party_by_name = {party.registered_name: party for party in Party.objects.filter(election=self.election)}
+        party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
 
         gsb_by_name = {
             region.region_name: region
@@ -412,7 +437,7 @@ class EML510dImporter(EMLBaseImporter[Eml510]):
                 contest,
                 region,
                 contest_data.total_votes.selection,
-                party_by_name,
+                party_by_list_number,
                 candidate_by_key,
                 vote_counts,
             )
@@ -430,7 +455,7 @@ class EML510dImporter(EMLBaseImporter[Eml510]):
                     contest,
                     gsb_region,
                     unit.selection,
-                    party_by_name,
+                    party_by_list_number,
                     candidate_by_key,
                     vote_counts,
                 )
@@ -443,14 +468,12 @@ class EML510dImporter(EMLBaseImporter[Eml510]):
 
 
 class ElectionImporter:
-    def __init__(self, folder: Path):
-        self.folder = folder
-
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+    def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
         self._region_map: dict[tuple[str, str], Region] = {}
         self._parser = XmlParser(ParserConfig(fail_on_unknown_properties=True))
 
-    _DOCUMENT_TYPES = {
+    _DOCUMENT_TYPES: dict[str, tuple[type[Emlstructure], type[EMLBaseImporter]]] = {
         "110a": (Eml110a, EML110aImporter),  # Verkiezingsdefinitie
         "230b": (Eml230, EML230bImporter),  # Kandidatenlijst
         VoteCount.EML_TYPE_510B: (Eml510, EML510bImporter),  # Telling
@@ -458,34 +481,47 @@ class ElectionImporter:
     }
 
     @staticmethod
-    def _document_id(xml_file_path: Path) -> str | None:
+    def _document_id(xml_file_path: Path | BytesIO) -> str | None:
         for _, element in ET.iterparse(xml_file_path, events=("start",)):
             return element.get("Id")
         return None
 
-    def _import_files(self, parser_type: str, xml_files: list[Path]) -> None:
+    def _process_file_paths(self, parser_type: str, xml_files: list[Path]) -> None:
+        """
+        Process the list of paths of `xml_files` using the parser for `parser_type`
+        """
         binding, importer_cls = self._DOCUMENT_TYPES[parser_type]
-        files_str = ", ".join([str(path) for path in xml_files])
-        self.logger.info(f"Importing {parser_type} files {files_str} using {importer_cls.__name__}...")
-        for xml_file_path in tqdm(
-            xml_files,
-            desc="Processing XML",
-            ncols=100,
-            dynamic_ncols=False,
-            bar_format="{l_bar}{bar:40}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
-        ):
+        self.logger.info(f"Importing {parser_type} files using {importer_cls.__name__}...")
+        file_cnt = len(xml_files)
+        for i, xml_file_path in enumerate(xml_files, start=1):
+            self.logger.info(f"Processing [{i}/{file_cnt}] {xml_file_path}...")
             eml = self._parser.from_path(xml_file_path, binding)
             importer_cls(eml, xml_file_path).parse()
 
-    def _classify_files(self) -> dict[str, list[Path]]:
-        xml_files: dict[str, list[Path]] = {key: [] for key in self._DOCUMENT_TYPES}
-        for xml_file_path in sorted(self.folder.rglob("*.xml")):
+    def _classify_files[T = Path | BytesIO](self, input_files: list[T]) -> dict[str, list[T]]:
+        xml_files: dict[str, list[T]] = {key: [] for key in self._DOCUMENT_TYPES}
+        for xml_file_path in input_files:
             document_id = self._document_id(xml_file_path)
-            if document_id in xml_files:
+            if document_id and document_id in xml_files:
                 xml_files[document_id].append(xml_file_path)
         return xml_files
 
-    def run(self) -> None:
-        xml_files = self._classify_files()
+    def import_folder(self, folder: Path) -> None:
+        """
+        Import all XML files from the given folder.
+        """
+        files = sorted(folder.rglob("*.xml"))
+        xml_files = self._classify_files(files)
         for parser_type in self._DOCUMENT_TYPES:
-            self._import_files(parser_type, xml_files[parser_type])
+            self._process_file_paths(parser_type, xml_files[parser_type])
+
+    def import_file_objects(self, files: list[NamedBytesIO]) -> None:
+        """
+        Import all given file-like objects.
+        """
+        xml_files = self._classify_files(files)
+        for parser_type, (binding, importer_cls) in self._DOCUMENT_TYPES.items():
+            for file in xml_files[parser_type]:
+                self.logger.info(f"Importing {parser_type} file {file.filename}")
+                eml = self._parser.from_bytes(file.getvalue(), binding)
+                importer_cls(eml, None).parse()
