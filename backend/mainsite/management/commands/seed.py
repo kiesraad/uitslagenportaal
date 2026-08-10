@@ -156,6 +156,7 @@ WS2023_ELECTION_SEED = {
         "label": "Waterschapsverkiezingen 2023",
         "category": "WS",
         "date": "2023-12-15T11:00:00",
+        "issue_report_opens_at": "2026-12-08T09:00:00",
         "issue_report_deadline": "2026-12-14T10:00:00",
         "report_error_url": "https://www.kiesraad.nl/service/contact",
         "counting_info_url": "https://www.kiesraad.nl/verkiezingen",
@@ -170,6 +171,7 @@ PS2023_ELECTION_SEED = {
         "label": "Provinciale Statenverkiezingen 2023",
         "category": "PS",
         "date": "2023-12-15T11:00:00",
+        "issue_report_opens_at": "2026-12-08T09:00:00",
         "issue_report_deadline": "2026-12-14T10:00:00",
         "report_error_url": "https://www.kiesraad.nl/service/contact",
         "counting_info_url": "https://www.kiesraad.nl/verkiezingen",
@@ -206,6 +208,11 @@ class Command(BaseCommand):
                 date=timezone.make_aware(
                     datetime.fromisoformat(
                         election_data["date"],
+                    )
+                ),
+                issue_report_opens_at=timezone.make_aware(
+                    datetime.fromisoformat(
+                        election_data["issue_report_opens_at"],
                     )
                 ),
                 issue_report_deadline=timezone.make_aware(
