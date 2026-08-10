@@ -42,6 +42,7 @@ uv pip install -e .
 uv add [package]
 ```
 
+
 ## Run Server
 
 ```bash
@@ -57,22 +58,51 @@ python manage.py migrate backend
 
 ## Management commands
 
-# Wipes all election data, keeps super user
+### Wipes all election data, keeps super user
 ```bash
 python manage.py wipe_db
 ```
 
-# Seed the ElectionConfig
+### Seed the ElectionConfig
 ```bash
 python manage.py seed
 ```
 
-# Import all EML files in the .data folder
+### Import all EML files in the .data folder
 ```bash
 python manage.py import_election
 ```
 
-# Wipe, seed & import in one
+### Wipe, seed & import in one
 ```bash
 python manage.py reset_and_import
+```
+
+## Object storage
+
+Files are stored in an S3-compatible bucket through Django's `default_storage`
+(`django-storages`). All settings default to the local MinIO container from
+`docker-compose.yml`, so no configuration is needed when you run the stack with
+Docker. Outside Docker, set these in your `.env`:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `S3_BUCKET_NAME` | `uitslagenportaal` | Bucket name |
+| `S3_ENDPOINT_URL` | `http://localhost:9000` | Endpoint the backend uploads through |
+| `S3_PUBLIC_DOMAIN` | `localhost:9000/uitslagenportaal` | Host used in the URLs handed to the browser |
+| `S3_URL_PROTOCOL` | `http:` | Protocol for those URLs (note the trailing colon) |
+| `S3_ACCESS_KEY` | `uitslagenportaal` | Access key |
+| `S3_SECRET_KEY` | `password` | Secret key |
+| `S3_REGION` | `nl-ams` | Region (Scaleway Amsterdam; ignored by MinIO) |
+| `S3_ADDRESSING_STYLE` | `path` | `path` for MinIO, `auto` for real S3 providers |
+
+Objects are public-read, so generated URLs are unsigned and do not expire. In
+production the bucket must therefore be configured to allow anonymous
+`s3:GetObject`. For Scaleway that means:
+
+```
+S3_ENDPOINT_URL=https://s3.nl-ams.scw.cloud
+S3_PUBLIC_DOMAIN=<bucket>.s3.nl-ams.scw.cloud
+S3_URL_PROTOCOL=https:
+S3_ADDRESSING_STYLE=auto
 ```

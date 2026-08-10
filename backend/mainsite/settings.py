@@ -118,6 +118,35 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 
+# Object storage
+# S3-compatible: MinIO locally (see docker-compose.yml), Scaleway in production.
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": os.environ.get("S3_BUCKET_NAME", "uitslagenportaal"),
+            "endpoint_url": os.environ.get("S3_ENDPOINT_URL", "http://localhost:9000"),
+            "access_key": os.environ.get("S3_ACCESS_KEY", "uitslagenportaal"),
+            "secret_key": os.environ.get("S3_SECRET_KEY", "password"),
+            "region_name": os.environ.get("S3_REGION", "nl-ams"),
+            "custom_domain": os.environ.get("S3_PUBLIC_DOMAIN", "localhost:9000/uitslagenportaal"),
+            "url_protocol": os.environ.get("S3_URL_PROTOCOL", "http:"),
+            # MinIO is reached by hostname, so virtual-host style addressing
+            # (bucket.object-storage:9000) would not resolve.
+            "addressing_style": os.environ.get("S3_ADDRESSING_STYLE", "path"),
+            # Public objects: no signature on generated URLs.
+            "querystring_auth": False,
+            "file_overwrite": True,
+            # Makes browsers download documents instead of rendering them.
+            "object_parameters": {"ContentDisposition": "attachment"},
+        },
+    },
+    # Assigning STORAGES replaces Django's default dict, so staticfiles has to
+    # be restated here or collectstatic and the admin lose their backend.
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+
 # Logging
 # https://docs.djangoproject.com/en/6.0/topics/logging/
 
@@ -149,5 +178,10 @@ LOGGING = {
         # Keep Django itself at INFO even when our own code runs at DEBUG,
         # otherwise every SQL query gets logged.
         "django": {"level": "INFO"},
+        # Same for the AWS SDK, which logs every endpoint lookup, signature and header at DEBUG
+        "boto3": {"level": "INFO"},
+        "botocore": {"level": "INFO"},
+        "s3transfer": {"level": "INFO"},
+        "urllib3": {"level": "INFO"},
     },
 }
