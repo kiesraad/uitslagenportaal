@@ -20,8 +20,8 @@ from xsdata.formats.dataclass.parsers.handlers import XmlEventHandler
 from election.models import (
     VoteCount,
 )
-from eml_import.utils.eml_110a_importer import EML110aImporter
-from eml_import.utils.eml_230b_importer import EML230bImporter
+from eml_import.utils.eml_110_importer import EML110aImporter
+from eml_import.utils.eml_230_importer import EML230bImporter
 from eml_import.utils.eml_510_importer import EML510bImporter, EML510dImporter
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO

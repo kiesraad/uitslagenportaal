@@ -17,8 +17,8 @@ from django.conf import settings
 from rest_framework.test import APIRequestFactory
 
 from election.models import Election, ElectionConfig, VoteCount, VoterTurnoutCount
-from mainsite.models import RegionCategory
 from eml_import.utils.election_importer import ElectionImporter
+from mainsite.models import RegionCategory
 from party.models import Party
 from party.views import PartyResultMatrixView
 from region.models import Region
