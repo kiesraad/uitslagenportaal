@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     "election.apps.ElectionConfig",
     "region.apps.RegionConfig",
     "party.apps.PartyConfig",
+    "eml_import.apps.EmlImportConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -118,6 +119,11 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 
+# GitHub EML ingress
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+GITHUB_INGRESS_REPO = os.environ.get("GITHUB_INGRESS_REPO")  # "owner/repo"
+
+
 # Object storage
 # S3-compatible: MinIO locally (see docker-compose.yml), Scaleway in production.
 STORAGES = {
@@ -157,7 +163,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "simple": {
-            "format": "{asctime} {levelname:8} {name}: {message}",
+            "format": "{asctime} {levelname} \t {name} - {message}",
             "style": "{",
         },
     },

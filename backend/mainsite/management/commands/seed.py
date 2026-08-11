@@ -180,7 +180,20 @@ PS2023_ELECTION_SEED = {
     **TIMELINE_ENTRIES,
 }
 
-ELECTION_SEED = [WS2023_ELECTION_SEED, PS2023_ELECTION_SEED]
+GR2026_ELECTION_SEED = {
+    "election": {
+        "id": "GR2026",
+        "label": "Gemeenteraad 2026",
+        "category": "GR",
+        "date": "2026-03-18T11:00:00",
+        "issue_report_deadline": "2026-04-18T10:00:00",
+        "gh_counting_results_branch": "auto-tk2026-tel",
+        "gh_exchange_branch": "auto-tk2026-uit",
+    },
+    **TIMELINE_ENTRIES,
+}
+
+ELECTION_SEED = [WS2023_ELECTION_SEED, PS2023_ELECTION_SEED, GR2026_ELECTION_SEED]
 
 
 class Command(BaseCommand):
@@ -223,6 +236,8 @@ class Command(BaseCommand):
                 report_error_url=election_data.get("report_error_url", ""),
                 counting_info_url=election_data.get("counting_info_url", ""),
                 voting_url=election_data.get("voting_url", ""),
+                gh_counting_results_branch=election_data.get("gh_counting_results_branch"),
+                gh_exchange_branch=election_data.get("gh_exchange_branch"),
             )
             for seed_key, variant in self._TIMELINE_VARIANTS.items():
                 for entry_data in item.get(seed_key, []):

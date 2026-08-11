@@ -20,4 +20,4 @@ class Command(BaseCommand):
         if not folder.is_dir():
             raise CommandError(f"Folder does not exist: {folder}")
 
-        ElectionImporter(folder).run()
+        ElectionImporter().import_folder(folder)
