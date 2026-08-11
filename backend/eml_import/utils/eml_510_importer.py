@@ -1,183 +1,24 @@
-import logging
-from abc import ABC, abstractmethod
-from io import BytesIO
-from pathlib import Path
-from xml.etree import ElementTree as ET
+from abc import ABC
 
 from django.conf import settings
 from django.utils import timezone
 from pyeml_bindings import (
     Count,
     CountingMethodMethodCode,
-    ElectionIdentifierStructureKr,
-    Eml110a,
-    Eml230,
     Eml510,
-    Emlstructure,
     ReportingUnitVotes,
 )
-from xsdata.formats.dataclass.parsers import XmlParser
-from xsdata.formats.dataclass.parsers.config import ParserConfig
 
 from election.models import (
     Contest,
-    Election,
-    ElectionConfig,
     ElectionDocument,
     VoteCount,
     VoterTurnoutCount,
 )
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from eml_import.utils.eml_base_importer import EMLBaseImporter
 from mainsite.models import CountingMethod, RegionCategory
 from party.models import Candidate, Party
-from region.models import Region
-
-
-def _csb_for_parent(parent: Region | None) -> Region | None:
-    """
-    CSB is the election-tree root.
-
-    Root regions have no parent and no csb. Children inherit the parent's csb,
-    or the parent itself when the parent is the root.
-    """
-    if parent is None:
-        return None
-    return parent.csb or parent
-
-
-BLANCO_PARTY_REGISTERED_NAME = "Blanco Lijst"
-
-
-class EMLBaseImporter[T](ABC):
-    eml_type = None
-
-    def __init__(self, eml: T, file_path: Path | None):
-        self.eml = eml
-        self.file_path = file_path
-
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self.election_config = None
-        self.linked_region = None
-        self._parse_election()
-
-    @abstractmethod
-    def _get_election_identifier_data(self) -> ElectionIdentifierStructureKr: ...
-
-    @abstractmethod
-    def _parse_data(self): ...
-
-    def _parse_election(self) -> None:
-        election_identifier = self._get_election_identifier_data().id.split("_")[0]
-        self.election_config = ElectionConfig.objects.get(identifier=election_identifier)
-        election_identifier_object = self._get_election_identifier_data()
-        election, _ = Election.objects.get_or_create(
-            election_config=self.election_config,
-            name=election_identifier_object.election_name,
-            subcategory=election_identifier_object.election_subcategory[0].value.value,
-            defaults={
-                # Date can differ between files, e.g. when there was a re-election (Gorinchem GR2026)
-                "date": election_identifier_object.election_date[0].value.to_date(),
-            },
-        )
-        self.election = election
-
-    def parse(self):
-        try:
-            self._parse_data()
-        except ElectionConfig.DoesNotExist:
-            self.logger.warning("Election is not configured, skipping 110a data import")
-
-
-class EML110aImporter(EMLBaseImporter[Eml110a]):
-    """Verkiezingsdefinitie"""
-
-    def _get_election_identifier_data(self):
-        return self.eml.election_event.election.election_identifier
-
-    def _parse_data(self):
-        self._parse_regions()
-        self._parse_registered_parties()
-        self.logger.info("Successfully imported data for Election")
-
-    def _parse_regions(self) -> None:
-        region_nodes = self.eml.election_event.election.election_tree.region
-        for node in region_nodes:
-            parent_region = None
-            if node.superior_region_number:
-                parent_region = Region.objects.get(
-                    election=self.election,
-                    region_category=node.superior_region_category.value,
-                    region_number=node.superior_region_number,
-                )
-            Region.objects.update_or_create(
-                election=self.election,
-                parent=parent_region,
-                region_name=node.region_name.value,
-                region_category=node.region_category.value,
-                region_number=node.region_number,
-                defaults={"csb": _csb_for_parent(parent_region)},
-            )
-
-    def _parse_registered_parties(self) -> None:
-        party_nodes = self.eml.election_event.election.registered_parties.registered_party
-        for node in party_nodes:
-            Party.objects.get_or_create(
-                election=self.election,
-                registered_name=node.registered_appellation.value,
-            )
-
-
-class EML230bImporter(EMLBaseImporter[Eml230]):
-    """Kandidatenlijst"""
-
-    def _get_election_identifier_data(self):
-        return self.eml.candidate_list.election.election_identifier
-
-    def _parse_data(self):
-        assert len(self.eml.candidate_list.election.contest) == 1, "More than one contest, cannot parse"
-        contest_data = self.eml.candidate_list.election.contest[0]
-        contest, _ = Contest.objects.get_or_create(
-            identifier=contest_data.contest_identifier.id,
-            election=self.election,
-        )
-        for affiliation in contest_data.affiliation:
-            assert affiliation.affiliation_identifier.id, (
-                f"AffiliationIdentifier/@Id missing for party "
-                f"{affiliation.affiliation_identifier.registered_name or BLANCO_PARTY_REGISTERED_NAME}"
-            )
-            list_number = int(affiliation.affiliation_identifier.id)
-            try:
-                party = Party.objects.get(
-                    election=self.election,
-                    registered_name=affiliation.affiliation_identifier.registered_name,
-                )
-                party.list_number = list_number
-                party.save(update_fields=["list_number", "updated_at"])
-            except Party.DoesNotExist:
-                # Some candidates are not affiliated to any party
-                party, _ = Party.objects.get_or_create(
-                    election=self.election,
-                    registered_name=f"{BLANCO_PARTY_REGISTERED_NAME} {list_number}",
-                    list_number=list_number,
-                )
-
-            for candidate in affiliation.candidate:
-                first_name = None
-                if candidate.candidate_full_name.person_name.first_name:
-                    first_name = candidate.candidate_full_name.person_name.first_name.content[0]
-                name_prefix = None
-                if candidate.candidate_full_name.person_name.name_prefix:
-                    name_prefix = candidate.candidate_full_name.person_name.name_prefix.content[0]
-                Candidate.objects.create(
-                    party=party,
-                    contest=contest,
-                    identifier=candidate.candidate_identifier.id,
-                    position=candidate.candidate_identifier.id,
-                    initials=candidate.candidate_full_name.person_name.name_line.content[0],
-                    first_name=first_name,
-                    name_prefix=name_prefix,
-                    last_name=candidate.candidate_full_name.person_name.last_name.content[0],
-                )
+from region.models import Region, build_region_slug
 
 
 class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
@@ -296,6 +137,65 @@ class EML510bImporter(EML510BaseImporter):
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
 
+    @staticmethod
+    def _polling_station_name(unit: ReportingUnitVotes) -> str:
+        name = unit.reporting_unit_identifier.value.split(" (postcode:")[0]
+        # Strip leading Stembureau if present, do recursively for
+        # eg 'Stembureau Stembureau Nutsgebouw Zwammerdam'
+        while name.startswith("Stembureau "):
+            name = name[len("Stembureau ") :]
+        return name
+
+    def _ensure_polling_stations(self, region: Region) -> dict[tuple[str, str], Region]:
+        """
+        Create all polling stations of this file up front, keyed by (number, name).
+
+        Replaces a per-station get_or_create (a SELECT plus an INSERT each, in the
+        hottest loop of the import) with one SELECT, one bulk INSERT and one SELECT
+        for the whole file.
+        """
+        stations_filter = {
+            "election": self.election,
+            "parent": region,
+            "region_category": RegionCategory.STEMBUREAU,
+        }
+        existing = {
+            (station.region_number, station.region_name): station
+            for station in Region.objects.filter(**stations_filter)
+        }
+
+        wanted: set[tuple[str, str]] = set()
+        for contest_data in self.eml.count.election.contests.contest:
+            for unit in contest_data.reporting_unit_votes:
+                wanted.add((str(unit.reporting_unit_identifier.id), self._polling_station_name(unit)))
+
+        missing = wanted - existing.keys()
+        if not missing:
+            return existing
+
+        csb = self._csb_for_parent(region)
+        Region.objects.bulk_create(
+            [
+                Region(
+                    election=self.election,
+                    region_number=region_number,
+                    region_name=region_name,
+                    parent=region,
+                    csb=csb,
+                    region_category=RegionCategory.STEMBUREAU,
+                    # bulk_create bypasses Region.save(), so derive the slug here
+                    slug=build_region_slug(region_number, region_name),
+                )
+                for region_number, region_name in missing
+            ],
+            batch_size=self.BULK_BATCH_SIZE,
+        )
+
+        return {
+            (station.region_number, station.region_name): station
+            for station in Region.objects.filter(**stations_filter)
+        }
+
     def _parse_data(self) -> None:
         authority_el = self.eml.managing_authority.authority_identifier
         managing_authority_name = (authority_el.value or "").strip()
@@ -311,7 +211,7 @@ class EML510bImporter(EML510BaseImporter):
                     storage_key=self.file_path.relative_to(f"{settings.BASE_DIR}/.data").as_posix(),
                     region=region,
                     content_type="application/xml",
-                    size=len(self.file_path.read_bytes()),
+                    size=self.file_path.stat().st_size,
                     file_type=ElectionDocument.FILE_TYPE_EML510B,
                 )
 
@@ -327,6 +227,7 @@ class EML510bImporter(EML510BaseImporter):
 
         # Preload party names dict
         party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
+        polling_stations = self._ensure_polling_stations(region)
 
         vote_counts: list[VoteCount] = []
         turnout_counts: list[VoterTurnoutCount] = []
@@ -349,20 +250,9 @@ class EML510bImporter(EML510BaseImporter):
             )
             self._collect_turnout_counts(contest, region, contest_data.total_votes, turnout_counts)
             for unit in contest_data.reporting_unit_votes:
-                polling_station_name = unit.reporting_unit_identifier.value.split(" (postcode:")[0]
-                # Strip leading Stembureau if present, do recursively for
-                # eg 'Stembureau Stembureau Nutsgebouw Zwammerdam'
-                while polling_station_name.startswith("Stembureau "):
-                    polling_station_name = polling_station_name[len("Stembureau ") :]
-
-                polling_station, _ = Region.objects.get_or_create(
-                    election=self.election,
-                    region_number=unit.reporting_unit_identifier.id,
-                    region_name=polling_station_name,
-                    parent=region,
-                    csb=_csb_for_parent(region),
-                    region_category=RegionCategory.STEMBUREAU,
-                )
+                polling_station = polling_stations[
+                    (str(unit.reporting_unit_identifier.id), self._polling_station_name(unit))
+                ]
                 self._parse_party_candidate_votecounts(
                     contest,
                     polling_station,
@@ -374,9 +264,9 @@ class EML510bImporter(EML510BaseImporter):
                 self._collect_turnout_counts(contest, polling_station, unit, turnout_counts)
 
         if vote_counts:
-            VoteCount.objects.bulk_create(vote_counts, batch_size=4000)
+            VoteCount.objects.bulk_create(vote_counts, batch_size=self.BULK_BATCH_SIZE)
         if turnout_counts:
-            VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=4000)
+            VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=self.BULK_BATCH_SIZE)
 
 
 class EML510dImporter(EML510BaseImporter):
@@ -394,16 +284,20 @@ class EML510dImporter(EML510BaseImporter):
         assert len(election_domain) == 1, "More than one election domain, cannot parse"
         region_number = int(election_domain[0].id) if election_domain[0].id else None
         region_name = election_domain[0].value
+        # A Totaaltelling is published by a top-level body (gemeente, waterschap,
+        # provincie, staat), never by a kieskring or a polling station. Those can
+        # share both number and name with their parent -- waterschap Noorderzijlvest
+        # has a kieskring called Noorderzijlvest with the same number -- which makes
+        # an unfiltered lookup ambiguous (MultipleObjectsReturned).
+        regions_qs = Region.objects.filter(election=self.election).exclude(
+            region_category__in=(RegionCategory.KIESKRING, RegionCategory.STEMBUREAU)
+        )
         if not region_number:
             # Allow for the case when the election domain has no region number attached,
             # this is the case in PS and region number is in that case not needed for retrieval
-            region = Region.objects.get(
-                election=self.election,
-                region_name=region_name,
-            )
+            region = regions_qs.get(region_name=region_name)
         else:
-            region = Region.objects.get(
-                election=self.election,
+            region = regions_qs.get(
                 region_number=region_number,
                 region_name=region_name,
             )
@@ -462,66 +356,6 @@ class EML510dImporter(EML510BaseImporter):
                 self._collect_turnout_counts(contest, gsb_region, unit, turnout_counts)
 
         if vote_counts:
-            VoteCount.objects.bulk_create(vote_counts, batch_size=1000)
+            VoteCount.objects.bulk_create(vote_counts, batch_size=self.BULK_BATCH_SIZE)
         if turnout_counts:
-            VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=1000)
-
-
-class ElectionImporter:
-    def __init__(self):
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self._region_map: dict[tuple[str, str], Region] = {}
-        self._parser = XmlParser(ParserConfig(fail_on_unknown_properties=True))
-
-    _DOCUMENT_TYPES: dict[str, tuple[type[Emlstructure], type[EMLBaseImporter]]] = {
-        "110a": (Eml110a, EML110aImporter),  # Verkiezingsdefinitie
-        "230b": (Eml230, EML230bImporter),  # Kandidatenlijst
-        VoteCount.EML_TYPE_510B: (Eml510, EML510bImporter),  # Telling
-        VoteCount.EML_TYPE_510D: (Eml510, EML510dImporter),  # Totaaltelling
-    }
-
-    @staticmethod
-    def _document_id(xml_file_path: Path | BytesIO) -> str | None:
-        for _, element in ET.iterparse(xml_file_path, events=("start",)):
-            return element.get("Id")
-        return None
-
-    def _process_file_paths(self, parser_type: str, xml_files: list[Path]) -> None:
-        """
-        Process the list of paths of `xml_files` using the parser for `parser_type`
-        """
-        binding, importer_cls = self._DOCUMENT_TYPES[parser_type]
-        self.logger.info(f"Importing {parser_type} files using {importer_cls.__name__}...")
-        file_cnt = len(xml_files)
-        for i, xml_file_path in enumerate(xml_files, start=1):
-            self.logger.info(f"Processing [{i}/{file_cnt}] {xml_file_path}...")
-            eml = self._parser.from_path(xml_file_path, binding)
-            importer_cls(eml, xml_file_path).parse()
-
-    def _classify_files[T = Path | BytesIO](self, input_files: list[T]) -> dict[str, list[T]]:
-        xml_files: dict[str, list[T]] = {key: [] for key in self._DOCUMENT_TYPES}
-        for xml_file_path in input_files:
-            document_id = self._document_id(xml_file_path)
-            if document_id and document_id in xml_files:
-                xml_files[document_id].append(xml_file_path)
-        return xml_files
-
-    def import_folder(self, folder: Path) -> None:
-        """
-        Import all XML files from the given folder.
-        """
-        files = sorted(folder.rglob("*.xml"))
-        xml_files = self._classify_files(files)
-        for parser_type in self._DOCUMENT_TYPES:
-            self._process_file_paths(parser_type, xml_files[parser_type])
-
-    def import_file_objects(self, files: list[NamedBytesIO]) -> None:
-        """
-        Import all given file-like objects.
-        """
-        xml_files = self._classify_files(files)
-        for parser_type, (binding, importer_cls) in self._DOCUMENT_TYPES.items():
-            for file in xml_files[parser_type]:
-                self.logger.info(f"Importing {parser_type} file {file.filename}")
-                eml = self._parser.from_bytes(file.getvalue(), binding)
-                importer_cls(eml, None).parse()
+            VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=self.BULK_BATCH_SIZE)

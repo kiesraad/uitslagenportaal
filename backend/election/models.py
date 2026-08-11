@@ -99,6 +99,14 @@ class Contest(BaseModel):
         related_name="contests",
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["election", "identifier"],
+                name="unique_contest_identifier_per_election",
+            )
+        ]
+
 
 class EMLTypeMixin(models.Model):
     class Meta:
