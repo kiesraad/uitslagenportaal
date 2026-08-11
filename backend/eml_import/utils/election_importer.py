@@ -166,6 +166,7 @@ class ElectionImporter:
                 processed_path = future.result()
                 done += 1
             except Exception as e:
+                # With any error the importer should continue as to not have everything fail
                 self.logger.info(f"Failed importing {parser_type} file {path} with exception: {type(e).__name__} {e}")
                 continue
             done += 1
