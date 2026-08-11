@@ -5,12 +5,13 @@ import ResultsNotPublished from '../../components/ResultsPage/ResultsNotPublishe
 import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline.tsx'
 import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
 import { useElectionConfig, usePartyVoteMatrix, useRegion } from '../../hooks/queries.ts'
-import PageIndex from '../../components/PageIndex'
+import ResultsPageIndex from '../../components/ResultsPage/ResultsPageIndex'
 import { appRoutes } from '../../utils/routes.ts'
 import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import PartyVoteMatrixTable from '../../components/ResultsPage/PartyVoteMatrixTable.tsx'
 import { getRegionLabels } from '../../utils/region.ts'
 import { formatDate } from '../../utils/date.ts'
+import { getPartyVoteCount } from '../../utils/voteCounts.ts'
 
 
 export function CSBPartyResultsPage() {
@@ -43,9 +44,7 @@ export function CSBPartyResultsPage() {
 
     const regionLabels = getRegionLabels(electionConfig?.csb_type)
     const partyName = partyVoteMatrix?.party.registered_name ?? partySlug
-    const partyListNumber = region?.vote_counts.find(
-        (voteCount) => voteCount.result_level === 'PARTY' && voteCount.party.slug === partySlug,
-    )?.party.list_number
+    const partyListNumber = getPartyVoteCount(region?.vote_counts, partySlug)?.party.list_number
 
     const isLoading = isElectionLoading || isRegionLoading || isPartyVoteMatrixLoading
     const isError = isElectionError || isRegionError || isPartyVoteMatrixError || !electionConfig || !region || !partyVoteMatrix
@@ -69,13 +68,7 @@ export function CSBPartyResultsPage() {
 
     const resultsPageContent = (
         <>
-            <PageIndex
-                links={[
-                    { label: <><span className="bold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
-                    { label: <><span className="bold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>, url: '#results-timeline' },
-                    { label: <span className="bold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
-                ]}
-            />
+            <ResultsPageIndex />
             <section id="telresultaten" className="party-vote-matrix-section">
                 <h2 className="text-lg mb-4.5 font-medium">Telresultaten lijst {partyListNumber ?? '-'}</h2>
                 <h3 className="party-level-title mb-2">{partyName}</h3>

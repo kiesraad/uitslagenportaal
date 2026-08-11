@@ -1,18 +1,11 @@
-import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { Layout } from '../../components/Layout.tsx'
 import PageTop from '../../components/PageTop.tsx'
 import SharedTabs from '../../components/SharedTabs.tsx'
-import VotesResume from '../../components/ResultsPage/VotesResume.tsx'
-import VotesList from '../../components/ResultsPage/VotesList.tsx'
-import ReportsWithResults from '../../components/ResultsPage/ReportsWithResults.tsx'
-import ResultsNotPublished from '../../components/ResultsPage/ResultsNotPublished.tsx'
-import ResultsTimeline from '../../components/ResultsPage/ResultsTimeline.tsx'
+import RegionResultsContent from '../../components/ResultsPage/RegionResultsContent.tsx'
 import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
 import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
-import PageIndex from '../../components/PageIndex'
 import { appRoutes } from '../../utils/routes.ts'
-import IssueNotice from '../../components/ResultsPage/IssueNotice.tsx'
 import { getRegionLabels } from '../../utils/region.ts'
 import { formatDate } from '../../utils/date.ts'
 
@@ -41,13 +34,6 @@ export function CSBResultsPage() {
     const isLoading = isElectionLoading || isRegionLoading
     const isError = isElectionError || isRegionError || !electionConfig || !region
 
-    const hasResults = Array.isArray(region?.vote_counts) && region.vote_counts.length > 0
-
-    const partyLevelVoteCounts = useMemo(
-        () => region?.vote_counts.filter((voteCount) => voteCount.result_level === 'PARTY') ?? [],
-        [region?.vote_counts],
-    )
-
     if (isLoading || isError) {
         return (
             <PageQueryBoundary
@@ -61,38 +47,6 @@ export function CSBResultsPage() {
             />
         )
     }
-
-    const resultsPageContent = (
-        <>
-            <PageIndex
-                links={[
-                    { label: <><span className="semibold">Telresultaten</span> zoals ze meetellen in de officiele uitslag</>, url: '#telresultaten' },
-                    { label: <><span className="semibold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen</>, url: '#results-timeline' },
-                    { label: <span className="semibold">Hoe u een fout kunt melden</span>, url: '#fout-melden' },
-                ]}
-            />
-            <section id="telresultaten">
-                <h3 className="mb-2">Telresultaten</h3>
-                <p>
-                    Het hoofdstembureau heeft de telresultaten van alle gemeentes in {region.region_name} gecontroleerd,
-                    overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn
-                    opgenomen in het proces-verbaal van het hoofdstembureau.
-                </p>
-            </section>
-            <VotesResume type='admittedVoters' votes={region.voter_turnout_counts} />
-            <section className="votes-cast">
-                <h4 className="mb-2">Uitgebrachte stemmen</h4>
-                <p className="mb-4">Klik op een lijst om de stemmen per kandidaat te zien</p>
-                <VotesList voteCounts={partyLevelVoteCounts} />
-            </section>
-            <VotesResume type='votesCast' votes={region.voter_turnout_counts} />
-            <ReportsWithResults
-                title="Brondocumenten"
-                description={`Onderstaande documenten bevatten de laatste telresultaten van ${regionLabels.article} ${regionLabels.singular.toLowerCase()}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`}
-                documents={region.documents}
-            />
-        </>
-    )
 
     return (
         <Layout
@@ -125,16 +79,25 @@ export function CSBResultsPage() {
             />
             <div className="page-main page-main-two-columns">
                 <div className="page-space-3">
-                    {!hasResults ? (
-                        <ResultsNotPublished regionLabel={region.region_name} />
-                    ) : (
-                        resultsPageContent
-                    )}
-                    <ResultsTimeline
-                        variant={region.timeline_variant}
-                        entries={electionConfig.timeline_entries ?? []}
+                    <RegionResultsContent
+                        intro={
+                            <>
+                                Het hoofdstembureau heeft de telresultaten van alle gemeentes in {region.region_name} gecontroleerd,
+                                overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn
+                                opgenomen in het proces-verbaal van het hoofdstembureau.
+                            </>
+                        }
+                        voteCounts={region.vote_counts}
+                        turnoutVotes={region.voter_turnout_counts}
+                        reports={{
+                            description: `Onderstaande documenten bevatten de laatste telresultaten van ${regionLabels.article} ${regionLabels.singular.toLowerCase()}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`,
+                            documents: region.documents,
+                        }}
+                        timelineVariant={region.timeline_variant}
+                        timelineEntries={electionConfig.timeline_entries ?? []}
+                        issueReportDeadline={electionConfig.issue_report_deadline}
+                        notPublishedRegionLabel={region.region_name}
                     />
-                    <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
                 </div>
             </div>
         </Layout>

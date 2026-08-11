@@ -71,6 +71,7 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
             "slug",
             "label",
             "date",
+            "issue_report_opens_at",
             "issue_report_deadline",
             "timeline_entries",
             "csb_type",
