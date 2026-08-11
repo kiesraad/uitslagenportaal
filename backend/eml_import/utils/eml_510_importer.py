@@ -200,30 +200,25 @@ class EML510bImporter(EML510BaseImporter):
         authority_el = self.eml.managing_authority.authority_identifier
         managing_authority_name = (authority_el.value or "").strip()
 
-        try:
-            region = Region.objects.get(
-                election=self.election,
-                region_number=int(self.eml.managing_authority.authority_identifier.id),
-                region_name=managing_authority_name,
+        region = Region.objects.get(
+            election=self.election,
+            region_number=int(self.eml.managing_authority.authority_identifier.id),
+            region_name=managing_authority_name,
+        )
+        if self.file_path is not None:
+            ElectionDocument.objects.create(
+                storage_key=self.file_path.relative_to(f"{settings.BASE_DIR}/.data").as_posix(),
+                region=region,
+                content_type="application/xml",
+                size=self.file_path.stat().st_size,
+                file_type=ElectionDocument.FILE_TYPE_EML510B,
             )
-            if self.file_path is not None:
-                ElectionDocument.objects.create(
-                    storage_key=self.file_path.relative_to(f"{settings.BASE_DIR}/.data").as_posix(),
-                    region=region,
-                    content_type="application/xml",
-                    size=self.file_path.stat().st_size,
-                    file_type=ElectionDocument.FILE_TYPE_EML510B,
-                )
 
-            region.results_available_at = timezone.now()
-            counting_method = self._counting_method(self.eml.count)
-            if counting_method is not None:
-                region.counting_method = counting_method
-            region.save()
-
-        except Region.DoesNotExist:
-            # Municipality does not exist in the election definition, so we shouldn't import it's results
-            return
+        region.results_available_at = timezone.now()
+        counting_method = self._counting_method(self.eml.count)
+        if counting_method is not None:
+            region.counting_method = counting_method
+        region.save()
 
         # Preload party names dict
         party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
