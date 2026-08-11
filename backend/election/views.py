@@ -1,4 +1,3 @@
-
 from django.core.files.storage import default_storage
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
