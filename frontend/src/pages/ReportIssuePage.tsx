@@ -2,11 +2,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowUpRightFromSquare, faCheck } from '@fortawesome/free-solid-svg-icons'
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { twMerge } from 'tailwind-merge'
 import { Layout } from '../components/Layout.tsx'
 import { InfoBox } from '../components/InfoBox.tsx'
 import { PageQueryBoundary } from '../components/PageQueryBoundary.tsx'
 import { useElectionConfig } from '../hooks/queries.ts'
-import { formatDate } from '../utils/date.ts'
+import { formatDate, formatIssueReportDeadlineHeading, getRemainingReportTime } from '../utils/date.ts'
 import { appRoutes } from '../utils/routes.ts'
 
 export function ReportIssuePage() {
@@ -30,6 +31,9 @@ export function ReportIssuePage() {
       />
     )
   }
+
+  const reportingOpen = getRemainingReportTime(electionConfig.issue_report_deadline) !== null
+  const deadlineHeading = formatIssueReportDeadlineHeading(electionConfig.issue_report_deadline)
 
   return (
     <Layout title="Een fout melden">
@@ -60,7 +64,7 @@ export function ReportIssuePage() {
           </p>
 
           <InfoBox>
-            <h4 className="font-bold">U heeft nog 3 dagen om een melding te maken</h4>
+            <h4 className="font-bold">{deadlineHeading}</h4>
             <p>
               Een melding aan het centraal stembureau kan van{' '}
               {formatDate(electionConfig.issue_report_opens_at)} tot{' '}
@@ -121,10 +125,15 @@ export function ReportIssuePage() {
 
           {electionConfig.report_error_url && (
             <a
-              className="report-error-button"
-              href={electionConfig.report_error_url}
-              target="_blank"
-              rel="noopener noreferrer"
+              className={twMerge(
+                'report-error-button',
+                !reportingOpen && 'report-error-button-disabled',
+              )}
+              href={reportingOpen ? electionConfig.report_error_url : undefined}
+              target={reportingOpen ? '_blank' : undefined}
+              rel={reportingOpen ? 'noopener noreferrer' : undefined}
+              aria-disabled={!reportingOpen}
+              onClick={reportingOpen ? undefined : (event) => event.preventDefault()}
             >
               Meld een fout
               <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
