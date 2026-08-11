@@ -18,7 +18,7 @@ from rest_framework.test import APIRequestFactory
 
 from election.models import Election, ElectionConfig, VoteCount, VoterTurnoutCount
 from mainsite.models import RegionCategory
-from mainsite.utils.election_importer import ElectionImporter
+from eml_import.utils.election_importer import ElectionImporter
 from party.models import Party
 from party.views import PartyResultMatrixView
 from region.models import Region

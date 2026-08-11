@@ -12,7 +12,7 @@ from github.File import File
 from election.models import ElectionConfig
 from eml_import.models import BranchType, ImportedCommit
 from eml_import.utils.named_bytes_io import NamedBytesIO
-from mainsite.utils.election_importer import ElectionImporter
+from eml_import.utils.election_importer import ElectionImporter
 
 COMMIT_BATCH_SIZE = 25
 

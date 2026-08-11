@@ -7,7 +7,7 @@ from django.conf import settings
 
 from election.models import Election, ElectionConfig, VoteCount
 from mainsite.models import RegionCategory
-from mainsite.utils.election_importer import ElectionImporter
+from eml_import.utils.election_importer import ElectionImporter
 from region.models import Region
 
 WS_FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "eml" / "ws"

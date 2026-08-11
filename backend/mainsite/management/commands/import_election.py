@@ -4,7 +4,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-from mainsite.utils.election_importer import ElectionImporter
+from eml_import.utils.election_importer import ElectionImporter
 
 
 def default_workers() -> int:
@@ -24,10 +24,7 @@ class Command(BaseCommand):
             "--workers",
             type=int,
             default=default_workers(),
-            help=(
-                "Number of worker processes to import with (default: one per CPU). "
-                "use 1 to import serially."
-            ),
+            help="Number of worker processes to import with (default: one per CPU). use 1 to import serially.",
         )
 
     def handle(self, *args, **options):
