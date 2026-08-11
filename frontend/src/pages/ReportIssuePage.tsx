@@ -1,14 +1,22 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowUpRightFromSquare, faCheck } from '@fortawesome/free-solid-svg-icons'
 import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { twMerge } from 'tailwind-merge'
+import type { ElectionConfig } from '../api/types.ts'
 import { Layout } from '../components/Layout.tsx'
 import { InfoBox } from '../components/InfoBox.tsx'
 import { PageQueryBoundary } from '../components/PageQueryBoundary.tsx'
 import { useElectionConfig } from '../hooks/queries.ts'
-import { formatDate, formatIssueReportDeadlineHeading, getRemainingReportTime } from '../utils/date.ts'
+import {
+  formatDate,
+  formatIssueReportDeadlineHeading,
+  getRemainingReportTime,
+} from '../utils/date.ts'
 import { appRoutes } from '../utils/routes.ts'
+
+const DEADLINE_TICK_MS = 60_000
 
 export function ReportIssuePage() {
   const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>()
@@ -32,8 +40,47 @@ export function ReportIssuePage() {
     )
   }
 
-  const reportingOpen = getRemainingReportTime(electionConfig.issue_report_deadline) !== null
-  const deadlineHeading = formatIssueReportDeadlineHeading(electionConfig.issue_report_deadline)
+  return (
+    <ReportIssuePageContent
+      electionConfig={electionConfig}
+      electionConfigSlug={electionConfigSlug ?? ''}
+    />
+  )
+}
+
+function ReportIssuePageContent({
+  electionConfig,
+  electionConfigSlug,
+}: {
+  electionConfig: ElectionConfig
+  electionConfigSlug: string
+}) {
+  const deadline = electionConfig.issue_report_deadline
+  const [now, setNow] = useState(() => new Date())
+
+  useEffect(() => {
+    const tick = () => setNow(new Date())
+    const intervalId = window.setInterval(tick, DEADLINE_TICK_MS)
+
+    const deadlineTime = new Date(deadline).getTime()
+    let timeoutId: number | undefined
+    if (!Number.isNaN(deadlineTime)) {
+      const msUntilDeadline = deadlineTime - Date.now()
+      if (msUntilDeadline > 0) {
+        timeoutId = window.setTimeout(tick, msUntilDeadline)
+      }
+    }
+
+    return () => {
+      window.clearInterval(intervalId)
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId)
+      }
+    }
+  }, [deadline])
+
+  const reportingOpen = getRemainingReportTime(deadline, now) !== null
+  const heading = formatIssueReportDeadlineHeading(deadline, now)
 
   return (
     <Layout title="Een fout melden">
@@ -46,13 +93,13 @@ export function ReportIssuePage() {
                 <span className="breadcrumb-sep">{'>'}</span>
               </span>
               <span className="breadcrumb-item">
-                <Link to={appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? '')}>
+                <Link to={appRoutes.electionConfigMunicipalityList(electionConfigSlug)}>
                   {electionConfig.label}
                 </Link>
                 <span className="breadcrumb-sep">{'>'}</span>
               </span>
               <span className="breadcrumb-item">
-                <Link to={appRoutes.reportIssue(electionConfigSlug ?? '')}>Fout melden</Link>
+                <Link to={appRoutes.reportIssue(electionConfigSlug)}>Fout melden</Link>
               </span>
             </nav>
             <h1 className="mb-3 text-3xl sm:text-4xl font-title font-bold">Een fout melden</h1>
@@ -64,7 +111,7 @@ export function ReportIssuePage() {
           </p>
 
           <InfoBox>
-            <h4 className="font-bold">{deadlineHeading}</h4>
+            <h4 className="font-bold">{heading}</h4>
             <p>
               Een melding aan het centraal stembureau kan van{' '}
               {formatDate(electionConfig.issue_report_opens_at)} tot{' '}
