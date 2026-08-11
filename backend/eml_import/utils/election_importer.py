@@ -159,10 +159,15 @@ class ElectionImporter:
         )
 
         done = 0
-        futures = [pool.submit(self._import_file, parser_type, str(path)) for path in ordered]
+        futures = {pool.submit(self._import_file, parser_type, str(path)): path for path in ordered}
         for future in as_completed(futures):
-            # Re-raise anything a worker raised, rather than losing it.
-            processed_path = future.result()
+            path = futures[future]
+            try:
+                processed_path = future.result()
+                done += 1
+            except Exception as e:
+                self.logger.info(f"Failed importing {parser_type} file {path} with exception: {type(e).__name__} {e}")
+                continue
             done += 1
             self.logger.info(f"[{done}/{len(ordered)}] Processed {parser_type} file {processed_path}...")
 

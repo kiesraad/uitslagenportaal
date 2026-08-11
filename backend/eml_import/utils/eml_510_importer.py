@@ -203,11 +203,22 @@ class EML510bImporter(EML510BaseImporter):
         authority_el = self.eml.managing_authority.authority_identifier
         managing_authority_name = (authority_el.value or "").strip()
 
-        region = Region.objects.get(
-            election=self.election,
-            region_number=int(self.eml.managing_authority.authority_identifier.id),
-            region_name=managing_authority_name,
-        )
+        try:
+            region = Region.objects.get(
+                election=self.election,
+                region_number=int(self.eml.managing_authority.authority_identifier.id),
+                region_name=managing_authority_name,
+            )
+        except Region.DoesNotExist:
+            raise EMLImporterException(
+                (
+                    f"Municipality {managing_authority_name} "
+                    f"{int(self.eml.managing_authority.authority_identifier.id)} "
+                    f"does not exist in the election definition of election {self.election}, "
+                    "so we can't import it's results"
+                )
+            )
+
         if self.file_path is not None:
             ElectionDocument.objects.create(
                 storage_key=self.file_path.relative_to(f"{settings.BASE_DIR}/.data").as_posix(),
