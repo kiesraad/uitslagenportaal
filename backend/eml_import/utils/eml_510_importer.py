@@ -16,6 +16,7 @@ from election.models import (
     VoterTurnoutCount,
 )
 from eml_import.utils.eml_base_importer import EMLBaseImporter
+from mainsite.exceptions import EMLImporterException
 from mainsite.models import CountingMethod, RegionCategory
 from party.models import Candidate, Party
 from region.models import Region, build_region_slug
@@ -66,23 +67,25 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
                             int(votes_item.candidate.candidate_identifier.id),
                         )
                     ]
-                    vote_counts.append(
-                        VoteCount(
-                            region=region,
-                            contest=contest,
-                            party=current_party,
-                            candidate=candidate,
-                            result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
-                            valid_votes=votes_item.valid_votes,
-                            eml_type=self.eml_type,
+                except KeyError:
+                    raise EMLImporterException(
+                        (
+                            "Candidate %s not found within party %s",
+                            int(votes_item.candidate.candidate_identifier.id),
+                            current_party.registered_name,
                         )
                     )
-                except KeyError:
-                    self.logger.error(
-                        "Candidate %s not found within party %s",
-                        int(votes_item.candidate.candidate_identifier.id),
-                        current_party.registered_name,
+                vote_counts.append(
+                    VoteCount(
+                        region=region,
+                        contest=contest,
+                        party=current_party,
+                        candidate=candidate,
+                        result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
+                        valid_votes=votes_item.valid_votes,
+                        eml_type=self.eml_type,
                     )
+                )
 
     def _collect_turnout_counts(self, contest, region, votes, turnout_counts) -> None:
         for rejected in votes.rejected_votes:
