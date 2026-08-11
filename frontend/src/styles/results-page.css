@@ -393,6 +393,15 @@
     background: #173966;
 }
 
+.report-error-button-disabled,
+.report-error-button-disabled:hover {
+    background: var(--color-gray-400);
+    color: var(--c-white);
+    pointer-events: none;
+    cursor: not-allowed;
+    text-decoration: none;
+}
+
 .report-error-button svg {
     width: 1rem;
     height: 1rem;

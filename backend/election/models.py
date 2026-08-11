@@ -13,6 +13,9 @@ class ElectionConfig(BaseModel):
     label = models.CharField(max_length=255, default="")
     slug = models.SlugField(unique=True, db_index=True)
     date = models.DateTimeField()
+    issue_report_opens_at = models.DateTimeField(
+        default=datetime(2026, 12, 8, 9, 0, tzinfo=ZoneInfo("Europe/Amsterdam")),
+    )
     issue_report_deadline = models.DateTimeField(
         default=datetime(2026, 12, 14, 10, 0, tzinfo=ZoneInfo("Europe/Amsterdam")),
     )

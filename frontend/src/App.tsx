@@ -1,5 +1,6 @@
 import {BrowserRouter, Route, Routes} from 'react-router-dom'
 import {HomePage} from './pages/HomePage'
+import {ReportIssuePage} from './pages/ReportIssuePage'
 import {ElectionConfigMunicipalityListPage} from './pages/ElectionConfigPage/ElectionConfigMunicipalityListPage'
 import {ElectionConfigCSBListPage} from './pages/ElectionConfigPage/ElectionConfigCSBListPage'
 import {CSBResultsPage} from './pages/CSBPage/CSBResultsPage.tsx'
@@ -19,6 +20,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage/>}/>
         <Route path="/:electionConfigSlug">
+          <Route path="fout-melden" element={<ReportIssuePage/>}/>
           <Route path="csb" element={<ElectionConfigCSBListPage/>}/>
           <Route path="csb/:regionSlug" element={<CSBMunicipalityListPage/>}/>
           <Route path="csb/:regionSlug/resultaten" element={<CSBResultsPage/>}/>
