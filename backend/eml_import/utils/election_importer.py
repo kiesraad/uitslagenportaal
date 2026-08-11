@@ -34,8 +34,6 @@ def build_parser() -> XmlParser:
     Pins the stdlib ElementTree handler: xsdata's default_handler() switches to
     LxmlEventHandler whenever lxml is merely importable, and that measured ~25%
     slower on GR2026 data.
-
-    Module-level so process-pool workers build an identical parser.
     """
     return XmlParser(
         ParserConfig(fail_on_unknown_properties=True),
@@ -44,8 +42,7 @@ def build_parser() -> XmlParser:
 
 
 class ElectionImporter:
-    # Set once per worker process by ElectionImporter._import_file; unused in the parent,
-    # which uses its own ElectionImporter._parser.
+    # Set once per worker process by ElectionImporter._import_file
     _WORKER_PARSER: XmlParser | None = None
 
     def __init__(self):
@@ -115,8 +112,6 @@ class ElectionImporter:
                 self._process_file_paths(parser_type, xml_files[parser_type])
             return
 
-        # django.setup is the initializer because it is picklable by reference and
-        # importing `django` needs no app registry.
         # Hand no open connection to the children, and force "spawn" so a forked
         # child can never inherit this process's socket.
         connections.close_all()
@@ -151,10 +146,7 @@ class ElectionImporter:
         workers: int,
     ) -> None:
         """
-        Import one document type on `pool`, one file per task.
-
-        Files are dispatched individually rather than pre-chunked so the pool
-        balances itself, and largest file first.
+        Import one document type on `pool`, one file per task, largest file first.
         """
         if not xml_files:
             return
