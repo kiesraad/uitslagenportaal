@@ -179,6 +179,7 @@ class ElectionImporter:
         if cls._WORKER_PARSER is None:
             # Once per worker process, not once per file.
             cls._WORKER_PARSER = build_parser()
+        assert cls._WORKER_PARSER is not None, "Worker parser not initialized."
 
         binding, importer_cls = cls._DOCUMENT_TYPES[parser_type]
         path = Path(raw_path)
@@ -199,4 +200,4 @@ class ElectionImporter:
                 self.logger.info(f"Importing {parser_type} file {file.filename}")
                 eml = self._parser.from_bytes(file.getvalue(), binding)
                 with transaction.atomic():
-                    importer_cls(eml, None).parse()
+                    importer_cls(eml, file).parse()

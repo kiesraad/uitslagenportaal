@@ -2,6 +2,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from django.db import models
+from django.db.models import TextChoices
 
 from mainsite.models import BaseModel
 from mainsite.utils.utils import name_to_slug
@@ -176,14 +177,14 @@ class ElectionDocument(BaseModel):
     storage_key = models.CharField(max_length=512, unique=True)
     content_type = models.CharField(max_length=128, default="application/xml")
     size = models.PositiveIntegerField()
-    FILE_TYPE_EML510B = "EML510b"
-    FILE_TYPE_CHOICES = [
-        (FILE_TYPE_EML510B, "EML510b"),
-    ]
+
+    class FileType(TextChoices):
+        EML510B = "EML510b"
+
     file_type = models.CharField(
         max_length=32,
-        choices=FILE_TYPE_CHOICES,
-        default=FILE_TYPE_EML510B,
+        choices=FileType.choices,
+        default=FileType.EML510B,
         help_text="Type of the election document",
     )
 
