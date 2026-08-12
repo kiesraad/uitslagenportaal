@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from django.conf import settings
+from django.db.models import Q
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
@@ -18,10 +19,7 @@ class ElectionConfigViewSet(viewsets.ReadOnlyModelViewSet):
     lookup_field = "slug"
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        if self.action == "list":
-            queryset = queryset.filter(date__gte=visibility_cutoff())
-        return queryset
+        return super().get_queryset().filter(date__gte=visibility_cutoff())
 
     def get_serializer_class(self):
         return ElectionConfigSerializer
@@ -31,7 +29,7 @@ class ContestViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Contest.objects.all()
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().filter(election__election_config__date__gte=visibility_cutoff())
         if self.action == "retrieve":
             queryset = queryset.select_related(
                 "election",
@@ -46,7 +44,12 @@ class ContestViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 def download_document(request, pk):
-    document = get_object_or_404(ElectionDocument, pk=pk)
+    document = get_object_or_404(
+        ElectionDocument.objects.filter(
+            Q(region__isnull=True) | Q(region__election__election_config__date__gte=visibility_cutoff()),
+        ),
+        pk=pk,
+    )
 
     data_root = (settings.BASE_DIR / ".data").resolve()
     file_path = (data_root / document.storage_key).resolve()

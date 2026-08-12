@@ -1,6 +1,7 @@
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
+from election.models import visibility_cutoff
 from mainsite.models import RegionCategory
 from region.models import Region
 from region.serializers import RegionDetailSerializer, RegionListSerializer
@@ -32,6 +33,8 @@ class RegionListView(ListAPIView):
         result = (
             Region.objects.filter(
                 election__election_config__slug=election_config_slug,
+                # Expired elections are hidden everywhere, not just on the home page.
+                election__election_config__date__gte=visibility_cutoff(),
             )
             .select_related("csb")
             .order_by("region_name")
@@ -74,6 +77,7 @@ class RegionDetailView(RetrieveAPIView):
             )
             .filter(
                 election__election_config__slug=election_config_slug,
+                election__election_config__date__gte=visibility_cutoff(),
                 slug=region_slug,
             )
         )

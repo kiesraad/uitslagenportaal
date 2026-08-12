@@ -1,5 +1,5 @@
 from calendar import monthrange
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from django.db import models
@@ -10,6 +10,7 @@ from mainsite.utils.utils import name_to_slug
 
 # TODO: discuss if this is the 'best' approach
 VISIBILITY_MONTHS = 3  # currently hardcoded at 3 months
+DELETION_GRACE_DAYS = 7
 
 
 def visibility_cutoff(now=None):
@@ -21,6 +22,10 @@ def visibility_cutoff(now=None):
         year -= 1
     last_day_of_month = monthrange(year, month)[1]
     return now.replace(year=year, month=month, day=min(now.day, last_day_of_month))
+
+
+def deletion_cutoff(now=None):
+    return visibility_cutoff(now) - timedelta(days=DELETION_GRACE_DAYS)
 
 
 class ElectionConfig(BaseModel):
