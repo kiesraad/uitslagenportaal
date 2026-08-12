@@ -55,7 +55,7 @@ class EMLBaseImporter[T](ABC):
         try:
             self._parse_data()
         except ElectionConfig.DoesNotExist:
-            self.logger.warning("Election is not configured, skipping 110a data import")
+            self.logger.warning("Election is not configured, skipping %s data import", self.eml_type.value)
 
     @staticmethod
     def _csb_for_parent(parent: Region | None) -> Region | None:

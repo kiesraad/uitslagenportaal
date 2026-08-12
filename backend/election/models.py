@@ -1,17 +1,42 @@
+from dataclasses import dataclass
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from django.db import models
-from django.db.models import TextChoices
+from django.db.models.enums import Choices, TextChoices
 
-from mainsite.models import BaseModel
+from mainsite.models import BaseModel, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from mainsite.utils.utils import name_to_slug
 
 
+@dataclass
+class ElectionCategoryConfig:
+    csb: RegionCategory
+
+
+class ElectionCategory(Choices):
+    def __new__(cls, value: str, config: ElectionCategoryConfig):
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj._config_ = config
+        return obj
+
+    @property
+    def config(self):
+        return self._config_
+
+    TK = "TK", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Tweede Kamerverkiezing"
+    EK = "EK", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Eerste Kamerverkiezing"
+    PS = "PS", ElectionCategoryConfig(csb=RegionCategory.PROVINCIE), "Provinciale Statenverkiezing"
+    WS = "WS", ElectionCategoryConfig(csb=RegionCategory.WATERSCHAP), "Waterschapsverkiezing"
+    GR = "GR", ElectionCategoryConfig(csb=RegionCategory.GEMEENTE), "Gemeenteraadsverkiezing"
+    EP = "EP", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Europees Parlementsverkiezing"
+
+
 class ElectionConfig(BaseModel):
     identifier = models.CharField(max_length=64, unique=True)
-    category = models.CharField(max_length=2)
+    category = models.CharField(max_length=2, choices=ElectionCategory.choices)
     label = models.CharField(max_length=255, default="")
     slug = models.SlugField(unique=True, db_index=True)
     date = models.DateTimeField()
@@ -100,6 +125,7 @@ class Contest(BaseModel):
         on_delete=models.CASCADE,
         related_name="contests",
     )
+    name = models.CharField(max_length=255, null=True)
 
     class Meta:
         constraints = [
