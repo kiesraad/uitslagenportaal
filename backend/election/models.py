@@ -1,10 +1,26 @@
+from calendar import monthrange
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from django.db import models
+from django.utils import timezone
 
 from mainsite.models import BaseModel
 from mainsite.utils.utils import name_to_slug
+
+# TODO: discuss if this is the 'best' approach
+VISIBILITY_MONTHS = 3  # currently hardcoded at 3 months
+
+
+def visibility_cutoff(now=None):
+    now = now or timezone.now()
+    month = now.month - VISIBILITY_MONTHS
+    year = now.year
+    if month <= 0:
+        month += 12
+        year -= 1
+    last_day_of_month = monthrange(year, month)[1]
+    return now.replace(year=year, month=month, day=min(now.day, last_day_of_month))
 
 
 class ElectionConfig(BaseModel):

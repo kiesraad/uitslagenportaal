@@ -5,7 +5,7 @@ from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 
-from election.models import Contest, ElectionConfig, ElectionDocument
+from election.models import Contest, ElectionConfig, ElectionDocument, visibility_cutoff
 from election.serializers import (
     ContestDetailSerializer,
     ContestListSerializer,
@@ -16,6 +16,12 @@ from election.serializers import (
 class ElectionConfigViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ElectionConfig.objects.all()
     lookup_field = "slug"
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == "list":
+            queryset = queryset.filter(date__gte=visibility_cutoff())
+        return queryset
 
     def get_serializer_class(self):
         return ElectionConfigSerializer
