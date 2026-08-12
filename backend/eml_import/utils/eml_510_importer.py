@@ -165,18 +165,23 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
         else:
             file_content = self.eml_file
         file_content.seek(0)
+        size = len(file_content.getvalue())
         stored_file_path = default_storage.save(file_path, file_content)
 
-        # We only call this once for the whole EML file, so a get_or_create doesn't result in an N+1 query
+        # We only call this once for the whole EML file, so a get_or_create doesn't result in an N+1 query.
+        # size is only a default (not a lookup key): storage_key is unique, so if a re-imported file's
+        # size differs from what's stored, looking it up by size too would miss the existing row and
+        # attempt to insert a duplicate storage_key.
         doc, created = ElectionDocument.objects.get_or_create(
             storage_key=stored_file_path,
             region=region,
             content_type="application/xml",
-            size=self.eml_file.stat().st_size,
             file_type=ElectionDocument.FileType.EML510B,
+            defaults={"size": size},
         )
-        if not created:
-            doc.size = self.eml_file.stat().st_size
+        # Update size on re-import
+        if not created and doc.size != size:
+            doc.size = size
             doc.save()
 
 
