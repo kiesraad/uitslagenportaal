@@ -165,12 +165,11 @@ class ElectionImporter:
             try:
                 processed_path = future.result()
                 done += 1
+                self.logger.info(f"[{done}/{len(ordered)}] Processed {parser_type} file {processed_path}...")
             except Exception as e:
                 # With any error the importer should continue as to not have everything fail
-                self.logger.info(f"Failed importing {parser_type} file {path} with exception: {type(e).__name__} {e}")
+                self.logger.error(f"Failed importing {parser_type} file {path} with exception: {type(e).__name__} {e}")
                 continue
-            done += 1
-            self.logger.info(f"[{done}/{len(ordered)}] Processed {parser_type} file {processed_path}...")
 
     @classmethod
     def _import_file(cls, parser_type: str, raw_path: str) -> str:

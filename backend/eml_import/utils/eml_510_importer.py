@@ -15,8 +15,8 @@ from election.models import (
     VoteCount,
     VoterTurnoutCount,
 )
+from eml_import.exceptions import EMLImporterException
 from eml_import.utils.eml_base_importer import EMLBaseImporter
-from mainsite.exceptions import EMLImporterException
 from mainsite.models import CountingMethod, RegionCategory
 from party.models import Candidate, Party
 from region.models import Region, build_region_slug
