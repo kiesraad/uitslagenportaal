@@ -3,6 +3,7 @@ import pytest
 from election.models import VoteCount
 from election.tests.factories import ContestFactory
 from mainsite.models import CountingMethod, RegionCategory
+from mainsite.utils.eml_type import EmlType
 from party.tests.factories import PartyFactory
 from region.serializers import RegionDetailSerializer
 from region.tests.factories import RegionFactory
@@ -45,7 +46,7 @@ def test_region_detail_serializer_filters_510d_vote_counts_for_gemeente():
         party=party,
         valid_votes=100,
         result_level=VoteCount.RESULT_LEVEL_PARTY,
-        eml_type=VoteCount.EML_TYPE_510B,
+        eml_type=EmlType.EML_510b,
     )
     VoteCount.objects.create(
         contest=contest,
@@ -53,10 +54,10 @@ def test_region_detail_serializer_filters_510d_vote_counts_for_gemeente():
         party=party,
         valid_votes=100,
         result_level=VoteCount.RESULT_LEVEL_PARTY,
-        eml_type=VoteCount.EML_TYPE_510D,
+        eml_type=EmlType.EML_510d,
     )
 
     data = RegionDetailSerializer(region).data
 
     assert len(data["vote_counts"]) == 1
-    assert data["vote_counts"][0]["eml_type"] == VoteCount.EML_TYPE_510B
+    assert data["vote_counts"][0]["eml_type"] == EmlType.EML_510b
