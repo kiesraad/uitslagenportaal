@@ -18,6 +18,7 @@ from election.models import (
     VoteCount,
     VoterTurnoutCount,
 )
+from eml_import.exceptions import EMLImporterException
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
@@ -75,23 +76,22 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
                             int(votes_item.candidate.candidate_identifier.id),
                         )
                     ]
-                    vote_counts.append(
-                        VoteCount(
-                            region=region,
-                            contest=contest,
-                            party=current_party,
-                            candidate=candidate,
-                            result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
-                            valid_votes=votes_item.valid_votes,
-                            eml_type=self.eml_type,
-                        )
-                    )
                 except KeyError:
-                    self.logger.error(
-                        "Candidate %s not found within party %s",
-                        int(votes_item.candidate.candidate_identifier.id),
-                        current_party.registered_name,
+                    candidate_id = int(votes_item.candidate.candidate_identifier.id)
+                    raise EMLImporterException(
+                        f"Candidate {candidate_id} not found within party {current_party.registered_name}"
                     )
+                vote_counts.append(
+                    VoteCount(
+                        region=region,
+                        contest=contest,
+                        party=current_party,
+                        candidate=candidate,
+                        result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
+                        valid_votes=votes_item.valid_votes,
+                        eml_type=self.eml_type,
+                    )
+                )
 
     def _collect_turnout_counts(self, contest, region, votes, turnout_counts) -> None:
         for rejected in votes.rejected_votes:
@@ -255,25 +255,29 @@ class EML510bImporter(EML510BaseImporter):
     def _parse_data(self) -> None:
         authority_el = self.eml.managing_authority.authority_identifier
         managing_authority_name = (authority_el.value or "").strip()
+        authority_id = int(self.eml.managing_authority.authority_identifier.id)
 
         try:
             region = Region.objects.get(
                 election=self.election,
-                region_number=int(self.eml.managing_authority.authority_identifier.id),
+                region_number=authority_id,
                 region_name=managing_authority_name,
             )
-            if self.eml_file is not None:
-                self._store_eml(region)
-
-            region.results_available_at = timezone.now()
-            counting_method = self._counting_method(self.eml.count)
-            if counting_method is not None:
-                region.counting_method = counting_method
-            region.save()
-
         except Region.DoesNotExist:
-            # Municipality does not exist in the election definition, so we shouldn't import it's results
-            return
+            raise EMLImporterException(
+                f"Municipality {managing_authority_name} {authority_id} "
+                f"does not exist in the election definition of election {self.election}, "
+                "so we can't import it's results"
+            )
+
+        if self.eml_file is not None:
+            self._store_eml(region)
+
+        region.results_available_at = timezone.now()
+        counting_method = self._counting_method(self.eml.count)
+        if counting_method is not None:
+            region.counting_method = counting_method
+        region.save()
 
         # Preload party names dict
         party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}

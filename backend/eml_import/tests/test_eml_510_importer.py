@@ -7,6 +7,7 @@ from pyeml_bindings import CountingMethodMethodCode
 
 from election.models import ElectionDocument, VoteCount, VoterTurnoutCount
 from election.tests.factories import ContestFactory, ElectionConfigFactory, ElectionDocumentFactory
+from eml_import.exceptions import EMLImporterException
 from eml_import.utils.eml_510_importer import EML510bImporter, EML510dImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
@@ -103,7 +104,7 @@ def test_parse_party_candidate_votecounts_builds_party_and_candidate_rows():
 
 
 @pytest.mark.django_db
-def test_parse_party_candidate_votecounts_logs_and_skips_unknown_candidate(caplog):
+def test_parse_party_candidate_votecounts_raises_for_unknown_candidate():
     contest = ContestFactory()
     region = RegionFactory(election=contest.election)
     party = PartyFactory(election=contest.election, list_number=1, registered_name="Test Party")
@@ -118,11 +119,14 @@ def test_parse_party_candidate_votecounts_logs_and_skips_unknown_candidate(caplo
     importer = make_importer(EML510bImporter)
     vote_counts: list[VoteCount] = []
 
-    with caplog.at_level(logging.ERROR):
+    with pytest.raises(
+        EMLImporterException,
+        match="Candidate 999 not found within party Test Party",
+    ):
         importer._parse_party_candidate_votecounts(contest, region, items, {1: party}, {}, vote_counts)
 
     assert len(vote_counts) == 1
-    assert "not found" in caplog.text
+    assert vote_counts[0].result_level == VoteCount.RESULT_LEVEL_PARTY
 
 
 @pytest.mark.django_db
