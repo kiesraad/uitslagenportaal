@@ -3,7 +3,6 @@ from datetime import timedelta
 
 from django.utils import timezone
 
-# TODO: discuss if this is the 'best' approach
 VISIBILITY_MONTHS = 3  # currently hardcoded at 3 months
 DELETION_GRACE_DAYS = 7
 
