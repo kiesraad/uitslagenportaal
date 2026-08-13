@@ -3,7 +3,6 @@ from abc import ABC
 from io import BytesIO
 from pathlib import Path
 
-from django.conf import settings
 from django.core.files.storage import default_storage
 from django.utils import timezone
 from pyeml_bindings import (
@@ -256,40 +255,23 @@ class EML510bImporter(EML510BaseImporter):
     def _parse_data(self) -> None:
         authority_el = self.eml.managing_authority.authority_identifier
         managing_authority_name = (authority_el.value or "").strip()
+        authority_id = int(self.eml.managing_authority.authority_identifier.id)
 
         try:
             region = Region.objects.get(
                 election=self.election,
-                region_number=int(self.eml.managing_authority.authority_identifier.id),
+                region_number=authority_id,
                 region_name=managing_authority_name,
             )
-            if self.eml_file is not None:
-                self._store_eml(region)
-
-            region.results_available_at = timezone.now()
-            counting_method = self._counting_method(self.eml.count)
-            if counting_method is not None:
-                region.counting_method = counting_method
-            region.save()
-
         except Region.DoesNotExist:
             raise EMLImporterException(
-                (
-                    f"Municipality {managing_authority_name} "
-                    f"{int(self.eml.managing_authority.authority_identifier.id)} "
-                    f"does not exist in the election definition of election {self.election}, "
-                    "so we can't import it's results"
-                )
+                f"Municipality {managing_authority_name} {authority_id} "
+                f"does not exist in the election definition of election {self.election}, "
+                "so we can't import it's results"
             )
 
-        if self.file_path is not None:
-            ElectionDocument.objects.create(
-                storage_key=self.file_path.relative_to(f"{settings.BASE_DIR}/.data").as_posix(),
-                region=region,
-                content_type="application/xml",
-                size=self.file_path.stat().st_size,
-                file_type=ElectionDocument.FILE_TYPE_EML510B,
-            )
+        if self.eml_file is not None:
+            self._store_eml(region)
 
         region.results_available_at = timezone.now()
         counting_method = self._counting_method(self.eml.count)
