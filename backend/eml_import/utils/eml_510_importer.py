@@ -1,6 +1,10 @@
+import re
 from abc import ABC
+from io import BytesIO
+from pathlib import Path
 
 from django.conf import settings
+from django.core.files.storage import default_storage
 from django.utils import timezone
 from pyeml_bindings import (
     Count,
@@ -17,12 +21,18 @@ from election.models import (
 )
 from eml_import.exceptions import EMLImporterException
 from eml_import.utils.eml_base_importer import EMLBaseImporter
+from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
+from mainsite.utils.eml_type import EmlType
 from party.models import Candidate, Party
 from region.models import Region, build_region_slug
 
 
 class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
+    def __init__(self, eml: Eml510, eml_file: Path | NamedBytesIO):
+        super().__init__(eml, eml_file)
+        self.election_documents = {doc.storage_key: doc for doc in ElectionDocument.objects.all()}
+
     @staticmethod
     def _counting_method(count) -> str | None:
         counting_method = getattr(count, "counting_method", None)
@@ -131,11 +141,58 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
             )
         )
 
+    def _store_eml(self, region: Region) -> None:
+        # Determine the name, it should be consistent based on the file content/type, so we store only one file
+        # if the same file gets imported twice with a different filename.
+        parent_number, parent_name = (
+            (region.parent.region_number, region.parent.region_name) if region.parent else (None, None)
+        )
+        filename = "_".join(
+            filter(
+                lambda x: x,
+                [
+                    self.election_config.identifier,
+                    self.eml_type.label,
+                    parent_number,
+                    parent_name,
+                    region.region_number,
+                    region.region_name,
+                ],
+            )
+        )
+        filename = re.sub(r"[^A-Za-z0-9_-]", "", filename.replace(" ", "_"))
+        file_path = f"{self.election_config.identifier}/{filename}.eml.xml"
+
+        # Store the file into the default storage
+        if isinstance(self.eml_file, Path):
+            file_content = BytesIO(self.eml_file.read_bytes())
+        else:
+            file_content = self.eml_file
+        file_content.seek(0)
+        size = len(file_content.getvalue())
+        stored_file_path = default_storage.save(file_path, file_content)
+
+        # We only call this once for the whole EML file, so a get_or_create doesn't result in an N+1 query.
+        # size is only a default (not a lookup key): storage_key is unique, so if a re-imported file's
+        # size differs from what's stored, looking it up by size too would miss the existing row and
+        # attempt to insert a duplicate storage_key.
+        doc, created = ElectionDocument.objects.get_or_create(
+            storage_key=stored_file_path,
+            region=region,
+            content_type="application/xml",
+            file_type=ElectionDocument.FileType.EML510B,
+            defaults={"size": size},
+        )
+        # Update size on re-import
+        if not created and doc.size != size:
+            doc.size = size
+            doc.save()
+
 
 class EML510bImporter(EML510BaseImporter):
     """Telling"""
 
-    eml_type = VoteCount.EML_TYPE_510B
+    eml_type = EmlType.EML_510b
 
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
@@ -209,6 +266,15 @@ class EML510bImporter(EML510BaseImporter):
                 region_number=int(self.eml.managing_authority.authority_identifier.id),
                 region_name=managing_authority_name,
             )
+            if self.eml_file is not None:
+                self._store_eml(region)
+
+            region.results_available_at = timezone.now()
+            counting_method = self._counting_method(self.eml.count)
+            if counting_method is not None:
+                region.counting_method = counting_method
+            region.save()
+
         except Region.DoesNotExist:
             raise EMLImporterException(
                 (
@@ -281,7 +347,7 @@ class EML510bImporter(EML510BaseImporter):
 class EML510dImporter(EML510BaseImporter):
     """Totaaltelling."""
 
-    eml_type = VoteCount.EML_TYPE_510D
+    eml_type = EmlType.EML_510d
 
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
@@ -315,6 +381,10 @@ class EML510dImporter(EML510BaseImporter):
         if counting_method is not None and region.counting_method != counting_method:
             region.counting_method = counting_method
             region.save(update_fields=["counting_method", "updated_at"])
+
+        # Store the EML file
+        if self.eml_file is not None:
+            self._store_eml(region)
 
         # Preload party names dict
         party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}

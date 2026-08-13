@@ -10,6 +10,8 @@ from election.models import (
     Election,
     ElectionConfig,
 )
+from eml_import.utils.named_bytes_io import NamedBytesIO
+from mainsite.utils.eml_type import EmlType
 from region.models import Region
 
 
@@ -17,11 +19,11 @@ class EMLBaseImporter[T](ABC):
     BLANCO_PARTY_REGISTERED_NAME = "Blanco Lijst"
     BULK_BATCH_SIZE = 4000
 
-    eml_type = None
+    eml_type: EmlType
 
-    def __init__(self, eml: T, file_path: Path | None):
+    def __init__(self, eml: T, eml_file: Path | NamedBytesIO):
         self.eml = eml
-        self.file_path = file_path
+        self.eml_file = eml_file
 
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.election_config = None

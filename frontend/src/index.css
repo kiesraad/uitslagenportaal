@@ -94,6 +94,18 @@ a:hover {
   text-decoration: underline;
 }
 
+/* Base heading styles (as defined in Figma) */
+h2, .h2 {
+  @apply font-bold text-2xl font-title;
+}
+h3, .h3 {
+  @apply font-bold text-xl font-title;
+}
+
+h4, .h4 {
+  @apply font-semibold text-base font-title;
+}
+
 /* Header */
 .header {
   background: var(--c-navy);

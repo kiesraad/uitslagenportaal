@@ -6,11 +6,14 @@ from election.models import (
     Contest,
 )
 from eml_import.utils.eml_base_importer import EMLBaseImporter
+from mainsite.utils.eml_type import EmlType
 from party.models import Candidate, Party
 
 
 class EML230bImporter(EMLBaseImporter[Eml230]):
     """Kandidatenlijst"""
+
+    eml_type = EmlType.EML_230b
 
     def _get_election_identifier_data(self):
         return self.eml.candidate_list.election.election_identifier

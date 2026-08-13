@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from election.models import VoteCount
 from mainsite.models import RegionCategory
 from mainsite.serializers import CandidateSummarySerializer
+from mainsite.utils.eml_type import EmlType
 from party.models import Party
 from party.serializers import PartyDetailSerializer, PartyListSerializer
 from region.models import Region
@@ -52,7 +53,7 @@ class PartyResultMatrixView(APIView):
         vote_counts = VoteCount.objects.filter(
             party=party,
             region__in=[csb, *gemeentes],
-            eml_type=VoteCount.EML_TYPE_510D,
+            eml_type=EmlType.EML_510d,
         )
         votes_by_candidate_and_region = {
             (vote_count.candidate_id, vote_count.region_id): vote_count.valid_votes
