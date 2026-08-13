@@ -17,14 +17,12 @@ from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.formats.dataclass.parsers.config import ParserConfig
 from xsdata.formats.dataclass.parsers.handlers import XmlEventHandler
 
-from election.models import (
-    VoteCount,
-)
 from eml_import.utils.eml_110_importer import EML110aImporter
 from eml_import.utils.eml_230_importer import EML230bImporter
 from eml_import.utils.eml_510_importer import EML510bImporter, EML510dImporter
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
+from mainsite.utils.eml_type import EmlType
 
 
 def build_parser() -> XmlParser:
@@ -50,10 +48,10 @@ class ElectionImporter:
         self._parser = build_parser()
 
     _DOCUMENT_TYPES: dict[str, tuple[type[Emlstructure], type[EMLBaseImporter]]] = {
-        "110a": (Eml110a, EML110aImporter),  # Verkiezingsdefinitie
-        "230b": (Eml230, EML230bImporter),  # Kandidatenlijst
-        VoteCount.EML_TYPE_510B: (Eml510, EML510bImporter),  # Telling
-        VoteCount.EML_TYPE_510D: (Eml510, EML510dImporter),  # Totaaltelling
+        EmlType.EML_110a: (Eml110a, EML110aImporter),  # Verkiezingsdefinitie
+        EmlType.EML_230b: (Eml230, EML230bImporter),  # Kandidatenlijst
+        EmlType.EML_510b: (Eml510, EML510bImporter),  # Telling
+        EmlType.EML_510d: (Eml510, EML510dImporter),  # Totaaltelling
     }
 
     @staticmethod
@@ -85,8 +83,13 @@ class ElectionImporter:
             self.logger.info(f"Processing [{i}/{file_cnt}] {xml_file_path}...")
             eml = self._parser.from_path(xml_file_path, binding)
             # Use a transaction to prevent auto-commit round-trips for each insert query
-            with transaction.atomic():
-                importer_cls(eml, xml_file_path).parse()
+            try:
+                with transaction.atomic():
+                    importer_cls(eml, xml_file_path).parse()
+            except Exception as e:
+                self.logger.error(
+                    f"Failed importing {parser_type} file {xml_file_path} with exception: {type(e).__name__} {e}"
+                )
 
     def _classify_files[T = Path | BytesIO](self, input_files: list[T]) -> dict[str, list[T]]:
         xml_files: dict[str, list[T]] = {key: [] for key in self._DOCUMENT_TYPES}
@@ -159,12 +162,17 @@ class ElectionImporter:
         )
 
         done = 0
-        futures = [pool.submit(self._import_file, parser_type, str(path)) for path in ordered]
+        futures = {pool.submit(self._import_file, parser_type, str(path)): path for path in ordered}
         for future in as_completed(futures):
-            # Re-raise anything a worker raised, rather than losing it.
-            processed_path = future.result()
-            done += 1
-            self.logger.info(f"[{done}/{len(ordered)}] Processed {parser_type} file {processed_path}...")
+            path = futures[future]
+            try:
+                processed_path = future.result()
+                done += 1
+                self.logger.info(f"[{done}/{len(ordered)}] Processed {parser_type} file {processed_path}...")
+            except Exception as e:
+                # With any error the importer should continue as to not have everything fail
+                self.logger.error(f"Failed importing {parser_type} file {path} with exception: {type(e).__name__} {e}")
+                continue
 
     @classmethod
     def _import_file(cls, parser_type: str, raw_path: str) -> str:
@@ -179,6 +187,7 @@ class ElectionImporter:
         if cls._WORKER_PARSER is None:
             # Once per worker process, not once per file.
             cls._WORKER_PARSER = build_parser()
+        assert cls._WORKER_PARSER is not None, "Worker parser not initialized."
 
         binding, importer_cls = cls._DOCUMENT_TYPES[parser_type]
         path = Path(raw_path)
@@ -198,5 +207,10 @@ class ElectionImporter:
             for file in xml_files[parser_type]:
                 self.logger.info(f"Importing {parser_type} file {file.filename}")
                 eml = self._parser.from_bytes(file.getvalue(), binding)
-                with transaction.atomic():
-                    importer_cls(eml, None).parse()
+                try:
+                    with transaction.atomic():
+                        importer_cls(eml, file).parse()
+                except Exception as e:
+                    self.logger.error(
+                        f"Failed importing {parser_type} file {file.filename} with exception: {type(e).__name__} {e}"
+                    )

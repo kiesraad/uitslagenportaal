@@ -29,7 +29,7 @@ export default function VotesList({voteCounts, total, columns = ['Lijst', 'Aanta
             ? ({...props}) => <Link to={`${location.pathname}/${voteCount.party.slug}`} {...props} />
             : ({...props}) => <div {...props} />
 
-          return <ListItem className={twMerge(
+          return <ListItem key={voteCount.id} className={twMerge(
             "items-center hover:no-underline! even:bg-blue-50 h-18 px-6 grid col-span-4 grid-cols-subgrid",
             isClickable && "hover:bg-blue-100"
           )}>

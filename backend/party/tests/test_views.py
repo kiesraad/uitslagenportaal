@@ -4,6 +4,7 @@ from rest_framework.test import APIRequestFactory
 from election.models import VoteCount
 from election.tests.factories import ContestFactory, ElectionFactory
 from mainsite.models import RegionCategory
+from mainsite.utils.eml_type import EmlType
 from party.tests.factories import CandidateFactory, PartyFactory
 from party.views import PartyResultMatrixView
 from region.tests.factories import RegionFactory
@@ -96,7 +97,7 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
         candidate=candidate_one,
         valid_votes=11,
         result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
-        eml_type=VoteCount.EML_TYPE_510D,
+        eml_type=EmlType.EML_510d,
     )
     VoteCount.objects.create(
         contest=contest,
@@ -105,7 +106,7 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
         candidate=candidate_one,
         valid_votes=22,
         result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
-        eml_type=VoteCount.EML_TYPE_510D,
+        eml_type=EmlType.EML_510d,
     )
     VoteCount.objects.create(
         contest=contest,
@@ -114,7 +115,7 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
         candidate=candidate_two,
         valid_votes=33,
         result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
-        eml_type=VoteCount.EML_TYPE_510D,
+        eml_type=EmlType.EML_510d,
     )
     VoteCount.objects.create(
         contest=contest,
@@ -123,7 +124,7 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
         candidate=candidate_one,
         valid_votes=33,
         result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
-        eml_type=VoteCount.EML_TYPE_510D,
+        eml_type=EmlType.EML_510d,
     )
     VoteCount.objects.create(
         contest=contest,
@@ -132,7 +133,7 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
         candidate=candidate_two,
         valid_votes=33,
         result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
-        eml_type=VoteCount.EML_TYPE_510D,
+        eml_type=EmlType.EML_510d,
     )
     VoteCount.objects.create(
         contest=contest,
@@ -140,7 +141,7 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
         party=party,
         valid_votes=11,
         result_level=VoteCount.RESULT_LEVEL_PARTY,
-        eml_type=VoteCount.EML_TYPE_510D,
+        eml_type=EmlType.EML_510d,
     )
     VoteCount.objects.create(
         contest=contest,
@@ -148,7 +149,7 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
         party=party,
         valid_votes=55,
         result_level=VoteCount.RESULT_LEVEL_PARTY,
-        eml_type=VoteCount.EML_TYPE_510D,
+        eml_type=EmlType.EML_510d,
     )
     VoteCount.objects.create(
         contest=contest,
@@ -156,7 +157,7 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
         party=party,
         valid_votes=66,
         result_level=VoteCount.RESULT_LEVEL_PARTY,
-        eml_type=VoteCount.EML_TYPE_510D,
+        eml_type=EmlType.EML_510d,
     )
 
     response = PartyResultMatrixView.as_view()(_matrix_request(election.slug, party.slug, csb.slug))

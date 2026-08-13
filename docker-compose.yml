@@ -81,26 +81,29 @@ services:
 
   # S3-compatible object storage for local dev.
   object-storage:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
+    image: rustfs/rustfs:1.0.0-rc.1
     environment:
-      MINIO_ROOT_USER: uitslagenportaal
-      MINIO_ROOT_PASSWORD: password
+      RUSTFS_ACCESS_KEY: uitslagenportaal
+      RUSTFS_SECRET_KEY: password
+      RUSTFS_ADDRESS: "0.0.0.0:9000"
+      RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
     volumes:
-      - minio_data:/data
+      - rustfs_data:/data
     ports:
       - "9000:9000" # S3 API
       - "9001:9001" # Web console
     healthcheck:
-      test: [ "CMD", "mc", "ready", "local" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/health" ]
       interval: 5s
       timeout: 5s
       retries: 5
 
   # One-shot: creates the uitslagenportaal bucket on first run and makes its
   # objects publicly readable, so documents can be served straight from storage
-  # without signed URLs. Re-running is a no-op.
-  minio-bootstrap:
+  # without signed URLs. Re-running is a no-op. Uses MinIO's `mc` client, which
+  # is also compatible with RustFS's S3 API.
+  object-storage-bootstrap:
     image: minio/mc:latest
     entrypoint: >
       /bin/sh -c "
@@ -115,4 +118,4 @@ services:
 
 volumes:
   db_data:
-  minio_data:
+  rustfs_data:

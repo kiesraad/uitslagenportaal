@@ -2,7 +2,9 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db.models import Q
-from django.http import FileResponse, Http404
+from django.http import FileResponse
+from django.core.files.storage import default_storage
+from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 
@@ -52,15 +54,7 @@ def download_document(request, pk):
         pk=pk,
     )
 
-    data_root = (settings.BASE_DIR / ".data").resolve()
-    file_path = (data_root / document.storage_key).resolve()
-
-    if not file_path.is_relative_to(data_root) or not file_path.is_file():
+    if not default_storage.exists(document.storage_key):
         raise Http404("Document not found")
 
-    return FileResponse(
-        file_path.open("rb"),
-        content_type=document.content_type,
-        as_attachment=True,
-        filename=Path(document.storage_key).name,
-    )
+    return HttpResponseRedirect(default_storage.url(document.storage_key))
