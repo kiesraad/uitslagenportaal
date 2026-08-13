@@ -702,7 +702,6 @@ def test_510d_breaks_down_per_gemeente_when_csb_has_one_child(ws_totaaltelling, 
     ]
 
 
-
 @pytest.fixture
 def ps_election(db):
     config = ElectionConfigFactory(identifier=PS_CONFIG_IDENTIFIER, category=ElectionCategory.PS.value)

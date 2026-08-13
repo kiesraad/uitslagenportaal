@@ -392,11 +392,13 @@ class EML510dImporter(EML510BaseImporter):
             # Populated by self._parse_party_candidate_votecounts() when processing reporting unit's votes
             candidate_by_short_code = {}
 
-            # Breakdown per child region
+            # Breakdown per child region (HSB/GSB)
             for unit in contest_data.reporting_unit_votes:
                 # Get child region name without region category prefix (e.g. kieskring)
                 child_region_name = child_region_category_re.sub("", unit.reporting_unit_identifier.value).strip()
-                child_region = child_region_by_name[child_region_name]
+                child_region = child_region_by_name.get(child_region_name)
+                if child_region is None:
+                    continue
 
                 contest_filter = {"election": self.election}
                 # Get the contest from the DB by name, if the contest in the EML file is set to 'alle'. This means that
