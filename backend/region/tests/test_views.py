@@ -4,8 +4,8 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 
-from election.models import VISIBILITY_MONTHS
 from election.tests.factories import ElectionFactory
+from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
 from region.views import RegionDetailView, RegionListView

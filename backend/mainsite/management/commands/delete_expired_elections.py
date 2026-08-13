@@ -2,7 +2,8 @@ from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from election.models import ElectionConfig, ElectionDocument, deletion_cutoff
+from election.models import ElectionConfig, ElectionDocument
+from election.utils import deletion_cutoff
 
 
 class Command(BaseCommand):

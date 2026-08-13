@@ -1,7 +1,7 @@
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
-from election.models import visibility_cutoff
+from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from region.models import Region
 from region.serializers import RegionDetailSerializer, RegionListSerializer

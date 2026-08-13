@@ -6,12 +6,13 @@ from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 
-from election.models import Contest, ElectionConfig, ElectionDocument, visibility_cutoff
+from election.models import Contest, ElectionConfig, ElectionDocument
 from election.serializers import (
     ContestDetailSerializer,
     ContestListSerializer,
     ElectionConfigSerializer,
 )
+from election.utils import visibility_cutoff
 
 
 class ElectionConfigViewSet(viewsets.ReadOnlyModelViewSet):

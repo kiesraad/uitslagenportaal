@@ -3,7 +3,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from election.models import VoteCount, visibility_cutoff
+from election.models import VoteCount
+from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from mainsite.serializers import CandidateSummarySerializer
 from party.models import Party

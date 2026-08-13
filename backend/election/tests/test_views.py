@@ -5,8 +5,8 @@ from django.http import Http404
 from django.test import RequestFactory
 from django.utils import timezone
 
-from election.models import VISIBILITY_MONTHS
 from election.tests.factories import ElectionConfigFactory, ElectionDocumentFactory
+from election.utils import VISIBILITY_MONTHS
 from election.views import download_document
 
 
