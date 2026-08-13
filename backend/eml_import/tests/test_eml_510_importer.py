@@ -1,4 +1,3 @@
-import logging
 from datetime import date
 
 import pytest
@@ -41,8 +40,6 @@ from election.tests.factories import (
     ElectionDocumentFactory,
     ElectionFactory,
 )
-from election.models import ElectionDocument, VoteCount, VoterTurnoutCount
-from election.tests.factories import ContestFactory, ElectionConfigFactory, ElectionDocumentFactory
 from eml_import.exceptions import EMLImporterException
 from eml_import.utils.eml_510_importer import EML510bImporter, EML510dImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
@@ -363,13 +360,15 @@ def test_parse_party_candidate_votecounts_logs_and_skips_unknown_candidate(
     ]
     vote_counts: list[VoteCount] = []
 
-    with caplog.at_level(logging.ERROR):
+    with pytest.raises(
+        EMLImporterException,
+        match="Candidate 999 not found within party Partij voor Zeeland",
+    ):
         ws_importer._parse_party_candidate_votecounts(
             ws_contest, ws_regions["gemeente"], items, {1: party}, {}, vote_counts
         )
 
     assert len(vote_counts) == 1
-    assert "999 not found" in caplog.text
 
 
 def test_parse_party_candidate_votecounts_records_short_code_mapping(
@@ -430,7 +429,10 @@ def test_parse_party_candidate_votecounts_logs_and_skips_unknown_short_code(
     ]
     vote_counts: list[VoteCount] = []
 
-    with caplog.at_level(logging.ERROR):
+    with pytest.raises(
+        EMLImporterException,
+        match="Candidate Onbekend not found within party Partij voor Zeeland",
+    ):
         ws_importer._parse_party_candidate_votecounts(
             ws_contest,
             ws_regions["gemeente"],
@@ -654,15 +656,16 @@ def test_510b_skips_file_of_region_outside_the_election(ws_regions, ws_contest, 
     """A gemeente that the election definition does not mention has no results to import."""
     eml = make_ws_telling(authority_id="0999", authority_name="Onbekend")
 
-    EML510bImporter(eml, NamedBytesIO(b"<eml/>", "telling.eml.xml")).parse()
+    with pytest.raises(
+        EMLImporterException,
+        match=r"Municipality Onbekend 999 does not exist in the election definition of election .*",
+    ):
+        EML510bImporter(eml, NamedBytesIO(b"<eml/>", "telling.eml.xml")).parse()
 
     assert not VoteCount.objects.exists()
     assert not VoterTurnoutCount.objects.exists()
     assert not ElectionDocument.objects.exists()
     assert not Region.objects.filter(region_category=RegionCategory.STEMBUREAU).exists()
-
-
-# --- EML510dImporter._parse_data: one kieskring, breakdown per gemeente ---------------------------
 
 
 @pytest.fixture

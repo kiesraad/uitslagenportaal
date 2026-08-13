@@ -72,10 +72,9 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
             if votes_item.candidate:
                 assert current_party, "No party to tie candidate to, cannot parse"
                 # get candidate from pre-saved data
+                candidate_id = votes_item.candidate.candidate_identifier.id
+                candidate_short_code = votes_item.candidate.candidate_identifier.short_code_attribute
                 try:
-                    candidate_id = votes_item.candidate.candidate_identifier.id
-                    candidate_short_code = votes_item.candidate.candidate_identifier.short_code_attribute
-
                     assert candidate_id is not None or candidate_short_code is not None
                     if candidate_id is not None:
                         candidate = candidate_by_key[(current_party.id, int(candidate_id))]
@@ -92,9 +91,9 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
                         candidate_id = candidate_by_short_code.get((current_party.id, candidate_short_code))
                         candidate = candidate_by_key[(None, candidate_id)]
                 except KeyError:
-                    candidate_id = votes_item.candidate.candidate_identifier.id
+                    candidate_identifier = candidate_id or candidate_short_code
                     raise EMLImporterException(
-                        f"Candidate {candidate_id} not found within party {current_party.registered_name}"
+                        f"Candidate {candidate_identifier} not found within party {current_party.registered_name}"
                     )
                 vote_counts.append(
                     VoteCount(
@@ -281,8 +280,7 @@ class EML510bImporter(EML510BaseImporter):
         except Region.DoesNotExist:
             raise EMLImporterException(
                 f"Municipality {managing_authority_name} {authority_id} "
-                f"does not exist in the election definition of election {self.election}, "
-                "so we can't import it's results"
+                f"does not exist in the election definition of election {self.election.name}"
             )
 
         if self.eml_file is not None:
