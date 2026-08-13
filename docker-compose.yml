@@ -1,7 +1,11 @@
 services:
   backend:
     build: ./backend
-    command: python manage.py runserver 0.0.0.0:8000
+    # Run Django under debugpy so VS Code can attach ("Django: attach (Docker)").
+    # --noreload keeps a single process; restart the container after code changes.
+    command: python -m debugpy --listen 0.0.0.0:5678 manage.py runserver 0.0.0.0:8000 --noreload
+    ports:
+      - "5678:5678" # debugpy; published to the host for VS Code attach
     environment:
       DB_NAME: uitslagenportaal
       DB_USER: uitslagenportaal_user
@@ -35,7 +39,8 @@ services:
     extends:
       service: backend
     command: sleep infinity
-    depends_on: !reset []
+    depends_on: !reset [] # backend-scripts has no service dependencies
+    ports: !reset [] # do not inherit 5678 from backend; only backend publishes debugpy
 
   frontend:
     build: ./frontend

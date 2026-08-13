@@ -20,6 +20,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "debugpy>=1.8.0", # VS Code attach debugging in Docker
     "ruff>=0.16.1",
     "pytest>=8.4.0",
     "pytest-django>=4.11.0",
