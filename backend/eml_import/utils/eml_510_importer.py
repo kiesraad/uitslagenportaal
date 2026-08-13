@@ -78,12 +78,9 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
                         )
                     ]
                 except KeyError:
+                    candidate_id = int(votes_item.candidate.candidate_identifier.id)
                     raise EMLImporterException(
-                        (
-                            "Candidate %s not found within party %s",
-                            int(votes_item.candidate.candidate_identifier.id),
-                            current_party.registered_name,
-                        )
+                        f"Candidate {candidate_id} not found within party {current_party.registered_name}"
                     )
                 vote_counts.append(
                     VoteCount(
