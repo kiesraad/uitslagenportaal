@@ -1,9 +1,5 @@
-from pathlib import Path
-
-from django.conf import settings
-from django.db.models import Q
-from django.http import FileResponse
 from django.core.files.storage import default_storage
+from django.db.models import Q
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
