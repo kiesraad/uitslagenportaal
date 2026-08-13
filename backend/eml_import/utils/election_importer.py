@@ -85,8 +85,13 @@ class ElectionImporter:
             self.logger.info(f"Processing [{i}/{file_cnt}] {xml_file_path}...")
             eml = self._parser.from_path(xml_file_path, binding)
             # Use a transaction to prevent auto-commit round-trips for each insert query
-            with transaction.atomic():
-                importer_cls(eml, xml_file_path).parse()
+            try:
+                with transaction.atomic():
+                    importer_cls(eml, xml_file_path).parse()
+            except Exception as e:
+                self.logger.error(
+                    f"Failed importing {parser_type} file {xml_file_path} with exception: {type(e).__name__} {e}"
+                )
 
     def _classify_files[T = Path | BytesIO](self, input_files: list[T]) -> dict[str, list[T]]:
         xml_files: dict[str, list[T]] = {key: [] for key in self._DOCUMENT_TYPES}
@@ -203,5 +208,10 @@ class ElectionImporter:
             for file in xml_files[parser_type]:
                 self.logger.info(f"Importing {parser_type} file {file.filename}")
                 eml = self._parser.from_bytes(file.getvalue(), binding)
-                with transaction.atomic():
-                    importer_cls(eml, None).parse()
+                try:
+                    with transaction.atomic():
+                        importer_cls(eml, None).parse()
+                except Exception as e:
+                    self.logger.error(
+                        f"Failed importing {parser_type} file {file.filename} with exception: {type(e).__name__} {e}"
+                    )
