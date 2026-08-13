@@ -1,7 +1,24 @@
 import pytest
 
-from election.models import ElectionConfig
+from election.models import ElectionCategory, ElectionConfig
 from election.tests.factories import ElectionConfigFactory, TimelineEntryFactory
+from mainsite.models import RegionCategory
+
+
+@pytest.mark.parametrize(
+    ("category", "expected_csb"),
+    [
+        (ElectionCategory.TK, RegionCategory.STAAT),
+        (ElectionCategory.EK, RegionCategory.STAAT),
+        (ElectionCategory.EP, RegionCategory.STAAT),
+        (ElectionCategory.PS, RegionCategory.PROVINCIE),
+        (ElectionCategory.WS, RegionCategory.WATERSCHAP),
+        (ElectionCategory.GR, RegionCategory.GEMEENTE),
+    ],
+)
+def test_election_category_knows_which_region_is_its_csb(category, expected_csb):
+    """The 510d importer resolves the region that published a Totaaltelling through this."""
+    assert ElectionCategory(category.value).config.csb == expected_csb
 
 
 @pytest.mark.django_db

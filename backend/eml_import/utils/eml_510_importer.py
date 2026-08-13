@@ -29,7 +29,7 @@ from region.models import Region, build_region_slug
 
 
 class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
-    def __init__(self, eml: Eml510, eml_file: Path | NamedBytesIO):
+    def __init__(self, eml: Eml510, eml_file: Path | NamedBytesIO | None):
         super().__init__(eml, eml_file)
         self.election_documents = {doc.storage_key: doc for doc in ElectionDocument.objects.all()}
 

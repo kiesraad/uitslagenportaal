@@ -44,6 +44,7 @@ ELECTION_NAME = "Algemeen bestuur van het waterschap Scheldestromen 2023"
 ELECTION_SUBCATEGORY = "AB2"
 ELECTION_DATE = date(2023, 3, 15)
 CONTEST_ID = "geen"
+CONTEST_NAME = "Scheldestromen"
 REGISTERED_NAME = "CDA"
 LIST_NUMBER = 1
 
@@ -107,7 +108,7 @@ def make_eml(*, affiliations=None, contest_id=CONTEST_ID) -> Eml230:
                 ),
                 contest=[
                     CandidateList.Election.Contest(
-                        contest_identifier=ContestIdentifierStructureKr(id=contest_id),
+                        contest_identifier=ContestIdentifierStructureKr(id=contest_id, contest_name=CONTEST_NAME),
                         affiliation=list(affiliations),
                     )
                 ],
@@ -146,7 +147,8 @@ def contest(party):
 
 
 def test_creates_contest_for_identifier(contest):
-    assert contest.identifier == CONTEST_ID
+    # The name matters for PS, where the 510d importer ties a kieskring to its own contest by name
+    assert (contest.identifier, contest.name) == (CONTEST_ID, CONTEST_NAME)
 
 
 def test_creates_candidates_for_affiliation(contest, party):

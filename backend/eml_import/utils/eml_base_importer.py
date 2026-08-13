@@ -21,7 +21,7 @@ class EMLBaseImporter[T](ABC):
 
     eml_type: EmlType
 
-    def __init__(self, eml: T, eml_file: Path | NamedBytesIO):
+    def __init__(self, eml: T, eml_file: Path | NamedBytesIO | None):
         self.eml = eml
         self.eml_file = eml_file
 
