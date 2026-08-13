@@ -25,7 +25,7 @@ export default function PartyCandidatesResultsContent({
       <ResultsPageIndex variant="party" />
 
       <section id="telresultaten">
-        <h2 className="text-lg mb-4.5 font-medium">Telresultaten lijst {partyListNumber ?? '-'}</h2>
+        <h2 className="mb-4.5">Telresultaten lijst {partyListNumber ?? '-'}</h2>
         <h3 className="party-level-title mb-2">{partyName}</h3>
         <CandidatesVoteList
           voteCounts={candidateVoteCounts}

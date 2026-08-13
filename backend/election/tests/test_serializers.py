@@ -1,7 +1,6 @@
 from datetime import timedelta
 
 import pytest
-from django.test import RequestFactory
 from django.utils import timezone
 
 from election.models import TimelineEntryStatus, TimelineVariant
@@ -44,17 +43,7 @@ def test_election_config_serializer_only_returns_default_variant_timeline_entrie
 
 
 @pytest.mark.django_db
-def test_election_document_serializer_url_is_absolute_with_request_context():
-    document = ElectionDocumentFactory()
-    request = RequestFactory().get("/")
-
-    data = ElectionDocumentSerializer(document, context={"request": request}).data
-
-    assert data["url"] == f"http://testserver/api/documents/{document.pk}/download/"
-
-
-@pytest.mark.django_db
-def test_election_document_serializer_url_is_relative_path_without_request_context():
+def test_election_document_serializer_url():
     document = ElectionDocumentFactory()
 
     data = ElectionDocumentSerializer(document).data

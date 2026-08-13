@@ -88,7 +88,7 @@ python manage.py import_next_github_commits [election identifier]
 ## Object storage
 
 Files are stored in an S3-compatible bucket through Django's `default_storage`
-(`django-storages`). All settings default to the local MinIO container from
+(`django-storages`). All settings default to the local RustFS container from
 `docker-compose.yml`, so no configuration is needed when you run the stack with
 Docker. Outside Docker, set these in your `.env`:
 
@@ -100,8 +100,8 @@ Docker. Outside Docker, set these in your `.env`:
 | `S3_URL_PROTOCOL` | `http:` | Protocol for those URLs (note the trailing colon) |
 | `S3_ACCESS_KEY` | `uitslagenportaal` | Access key |
 | `S3_SECRET_KEY` | `password` | Secret key |
-| `S3_REGION` | `nl-ams` | Region (Scaleway Amsterdam; ignored by MinIO) |
-| `S3_ADDRESSING_STYLE` | `path` | `path` for MinIO, `auto` for real S3 providers |
+| `S3_REGION` | `nl-ams` | Region (Scaleway Amsterdam; ignored by RustFS) |
+| `S3_ADDRESSING_STYLE` | `path` | `path` for RustFS, `auto` for real S3 providers |
 
 Objects are public-read, so generated URLs are unsigned and do not expire. In
 production the bucket must therefore be configured to allow anonymous

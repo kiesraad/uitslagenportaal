@@ -1,3 +1,4 @@
+from django.urls import reverse
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -32,12 +33,9 @@ class ElectionDocumentSerializer(serializers.ModelSerializer):
             "file_type",
         )
 
-    def get_url(self, obj: ElectionDocument) -> str:
-        request = self.context.get("request")
-        path = f"/api/documents/{obj.pk}/download/"
-        if request is not None:
-            return request.build_absolute_uri(path)
-        return path
+    @staticmethod
+    def get_url(obj: ElectionDocument) -> str:
+        return reverse("document-download", kwargs={"pk": obj.pk})
 
 
 class TimelineEntrySerializer(serializers.ModelSerializer):
