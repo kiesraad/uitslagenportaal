@@ -5,7 +5,7 @@ description = "TOML file for backend"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "django>=6.0.8",
+    "django>=6.1",
     "django-cors-headers>=4.9.0",
     "django-extensions>=4.1",
     "django-storages[s3]>=1.14.6",
