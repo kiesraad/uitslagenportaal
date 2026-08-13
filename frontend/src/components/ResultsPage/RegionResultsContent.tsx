@@ -48,12 +48,12 @@ export default function RegionResultsContent({
     <>
       <ResultsPageIndex />
       <section id="telresultaten">
-        <h3 className="mb-2">Telresultaten</h3>
+        <h2 className="mb-2">Telresultaten</h2>
         <p>{intro}</p>
       </section>
       <VotesResume type="admittedVoters" votes={turnoutVotes} />
       <section className="votes-cast">
-        <h4 className="mb-2">Uitgebrachte stemmen</h4>
+        <h3 className="mb-2">Uitgebrachte stemmen</h3>
         <p className="mb-4">Klik op een lijst om de stemmen per kandidaat te zien</p>
         <VotesList voteCounts={partyLevelVoteCounts} />
       </section>

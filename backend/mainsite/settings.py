@@ -125,7 +125,7 @@ GITHUB_INGRESS_REPO = os.environ.get("GITHUB_INGRESS_REPO")  # "owner/repo"
 
 
 # Object storage
-# S3-compatible: MinIO locally (see docker-compose.yml), Scaleway in production.
+# S3-compatible: RustFS locally (see docker-compose.yml), Scaleway in production.
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3.S3Storage",
@@ -137,7 +137,7 @@ STORAGES = {
             "region_name": os.environ.get("S3_REGION", "nl-ams"),
             "custom_domain": os.environ.get("S3_PUBLIC_DOMAIN", "localhost:9000/uitslagenportaal"),
             "url_protocol": os.environ.get("S3_URL_PROTOCOL", "http:"),
-            # MinIO is reached by hostname, so virtual-host style addressing
+            # RustFS is reached by hostname, so virtual-host style addressing
             # (bucket.object-storage:9000) would not resolve.
             "addressing_style": os.environ.get("S3_ADDRESSING_STYLE", "path"),
             # Public objects: no signature on generated URLs.

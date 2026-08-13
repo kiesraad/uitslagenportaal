@@ -122,7 +122,7 @@ function ReportIssuePageContent({
           </InfoBox>
 
           <section className="flex flex-col gap-3">
-            <h2 className="text-xl font-bold font-title">Waarvoor kunt u een melding maken?</h2>
+            <h2>Waarvoor kunt u een melding maken?</h2>
             <p>
               U kunt een melding maken van mogelijke fouten die zijn gemaakt bij het tellen,
               opschrijven of overtypen van de stemmen in de uitslagensoftware. Dit kan voor de
@@ -132,7 +132,7 @@ function ReportIssuePageContent({
           </section>
 
           <section className="flex flex-col gap-3">
-            <h2 className="text-xl font-bold font-title">Wat wordt er met een melding gedaan?</h2>
+            <h2>Wat wordt er met een melding gedaan?</h2>
             <p>
               Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is. Als dat
               nodig is, nemen we contact op met de gemeente of het stembureau. In sommige gevallen
@@ -144,7 +144,7 @@ function ReportIssuePageContent({
           </section>
 
           <section className="flex flex-col gap-3">
-            <h2 className="text-xl font-bold font-title">Punten waar uw melding aan moet voldoen</h2>
+            <h2>Punten waar uw melding aan moet voldoen</h2>
             <ul className="flex flex-col gap-4 list-none p-0 m-0">
               <ChecklistItem>
                 De melding moet voor {formatDate(electionConfig.issue_report_deadline)} bij de
@@ -195,7 +195,7 @@ function ReportIssuePageContent({
 function ChecklistItem({ children }: { children: ReactNode }) {
   return (
     <li className="flex items-start gap-2">
-      <FontAwesomeIcon icon={faCheck} className="mt-1 size-4 shrink-0 text-[var(--c-done)]" />
+      <FontAwesomeIcon icon={faCheck} className="mt-1 size-4 shrink-0 text-(--c-done)" />
       <span>{children}</span>
     </li>
   )

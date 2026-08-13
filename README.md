@@ -27,12 +27,12 @@ This folder is mounted into the backend container at `/app/.data`.
 ### Object storage
 
 Uploaded and generated files are stored in an S3-compatible bucket. Locally that is
-the `object-storage` service (MinIO); in production it is Scaleway Object Storage.
+the `object-storage` service (RustFS); in production it is Scaleway Object Storage.
 
 - API: http://localhost:9000
 - Console: http://localhost:9001 (user `uitslagenportaal`, password `password`)
 - Bucket: `uitslagenportaal`, created on first `docker compose up` by the
-  `minio-bootstrap` service, which also makes its objects publicly readable
+  `object-storage-bootstrap` service, which also makes its objects publicly readable
 
 The backend reaches the bucket at `object-storage:9000` over the compose network,
 but generates public URLs pointing at `localhost:9000`, since that is the host the

@@ -47,8 +47,7 @@ export default function VotesResume({ votes, type }: Props & { type: VotesResume
 
     return (
         <section className="admitted-voters">
-            {type === 'votesCast' && <h4 className="mb-2">Uitgebrachte stemmen</h4>}
-            {type === 'admittedVoters' && <h4 className="mb-2">Toegelaten kiezers</h4>}
+            {type === 'admittedVoters' && <h3 className="mb-2">Toegelaten kiezers</h3>}
             <div className={'admitted-voters-box'}>
                 {boxVotes.map((vote) => (
                     <div key={vote.name} className={`admitted-voters-item ${vote.bold ? 'font-semibold' : ''}`}>

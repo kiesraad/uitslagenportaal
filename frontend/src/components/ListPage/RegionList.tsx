@@ -110,7 +110,7 @@ export function RegionList({
   return (
     <div className="page-main">
 
-      {isPollingStationList && (<h2 className="mb-4 text-2xl font-bold font-title">
+      {isPollingStationList && (<h2 className="mb-4">
         {sortedPollingStations.length} stembureaus in {regionTitle}
       </h2>)}
 
@@ -121,7 +121,7 @@ export function RegionList({
       />
 
 
-      {!isPollingStationList && (<h2 className="mb-4 text-2xl font-bold font-title">
+      {!isPollingStationList && (<h2 className="mb-4">
         Vind een {getRegionLabels(regionCategory).singular.toLowerCase()} van A tot Z
       </h2>)}
 
