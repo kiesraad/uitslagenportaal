@@ -13,11 +13,18 @@ import PollingStationResultsPage from './pages/PollingStationPage/PollingStation
 import PollingStationPartyResultsPage from './pages/PollingStationPage/PollingStationPartyResultsPage.tsx'
 import MunicipalityPageLayout from "@/pages/MunicipalityPage/MunicipalityPageLayout.tsx";
 import {NotFoundPage} from './pages/NotFoundPage'
+import {useScrollToTop} from './hooks/useScrollToTop.ts'
 
+
+function ScrollToTop() {
+  useScrollToTop()
+  return null
+}
 
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop/>
       <Routes>
         <Route path="/" element={<HomePage/>}/>
         <Route path="/:electionConfigSlug">

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Layout } from './Layout'
 
 type PageQueryBoundaryProps = {
@@ -5,6 +6,7 @@ type PageQueryBoundaryProps = {
   isError: boolean
   onRetry: () => void
   entityLabel: string
+  withLayout?: boolean
 }
 
 /**
@@ -16,28 +18,45 @@ export function PageQueryBoundary({
   isError,
   onRetry,
   entityLabel,
+  withLayout = true,
 }: PageQueryBoundaryProps) {
   const labelLower = entityLabel.toLowerCase()
 
-  if (isLoading) {
-    return (
-      <Layout title={`${entityLabel} laden…`} description={`${entityLabel} laden…`}>
-        <p>{labelLower} laden…</p>
+  const wrap = (title: string, description: string, children: ReactNode) =>
+    withLayout ? (
+      <Layout title={title} description={description}>
+        <div className="page-top page-top-placeholder" aria-hidden="true" />
+        {children}
       </Layout>
+    ) : (
+      children
+    )
+
+  if (isLoading) {
+    return wrap(
+      `${entityLabel} laden…`,
+      `${entityLabel} laden…`,
+      <div className="page-main">
+        <div className="page-status" role="status" aria-live="polite">
+          <p className="page-status-text">{entityLabel} laden…</p>
+          <p>Een moment geduld, de gegevens worden opgehaald.</p>
+        </div>
+      </div>,
     )
   }
 
   if (isError) {
-    return (
-      <Layout
-        title={`${entityLabel} niet gevonden`}
-        description={`Kan ${labelLower} niet laden.`}
-      >
-        <p>Kan {labelLower} niet laden.</p>
-        <button type="button" onClick={onRetry}>
-          Opnieuw proberen
-        </button>
-      </Layout>
+    return wrap(
+      `${entityLabel} niet gevonden`,
+      `Kan ${labelLower} niet laden.`,
+      <div className="page-main">
+        <div className="page-status" role="alert">
+          <p className="page-status-text">Kan {labelLower} niet laden.</p>
+          <button type="button" onClick={onRetry}>
+            Opnieuw proberen
+          </button>
+        </div>
+      </div>,
     )
   }
 
