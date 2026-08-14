@@ -12,6 +12,7 @@ import {MunicipalityResultsPage} from './pages/MunicipalityPage/MunicipalityResu
 import PollingStationResultsPage from './pages/PollingStationPage/PollingStationResultsPage.tsx'
 import PollingStationPartyResultsPage from './pages/PollingStationPage/PollingStationPartyResultsPage.tsx'
 import MunicipalityPageLayout from "@/pages/MunicipalityPage/MunicipalityPageLayout.tsx";
+import {NotFoundPage} from './pages/NotFoundPage'
 
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage/>}/>
         <Route path="/:electionConfigSlug">
+          <Route index element={<NotFoundPage/>}/>
           <Route path="fout-melden" element={<ReportIssuePage/>}/>
           <Route path="csb" element={<ElectionConfigCSBListPage/>}/>
           <Route path="csb/:regionSlug" element={<CSBMunicipalityListPage/>}/>
@@ -34,7 +36,9 @@ function App() {
           <Route path="gsb/:parentRegionSlug/csb/:csbSlug/:pollingStationSlug" element={<PollingStationResultsPage/>}/>
           <Route path="gsb/:parentRegionSlug/csb/:csbSlug/:pollingStationSlug/:partySlug"
                  element={<PollingStationPartyResultsPage/>}/>
+          <Route path="*" element={<NotFoundPage/>}/>
         </Route>
+        <Route path="*" element={<NotFoundPage/>}/>
       </Routes>
     </BrowserRouter>
   )
