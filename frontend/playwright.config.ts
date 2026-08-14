@@ -1,7 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// Assumes the full stack is already running via docker compose on port 8080.
-// See the root README for: docker compose up -d, migrate, reset_and_import.
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:8080'
 
 export default defineConfig({
