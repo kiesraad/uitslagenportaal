@@ -33,7 +33,7 @@ test.describe('Waterschap election (Scheldestromen WS fixture)', () => {
     await expect(page.getByRole('columnheader', { name: 'Borsele' })).toBeVisible()
   })
 
-  test('homepage → gemeente list → gemeente Borsele', async ({ page }) => {
+  test('homepage → gemeente list → gemeente Borsele → party results', async ({ page }) => {
     await page.goto('/')
 
     await page.getByRole('link', { name: 'Waterschapsverkiezingen 2023' }).click()
@@ -54,5 +54,13 @@ test.describe('Waterschap election (Scheldestromen WS fixture)', () => {
     await expect(page.getByRole('heading', { name: 'Telresultaten' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Partij voor Zeeland' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'CDA' })).toBeVisible()
+
+    await page.getByRole('link', { name: 'Partij voor Zeeland' }).click()
+    await expect(page).toHaveURL(/\/gsb\/[^/]+\/csb\/[^/]+\/resultaten\/[^/]+\/?$/)
+    await expect(page.getByRole('heading', { level: 1, name: /Telresultaten gemeente/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Telresultaten lijst/ })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 3, name: 'Partij voor Zeeland' })).toBeVisible()
+    await expect(page.getByText(/Minderhoud/)).toBeVisible()
+    await expect(page.getByText(/Totaal stemmen lijst/)).toBeVisible()
   })
 })
