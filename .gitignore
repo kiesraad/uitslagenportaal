@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Playwright (artifacts from `npm run test:e2e` in frontend/)
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/playwright/.cache/
+frontend/playwright/.auth/
+
 
 ### Backend
 __pycache__/
