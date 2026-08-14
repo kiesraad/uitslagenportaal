@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-// Requires WS fixture import — see playwright.config.ts.
+// Throwaway stack + WS fixtures: Playwright webServer (see playwright.config.ts).
 
 test.describe('Waterschap election (Scheldestromen WS fixture)', () => {
   test('homepage → gemeente list → waterschappen → CSB results → party matrix', async ({ page }) => {
