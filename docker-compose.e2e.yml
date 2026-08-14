@@ -1,0 +1,33 @@
+# Playwright throwaway stack. Always pass a separate project name so
+# containers and volumes never collide with the day-to-day compose project:
+#
+#   docker compose --project-name uitslagenportaal-e2e \
+#     -f docker-compose.yml -f docker-compose.e2e.yml up
+#
+# Host port 8081 is the only entry Playwright needs. The e2e database lives
+# in this project's volumes; `down -v` on this project name is the wipe.
+# GitHub Actions can use the same files; CI=true makes Playwright always
+# start a fresh stack (see frontend/playwright.config.ts).
+
+services:
+  backend:
+    environment:
+      CORS_ALLOWED_ORIGINS: http://localhost:8081
+      S3_PUBLIC_DOMAIN: localhost:19000/uitslagenportaal
+
+  frontend:
+    environment:
+      VITE_HMR_CLIENT_PORT: "8081"
+
+  proxy:
+    ports: !override
+      - "8081:80"
+
+  db:
+    # Do not publish 5433 — that port belongs to the daily stack.
+    ports: !override []
+
+  object-storage:
+    # Remap S3 so :9000/:9001 stay free for local development.
+    ports: !override
+      - "19000:9000"
