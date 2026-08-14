@@ -1,5 +1,6 @@
-# uitslagenportaal
-Webapplicatie voor verkiezingsuitslagen.
+# Uitslagenportaal
+
+Webapplicatie voor weergeven van verkiezingsuitslagen.
 
 ## Development setup
 
@@ -75,3 +76,28 @@ docker compose run --rm backend-scripts python manage.py seed
   ```bash
   docker compose run --rm frontend npm run lint
   ```
+
+### Election visibility and deletion
+
+Elections disappear from the portal automatically 3 months after their
+`ElectionConfig.date`. This is derived from the date at request time, so nothing
+has to be run to hide an election.
+
+Deleting the data is a separate, manual step. An election becomes eligible one
+week after it turned invisible, which leaves time to back up anything worth
+keeping.
+
+`delete_expired_elections` reports what it would remove and changes nothing:
+
+```bash
+docker compose run --rm backend-scripts python manage.py delete_expired_elections
+```
+
+Add `--confirm` to actually delete. This permanently removes the election
+config, its elections, regions, parties, candidates, vote counts and documents,
+including the stored files in object storage. There is no undo — re-importing
+from the source EML files is the only way back.
+
+```bash
+docker compose run --rm backend-scripts python manage.py delete_expired_elections --confirm
+```

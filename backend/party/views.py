@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from election.models import VoteCount
+from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from mainsite.serializers import CandidateSummarySerializer
 from mainsite.utils.eml_type import EmlType
@@ -24,11 +25,14 @@ class PartyResultMatrixView(APIView):
             raise ValidationError({"party": "This query parameter is required."})
         if not csb_slug:
             raise ValidationError({"csb": "This query parameter is required."})
+        # Expired elections are hidden everywhere
+        cutoff = visibility_cutoff()
 
         try:
             party = Party.objects.get(
                 slug=party_slug,
                 election__slug=election_slug,
+                election__election_config__date__gte=cutoff,
             )
         except Party.DoesNotExist:
             raise ValidationError({"party": "Party not found for this election."})
@@ -37,6 +41,7 @@ class PartyResultMatrixView(APIView):
             csb = Region.objects.get(
                 slug=csb_slug,
                 election__slug=election_slug,
+                election__election_config__date__gte=cutoff,
             )
         except Region.DoesNotExist:
             raise ValidationError({"csb": "CSB not found for this election."})
@@ -97,7 +102,7 @@ class PartyViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Party.objects.all()
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().filter(election__election_config__date__gte=visibility_cutoff())
         if self.action == "retrieve":
             queryset = queryset.select_related("election")
         return queryset
