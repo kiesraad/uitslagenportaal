@@ -61,6 +61,21 @@ test.describe('Waterschap election (Scheldestromen WS fixture)', () => {
     await expect(page.getByText(/Totaal stemmen lijst/)).toBeVisible()
   })
 
+  test('CSB per gemeente → Goes has no results', async ({ page }) => {
+    await page.goto('/ab2023/csb/17-scheldestromen')
+    await expect(page.getByRole('heading', { level: 1, name: 'Waterschap - Scheldestromen' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Per gemeente' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Borsele' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Goes' })).toBeVisible()
+
+    await page.getByRole('link', { name: 'Goes' }).click()
+    await expect(page).toHaveURL(/\/gsb\/[^/]+\/csb\/[^/]+\/resultaten\/?$/)
+    await expect(page.getByRole('heading', { level: 1, name: 'Gemeente Goes' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'De telresultaten van Goes zijn nog niet gepubliceerd' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Hele gemeente' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Partij voor Zeeland' })).toHaveCount(0)
+  })
+
   test('stembureau list → stembureau results → party results', async ({ page }) => {
     await page.goto('/ab2023/gsb/654-borsele/csb/17-scheldestromen')
     await expect(page.getByRole('heading', { level: 1, name: 'Gemeente Borsele' })).toBeVisible()
