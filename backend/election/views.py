@@ -17,9 +17,6 @@ class ElectionConfigViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ElectionConfig.objects.all()
     lookup_field = "slug"
 
-    def get_queryset(self):
-        return super().get_queryset().filter(date__gte=visibility_cutoff())
-
     def get_serializer_class(self):
         return ElectionConfigSerializer
 

@@ -3,13 +3,18 @@ import io
 import itertools
 import logging
 import zipfile
+from time import sleep
 from typing import Iterator
 
 from django.conf import settings
+from django.core.cache import cache
 from github import Auth, Github
 from github.File import File
+from github.Repository import Repository
+from redis.exceptions import LockError
 
 from election.models import ElectionConfig
+from eml_import.exceptions import GithubImportException
 from eml_import.models import BranchType, ImportedCommit
 from eml_import.utils.election_importer import ElectionImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
@@ -26,11 +31,33 @@ BRANCH_FIELDS: dict[BranchType, str] = {
 class GithubEmlImporter:
     def __init__(self, election_config: ElectionConfig) -> None:
         self.election_config = election_config
-        self.gh = Github(auth=Auth.Token(settings.GITHUB_TOKEN), per_page=500)
-        self.repo = self.gh.get_repo(settings.GITHUB_INGRESS_REPO)
+        self.gh: Github | None = None
+        self.repo: Repository | None = None
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def run(self) -> int:
+        self.logger.info(
+            "Starting GitHub importer for election %s",
+            self.election_config.identifier,
+        )
+
+        if not settings.GITHUB_TOKEN or not settings.GITHUB_INGRESS_REPO:
+            raise GithubImportException("GITHUB_TOKEN and/or GITHUB_INGRESS_REPO not configured.")
+
+        self.gh = Github(auth=Auth.Token(settings.GITHUB_TOKEN), per_page=500)
+        self.repo = self.gh.get_repo(settings.GITHUB_INGRESS_REPO)
+
+        try:
+            with cache.lock(self.election_config.identifier, blocking=False):
+                sleep(5)
+                return self._run_import()
+        except LockError:
+            self.logger.warning(
+                "Could not acquire lock, GithubEmlImporter is already running for %s", self.election_config.identifier
+            )
+            return 0
+
+    def _run_import(self) -> int:
         """
         Import the next batch of commits from the first branch that still has commits left.
         :return: the number of imported files
@@ -40,10 +67,6 @@ class GithubEmlImporter:
                 ImportedCommit.objects.filter(election_config=self.election_config, branch_type=branch_type)
                 .order_by("-created_at")
                 .first()
-            )
-            self.logger.info(
-                "Starting GitHub importer for election %s",
-                self.election_config.identifier,
             )
 
             self.logger.info(
