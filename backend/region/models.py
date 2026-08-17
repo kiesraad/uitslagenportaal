@@ -76,3 +76,6 @@ class Region(BaseModel):
 
         if self.parent_id and self.parent.election_id != self.election_id:
             raise ValidationError({"parent": "Parent region must belong to the same election."})
+
+    def __str__(self) -> str:
+        return f"<Region {self.region_category.lower()} {self.region_name} ({self.pk})>"

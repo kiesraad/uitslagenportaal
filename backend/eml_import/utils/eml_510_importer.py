@@ -14,6 +14,7 @@ from pyeml_bindings import (
 
 from election.models import (
     Contest,
+    ElectionCategory,
     ElectionDocument,
     VoteCount,
     VoterTurnoutCount,
@@ -28,7 +29,7 @@ from region.models import Region, build_region_slug
 
 
 class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
-    def __init__(self, eml: Eml510, eml_file: Path | NamedBytesIO):
+    def __init__(self, eml: Eml510, eml_file: Path | NamedBytesIO | None):
         super().__init__(eml, eml_file)
         self.election_documents = {doc.storage_key: doc for doc in ElectionDocument.objects.all()}
 
@@ -44,14 +45,16 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
 
     def _parse_party_candidate_votecounts(
         self,
-        contest,
-        region,
+        contest: Contest,
+        region: Region,
         items: list[Count.Election.Contests.Contest.TotalVotes.Selection | ReportingUnitVotes.Selection],
         party_by_list_nuber: dict[int, Party],
-        candidate_by_key,
-        vote_counts,
+        candidate_by_key: dict[tuple[int | None, int], Candidate],
+        vote_counts: list[VoteCount],
+        *,
+        candidate_by_short_code: dict[tuple[int, str], int] | None = None,
     ) -> None:
-        current_party = None
+        current_party: Party | None = None
         for votes_item in items:
             if votes_item.affiliation_identifier:
                 # get party from pre-saved data
@@ -69,17 +72,28 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
             if votes_item.candidate:
                 assert current_party, "No party to tie candidate to, cannot parse"
                 # get candidate from pre-saved data
+                candidate_id = votes_item.candidate.candidate_identifier.id
+                candidate_short_code = votes_item.candidate.candidate_identifier.short_code_attribute
                 try:
-                    candidate = candidate_by_key[
-                        (
-                            current_party.id,
-                            int(votes_item.candidate.candidate_identifier.id),
-                        )
-                    ]
+                    assert candidate_id is not None or candidate_short_code is not None
+                    if candidate_id is not None:
+                        candidate = candidate_by_key[(current_party.id, int(candidate_id))]
+
+                        if candidate_by_short_code is not None:
+                            # Store candidate-short code mapping for later use. We have to save the candidate's DB id
+                            # because when processing total votecounts for candidates that belong to a HSB-specific
+                            # contest, we can't fetch them by position/identifier.
+                            if candidate_id is not None and candidate_short_code is not None:
+                                candidate_by_short_code[(current_party.id, candidate_short_code)] = candidate.id
+                    else:
+                        # Candidate identifier is None, meaning we have to fetch them by short code from the mapping
+                        # created when processing reporting units' votes.
+                        candidate_id = candidate_by_short_code.get((current_party.id, candidate_short_code))
+                        candidate = candidate_by_key[(None, candidate_id)]
                 except KeyError:
-                    candidate_id = int(votes_item.candidate.candidate_identifier.id)
+                    candidate_identifier = candidate_id or candidate_short_code
                     raise EMLImporterException(
-                        f"Candidate {candidate_id} not found within party {current_party.registered_name}"
+                        f"Candidate {candidate_identifier} not found within party {current_party.registered_name}"
                     )
                 vote_counts.append(
                     VoteCount(
@@ -266,8 +280,7 @@ class EML510bImporter(EML510BaseImporter):
         except Region.DoesNotExist:
             raise EMLImporterException(
                 f"Municipality {managing_authority_name} {authority_id} "
-                f"does not exist in the election definition of election {self.election}, "
-                "so we can't import it's results"
+                f"does not exist in the election definition of election {self.election.name}"
             )
 
         if self.eml_file is not None:
@@ -338,14 +351,11 @@ class EML510dImporter(EML510BaseImporter):
         assert len(election_domain) == 1, "More than one election domain, cannot parse"
         region_number = int(election_domain[0].id) if election_domain[0].id else None
         region_name = election_domain[0].value
-        # A Totaaltelling is published by a top-level body (gemeente, waterschap,
-        # provincie, staat), never by a kieskring or a polling station. Those can
-        # share both number and name with their parent -- waterschap Noorderzijlvest
-        # has a kieskring called Noorderzijlvest with the same number -- which makes
-        # an unfiltered lookup ambiguous (MultipleObjectsReturned).
-        regions_qs = Region.objects.filter(election=self.election).exclude(
-            region_category__in=(RegionCategory.KIESKRING, RegionCategory.STEMBUREAU)
-        )
+
+        # We're processing CSB results, but the region_category for CSBs differs per election category,
+        # so get it from the category config.
+        election_category = ElectionCategory(self.election.election_config.category)
+        regions_qs = Region.objects.filter(election=self.election, region_category=election_category.config.csb)
         if not region_number:
             # Allow for the case when the election domain has no region number attached,
             # this is the case in PS and region number is in that case not needed for retrieval
@@ -365,26 +375,68 @@ class EML510dImporter(EML510BaseImporter):
         if self.eml_file is not None:
             self._store_eml(region)
 
-        # Preload party names dict
+        # Preload party names dict and child regions by name
         party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
-
-        gsb_by_name = {
+        child_region_category = RegionCategory.GEMEENTE if region.children.count() == 1 else RegionCategory.KIESKRING
+        child_region_by_name = {
             region.region_name: region
-            for region in Region.objects.filter(election=self.election, region_category=RegionCategory.GEMEENTE)
+            for region in Region.objects.filter(election=self.election, region_category=child_region_category)
         }
+        child_region_category_re = re.compile(child_region_category.label, re.IGNORECASE)
 
         vote_counts: list[VoteCount] = []
         turnout_counts: list[VoterTurnoutCount] = []
         for contest_data in self.eml.count.election.contests.contest:
+            # Populated by self._parse_party_candidate_votecounts() when processing reporting unit's votes
+            candidate_by_short_code = {}
+
+            # Breakdown per child region (HSB/GSB)
+            for unit in contest_data.reporting_unit_votes:
+                # Get child region name without region category prefix (e.g. kieskring)
+                child_region_name = child_region_category_re.sub("", unit.reporting_unit_identifier.value).strip()
+                child_region = child_region_by_name.get(child_region_name)
+                if child_region is None:
+                    continue
+
+                contest_filter = {"election": self.election}
+                # Get the contest from the DB by name, if the contest in the EML file is set to 'alle'. This means that
+                # the candidates are linked to a contest per reporting unit, so we get the contest by name.
+                if contest_data.contest_identifier.id == "alle":
+                    contest_filter["name"] = child_region_name
+                else:
+                    contest_filter["identifier"] = contest_data.contest_identifier.id
+                contest = Contest.objects.get(**contest_filter)
+                candidate_by_key = {
+                    (candidate.party_id, candidate.identifier): candidate
+                    for candidate in Candidate.objects.filter(contest=contest)
+                }
+
+                self._parse_party_candidate_votecounts(
+                    contest,
+                    child_region,
+                    unit.selection,
+                    party_by_list_number,
+                    candidate_by_key,
+                    vote_counts,
+                    candidate_by_short_code=candidate_by_short_code,
+                )
+                self._collect_turnout_counts(contest, child_region, unit, turnout_counts)
+
+            # CSB totals
             contest = Contest.objects.get(
                 identifier=contest_data.contest_identifier.id,
                 election=self.election,
             )
+            # Get candidates by (party, identifier) and by (None, DB id) key.
+            # We need to get candidates by DB id when processing contest-spanning totals. The DB ids are determined by
+            # the short code mapping, which is tracked when processing the reporting unit's votes.
             candidate_by_key = {
                 (candidate.party_id, candidate.identifier): candidate
                 for candidate in Candidate.objects.filter(contest=contest)
+            } | {
+                (None, candidate.id): candidate
+                for candidate in Candidate.objects.filter(contest__election=self.election)
             }
-            # CSB totals
             self._parse_party_candidate_votecounts(
                 contest,
                 region,
@@ -392,26 +444,9 @@ class EML510dImporter(EML510BaseImporter):
                 party_by_list_number,
                 candidate_by_key,
                 vote_counts,
+                candidate_by_short_code=candidate_by_short_code,
             )
             self._collect_turnout_counts(contest, region, contest_data.total_votes, turnout_counts)
-
-            # Breakdown per GSB
-            for unit in contest_data.reporting_unit_votes:
-                gsb_name = unit.reporting_unit_identifier.value
-                gsb_region = gsb_by_name.get(gsb_name)
-                if gsb_region is None:
-                    # GSB does not exist in the current election, skip import of data
-                    continue
-
-                self._parse_party_candidate_votecounts(
-                    contest,
-                    gsb_region,
-                    unit.selection,
-                    party_by_list_number,
-                    candidate_by_key,
-                    vote_counts,
-                )
-                self._collect_turnout_counts(contest, gsb_region, unit, turnout_counts)
 
         if vote_counts:
             VoteCount.objects.bulk_create(vote_counts, batch_size=self.BULK_BATCH_SIZE)

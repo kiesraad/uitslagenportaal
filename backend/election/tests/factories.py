@@ -7,6 +7,7 @@ from factory.django import DjangoModelFactory
 from election.models import (
     Contest,
     Election,
+    ElectionCategory,
     ElectionConfig,
     ElectionDocument,
     TimelineEntry,
@@ -14,7 +15,7 @@ from election.models import (
     TimelineVariant,
 )
 
-CATEGORIES = ["GR", "TK", "AB", "PS", "EP"]
+CATEGORIES = ElectionCategory.values
 
 
 class ElectionConfigFactory(DjangoModelFactory):

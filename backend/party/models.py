@@ -36,6 +36,14 @@ class Party(BaseModel):
 
 
 class Candidate(BaseModel):
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["contest", "party", "position"],
+                name="unique_position_per_contest_and_party",
+            ),
+        ]
+
     contest = models.ForeignKey(
         "election.Contest",
         on_delete=models.CASCADE,
