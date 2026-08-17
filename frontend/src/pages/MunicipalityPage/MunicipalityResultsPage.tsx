@@ -1,4 +1,4 @@
-import {useParams} from 'react-router-dom'
+import {useParams} from 'react-router'
 import RegionResultsContent from '../../components/ResultsPage/RegionResultsContent.tsx'
 import {PageQueryBoundary} from '../../components/PageQueryBoundary.tsx'
 import {useRegion} from '../../hooks/queries.ts'

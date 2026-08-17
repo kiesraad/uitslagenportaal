@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { Layout } from '../components/Layout.tsx'
 import PageTop from '../components/PageTop.tsx'
 import { appRoutes } from '../utils/routes.ts'
