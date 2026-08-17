@@ -51,8 +51,6 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-router"
         update-types: ["version-update:semver-major"]
-      - dependency-name: "react-router-dom"
-        update-types: ["version-update:semver-major"]
   - package-ecosystem: "uv"
     directory: "/backend"
     # 1st and 15th day of each month
