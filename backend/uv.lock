@@ -758,8 +758,8 @@ dev = [
     { name = "debugpy", specifier = ">=1.8.0" },
     { name = "factory-boy", specifier = ">=3.3.3" },
     { name = "pytest", specifier = ">=8.4.0" },
-    { name = "pytest-django", specifier = ">=4.11.0" },
-    { name = "ruff", specifier = ">=0.16.1" },
+    { name = "pytest-django", specifier = ">=4.13.0" },
+    { name = "ruff", specifier = ">=0.16.2" },
 ]
 
 [[package]]
