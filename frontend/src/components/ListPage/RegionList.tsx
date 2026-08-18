@@ -6,6 +6,8 @@ import { getRegionLabels } from '../../utils/region'
 import type {ElectionConfig, Region, RegionCategory} from '../../api/types'
 import {type PropsWithChildren, useMemo} from "react";
 import {twMerge} from "tailwind-merge";
+import {faChevronRight} from "@fortawesome/free-solid-svg-icons";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 
 
 
@@ -170,11 +172,11 @@ function ListOptionLink({listOption, to}: {
   return (
     <Link
       to={to}
-      className="items-center hover:no-underline! odd:bg-blue-50 hover:bg-blue-100 py-4 px-6 grid col-span-3 grid-cols-subgrid"
+      className="items-center hover:no-underline! odd:bg-blue-50 hover:bg-blue-100 h-18 px-6 grid col-span-3 grid-cols-subgrid"
     >
       <span className={twMerge(listOption.stationNumber && "font-light text-gray-700 pr-2")}>{listOption.stationNumber}</span>
       <span className="underline">{listOption.label}</span>
-      <span className="gemeente-chevron">{'>'}</span>
+      <span><FontAwesomeIcon icon={faChevronRight} /></span>
     </Link>
   )
 }
