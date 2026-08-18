@@ -11,9 +11,15 @@
 
 services:
   backend:
+    # Dev stack runs under debugpy; e2e only needs a plain runserver.
+    command: python manage.py runserver 0.0.0.0:8000
+    ports: !override []
     environment:
       CORS_ALLOWED_ORIGINS: http://localhost:8081
       S3_PUBLIC_DOMAIN: localhost:19000/uitslagenportaal
+
+  backend-scripts:
+    ports: !override []
 
   frontend:
     environment:
