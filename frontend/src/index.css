@@ -18,22 +18,31 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/geistmono/regular.ttf') format('truetype');
+  font-style: normal;
+  font-display: swap;
+}
+
 /**
  * TailwindCSS config
  */
 @theme {
   /* font-sans is the default font used by Tailwind */
-  --font-sans: 'DM Sans', 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
-  --font-title: 'Space Grotesk', 'Segoe UI', Arial, sans-serif;
+  --font-sans: 'DM Sans', 'Source Sans 3', 'Trebuchet MS', Arial, sans-serif;
+  --font-title: 'Space Grotesk', 'Trebuchet MS', Arial, sans-serif;
+  --font-number: 'Geist Mono', 'Lucida Sans Typewriter', 'Courier New', monospace;
 
   --color-*: initial;
   /* Some colors are not defined in the Figma designs, so there are gaps in the numbers */
-  --color-blue-50: #F4F7FA;
+  --color-blue-50: #F4F7FA;  /* same as KR Blauw/25 */
   --color-blue-100: #E5EBF4;
   --color-blue-200: #EBF3F7;
   --color-blue-500: #01689B;
   --color-blue-700: #1B3764;
   --color-blue-800: #113051;
+
 
   /* Gray colors from figma */
   --color-gray-25: oklch(0.992 0.001 247.829);
