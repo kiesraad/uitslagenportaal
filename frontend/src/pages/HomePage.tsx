@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { Layout } from '../components/Layout.tsx'
 import Timeline, { type TimelineEntry } from '../components/Timeline.tsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'

@@ -1,4 +1,4 @@
-import {BrowserRouter, Route, Routes} from 'react-router-dom'
+import {BrowserRouter, Route, Routes} from 'react-router'
 import {HomePage} from './pages/HomePage'
 import {ReportIssuePage} from './pages/ReportIssuePage'
 import {ElectionConfigMunicipalityListPage} from './pages/ElectionConfigPage/ElectionConfigMunicipalityListPage'
