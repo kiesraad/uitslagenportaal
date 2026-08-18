@@ -1,5 +1,5 @@
 import {Outlet} from "react-router";
-import {useParams} from "react-router-dom";
+import {useParams} from "react-router";
 import {appRoutes} from "@/utils/routes.ts";
 import {useElectionConfig, useRegion} from "@/hooks/queries.ts";
 import {PageQueryBoundary} from "@/components/PageQueryBoundary.tsx";

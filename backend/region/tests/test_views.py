@@ -1,7 +1,11 @@
+import datetime
+
 import pytest
+from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 
 from election.tests.factories import ElectionFactory
+from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
 from region.views import RegionDetailView, RegionListView
@@ -249,3 +253,21 @@ def test_region_detail_disambiguates_waterschap_polling_station_by_csb_and_paren
     assert response.data["slug"] == stembureau.slug
     assert response.data["csb_slug"] == waterschap.slug
     assert response.data["csb_name"] == waterschap.region_name
+
+
+@pytest.mark.django_db
+def test_region_list_is_empty_for_an_expired_election():
+    # The /<slug>/gsb page reads this endpoint, so a hidden election has to
+    # yield no municipalities rather than the full list.
+    started = timezone.now() - datetime.timedelta(days=31 * VISIBILITY_MONTHS + 1)
+    election = ElectionFactory(election_config__identifier="GR2026", election_config__date=started)
+    RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Amstelveen")
+
+    request = factory.get(
+        "/api/regions/",
+        {"election_config": election.election_config.slug, "region_category": RegionCategory.GEMEENTE},
+    )
+    response = RegionListView.as_view()(request)
+
+    assert response.status_code == 200
+    assert list(response.data) == []

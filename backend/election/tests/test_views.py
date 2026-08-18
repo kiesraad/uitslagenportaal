@@ -1,11 +1,62 @@
+import datetime
+
 import pytest
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.http import Http404
 from django.test import RequestFactory
+from django.utils import timezone
 
-from election.tests.factories import ElectionDocumentFactory
+from election.tests.factories import ElectionConfigFactory, ElectionDocumentFactory
+from election.utils import VISIBILITY_MONTHS
 from election.views import download_document
+
+
+@pytest.fixture
+def data_root(tmp_path, settings):
+    settings.BASE_DIR = tmp_path
+    root = tmp_path / ".data"
+    root.mkdir()
+    return root
+
+
+@pytest.fixture
+def expired_election():
+    """An election old enough to be past the visibility window, like GR2026."""
+    # 31 days per month keeps this comfortably past the cutoff whatever the
+    # calendar does with short months.
+    started = timezone.now() - datetime.timedelta(days=31 * VISIBILITY_MONTHS + 1)
+    return ElectionConfigFactory(identifier="GR2026", label="Gemeenteraad 2026", date=started)
+
+
+@pytest.fixture
+def current_election():
+    return ElectionConfigFactory(identifier="AB2023", label="Waterschappen 2023")
+
+
+@pytest.mark.django_db
+def test_expired_election_is_left_out_of_the_config_list(client, expired_election, current_election):
+    response = client.get("/api/election_configs/")
+
+    assert response.status_code == 200
+    assert [item["slug"] for item in response.json()] == [current_election.slug]
+
+
+@pytest.mark.django_db
+def test_expired_election_detail_returns_404(client, expired_election):
+    # A direct link to a hidden election has to fail rather than render an
+    # otherwise empty page.
+    response = client.get(f"/api/election_configs/{expired_election.slug}/")
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_current_election_detail_is_still_reachable(client, current_election):
+    response = client.get(f"/api/election_configs/{current_election.slug}/")
+
+    assert response.status_code == 200
+    assert response.json()["slug"] == current_election.slug
 
 
 @pytest.mark.django_db

@@ -24,7 +24,12 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
         contest, _ = Contest.objects.get_or_create(
             identifier=contest_data.contest_identifier.id,
             election=self.election,
+            name=contest_data.contest_identifier.contest_name,
         )
+        # A candidate list can be imported more than once (e.g. a corrected file),
+        # so only create the candidates that are not in the database yet.
+        existing_keys = set(Candidate.objects.filter(contest=contest).values_list("party_id", "identifier"))
+
         candidates: list[Candidate] = []
         for affiliation in contest_data.affiliation:
             assert affiliation.affiliation_identifier.id, (
@@ -48,6 +53,12 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
                 )
 
             for candidate in affiliation.candidate:
+                identifier = int(candidate.candidate_identifier.id)
+                key = (party.pk, identifier)
+                if key in existing_keys:
+                    continue
+                existing_keys.add(key)
+
                 first_name = None
                 if candidate.candidate_full_name.person_name.first_name:
                     first_name = candidate.candidate_full_name.person_name.first_name.content[0]
@@ -58,8 +69,8 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
                     Candidate(
                         party=party,
                         contest=contest,
-                        identifier=candidate.candidate_identifier.id,
-                        position=candidate.candidate_identifier.id,
+                        identifier=identifier,
+                        position=identifier,
                         initials=candidate.candidate_full_name.person_name.name_line.content[0],
                         first_name=first_name,
                         name_prefix=name_prefix,

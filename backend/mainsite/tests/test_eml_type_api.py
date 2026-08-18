@@ -8,15 +8,15 @@ returns the EML type that belongs at that reporting level:
 - Party result matrix → 510d GSB + CSB counts
 """
 
-from datetime import datetime
+from datetime import timedelta
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 import pytest
 from django.conf import settings
+from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 
-from election.models import Election, ElectionConfig, VoteCount, VoterTurnoutCount
+from election.models import Election, ElectionCategory, ElectionConfig, VoteCount, VoterTurnoutCount
 from eml_import.utils.election_importer import ElectionImporter
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
@@ -53,9 +53,9 @@ def ws_import_folder():
 def ab2023_config(db):
     return ElectionConfig.objects.create(
         identifier="AB2023",
-        category="AB",
+        category=ElectionCategory.WS.value,
         label="Waterschappen 2023",
-        date=datetime(2023, 12, 15, 11, 0, tzinfo=ZoneInfo("Europe/Amsterdam")),
+        date=timezone.now() - timedelta(days=1),  # so the test remains within timeframe
     )
 
 

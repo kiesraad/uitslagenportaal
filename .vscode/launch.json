@@ -2,6 +2,25 @@
     "version": "0.2.0",
     "configurations": [
         {
+            // Attach to debugpy inside the backend container (docker compose up).
+            // Set breakpoints in backend/, then hit http://localhost:8080.
+            "name": "Django: attach (Docker)",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}/backend",
+                    "remoteRoot": "/app"
+                }
+            ],
+            "django": true,
+            "justMyCode": true
+        },
+        {
             "name": "Django: runserver",
             "type": "debugpy",
             "request": "launch",

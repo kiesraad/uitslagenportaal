@@ -1,4 +1,4 @@
-import {Link, useNavigate} from 'react-router-dom'
+import {Link, useNavigate} from 'react-router'
 import type {SearchListOption} from '../SearchBar'
 import SearchBar from '../SearchBar'
 import { appRoutes } from '../../utils/routes'

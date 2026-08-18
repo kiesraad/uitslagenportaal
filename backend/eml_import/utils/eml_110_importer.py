@@ -2,6 +2,7 @@ from pyeml_bindings import (
     Eml110a,
 )
 
+from election.models import Contest
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from mainsite.utils.eml_type import EmlType
 from party.models import Party
@@ -17,9 +18,19 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
         return self.eml.election_event.election.election_identifier
 
     def _parse_data(self):
+        self._parse_contest()
         self._parse_regions()
         self._parse_registered_parties()
         self.logger.info("Successfully imported data for Election")
+
+    def _parse_contest(self) -> None:
+        """
+        Create a Contest object for the identifier in the Election
+        """
+        Contest.objects.get_or_create(
+            election=self.election,
+            identifier=self.eml.election_event.election.contest.contest_identifier.id,
+        )
 
     def _parse_regions(self) -> None:
         region_nodes = self.eml.election_event.election.election_tree.region

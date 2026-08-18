@@ -21,7 +21,7 @@ class EMLBaseImporter[T](ABC):
 
     eml_type: EmlType
 
-    def __init__(self, eml: T, eml_file: Path | NamedBytesIO):
+    def __init__(self, eml: T, eml_file: Path | NamedBytesIO | None):
         self.eml = eml
         self.eml_file = eml_file
 
@@ -55,7 +55,7 @@ class EMLBaseImporter[T](ABC):
         try:
             self._parse_data()
         except ElectionConfig.DoesNotExist:
-            self.logger.warning("Election is not configured, skipping 110a data import")
+            self.logger.warning("Election is not configured, skipping %s data import", self.eml_type.value)
 
     @staticmethod
     def _csb_for_parent(parent: Region | None) -> Region | None:

@@ -1,11 +1,13 @@
 import datetime
 
 import factory
+from django.utils import timezone
 from factory.django import DjangoModelFactory
 
 from election.models import (
     Contest,
     Election,
+    ElectionCategory,
     ElectionConfig,
     ElectionDocument,
     TimelineEntry,
@@ -13,7 +15,7 @@ from election.models import (
     TimelineVariant,
 )
 
-CATEGORIES = ["GR", "TK", "AB", "PS", "EP"]
+CATEGORIES = ElectionCategory.values
 
 
 class ElectionConfigFactory(DjangoModelFactory):
@@ -22,7 +24,7 @@ class ElectionConfigFactory(DjangoModelFactory):
 
     identifier = factory.Sequence(lambda n: f"{CATEGORIES[n % len(CATEGORIES)]}202{n}")
     category = factory.Faker("random_element", elements=CATEGORIES)
-    date = factory.Faker("date_time_this_decade", tzinfo=datetime.timezone.utc)
+    date = factory.LazyFunction(lambda: timezone.now() - datetime.timedelta(days=1))
 
 
 class ElectionFactory(DjangoModelFactory):
