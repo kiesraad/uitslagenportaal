@@ -8,9 +8,9 @@ cd "$ROOT"
 
 COMPOSE=(
   docker compose
-  --project-name uitslagenportaal-e2e
+  --project-name uitslagenportaal-playwright
   -f docker-compose.yml
-  -f docker-compose.e2e.yml
+  -f docker-compose.playwright.yml
 )
 
 cleanup() {

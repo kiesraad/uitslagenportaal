@@ -1,7 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// Isolated throwaway stack on :8081 (docker-compose.e2e.yml).
-// for testing purposes
+// Isolated throwaway stack on :8081 (docker-compose.playwright.yml).
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:8081'
 
 export default defineConfig({
@@ -15,7 +14,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'bash ../.docker/e2e/start.sh',
+    command: 'bash ../.docker/playwright/start.sh',
     url: baseURL,
     timeout: 5 * 60 * 1000,  // 5 minutes
     reuseExistingServer: false,

@@ -1,17 +1,17 @@
 # Playwright throwaway stack. Always pass a separate project name so
 # containers and volumes never collide with the day-to-day compose project:
 #
-#   docker compose --project-name uitslagenportaal-e2e \
-#     -f docker-compose.yml -f docker-compose.e2e.yml up
+#   docker compose --project-name uitslagenportaal-playwright \
+#     -f docker-compose.yml -f docker-compose.playwright.yml up
 #
-# Host port 8081 is the only entry Playwright needs. The e2e database lives
+# Host port 8081 is the only entry Playwright needs. The database lives
 # in this project's volumes; `down -v` on this project name is the wipe.
 # GitHub Actions can use the same files; CI=true makes Playwright always
 # start a fresh stack (see frontend/playwright.config.ts).
 
 services:
   backend:
-    # Dev stack runs under debugpy; e2e only needs a plain runserver.
+    # Dev stack runs under debugpy; Playwright only needs a plain runserver.
     command: python manage.py runserver 0.0.0.0:8000
     ports: !override []
     environment:

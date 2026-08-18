@@ -7,7 +7,7 @@ on:
       - "frontend/**"
       - "backend/**"
       - "docker-compose.yml"
-      - "docker-compose.e2e.yml"
+      - "docker-compose.playwright.yml"
       - ".docker/**"
       - ".github/workflows/playwright.yml"
   pull_request:
@@ -15,7 +15,7 @@ on:
       - "frontend/**"
       - "backend/**"
       - "docker-compose.yml"
-      - "docker-compose.e2e.yml"
+      - "docker-compose.playwright.yml"
       - ".docker/**"
       - ".github/workflows/playwright.yml"
 
