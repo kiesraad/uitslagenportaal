@@ -39,7 +39,7 @@ CSB_DIR = "centraalstembureau/nederland"
 GSB_DIR = "gemeente/amsterdam"
 HSB_DIR = "hoofdstembureau/amsterdam"
 
-OSV_CSV = "osv4-3_telling_tk2025.csv"
+OSV_CSV = "osv4-3_telling_tk2025.csv"  # A control protocol export, dropped beside the EML files
 
 # Only the fields `read_eml_meta` looks for; the command never parses the body of a document.
 EML = """\
@@ -81,6 +81,14 @@ DOCUMENTS = [
     Document("Telling_TK2025_kieskring_Amsterdam", EmlType.EML_510c, authority="Amsterdam"),
     Document("Totaaltelling_TK2025", EmlType.EML_510d),
     Document("Resultaat_TK2025", EmlType.EML_520),
+]
+
+
+# A national election (TK, EP): the central stembureau names no election domain, and only its
+# definition goes without a managing authority as well.
+NATIONAL_DOCUMENTS = [
+    Document("Verkiezingsdefinitie_TK2025", EmlType.EML_110a, domain=""),
+    Document("Kandidatenlijsten_TK2025_Amsterdam", EmlType.EML_230b, authority="De Kiesraad", domain=""),
 ]
 
 
@@ -200,13 +208,38 @@ def test_counting_documents_nest_two_zips_deep(source, replica):
     assert zip_member(inner, document.name) == document.read_bytes()
 
 
-def test_the_control_protocol_export_rides_along_with_the_totaaltelling(replica):
+def test_an_upload_archive_holds_nothing_but_the_eml_document(replica):
+    """The real uploads carry the control protocol export too, but the importer reads only XML."""
     uploads = written_files(replica, f"dob1/{CSB_DIR}/")
-    contents = [zip_names(upload) for upload in uploads.values()]
+    contents = sorted(zip_names(upload) for upload in uploads.values())
 
-    assert ["Totaaltelling_TK2025.zip", OSV_CSV] in contents
-    # Only the Totaaltelling is accompanied by it; the Resultaat travels alone.
-    assert ["Resultaat_TK2025.zip"] in contents
+    assert contents == [["Resultaat_TK2025.zip"], ["Totaaltelling_TK2025.zip"]]
+    assert not [name for name in written_files(replica) if name.endswith(".csv")]
+
+
+def test_a_national_central_stembureau_keeps_its_documents_together(run, tmp_path):
+    """Its definition names neither a domain nor an authority, but belongs with the rest."""
+    source = write_source(tmp_path / "national", documents=NATIONAL_DOCUMENTS)
+
+    replica = build(source, tmp_path / "replica")
+
+    folder = f"dob2pk/centraalstembureau/{folder_slug(build_ingress_repo.NATIONAL_CSB)}"
+    assert list(written_files(replica, "dob2pk/")) == [
+        f"{folder}/Kandidatenlijsten_TK2025_Amsterdam.zip",
+        f"{folder}/Verkiezingsdefinitie_TK2025.zip",
+    ]
+
+
+def test_the_definition_of_a_national_election_is_committed_before_its_candidate_lists(tmp_path):
+    """The importer replays commits oldest first, and a candidate list needs its election."""
+    source = write_source(tmp_path / "national", documents=NATIONAL_DOCUMENTS)
+
+    exchange, _ = build_ingress_repo.Command()._collect_uploads(source)
+
+    assert [upload.path.name for upload in exchange] == [
+        "Verkiezingsdefinitie_TK2025.eml.xml",
+        "Kandidatenlijsten_TK2025_Amsterdam.eml.xml",
+    ]
 
 
 def test_a_gemeente_and_a_kieskring_of_the_same_name_stay_apart(replica):
@@ -282,6 +315,30 @@ def test_refuses_to_rebuild_an_election_that_is_already_there(run, source, tmp_p
 
     with pytest.raises(CommandError, match=f"{EXCHANGE_BRANCH} already exists"):
         build(source, tmp_path / "replica")
+
+
+def test_an_empty_repository_on_another_default_branch_is_pointed_at_main(run, source, tmp_path):
+    """`git init` elsewhere may have left HEAD on `master`; the branches are built off `main`."""
+    dest = tmp_path / "replica"
+    (dest / ".git").mkdir(parents=True)
+
+    build(source, dest)
+
+    assert ["symbolic-ref", "HEAD", "refs/heads/main"] in git_commands(run)
+    # The repository was adopted as it is, not re-initialised over the top of it.
+    assert not [command for command in git_commands(run) if command[0] == "init"]
+
+
+def test_refuses_a_repository_whose_history_has_no_main(run, source, tmp_path):
+    dest = tmp_path / "replica"
+    (dest / ".git").mkdir(parents=True)
+    # The branch lookups still report "not there", but HEAD resolves: this repository has commits.
+    run.side_effect = lambda argv, **_: subprocess.CompletedProcess(
+        argv, 1 if argv[1] == "rev-parse" and argv[-1].startswith("refs/heads/") else 0, "", ""
+    )
+
+    with pytest.raises(CommandError, match="has commits but no main branch"):
+        build(source, dest)
 
 
 def test_refuses_a_destination_that_is_not_a_git_repository(run, source, tmp_path):

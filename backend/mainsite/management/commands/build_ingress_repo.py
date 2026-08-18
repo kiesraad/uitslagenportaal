@@ -55,6 +55,10 @@ BRANCH_PREFIX = "auto-"
 GSB, HSB, CSB = "gemeente", "hoofdstembureau", "centraalstembureau"
 LEVEL_ORDER = (GSB, HSB, CSB)
 
+# The central stembureau of a national election (TK, EP). Its documents name no election domain,
+# and its Verkiezingsdefinitie names no managing authority either, so it has to be named here.
+NATIONAL_CSB = "De Kiesraad"
+
 # Which branch each EML document belongs on, and which level uploaded it.
 EXCHANGE_LEVELS: dict[str, str] = {
     EmlType.EML_110a: CSB,  # Verkiezingsdefinitie
@@ -200,7 +204,6 @@ class Upload:
     organisation: str
     election_id: str
     path: Path
-    osv_csv: Path | None = None
 
     @property
     def subject(self) -> str:
@@ -313,8 +316,9 @@ class Command(BaseCommand):
         return f"{prefix}-uit", f"{prefix}-tel"
 
     def _open_repo(self, dest: Path) -> None:
-        """Create the repository, or take the one that is already there as it is."""
+        """Create the repository, or take the one that is already there."""
         if (dest / ".git").is_dir():
+            self._adopt_repo(dest)
             return
 
         if dest.exists() and any(dest.iterdir()):
@@ -322,6 +326,29 @@ class Command(BaseCommand):
 
         dest.mkdir(parents=True, exist_ok=True)
         self._git(dest, "init", "--quiet")
+        self._point_head_at_main(dest)
+
+    def _adopt_repo(self, dest: Path) -> None:
+        """
+        Put an existing repository on `main` before anything is written to it.
+
+        A repository created under another `init.defaultBranch` has its unborn HEAD on `master`,
+        and `_ensure_main` would commit the README there: `_write_repo` would then fail on a
+        `main` that was never created, leaving that commit behind.
+        """
+        if self._branch_exists(dest, MAIN_BRANCH):
+            return
+
+        if self._git(dest, "rev-parse", "--verify", "--quiet", "HEAD", check=False) is not None:
+            raise CommandError(
+                f"Repository {dest} has commits but no {MAIN_BRANCH} branch; "
+                f"the election branches are built off {MAIN_BRANCH}."
+            )
+
+        # Nothing has been committed yet, so HEAD is free to move.
+        self._point_head_at_main(dest)
+
+    def _point_head_at_main(self, dest: Path) -> None:
         self._git(dest, "symbolic-ref", "HEAD", f"refs/heads/{MAIN_BRANCH}")
 
     def _branch_exists(self, dest: Path, branch: str) -> bool:
@@ -370,11 +397,7 @@ class Command(BaseCommand):
         return exchange, counting
 
     def _upload(self, meta: EmlMeta, level: str) -> Upload:
-        # The control protocol export accompanies the Totaaltelling it was generated from.
-        osv_csv = None
-        if meta.doc_type == EmlType.EML_510d:
-            osv_csv = next(iter(sorted(meta.path.parent.glob("osv4-3*.csv"))), None)
-        return Upload(level, self._organisation(meta, level), meta.election_id, meta.path, osv_csv)
+        return Upload(level, self._organisation(meta, level), meta.election_id, meta.path)
 
     @staticmethod
     def _organisation(meta: EmlMeta, level: str) -> str:
@@ -384,10 +407,10 @@ class Command(BaseCommand):
         A central stembureau names itself inconsistently across document types ("Gelderland" in
         one, "Centraal stembureau Gelderland" in the next), so use the election domain there and
         keep every document of one central stembureau in a single folder. Gemeenten and
-        hoofdstembureaus identify themselves in the managing authority.
+        hoofdstembureaus identify themselves in the managing authority. Use NATIONAL_CSB if not set.
         """
         if level == CSB:
-            return meta.domain or meta.authority or meta.election_id
+            return meta.domain or meta.authority or NATIONAL_CSB
         return meta.authority or meta.domain or meta.election_id
 
     # Building the trees -----------------------------------------------------------------
@@ -409,8 +432,6 @@ class Command(BaseCommand):
             f"_{file_slug(upload.organisation)}-{timestamp:%Y%m%d-%H%M%S}.zip"
         )
         entries = [(f"{eml_stem(upload.path)}.zip", self._wrap(upload.path, timestamp))]
-        if upload.osv_csv is not None:
-            entries.append((upload.osv_csv.name, upload.osv_csv.read_bytes()))
         return f"{directory}/{name}", make_zip(entries, timestamp)
 
     def _build_commits(
