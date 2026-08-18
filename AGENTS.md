@@ -25,7 +25,7 @@ patterns.
 backend/    Django 6 + DRF, Python 3.13+, managed with uv
 frontend/   React 19 + TypeScript + Vite + Tailwind 4
 .docker/    nginx reverse proxy config, postgres init
-docker-compose.yml  full stack: db, backend, frontend, proxy, object storage
+docker-compose.yml  full stack: db, redis, backend, celery, frontend, proxy, object storage
 ```
 
 ### Backend apps (`backend/`)
@@ -36,7 +36,7 @@ docker-compose.yml  full stack: db, backend, frontend, proxy, object storage
 | `election`   | `ElectionConfig`, `Election`, `Contest`, `VoteCount`, `VoterTurnoutCount`, `TimelineEntry`, `ElectionDocument` |
 | `region`     | `Region` — self-referencing tree (CSB → HSB/kieskring → gemeente → stembureau)                                 |
 | `party`      | `Party`, `Candidate`                                                                                           |
-| `eml_import` | EML parsing/import and the GitHub ingress importer                                                             |
+| `eml_import` | EML parsing/import, the GitHub ingress importer, `ImportedCommit`, and the Celery tasks         |
 
 Each app follows Django convention: `models.py`, `serializers.py`, `views.py`, `urls.py`,
 `tests/`. API routes are mounted under `/api/` in `mainsite/urls.py`.
@@ -45,6 +45,13 @@ EML import lives in `eml_import/utils/`: `election_importer.py` orchestrates (pa
 via `ProcessPoolExecutor`), and per-type importers subclass `EMLBaseImporter`
 (110a definition, 230b candidate lists, 510b/510d counts). Uploaded and generated files
 go to S3-compatible storage through Django's `default_storage`.
+
+### Background jobs
+
+Celery (app in `mainsite/celery.py`, tasks in `<app>/tasks.py`) runs with Redis backend.
+Celery Beat is used for periodic tasks, and tasks are scheduled in `tasks.py`. The `celery` compose service
+runs worker and beat together (`celery -A mainsite worker --beat`) under `watchmedo`
+for autoreload. Put new tasks in `<app>/tasks.py` — the app autodiscovers them.
 
 ### Frontend (`frontend/src`)
 
@@ -86,7 +93,14 @@ docker compose run --rm backend-scripts pytest election/tests/test_views.py::tes
 - Build data with the `factory-boy` factories in `<app>/tests/factories.py` — extend those
   rather than hand-building model instances.
 - The root `conftest.py` swaps in `InMemoryStorage` for every test, so tests never hit the
-  real bucket.
+  real storage backend.
+- Test Celery tasks by calling the task function directly and patching `.delay` on the
+  ones it fans out to (see `eml_import/tests/test_tasks.py`); no worker or broker runs.
+- Unit tests do not read the XML fixture files in `mainsite/tests/fixtures/eml/`. Build
+  the EML input in code with the real `pyeml_bindings` dataclasses, as the importer tests
+  do — they are about what the importer writes, not about parsing XML. The fixtures are
+  for integration tests that run a whole import (`mainsite/tests/test_election_importer.py`,
+  `test_eml_type_api.py`); use them there, or when explicitly asked to.
 
 Frontend: **vitest + Testing Library** (jsdom), tests in `frontend/tests/`, mirroring the
 `src/` structure.
