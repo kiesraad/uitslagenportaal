@@ -108,6 +108,8 @@ Browser tests live in `frontend/tests/e2e/`. They run on a separate  **throwaway
 
 Playwright starts and stops this stack automatically via `frontend/playwright.config.ts` and `.docker/e2e/start.sh`. Each run migrates the database and imports EML fixtures from `backend/mainsite/tests/fixtures/eml/` (waterschap and provinciale staten).
 
+`cd frontend && npm install` installs `@playwright/test` and downloads Chromium (cached in `~/.cache/ms-playwright`). The frontend Docker image skips that download. A CI job should install browsers separately with `npx playwright install --with-deps chromium` so Linux system libraries are present.
+
 ### Running tests
 
 Always run Playwright from the `frontend/` directory:
