@@ -101,3 +101,37 @@ from the source EML files is the only way back.
 ```bash
 docker compose run --rm backend-scripts python manage.py delete_expired_elections --confirm
 ```
+
+## End-to-end tests (Playwright)
+
+Browser tests live in `frontend/tests/e2e/`. They run on a separate  **throwaway stack** on http://localhost:8081. 
+
+Playwright starts and stops this stack automatically via `frontend/playwright.config.ts` and `.docker/e2e/start.sh`. Each run migrates the database and imports EML fixtures from `backend/mainsite/tests/fixtures/eml/` (waterschap and provinciale staten).
+
+### Running tests
+
+Always run Playwright from the `frontend/` directory:
+
+```bash
+cd frontend
+npm run test:e2e
+```
+
+Run a single spec file:
+
+```bash
+npx playwright test ws-election
+```
+
+Filter by test title (substring match):
+
+```bash
+npx playwright test ps-election -g "Aa en Hunze"
+```
+
+Debug or watch the browser:
+
+```bash
+npx playwright test ws-election --debug
+npx playwright test ws-election --headed
+```
