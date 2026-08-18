@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Self
 from zoneinfo import ZoneInfo
 
 from django.db import models
 from django.db.models.enums import Choices, TextChoices
 
+from election.utils import visibility_cutoff
 from mainsite.models import BaseModel, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from mainsite.utils.utils import name_to_slug
@@ -34,7 +36,15 @@ class ElectionCategory(Choices):
     EP = "EP", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Europees Parlementsverkiezing"
 
 
+class ElectionConfigManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(date__gte=visibility_cutoff())
+
+
 class ElectionConfig(BaseModel):
+    objects = ElectionConfigManager()
+    with_expired = models.Manager[Self]()
+
     identifier = models.CharField(max_length=64, unique=True)
     category = models.CharField(max_length=2, choices=ElectionCategory.choices)
     label = models.CharField(max_length=255, default="")

@@ -1,51 +1,69 @@
 import {Link} from 'react-router'
-import type {VoteCounts} from '../../api/types'
 import {twMerge} from "tailwind-merge";
+import type {PropsWithChildren} from "react";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faChevronRight} from "@fortawesome/free-solid-svg-icons";
 
-type Props = {
-  voteCounts: VoteCounts
-  total?: {
-    label: string;
-    value: number;
-  };
-  columns?: string[]
+type VotesListProps = {
+    total?: {
+        label: string;
+        value: number;
+    };
+    indexColumn: string;
 }
 
-export default function VotesList({voteCounts, total, columns = ['Lijst', 'Aantal stemmen']}: Props) {
+export default function VotesList({
+    total,
+    indexColumn,
+    children
+}: PropsWithChildren<VotesListProps>) {
 
-  return (
-    <div className="votes-cast-list-container">
+    // Use `overflow-visible w-1 text-nowrap` to ignore the width of the spanned rows for the max-content col size
+    return (
+        <div className="votes-cast-list-container">
 
-      <div className="grid grid-cols-[max-content_auto_max-content_max-content] gap-x-4">
-        <div className="flex justify-between font-semibold pl-4.5 py-3 col-span-3">
-          {columns.map((column, i) => (
-            <span key={i}>{column}</span>
-          ))}
+            <div className="grid grid-cols-[max-content_auto_max-content_max-content] gap-x-4">
+                <div className="flex justify-between font-semibold pl-4.5 py-3 col-span-3">
+                    <span className="overflow-visible w-1 text-nowrap">{indexColumn}</span>
+                    <span>Aantal stemmen</span>
+                </div>
+                {children}
+
+                {total && (
+                    <div className="flex items-center justify-between font-semibold h-18 pl-6 py-3 col-span-3">
+                        <span className="overflow-visible w-1 text-nowrap">{total.label}</span>
+                        <span>{total.value}</span>
+                    </div>
+                )}
+            </div>
         </div>
+    )
+}
 
-        {voteCounts.map((voteCount) => {
-          const isClickable = voteCount.valid_votes > 0
-          const ListItem = isClickable
-            ? ({...props}) => <Link to={`${location.pathname}/${voteCount.party.slug}`} {...props} />
-            : ({...props}) => <div {...props} />
+type VotesListItemProps = {
+    number: number | null, title: string, voteCount: number, href?: string
+}
 
-          return <ListItem key={voteCount.id} className={twMerge(
-            "items-center hover:no-underline! even:bg-blue-50 h-18 px-6 grid col-span-4 grid-cols-subgrid",
-            isClickable && "hover:bg-blue-100"
-          )}>
-            <span className="font-light text-gray-700">{voteCount.party.list_number ?? '-'}</span>
-            <span className="in-[a]:text-(--c-blue) in-[a]:underline">{voteCount.party.registered_name}</span>
-            <span className="text-right bold">{voteCount.valid_votes.toLocaleString('nl-NL')}</span>
-            <span>{isClickable && <span className="gemeente-chevron mb-1">{'>'}</span>}</span>
-          </ListItem>
-        })}
-      </div>
-      {total && (
-        <div className="font-semibold flex items-center justify-between p-4.5">
-          <span>{total.label}</span>
-          <span className="mr-8">{total.value}</span>
-        </div>
-      )}
-    </div>
-  )
+export function VotesListItem({number, title, voteCount, href}: VotesListItemProps) {
+    const isClickable = voteCount > 0 && !!href
+
+    const className = twMerge(
+        "items-center hover:no-underline! even:bg-blue-50 h-18 pl-6 pr-4 grid col-span-4 grid-cols-subgrid",
+        isClickable && "hover:bg-blue-100"
+    )
+
+    const content = (
+        <>
+            <span className="font-light text-gray-700">{number ?? '-'}</span>
+            <span className="in-[a]:text-blue-500 in-[a]:underline">{title}</span>
+            <span className={twMerge("text-right", voteCount && "font-semibold text-gray-700")}>
+                {voteCount ? voteCount.toLocaleString('nl-NL') : "–"}
+            </span>
+            <span>{isClickable && <FontAwesomeIcon icon={faChevronRight} />}</span>
+        </>
+    )
+
+    return isClickable
+        ? <Link to={href} className={className}>{content}</Link>
+        : <div className={className}>{content}</div>
 }
