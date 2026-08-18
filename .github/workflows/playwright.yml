@@ -1,4 +1,4 @@
-name: E2E
+name: Playwright
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - "docker-compose.yml"
       - "docker-compose.e2e.yml"
       - ".docker/**"
-      - ".github/workflows/e2e.yml"
+      - ".github/workflows/playwright.yml"
   pull_request:
     paths:
       - "frontend/**"
@@ -17,7 +17,7 @@ on:
       - "docker-compose.yml"
       - "docker-compose.e2e.yml"
       - ".docker/**"
-      - ".github/workflows/e2e.yml"
+      - ".github/workflows/playwright.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -40,7 +40,7 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
       - run: npx playwright install --with-deps chromium
         working-directory: frontend
-      - run: npm run test:e2e
+      - run: npm run test:playwright
         working-directory: frontend
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}

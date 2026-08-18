@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:playwright": "playwright test",
     "postinstall": "node ./scripts/install-playwright-chromium.mjs"
   },
   "dependencies": {
