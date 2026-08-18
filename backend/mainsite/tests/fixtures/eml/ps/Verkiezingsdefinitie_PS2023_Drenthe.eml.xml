@@ -30,11 +30,8 @@
                     <kr:Committee CommitteeCategory="CSB"/>
                     <kr:Committee CommitteeCategory="HSB"/>
                 </kr:Region>
-                <kr:Region RegionNumber="106" RegionCategory="GEMEENTE" SuperiorRegionNumber="1" SuperiorRegionCategory="KIESKRING">
-                    <kr:RegionName>Assen</kr:RegionName>
-                </kr:Region>
-                <kr:Region RegionNumber="109" RegionCategory="GEMEENTE" SuperiorRegionNumber="1" SuperiorRegionCategory="KIESKRING">
-                    <kr:RegionName>Coevorden</kr:RegionName>
+                <kr:Region RegionNumber="1680" RegionCategory="GEMEENTE" SuperiorRegionNumber="1" SuperiorRegionCategory="KIESKRING">
+                    <kr:RegionName>Aa en Hunze</kr:RegionName>
                 </kr:Region>
             </kr:ElectionTree>
             <kr:RegisteredParties>
