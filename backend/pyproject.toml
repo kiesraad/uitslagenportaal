@@ -29,6 +29,7 @@ dev = [
     "pytest>=8.4.0",
     "pytest-django>=4.13.0",
     "factory-boy>=3.3.3",
+    "fakeredis[lua]>=2.37.0",
 ]
 
 [tool.setuptools]

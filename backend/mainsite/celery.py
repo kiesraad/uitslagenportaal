@@ -33,4 +33,3 @@ def configure_logging(**_):
     config = copy.deepcopy(settings.LOGGING)
     config["handlers"]["stdout"]["formatter"] = "simple"
     logging.config.dictConfig(config)
-

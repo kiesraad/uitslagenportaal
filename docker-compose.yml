@@ -44,8 +44,7 @@ services:
   celery:
     extends:
       service: backend
-    # Celery has no autoreloader of its own, so watchmedo restarts the worker
-    # whenever a .py file changes.
+    # Celery has no autoreloader of its own, so watchmedo restarts the worker whenever a .py file changes.
     command: >
       watchmedo auto-restart
       --directory=/app --pattern="*.py" --recursive --debug-force-polling

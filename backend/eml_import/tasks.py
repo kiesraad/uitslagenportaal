@@ -1,4 +1,5 @@
 from celery import Celery
+from celery.exceptions import BackendError
 from celery.schedules import crontab
 from django.db import DatabaseError
 from requests import RequestException
@@ -20,11 +21,30 @@ def setup_periodic_tasks(sender: Celery, **_) -> None:
 
 @app.task(
     ignore_result=True,
-    autoretry_for=[DatabaseError, RequestException],
+    autoretry_for=[DatabaseError, BackendError],
     retry_backoff=5,
     max_retries=2,
 )
 def import_next_eml_commits() -> None:
+    """
+    Start a new task for each election config.
+    """
     election_configs = ElectionConfig.objects.all()
     for config in election_configs:
-        GithubEmlImporter(config).run()
+        import_election_eml_commits.delay(config.id)
+
+
+@app.task(
+    ignore_result=True,
+    autoretry_for=[DatabaseError, RequestException],
+    retry_backoff=5,
+    max_retries=2,
+)
+def import_election_eml_commits(election_config_id: int) -> None:
+    """
+    Import the next EML commits from GitHub for the given election config.
+    By running a task for each election config, we can retry on error for each election instead of all at once.
+    :param election_config_id:
+    """
+    election_config = ElectionConfig.objects.get(pk=election_config_id)
+    GithubEmlImporter(election_config).run()
