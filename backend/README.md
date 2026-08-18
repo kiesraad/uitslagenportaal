@@ -37,6 +37,8 @@ uv pip install -e .
 - Have an .data folder for debug data and fill it with EML files from an election
 - For the GitHub EML ingress, optionally set GITHUB_TOKEN and GITHUB_INGRESS_REPO. 
   Use a Personal Access Token (classic) with `repo` scope as GITHUB_TOKEN. 
+  If these are set, and branches are configured in the election config, 
+  then the Celery task will automatically start importing data from GitHub every 10 min.
 
 4. Adding new packages
 
