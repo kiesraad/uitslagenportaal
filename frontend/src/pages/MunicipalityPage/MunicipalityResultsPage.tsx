@@ -1,5 +1,5 @@
 import RegionResultsContent from '../../components/ResultsPage/RegionResultsContent.tsx'
-import {useOutletContext, useParams} from "react-router";
+import {useOutletContext} from "react-router";
 import type {ElectionConfig, Region} from "@/api/types.ts";
 import HtmlHead from "@/components/HtmlHead.tsx";
 
