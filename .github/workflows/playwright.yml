@@ -3,21 +3,7 @@ name: Playwright
 on:
   push:
     branches: [main, dev]
-    paths:
-      - "frontend/**"
-      - "backend/**"
-      - "docker-compose.yml"
-      - "docker-compose.playwright.yml"
-      - ".docker/**"
-      - ".github/workflows/playwright.yml"
   pull_request:
-    paths:
-      - "frontend/**"
-      - "backend/**"
-      - "docker-compose.yml"
-      - "docker-compose.playwright.yml"
-      - ".docker/**"
-      - ".github/workflows/playwright.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
