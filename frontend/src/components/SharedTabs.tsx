@@ -1,4 +1,4 @@
-import { Link, matchPath, useLocation } from 'react-router-dom'
+import { Link, matchPath, useLocation } from 'react-router'
 
 type Props = {
   tabs: {

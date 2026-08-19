@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Playwright artifacts (written next to wherever `playwright test` is run)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+playwright/.auth/
+
 
 ### Backend
 __pycache__/
@@ -64,7 +71,7 @@ ipython_config.py
 .python-version
 
 __pypackages__/
-celerybeat-schedule
+celerybeat-schedule*
 celerybeat.pid
 
 .env

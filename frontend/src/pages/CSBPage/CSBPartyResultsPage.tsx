@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { useParams } from 'react-router'
 import { Layout } from '../../components/Layout.tsx'
 import PageTop from '../../components/PageTop.tsx'
 import ResultsNotPublished from '../../components/ResultsPage/ResultsNotPublished.tsx'
@@ -73,7 +73,7 @@ export function CSBPartyResultsPage() {
                 <h2 className="text-lg mb-4.5 font-medium">Telresultaten lijst {partyListNumber ?? '-'}</h2>
                 <h3 className="party-level-title mb-2">{partyName}</h3>
 
-                <p className="mb-4">
+                <p className="mb-4 max-w-160">
                     Het centraal stembureau heeft de telresultaten van alle gemeenten en kieskringen gecontroleerd, overgenomen en bij elkaar opgeteld.
                     Hieronder ziet u de telresultaten zoals ze zijn opgenmomen in het proces-verbaal van het centraal stembureau.
                 </p>
@@ -96,7 +96,7 @@ export function CSBPartyResultsPage() {
                     { href: appRoutes.csbPartyResults(electionConfigSlug ?? '', regionSlug, partySlug), label: partyName },
                 ]}
             />
-            <div className="page-main page-main-two-columns">
+            <div className="page-main">
                 <div className="page-space-3 party-vote-matrix-page">
                     {!hasResults ? (
                         <ResultsNotPublished regionLabel={region.region_name} />

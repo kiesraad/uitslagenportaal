@@ -72,6 +72,26 @@ DATABASES = {
     }
 }
 
+# Redis config
+REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
+REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
+REDIS_USER = os.environ.get("REDIS_USER", "")
+REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "")
+REDIS_URL = f"redis://{REDIS_USER}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
+
+# Celery config - use a different broker and result backend Redis DB
+CELERY_BROKER_URL = REDIS_URL + "/1"
+CELERY_RESULT_BACKEND = REDIS_URL + "/2"
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 0.5h
+
+# Cache config
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL + "/0",
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -163,7 +183,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "simple": {
-            "format": "{asctime} {levelname} \t {name} - {message}",
+            "format": "{asctime} {processName} - {levelname} - {name} - {message}",
             "style": "{",
         },
     },
@@ -181,13 +201,14 @@ LOGGING = {
         "level": LOG_LEVEL,
     },
     "loggers": {
-        # Keep Django itself at INFO even when our own code runs at DEBUG,
-        # otherwise every SQL query gets logged.
+        # Set some loggers to INFO to prevent spam if LOG_LEVEL is DEBUG
         "django": {"level": "INFO"},
-        # Same for the AWS SDK, which logs every endpoint lookup, signature and header at DEBUG
         "boto3": {"level": "INFO"},
         "botocore": {"level": "INFO"},
         "s3transfer": {"level": "INFO"},
         "urllib3": {"level": "INFO"},
+        "celery": {"level": "INFO"},
+        "kombu": {"level": "INFO"},
+        "redis.connection": {"level": "INFO"},
     },
 }

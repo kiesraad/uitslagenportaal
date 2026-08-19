@@ -9,7 +9,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         with transaction.atomic():
-            _, summary = ElectionConfig.objects.all().delete()
+            _, summary = ElectionConfig.with_expired.all().delete()
 
         self.stdout.write(self.style.SUCCESS("Election data wiped."))
         for label, count in sorted(summary.items()):

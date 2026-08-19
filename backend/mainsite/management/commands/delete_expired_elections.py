@@ -21,7 +21,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         cutoff = deletion_cutoff()
-        expired = ElectionConfig.objects.filter(date__lt=cutoff).order_by("date")
+        expired = ElectionConfig.with_expired.filter(date__lt=cutoff).order_by("date")
 
         if not expired.exists():
             self.stdout.write(f"No elections started before {cutoff:%Y-%m-%d %H:%M}. Nothing to delete.")

@@ -52,7 +52,7 @@ export default function VotesResume({ votes, type }: Props & { type: VotesResume
                 {boxVotes.map((vote) => (
                     <div key={vote.name} className={`admitted-voters-item ${vote.bold ? 'font-semibold' : ''}`}>
                         <span>{vote.name}</span>
-                        <span>{vote.count.toLocaleString('nl-NL')}</span>
+                        <span className="font-number">{vote.count.toLocaleString('nl-NL')}</span>
                     </div>
                 ))}
             </div>

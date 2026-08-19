@@ -32,6 +32,13 @@ def test_region_slug_is_truncated_to_49_characters():
 
 
 @pytest.mark.django_db
+def test_region_str_names_the_category_and_region():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE, region_name="Borsele")
+
+    assert str(region) == f"<Region gemeente Borsele ({region.pk})>"
+
+
+@pytest.mark.django_db
 def test_region_clean_rejects_parent_from_different_election():
     parent = RegionFactory(region_category=RegionCategory.PROVINCIE)
     child = Region(

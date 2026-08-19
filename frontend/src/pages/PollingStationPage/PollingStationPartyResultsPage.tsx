@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { useParams } from 'react-router'
 import PageTop from '../../components/PageTop'
 import PartyCandidatesResultsContent from '../../components/ResultsPage/PartyCandidatesResultsContent'
 import { Layout } from '../../components/Layout'

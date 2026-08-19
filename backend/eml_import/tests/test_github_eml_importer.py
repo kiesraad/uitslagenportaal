@@ -1,16 +1,19 @@
 import io
+import logging
 import zipfile
 from datetime import timedelta
 
 import pytest
+from django.core.cache import cache
 from django.utils import timezone
 
 from election.tests.factories import ElectionConfigFactory
+from eml_import.exceptions import GithubImportException
 from eml_import.models import BranchType, ImportedCommit
 from eml_import.tests.factories import ImportedCommitFactory
 from eml_import.tests.fakes import FakeCommit, FakeFile, FakeGithub, FakeRepo
 from eml_import.utils import github_eml_importer
-from eml_import.utils.github_eml_importer import COMMIT_BATCH_SIZE, GithubEmlImporter
+from eml_import.utils.github_eml_importer import COMMIT_BATCH_SIZE, LOCK_TIMEOUT, GithubEmlImporter
 
 XML_110A = b"<EML Id='110a'/>"
 XML_230B = b"<EML Id='230b'/>"
@@ -18,6 +21,8 @@ XML_510B = b"<EML Id='510b'/>"
 
 BRANCH_EXCHANGE = "exchange"
 BRANCH_COUNTING_RESULTS = "counting-results"
+
+INGRESS_REPO = "kiesraad/repo"
 
 
 def zip_bytes(entries: dict[str, bytes]) -> bytes:
@@ -32,6 +37,11 @@ def as_pairs(files) -> list[tuple[str, bytes]]:
     return [(file.filename, file.getvalue()) for file in files]
 
 
+def warnings_of(caplog) -> list[str]:
+    """The warnings the importer logged, which is the only trace a lock problem leaves."""
+    return [record.getMessage() for record in caplog.records if record.levelno == logging.WARNING]
+
+
 @pytest.fixture
 def fake_repo(monkeypatch, settings):
     """Build a FakeRepo and make GithubEmlImporter construct itself against it.
@@ -39,7 +49,7 @@ def fake_repo(monkeypatch, settings):
     ``commits`` is either the commits of the exchange branch, or a branch name -> commits mapping.
     """
     settings.GITHUB_TOKEN = "token"  # Auth.Token rejects None, and the setting is unset in CI
-    settings.GITHUB_INGRESS_REPO = "owner/repo"
+    settings.GITHUB_INGRESS_REPO = INGRESS_REPO
 
     def build(commits, contents=None):
         branches = commits if isinstance(commits, dict) else {BRANCH_EXCHANGE: commits}
@@ -77,7 +87,21 @@ def imported_batches(monkeypatch):
     return batches
 
 
-def test_iterate_all_xml_files_yields_xml_and_unpacks_zip(fake_repo, election_config):
+@pytest.fixture
+def build_importer():
+    """
+    An importer already setup with the fake repo.
+    """
+
+    def build(election_config, repo):
+        importer = GithubEmlImporter(election_config)
+        importer.repo = repo
+        return importer
+
+    return build
+
+
+def test_iterate_all_xml_files_yields_xml_and_unpacks_zip(fake_repo, build_importer, election_config):
     repo = fake_repo(
         commits=[FakeCommit("head")],
         contents={
@@ -91,7 +115,7 @@ def test_iterate_all_xml_files_yields_xml_and_unpacks_zip(fake_repo, election_co
         FakeFile("results/notes.txt"),
     ]
 
-    extracted = list(GithubEmlImporter(election_config)._iterate_all_xml_files(files))
+    extracted = list(build_importer(election_config, repo)._iterate_all_xml_files(files))
 
     assert as_pairs(extracted) == [
         ("results/telling.xml", XML_510B),
@@ -105,32 +129,34 @@ def test_iterate_all_xml_files_yields_xml_and_unpacks_zip(fake_repo, election_co
 
 
 @pytest.mark.parametrize("status", ["added", "modified", "renamed", "copied", "changed"])
-def test_iterate_all_xml_files_imports_every_status_that_leaves_a_file_behind(fake_repo, election_config, status):
-    fake_repo(commits=[FakeCommit("head")], contents={"telling.xml": XML_510B})
+def test_iterate_all_xml_files_imports_every_status_that_leaves_a_file_behind(
+    fake_repo, build_importer, election_config, status
+):
+    repo = fake_repo(commits=[FakeCommit("head")], contents={"telling.xml": XML_510B})
 
-    extracted = list(GithubEmlImporter(election_config)._iterate_all_xml_files([FakeFile("telling.xml", status)]))
+    extracted = list(build_importer(election_config, repo)._iterate_all_xml_files([FakeFile("telling.xml", status)]))
 
     assert as_pairs(extracted) == [("telling.xml", XML_510B)]
 
 
 @pytest.mark.parametrize("status", ["removed", "unchanged"])
-def test_iterate_all_xml_files_skips_removed_and_unchanged(fake_repo, election_config, status):
+def test_iterate_all_xml_files_skips_removed_and_unchanged(fake_repo, build_importer, election_config, status):
     repo = fake_repo(commits=[FakeCommit("head")], contents={"telling.xml": XML_510B})
 
-    extracted = list(GithubEmlImporter(election_config)._iterate_all_xml_files([FakeFile("telling.xml", status)]))
+    extracted = list(build_importer(election_config, repo)._iterate_all_xml_files([FakeFile("telling.xml", status)]))
 
     assert extracted == []
     assert repo.calls_named("get_git_blob") == []
 
 
-def test_iterate_all_xml_files_unpacks_nested_zip(fake_repo, election_config):
+def test_iterate_all_xml_files_unpacks_nested_zip(fake_repo, build_importer, election_config):
     inner = zip_bytes({"telling.xml": XML_510B})
-    fake_repo(
+    repo = fake_repo(
         commits=[FakeCommit("head")],
         contents={"outer.zip": zip_bytes({"nested/inner.zip": inner})},
     )
 
-    extracted = list(GithubEmlImporter(election_config)._iterate_all_xml_files([FakeFile("outer.zip")]))
+    extracted = list(build_importer(election_config, repo)._iterate_all_xml_files([FakeFile("outer.zip")]))
 
     # Named after the entry inside the archive, not after the zip it arrived in
     assert as_pairs(extracted) == [("telling.xml", XML_510B)]
@@ -153,7 +179,7 @@ def test_iterate_branches_skips_branches_that_are_not_configured(fake_repo, elec
     assert branches == [(BranchType.COUNTING_RESULTS, BRANCH_COUNTING_RESULTS)]
 
 
-def test_get_next_batch_of_files_starts_at_the_oldest_commit(fake_repo, election_config):
+def test_get_next_batch_of_files_starts_at_the_oldest_commit(fake_repo, build_importer, election_config):
     repo = fake_repo(
         commits=[
             FakeCommit("oldest", [FakeFile("a.xml")]),
@@ -162,7 +188,7 @@ def test_get_next_batch_of_files_starts_at_the_oldest_commit(fake_repo, election
         ]
     )
 
-    head_sha, files = GithubEmlImporter(election_config)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
 
     assert head_sha == "newest"
     # compare() excludes the base commit, so the oldest commit is fetched separately;
@@ -173,17 +199,17 @@ def test_get_next_batch_of_files_starts_at_the_oldest_commit(fake_repo, election
     assert repo.calls_named("compare") == [("compare", "oldest", "newest")]
 
 
-def test_get_next_batch_of_files_caps_the_batch_size(fake_repo, election_config):
+def test_get_next_batch_of_files_caps_the_batch_size(fake_repo, build_importer, election_config):
     commits = [FakeCommit(f"c{index}", [FakeFile(f"{index}.xml")]) for index in range(COMMIT_BATCH_SIZE + 2)]
-    fake_repo(commits=commits)
+    repo = fake_repo(commits=commits)
 
-    head_sha, files = GithubEmlImporter(election_config)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
 
     assert head_sha == f"c{COMMIT_BATCH_SIZE - 1}"
     assert len(files) == COMMIT_BATCH_SIZE
 
 
-def test_get_next_batch_of_files_resumes_after_the_base_commit(fake_repo, election_config):
+def test_get_next_batch_of_files_resumes_after_the_base_commit(fake_repo, build_importer, election_config):
     repo = fake_repo(
         commits=[
             FakeCommit("imported", [FakeFile("already-done.xml")]),
@@ -192,7 +218,7 @@ def test_get_next_batch_of_files_resumes_after_the_base_commit(fake_repo, electi
         ]
     )
 
-    head_sha, files = GithubEmlImporter(election_config)._get_next_batch_of_files("imported", BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files("imported", BRANCH_EXCHANGE)
 
     assert head_sha == "last"
     # The base commit's own files are not imported a second time
@@ -200,10 +226,10 @@ def test_get_next_batch_of_files_resumes_after_the_base_commit(fake_repo, electi
     assert repo.calls_named("compare")[0] == ("compare", "imported", BRANCH_EXCHANGE)
 
 
-def test_get_next_batch_of_files_returns_nothing_when_up_to_date(fake_repo, election_config):
+def test_get_next_batch_of_files_returns_nothing_when_up_to_date(fake_repo, build_importer, election_config):
     repo = fake_repo(commits=[FakeCommit("imported", [FakeFile("a.xml")])])
 
-    head_sha, files = GithubEmlImporter(election_config)._get_next_batch_of_files("imported", BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files("imported", BRANCH_EXCHANGE)
 
     assert head_sha is None
     assert files == []
@@ -212,7 +238,7 @@ def test_get_next_batch_of_files_returns_nothing_when_up_to_date(fake_repo, elec
     assert repo.calls_named("compare") == [("compare", "imported", BRANCH_EXCHANGE)]
 
 
-def test_get_next_batch_of_files_does_not_diff_a_single_commit(fake_repo, election_config):
+def test_get_next_batch_of_files_does_not_diff_a_single_commit(fake_repo, build_importer, election_config):
     repo = fake_repo(
         commits=[
             FakeCommit("imported", [FakeFile("already-done.xml")]),
@@ -220,7 +246,7 @@ def test_get_next_batch_of_files_does_not_diff_a_single_commit(fake_repo, electi
         ]
     )
 
-    head_sha, files = GithubEmlImporter(election_config)._get_next_batch_of_files("imported", BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files("imported", BRANCH_EXCHANGE)
 
     assert head_sha == "only"
     assert [file.filename for file in files] == ["a.xml"]
@@ -229,12 +255,14 @@ def test_get_next_batch_of_files_does_not_diff_a_single_commit(fake_repo, electi
     assert repo.calls_named("get_commit") == [("get_commit", "only")]
 
 
-def test_get_next_batch_of_files_uses_the_diff_when_it_has_fewer_than_300_files(fake_repo, election_config):
+def test_get_next_batch_of_files_uses_the_diff_when_it_has_fewer_than_300_files(
+    fake_repo, build_importer, election_config
+):
     first_commit_files = [FakeFile("a.xml")]
     diff_files = [FakeFile(f"pad_{index}.xml") for index in range(299)]
     repo = fake_repo(commits=[FakeCommit("first", first_commit_files), FakeCommit("second", diff_files)])
 
-    head_sha, files = GithubEmlImporter(election_config)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
 
     assert head_sha == "second"
     assert [file.filename for file in files] == ["a.xml"] + [f"pad_{index}.xml" for index in range(299)]
@@ -244,13 +272,13 @@ def test_get_next_batch_of_files_uses_the_diff_when_it_has_fewer_than_300_files(
 
 
 def test_get_next_batch_of_files_fetches_files_per_commit_when_the_diff_has_300_or_more_files(
-    fake_repo, election_config
+    fake_repo, build_importer, election_config
 ):
     first_commit_files = [FakeFile("a.xml")]
     diff_files = [FakeFile(f"pad_{index}.xml") for index in range(300)]
     repo = fake_repo(commits=[FakeCommit("first", first_commit_files), FakeCommit("second", diff_files)])
 
-    head_sha, files = GithubEmlImporter(election_config)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
 
     assert head_sha == "second"
     assert [file.filename for file in files] == ["a.xml"] + [f"pad_{index}.xml" for index in range(300)]
@@ -396,3 +424,107 @@ def test_run_does_nothing_when_no_branch_has_new_commits(fake_repo, imported_bat
     assert file_count == 0
     assert imported_batches == []
     assert ImportedCommit.objects.count() == 2
+
+
+@pytest.mark.parametrize("missing_setting", ["GITHUB_TOKEN", "GITHUB_INGRESS_REPO"])
+def test_run_refuses_to_start_when_github_is_not_configured(fake_repo, settings, election_config, missing_setting):
+    fake_repo(commits=[FakeCommit("head")])
+    setattr(settings, missing_setting, "")
+    importer = GithubEmlImporter(election_config)
+
+    with pytest.raises(GithubImportException, match=missing_setting):
+        importer.run()
+
+    # Bails out before building a client, so nothing was ever asked of GitHub
+    assert importer.gh is None
+    assert importer.repo is None
+
+
+def test_run_connects_to_the_configured_repository(fake_repo, imported_batches, stored_election_config):
+    fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
+    importer = GithubEmlImporter(stored_election_config)
+
+    importer.run()
+
+    assert importer.gh.requested_repos == [INGRESS_REPO]
+
+
+def test_run_skips_the_import_while_another_worker_holds_the_lock(
+    fake_repo, imported_batches, stored_election_config, caplog
+):
+    fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
+    importer = GithubEmlImporter(stored_election_config)
+
+    # Stand in for a second worker that is already importing this election
+    with cache.lock(importer.cache_lock_key, timeout=LOCK_TIMEOUT):
+        file_count = importer.run()
+
+    # It gives up rather than waiting, so the beat schedule cannot pile workers up on one election
+    assert file_count == 0
+    assert imported_batches == []
+    assert ImportedCommit.objects.count() == 0
+    # Returning 0 is indistinguishable from an election with nothing left to import,
+    # so the warning is the only trace the skipped run leaves behind
+    assert warnings_of(caplog) == [
+        f"Could not acquire lock, GithubEmlImporter is already running for {stored_election_config.identifier}"
+    ]
+
+
+def test_run_locks_per_election_and_not_globally(fake_repo, imported_batches, stored_election_config, caplog):
+    fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
+    other_election = GithubEmlImporter(ElectionConfigFactory.build(identifier="OTHER2026"))
+
+    # An import running for a different election must not hold this one up
+    with cache.lock(other_election.cache_lock_key, timeout=LOCK_TIMEOUT):
+        file_count = GithubEmlImporter(stored_election_config).run()
+
+    assert file_count == 1
+    assert as_pairs(imported_batches[0]) == [("telling.xml", XML_510B)]
+    assert warnings_of(caplog) == []
+
+
+def test_run_releases_the_lock_when_it_finishes(fake_repo, imported_batches, stored_election_config):
+    fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
+    importer = GithubEmlImporter(stored_election_config)
+
+    importer.run()
+
+    assert cache.lock(importer.cache_lock_key, blocking=False).acquire() is True
+
+
+def test_run_holds_a_lock_that_expires_on_its_own(fake_repo, monkeypatch, stored_election_config):
+    """A worker that dies mid-import must not block its election forever."""
+    fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
+    importer = GithubEmlImporter(stored_election_config)
+    remaining = []
+
+    class TtlObservingElectionImporter:
+        def import_file_objects(self, files):
+            remaining.append(cache.ttl(importer.cache_lock_key))
+
+    monkeypatch.setattr(github_eml_importer, "ElectionImporter", TtlObservingElectionImporter)
+
+    importer.run()
+
+    assert remaining == [LOCK_TIMEOUT]
+
+
+def test_run_keeps_its_result_when_the_lock_expires_mid_import(fake_repo, monkeypatch, stored_election_config, caplog):
+    fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
+    importer = GithubEmlImporter(stored_election_config)
+
+    class LockExpiringElectionImporter:
+        def import_file_objects(self, files):
+            # As if LOCK_TIMEOUT elapsed while this import was still running
+            cache.delete(importer.cache_lock_key)
+
+    monkeypatch.setattr(github_eml_importer, "ElectionImporter", LockExpiringElectionImporter)
+
+    file_count = importer.run()
+
+    # Releasing an expired lock fails, but the import itself ran to completion,
+    # so its result and its bookkeeping stand rather than being reported as a skipped run
+    assert file_count == 1
+    assert list(ImportedCommit.objects.values_list("branch_type", "commit_sha")) == [(BranchType.EXCHANGE, "first")]
+    # Reported as an expired lock rather than as contention, so the two cannot be confused in the logs
+    assert warnings_of(caplog) == [f"Lock for {stored_election_config.identifier} expired before the import finished"]
