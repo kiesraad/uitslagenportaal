@@ -120,6 +120,23 @@
             "justMyCode": true
         },
         {
+            "name": "Django: import_next_github_commits",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "import_next_github_commits",
+                "GR2026"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
             "name": "Django: pytest",
             "type": "debugpy",
             "request": "launch",
