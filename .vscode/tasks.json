@@ -4,16 +4,14 @@
         {
             "label": "docker: run import_next_github_commits with debugpy",
             "type": "shell",
-            "command": "docker ps -q --filter publish=5679 | xargs -r docker stop; docker compose run --rm -p 5679:5679 backend python -m debugpy --listen 0.0.0.0:5679 --wait-for-client manage.py import_next_github_commits GR2026",
+            "command": "${workspaceFolder}/backend/debug_helpers/eml-github-debugpy-import.sh",
             "isBackground": true,
             "problemMatcher": {
-                "pattern": {
-                    "regexp": "^$"
-                },
+                "pattern": { "regexp": "^$" },
                 "background": {
                     "activeOnStart": true,
-                    "beginsPattern": "^.*",
-                    "endsPattern": "waiting for client"
+                    "beginsPattern": "Creating",
+                    "endsPattern": "waiting for client to connect"
                 }
             },
             "presentation": {
