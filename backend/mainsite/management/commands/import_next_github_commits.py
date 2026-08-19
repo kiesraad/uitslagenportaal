@@ -17,7 +17,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         identifier = options["election_config"]
         try:
-            election_config = ElectionConfig.objects.get(identifier=identifier)
+            election_config = ElectionConfig.with_expired.get(identifier=identifier)
         except ElectionConfig.DoesNotExist:
             raise CommandError(f"Election config does not exist: {identifier}")
 
