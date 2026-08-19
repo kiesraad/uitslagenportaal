@@ -39,7 +39,8 @@ export function MunicipalityPollingstationListPage() {
         onRetry={() => {
           void refetchPollingStations()
         }}
-        entityLabel="Gemeente"
+        entityLabel="Stembureaus"
+        withLayout={false}
       />
     )
   }

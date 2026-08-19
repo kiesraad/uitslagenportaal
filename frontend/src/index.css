@@ -310,6 +310,24 @@ h4, .h4 {
   gap: 4rem;
 }
 
+.page-top-placeholder {
+  min-height: 240px;
+}
+
+.page-status {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 1rem;
+  min-height: 60vh;
+}
+
+.page-status-text {
+  font-size: 1.125rem;
+  color: var(--c-navy);
+}
+
 .page-space-1 {
   display: flex;
   flex-direction: column;
@@ -964,6 +982,10 @@ h4, .h4 {
   padding: 68px 6rem 68px 0;
 }
 
+.footer-col {
+  min-height: 148px;
+}
+
 .footer-col h4 {
   font-size: 1rem;
   font-weight: 700;
@@ -1217,6 +1239,10 @@ h4, .h4 {
     padding-top: 3rem;
   }
 
+  .page-top-placeholder {
+    min-height: 210px;
+  }
+
   .platform-header-inner {
     padding: 0 2.5rem;
   }
@@ -1349,12 +1375,20 @@ h4, .h4 {
     padding-top: 2rem;
   }
 
+  .page-top-placeholder {
+    min-height: 170px;
+  }
+
   .platform-page-shell {
     padding: 1.5rem 1.25rem 2.5rem;
   }
 
   .page-main {
     padding: 1.25rem;
+  }
+
+  .page-status {
+    min-height: 45vh;
   }
 
   .page-main-two-columns {
@@ -1426,6 +1460,10 @@ h4, .h4 {
     flex-direction: column;
     gap: 32px;
     padding: 0 1.25rem 32px;
+  }
+
+  .footer-col {
+    min-height: 0;
   }
 
   .footer-meta {
