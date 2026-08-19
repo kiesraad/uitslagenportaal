@@ -5,8 +5,13 @@ import './index.css'
 import App from './App.tsx'
 
 const queryClient = new QueryClient()
+const rootElem = document.getElementById('root');
 
-createRoot(document.getElementById('root')!).render(
+if (rootElem === null) {
+    throw new Error("No root element found")
+}
+
+createRoot(rootElem).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />

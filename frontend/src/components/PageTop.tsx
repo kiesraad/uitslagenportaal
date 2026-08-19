@@ -29,8 +29,8 @@ export default function PageTop({title, subtitle, breadcrumb, tabs}: Props) {
       ) : null}
 
       <div className="pb-12">
-        <h1 className="mb-3 text-3xl sm:text-4xl font-title font-bold">
-          {title.split('\n').map((line, i) => <span key={i}>{line}<br/></span>)}
+        <h1 className="mb-3 text-3xl sm:text-4xl font-title font-bold whitespace-pre-line">
+            {title}
         </h1>
         {subtitle && <p>{subtitle}</p>}
       </div>

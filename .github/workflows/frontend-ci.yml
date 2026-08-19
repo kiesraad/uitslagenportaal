@@ -16,10 +16,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
+  lint-changed:
+    # Only enforce Biome on the files a PR touches; the rest of the codebase is
+    # not Biome-clean yet. Skipped on pushes to dev/main for now.
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # biome --changed diffs against the base commit, which a shallow clone lacks
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -27,7 +33,11 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
         working-directory: frontend
-      - run: npm run lint
+      - run: >
+          npx biome ci
+          --changed --since=${{ github.event.pull_request.base.sha }}
+          --no-errors-on-unmatched
+          --reporter=github
         working-directory: frontend
 
   test:

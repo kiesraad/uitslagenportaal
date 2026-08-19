@@ -34,7 +34,7 @@ export default function PartyCandidatesResultsContent({
                 }}>
                     {candidateVoteCounts.map((voteCount, i) => (
                         <VotesListItem
-                            key={i}
+                            key={voteCount.id}
                             number={i + 1}
                             title={formatCandidateName(voteCount.candidate!)}
                             voteCount={voteCount.valid_votes}
