@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useLocation, useNavigationType } from 'react-router-dom'
+import { useLocation, useNavigationType } from 'react-router'
 
 // Used to scroll to top on some pages
 export function useScrollToTop() {
