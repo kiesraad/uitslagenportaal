@@ -10,6 +10,8 @@ Start the full stack (database, backend, frontend and reverse proxy) with Docker
 docker compose up -d --build
 ```
 
+Install plugins for `ruff` and `biome` in your IDE to use the required formatting/linting.
+
 ### Environment variables
 
 No `.env` file is required for Docker development. Database and backend settings are configured in `docker-compose.yml` and passed to the containers automatically (`DB_HOST=db`, etc.).
@@ -72,9 +74,14 @@ docker compose run --rm backend-scripts python manage.py seed
   docker compose run --rm backend-scripts ruff format
   ```
 
-- Eslint format:
+- Biome lint:
   ```bash
   docker compose run --rm frontend npm run lint
+  ```
+  
+- Biome format:
+  ```bash
+  docker compose run --rm frontend npm run format
   ```
 
 ### Election visibility and deletion
