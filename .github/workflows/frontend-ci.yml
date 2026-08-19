@@ -38,6 +38,7 @@ jobs:
           --changed --since=${{ github.event.pull_request.base.sha }}
           --no-errors-on-unmatched
           --reporter=github
+          --colors=off
         working-directory: frontend
 
   test:
