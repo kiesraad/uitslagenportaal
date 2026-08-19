@@ -13,9 +13,6 @@ jobs:
   playwright:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    container:
-      image: mcr.microsoft.com/playwright:v1.62.0-noble
-      options: --user 1001
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -27,6 +24,19 @@ jobs:
         working-directory: frontend
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      - name: Resolve Playwright version
+        id: playwright-version
+        working-directory: frontend
+        run: |
+          echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+      # ubuntu-latest already has every lib Chromium needs; --with-deps only added
+      # unused fallback fonts. --only-shell: CI runs headless.
+      - run: npx playwright install --only-shell chromium
+        working-directory: frontend
       - run: npm run test:playwright
         working-directory: frontend
       - uses: actions/upload-artifact@v4
