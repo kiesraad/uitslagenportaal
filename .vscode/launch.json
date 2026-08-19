@@ -2,9 +2,27 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Import Github with debugger",
+            "type": "debugpy",
+            "request": "attach",
+            "preLaunchTask": "docker: run import_next_github_commits with debugpy",
+            "connect": {
+                "host": "localhost",
+                "port": 5679
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}/backend",
+                    "remoteRoot": "/app"
+                }
+            ],
+            "django": true,
+            "justMyCode": true
+        },
+        {
             // Attach to debugpy inside the backend container (docker compose up).
-            // Set breakpoints in backend/, then hit http://localhost:8080.
-            "name": "Django: attach (Docker)",
+            // For runserver
+            "name": "Runserver deubugger attach",
             "type": "debugpy",
             "request": "attach",
             "connect": {
