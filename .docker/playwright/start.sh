@@ -8,7 +8,6 @@ cd "$ROOT"
 
 COMPOSE=(
   docker compose
-  --project-name uitslagenportaal-playwright
   -f docker-compose.yml
   -f docker-compose.playwright.yml
 )
