@@ -70,7 +70,7 @@ export function HomePage() {
                 <FontAwesomeIcon icon={faHourglass} />
                 <h2>Telresultaten volgen binnenkort</h2>
               </div>
-              {/* <p>Op dit moment is de Tweede Kamerverkiezing bezig; u kunt nog stemmen tot  <strong>21.00 uur op 26 november 2025</strong>. In de loop van 27 november verwachten we de eerste telresultaten van het aantal stemmen. Na 3 maanden worden de resultaten weer verwijderd.</p> */}
+              <p>Op dit moment zijn er nog geen telresultaten van een verkiezing beschikbaar. Wanneer de dag van stemming nadert, zal een verkiezing met bijbehorende regios worden aangemaakt. Vanaf de dag van stemming zullen via deze pagina de tellingen worden weergegeven. Na 3 maanden worden de resultaten weer verwijderd.</p>
             </div>
           )}
         </div>

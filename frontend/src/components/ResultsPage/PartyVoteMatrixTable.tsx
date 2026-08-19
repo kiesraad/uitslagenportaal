@@ -20,7 +20,7 @@ export default function PartyVoteMatrixTable({ matrix }: Props) {
         <thead>
           <tr>
             <th className="party-vote-matrix-candidate-header">Kandidaat</th>
-            <th className="party-vote-matrix-total-header">Totaal</th>
+            <th>Totaal</th>
             {matrix.columns.map((column) => (
               <th key={column.slug} className="party-vote-matrix-region-header">
                 {column.region_name}
@@ -35,9 +35,9 @@ export default function PartyVoteMatrixTable({ matrix }: Props) {
                 <span className="party-vote-matrix-position">{candidate.position}</span>
                 <span>{formatCandidateName(candidate)}</span>
               </td>
-              <td className="party-vote-matrix-total bold">{formatVotes(total)}</td>
+              <td className="party-vote-matrix-total font-bold font-number">{formatVotes(total)}</td>
               {matrix.columns.map((column) => (
-                <td key={column.slug} className="party-vote-matrix-votes">
+                <td key={column.slug} className="party-vote-matrix-votes font-number">
                   {formatVotes(votes[column.slug])}
                 </td>
               ))}
@@ -45,11 +45,11 @@ export default function PartyVoteMatrixTable({ matrix }: Props) {
           ))}
           <tr className="party-vote-matrix-totals-row">
             <td className="party-vote-matrix-candidate">
-              <span className="bold">Totaal</span>
+              <span className="font-bold">Totaal</span>
             </td>
-            <td className="party-vote-matrix-total bold">{formatVotes(matrix.totals.total)}</td>
+            <td className="party-vote-matrix-total bold font-number">{formatVotes(matrix.totals.total)}</td>
             {matrix.columns.map((column) => (
-              <td key={column.slug} className="party-vote-matrix-votes">
+              <td key={column.slug} className="party-vote-matrix-votes font-number">
                 {formatVotes(matrix.totals.votes[column.slug])}
               </td>
             ))}

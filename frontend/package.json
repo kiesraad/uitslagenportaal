@@ -9,7 +9,9 @@
       "lint": "biome lint",
       "format": "biome format",
       "preview": "vite preview",
-      "test": "vitest run"
+      "test": "vitest run",
+      "test:playwright": "playwright test",
+      "postinstall": "node ./scripts/install-playwright-chromium.mjs"
    },
    "dependencies": {
       "@fortawesome/fontawesome-svg-core": "^7.2.0",
@@ -26,6 +28,7 @@
       "tailwindcss": "^4.3.3"
    },
    "devDependencies": {
+      "@playwright/test": "^1.62.1",
       "@biomejs/biome": "2.5.9",
       "@testing-library/jest-dom": "^7.0.0",
       "@testing-library/react": "^16.3.2",
