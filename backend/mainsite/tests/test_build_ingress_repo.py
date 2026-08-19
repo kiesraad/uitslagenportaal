@@ -35,6 +35,9 @@ ELECTION_ID = "TK2025"
 EXCHANGE_BRANCH = "auto-tk2025-uit"
 COUNTING_BRANCH = "auto-tk2025-tel"
 
+ELECTION_DAY = "2025-10-29"
+FIRST_COUNTING_COMMIT = f"{ELECTION_DAY}T09:00:00"
+
 CSB_DIR = "centraalstembureau/nederland"
 GSB_DIR = "gemeente/amsterdam"
 HSB_DIR = "hoofdstembureau/amsterdam"
@@ -49,11 +52,13 @@ EML = """\
     <Election>
         <ElectionIdentifier Id="{election_id}">
             <kr:ElectionDomain>{domain}</kr:ElectionDomain>
+            {election_date}
         </ElectionIdentifier>
     </Election>
 </EML>
 """
 MANAGING_AUTHORITY = "<ManagingAuthority><AuthorityIdentifier>{authority}</AuthorityIdentifier></ManagingAuthority>"
+ELECTION_DATE = "<kr:ElectionDate>{election_date}</kr:ElectionDate>"
 
 
 @dataclass(frozen=True)
@@ -64,11 +69,17 @@ class Document:
     doc_type: str
     authority: str = ""  # ManagingAuthority: the gemeente or hoofdstembureau that filed it
     domain: str = "Nederland"  # kr:ElectionDomain: the body holding the election
+    election_date: str = ELECTION_DAY  # kr:ElectionDate: the day the election is held
 
     def render(self, election_id: str) -> str:
         authority = MANAGING_AUTHORITY.format(authority=self.authority) if self.authority else ""
+        election_date = ELECTION_DATE.format(election_date=self.election_date) if self.election_date else ""
         return EML.format(
-            doc_type=self.doc_type, managing_authority=authority, election_id=election_id, domain=self.domain
+            doc_type=self.doc_type,
+            managing_authority=authority,
+            election_id=election_id,
+            domain=self.domain,
+            election_date=election_date,
         )
 
 
@@ -143,6 +154,25 @@ def commits_per_branch(run) -> dict[str, int]:
         elif command[0] == "commit":
             counts[branch] = counts.get(branch, 0) + 1
     return counts
+
+
+def commit_dates_per_branch(run) -> dict[str, list[str]]:
+    """The date every commit claims, per branch, following the checkouts between them."""
+    dates: dict[str, list[str]] = {}
+    branch = "main"
+    for call in run.call_args_list:
+        command = call.args[0][1:]
+        if command[0] == "checkout":
+            branch = command[-1]
+        elif command[0] == "commit":
+            dates.setdefault(branch, []).append(call.kwargs["env"]["GIT_AUTHOR_DATE"])
+    return dates
+
+
+def counting_commit_dates(dates: dict[str, list[str]]) -> list[str]:
+    """The counting branch's uploads, without the scaffolding commit each branch opens with."""
+    _scaffolding, *uploads = dates[COUNTING_BRANCH]
+    return uploads
 
 
 def written_files(dest: Path, prefix: str = "") -> dict[str, bytes]:
@@ -234,7 +264,7 @@ def test_the_definition_of_a_national_election_is_committed_before_its_candidate
     """The importer replays commits oldest first, and a candidate list needs its election."""
     source = write_source(tmp_path / "national", documents=NATIONAL_DOCUMENTS)
 
-    exchange, _ = build_ingress_repo.Command()._collect_uploads(source)
+    exchange, _, _ = build_ingress_repo.Command()._collect_uploads(source)
 
     assert [upload.path.name for upload in exchange] == [
         "Verkiezingsdefinitie_TK2025.eml.xml",
@@ -273,6 +303,34 @@ def test_every_org_gets_its_own_commit(run, replica):
     # definition and the Amsterdam candidate list; the counting branch the gemeente, the
     # kieskring, and the central stembureau's Totaaltelling and Resultaat together.
     assert commits_per_branch(run) == {"main": 1, EXCHANGE_BRANCH: 3, COUNTING_BRANCH: 4}
+
+
+def test_counting_starts_on_election_day_and_the_exchange_comes_before_it(run, replica):
+    """The dates come from the documents' own kr:ElectionDate, not from the election id."""
+    dates = commit_dates_per_branch(run)
+
+    assert min(counting_commit_dates(dates)) == FIRST_COUNTING_COMMIT
+    assert max(dates[EXCHANGE_BRANCH]) < FIRST_COUNTING_COMMIT
+
+
+def test_the_election_date_is_taken_from_any_document_when_the_definition_has_none(run, tmp_path):
+    """Every EML type carries the date, so a source without a dated definition still schedules."""
+    documents = [
+        Document("Verkiezingsdefinitie_TK2025", EmlType.EML_110a, election_date=""),
+        Document("Telling_TK2025_gemeente_Amsterdam", EmlType.EML_510b, authority="Amsterdam"),
+    ]
+
+    build(write_source(tmp_path / "source", documents=documents), tmp_path / "replica")
+
+    assert min(counting_commit_dates(commit_dates_per_branch(run))) == FIRST_COUNTING_COMMIT
+
+
+def test_refuses_a_source_whose_documents_name_no_election_date(run, tmp_path):
+    documents = [Document(document.name, document.doc_type, election_date="") for document in DOCUMENTS]
+    source = write_source(tmp_path / "source", documents=documents)
+
+    with pytest.raises(CommandError, match="No kr:ElectionDate"):
+        build(source, tmp_path / "replica")
 
 
 def test_commits_carry_the_given_author(run, replica):

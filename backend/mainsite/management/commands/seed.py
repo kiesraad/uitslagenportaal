@@ -161,6 +161,8 @@ WS2023_ELECTION_SEED = {
         "report_error_url": "https://www.kiesraad.nl/service/contact",
         "counting_info_url": "https://www.kiesraad.nl/verkiezingen",
         "voting_url": "https://www.kiesraad.nl/actueel/agenda",
+        "gh_counting_results_branch": "auto-ab2023-tel",
+        "gh_exchange_branch": "auto-ab2023-uit",
     },
     **TIMELINE_ENTRIES,
 }
@@ -176,6 +178,8 @@ PS2023_ELECTION_SEED = {
         "report_error_url": "https://www.kiesraad.nl/service/contact",
         "counting_info_url": "https://www.kiesraad.nl/verkiezingen",
         "voting_url": "https://www.kiesraad.nl/actueel/agenda",
+        "gh_counting_results_branch": "auto-ps2023-tel",
+        "gh_exchange_branch": "auto-ps2023-uit",
     },
     **TIMELINE_ENTRIES,
 }

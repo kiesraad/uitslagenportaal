@@ -17,6 +17,9 @@ root element `Id` of every XML it finds -- so what has to be right is the branch
 on, the order of the commits, and the zip nesting. Keeping the layout uniform is what lets this
 handle TK/EK/EP, whose real repository spreads kieskringen over `hoofdstembureau`, `nbsb` and
 `openbaar_lichaam` folders.
+
+The commits are dated off the election itself: the `kr:ElectionDate` of the Verkiezingsdefinitie
+puts the counting commits on election day, and the exchange commits in the weeks before it.
 """
 
 import io
@@ -27,7 +30,7 @@ import unicodedata
 import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from itertools import groupby
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -42,6 +45,7 @@ KR_NS = "http://www.kiesraad.nl/extensions"
 _AUTHORITY_TAG = f"{{{EML_NS}}}AuthorityIdentifier"
 _ELECTION_IDENTIFIER_TAG = f"{{{EML_NS}}}ElectionIdentifier"
 _ELECTION_DOMAIN_TAG = f"{{{KR_NS}}}ElectionDomain"
+_ELECTION_DATE_TAG = f"{{{KR_NS}}}ElectionDate"
 
 EXCHANGE_ROOT = "dob2pk"
 COUNTING_ROOT = "dob1"
@@ -74,6 +78,11 @@ COUNTING_LEVELS: dict[str, str] = {
 
 COMMIT_MODES = ("per-org", "per-file", "single")
 
+# The counting commits start at this hour on election day; the exchange documents (definition,
+# polling stations, candidate lists) are published in the run-up to it.
+OPENING_HOUR = time(9, 0)
+EXCHANGE_LEAD_TIME = timedelta(weeks=6)
+
 # Copied verbatim from the ingress repository: the uploads carry scans and printed models
 # next to the EML files, and those are kept out of git.
 GITIGNORE = """\
@@ -90,6 +99,7 @@ GITIGNORE = """\
 *.[jJ][pP][eE][gG]
 *.[pP][dD][fF]
 *.[pP][nN][gG]
+.idea
 """
 
 README = """\
@@ -154,6 +164,7 @@ class EmlMeta:
     election_id: str  # ElectionIdentifier/@Id, e.g. "GR2026_Eemsdelta"
     domain: str | None  # kr:ElectionDomain, the name of the body holding the election
     authority: str | None  # ManagingAuthority, the gemeente for a Telling
+    election_date: date | None  # kr:ElectionDate, the day the election is held
 
 
 def read_eml_meta(path: Path) -> EmlMeta | None:
@@ -168,6 +179,7 @@ def read_eml_meta(path: Path) -> EmlMeta | None:
     election_id: str | None = None
     domain: str | None = None
     authority: str | None = None
+    election_date: date | None = None
     root_seen = False
 
     with path.open("rb") as handle:
@@ -185,6 +197,10 @@ def read_eml_meta(path: Path) -> EmlMeta | None:
                 authority = authority or (element.text or "").strip() or None
             elif element.tag == _ELECTION_DOMAIN_TAG:
                 domain = (element.text or "").strip() or None
+            elif element.tag == _ELECTION_DATE_TAG:
+                # Repeated when a re-election moved the date; the first one is the election proper.
+                if election_date is None and (text := (element.text or "").strip()):
+                    election_date = date.fromisoformat(text)
             elif element.tag == _ELECTION_IDENTIFIER_TAG:
                 election_id = element.get("Id")
                 # Every field above lives at or before the election identifier.
@@ -193,7 +209,7 @@ def read_eml_meta(path: Path) -> EmlMeta | None:
     if not doc_type or not election_id:
         return None
 
-    return EmlMeta(path, doc_type, election_id, domain, authority)
+    return EmlMeta(path, doc_type, election_id, domain, authority, election_date)
 
 
 @dataclass(frozen=True)
@@ -278,19 +294,19 @@ class Command(BaseCommand):
                 raise CommandError(f"Branch {branch} already exists in {dest}; delete it to rebuild {election_id}")
 
         # Get the files to upload in commits
-        exchange_uploads, counting_uploads = self._collect_uploads(source)
+        exchange_uploads, counting_uploads, election_date = self._collect_uploads(source)
         if not exchange_uploads and not counting_uploads:
             raise CommandError(f"No usable EML documents found in {source}")
+        if election_date is None:
+            raise CommandError(f"No kr:ElectionDate found in any EML document in {source}")
 
-        # Get the commits
-        year = self._election_year(election_id)
+        # Get the commits: the counting opens on election day, the exchange documents precede it.
         mode = options["commit_mode"]
+        counting_base = datetime.combine(election_date, OPENING_HOUR)
         exchange_commits = self._build_commits(
-            exchange_uploads, self._exchange_file, base=datetime(year, 2, 1, 9, 0), mode=mode
+            exchange_uploads, self._exchange_file, base=counting_base - EXCHANGE_LEAD_TIME, mode=mode
         )
-        counting_commits = self._build_commits(
-            counting_uploads, self._counting_file, base=datetime(year, 3, 19, 9, 0), mode=mode
-        )
+        counting_commits = self._build_commits(counting_uploads, self._counting_file, base=counting_base, mode=mode)
 
         self._write_repo(
             dest=dest,
@@ -371,21 +387,36 @@ class Command(BaseCommand):
 
     # Collecting -------------------------------------------------------------------------
 
-    def _collect_uploads(self, source: Path) -> tuple[list[Upload], list[Upload]]:
+    def _collect_uploads(self, source: Path) -> tuple[list[Upload], list[Upload], date | None]:
+        """
+        Sort the EML documents in `source` into the two branches, and read the election date.
+
+        The Verkiezingsdefinitie defines the election, so its date is the one to schedule on. Every
+        other document type carries the date too, which covers a source that has no definition.
+        """
         exchange: list[Upload] = []
         counting: list[Upload] = []
         skipped: list[Path] = []
+        definition_date: date | None = None
+        first_date: date | None = None
 
         for path in sorted(source.rglob("*.xml")):
             meta = read_eml_meta(path)
             if meta is None:
                 skipped.append(path)
-            elif level := EXCHANGE_LEVELS.get(meta.doc_type):
+                continue
+
+            if level := EXCHANGE_LEVELS.get(meta.doc_type):
                 exchange.append(self._upload(meta, level))
             elif level := COUNTING_LEVELS.get(meta.doc_type):
                 counting.append(self._upload(meta, level))
             else:
                 skipped.append(path)
+                continue
+
+            first_date = first_date or meta.election_date
+            if meta.doc_type == EmlType.EML_110a:
+                definition_date = definition_date or meta.election_date
 
         exchange.sort(key=lambda upload: (upload.group, upload.path.name))
         counting.sort(key=lambda upload: (upload.group, upload.path.name))
@@ -394,7 +425,7 @@ class Command(BaseCommand):
         )
         for path in skipped:
             self.stdout.write(f"  skipped {path}")
-        return exchange, counting
+        return exchange, counting, definition_date or first_date
 
     def _upload(self, meta: EmlMeta, level: str) -> Upload:
         return Upload(level, self._organisation(meta, level), meta.election_id, meta.path)
