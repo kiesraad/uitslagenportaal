@@ -6,6 +6,7 @@
             "type": "debugpy",
             "request": "attach",
             "preLaunchTask": "docker: run import_next_github_commits with debugpy",
+            "postDebugTask": "docker: stop import_next_github_commits",
             "connect": {
                 "host": "localhost",
                 "port": 5679
