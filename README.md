@@ -101,3 +101,39 @@ from the source EML files is the only way back.
 ```bash
 docker compose run --rm backend-scripts python manage.py delete_expired_elections --confirm
 ```
+
+## Playwright tests
+
+Browser tests live in `frontend/playwright/`. They run on a separate **throwaway stack** on http://localhost:8081.
+
+Playwright starts and stops this stack automatically via `frontend/playwright.config.ts` and `.docker/playwright/start.sh`. Each run migrates the database and imports EML fixtures from `backend/mainsite/tests/fixtures/eml/` (waterschap and provinciale staten).
+
+`cd frontend && npm install` installs `@playwright/test` and downloads Chromium (cached in `~/.cache/ms-playwright`). The frontend Docker image skips that download. CI (`.github/workflows/playwright.yml`) installs Chromium with `npx playwright install --with-deps chromium` so Linux system libraries are present, then runs `npm run test:playwright`.
+
+### Running tests
+
+Always run Playwright from the `frontend/` directory:
+
+```bash
+cd frontend
+npm run test:playwright
+```
+
+Run a single spec file:
+
+```bash
+npx playwright test ws-election
+```
+
+Filter by test title (substring match):
+
+```bash
+npx playwright test ps-election -g "Aa en Hunze"
+```
+
+Debug or watch the browser:
+
+```bash
+npx playwright test ws-election --debug
+npx playwright test ws-election --headed
+```

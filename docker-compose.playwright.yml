@@ -1,0 +1,35 @@
+# Playwright throwaway stack — isolated project name, ports, and services.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.playwright.yml up
+
+name: uitslagenportaal-playwright
+
+services:
+  backend:
+    # Dev stack runs under debugpy; Playwright only needs a plain runserver.
+    command: python manage.py runserver 0.0.0.0:8000
+    ports: !override []
+    environment:
+      CORS_ALLOWED_ORIGINS: http://localhost:8081
+      S3_PUBLIC_DOMAIN: localhost:19000/uitslagenportaal
+
+  backend-scripts:
+    profiles:
+      - donotstart
+
+  frontend:
+    environment:
+      VITE_HMR_CLIENT_PORT: "8081"
+
+  proxy:
+    ports: !override
+      - "8081:80"
+
+  db:
+    # Do not publish 5433 — that port belongs to the daily stack.
+    ports: !override []
+
+  object-storage:
+    # Remap S3 so :9000/:9001 stay free for local development.
+    ports: !override
+      - "19000:9000"
