@@ -14,7 +14,8 @@ services:
       S3_PUBLIC_DOMAIN: localhost:19000/uitslagenportaal
 
   backend-scripts:
-    ports: !override []
+    profiles:
+      - donotstart
 
   frontend:
     environment:
