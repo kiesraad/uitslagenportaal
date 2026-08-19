@@ -253,10 +253,6 @@
     border-bottom: 1px solid var(--c-border);
 }
 
-.party-vote-matrix-total-header {
-    border-top: 3px solid var(--c-border);
-}
-
 .party-vote-matrix-candidate-header {
     border-right: 1px solid var(--c-border);
 }

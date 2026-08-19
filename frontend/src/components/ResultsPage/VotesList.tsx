@@ -56,7 +56,7 @@ export function VotesListItem({number, title, voteCount, href}: VotesListItemPro
         <>
             <span className="font-light text-gray-700">{number ?? '-'}</span>
             <span className="in-[a]:text-blue-500 in-[a]:underline">{title}</span>
-            <span className={twMerge("text-right", voteCount && "font-semibold text-gray-700")}>
+            <span className={twMerge("text-right font-number", voteCount && "font-semibold text-gray-700")}>
                 {voteCount ? voteCount.toLocaleString('nl-NL') : "–"}
             </span>
             <span>{isClickable && <FontAwesomeIcon icon={faChevronRight} />}</span>
