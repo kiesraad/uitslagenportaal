@@ -33,13 +33,13 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
         working-directory: frontend
+      # Run from the repo root so annotation paths are repo-relative (frontend/src/...),
+      # which is what GitHub needs to attach them to the PR diff.
       - run: >
-          npx biome ci
+          ./frontend/node_modules/.bin/biome ci
           --changed --since=${{ github.event.pull_request.base.sha }}
           --no-errors-on-unmatched
           --reporter=github
-          --colors=off
-        working-directory: frontend
 
   test:
     runs-on: ubuntu-latest
