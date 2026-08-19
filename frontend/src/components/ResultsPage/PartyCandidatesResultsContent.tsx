@@ -35,7 +35,7 @@ export default function PartyCandidatesResultsContent({ voteCounts, partySlug, i
                   <VotesListItem
                      key={voteCount.id}
                      number={i + 1}
-                     title={formatCandidateName(voteCount.candidate!)}
+                     title={formatCandidateName(voteCount.candidate)}
                      voteCount={voteCount.valid_votes}
                   />
                ))}
