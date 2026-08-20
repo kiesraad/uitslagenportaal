@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { VoteCounts } from "@/api/types.ts";
 import VotesList, { VotesListItem } from "@/components/ResultsPage/VotesList.tsx";
 import { formatCandidateName } from "@/utils/formatCandidateName.ts";
@@ -12,22 +13,26 @@ type Props = {
 };
 
 export default function PartyCandidatesResultsContent({ voteCounts, partySlug, issueReportDeadline }: Props) {
+   const { t } = useLingui();
    const partyVoteCount = getPartyVoteCount(voteCounts, partySlug);
    const candidateVoteCounts = getCandidateVoteCountsForParty(voteCounts, partySlug);
    const partyListNumber = partyVoteCount?.party.list_number;
-   const partyName = partyVoteCount?.party.registered_name ?? "Lijst";
+   const partyName = partyVoteCount?.party.registered_name ?? t`Lijst`;
+   const listNumber = partyListNumber ?? "-";
 
    return (
       <>
          <ResultsPageIndex variant="party" />
 
          <section id="telresultaten">
-            <h2 className="mb-4.5">Telresultaten lijst {partyListNumber ?? "-"}</h2>
+            <h2 className="mb-4.5">
+               <Trans>Telresultaten lijst {listNumber}</Trans>
+            </h2>
             <h3 className="party-level-title mb-2">{partyName}</h3>
             <VotesList
-               indexColumn="Kandidaat"
+               indexColumn={t`Kandidaat`}
                total={{
-                  label: `Totaal stemmen lijst ${partyListNumber ?? "-"}`,
+                  label: t`Totaal stemmen lijst ${listNumber}`,
                   value: partyVoteCount?.valid_votes ?? 0,
                }}
             >

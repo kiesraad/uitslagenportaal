@@ -40,7 +40,9 @@ test.describe('Provinciale Staten election (Drenthe PS fixture)', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Gemeente Aa en Hunze' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Resultaten per stembureau' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Hele gemeente' })).toBeVisible()
-    await expect(page.getByRole('heading', { level: 2, name: /stembureaus in Gemeente Aa en Hunze/ })).toBeVisible()
+    // "stembureau" or "stembureaus" depending on how many the fixture holds:
+    // the heading is an ICU plural, so a single station reads "1 stembureau".
+    await expect(page.getByRole('heading', { level: 2, name: /stembureaus? in Gemeente Aa en Hunze/ })).toBeVisible()
     await expect(page.getByRole('link', { name: /Gemeentehuis Gieten/ })).toBeVisible()
 
     await page.getByRole('link', { name: 'Hele gemeente' }).click()

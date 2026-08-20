@@ -43,7 +43,9 @@ test.describe('Waterschap election (Scheldestromen WS fixture)', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Gemeente Borsele' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Resultaten per stembureau' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Hele gemeente' })).toBeVisible()
-    await expect(page.getByRole('heading', { level: 2, name: /stembureaus in Gemeente Borsele/ })).toBeVisible()
+    // "stembureau" or "stembureaus" depending on how many the fixture holds:
+    // the heading is an ICU plural, so a single station reads "1 stembureau".
+    await expect(page.getByRole('heading', { level: 2, name: /stembureaus? in Gemeente Borsele/ })).toBeVisible()
     await expect(page.getByRole('link', { name: /Heinkenszand/ })).toBeVisible()
 
     await page.getByRole('link', { name: 'Hele gemeente' }).click()

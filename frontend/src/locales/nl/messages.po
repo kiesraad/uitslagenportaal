@@ -1,0 +1,691 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-08-19 15:35+0200\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: nl\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#. placeholder {0}: sortedPollingStations.length
+#: src/components/ListPage/RegionList.tsx
+msgid "{0, plural, one {# stembureau in {regionTitle}} other {# stembureaus in {regionTitle}}}"
+msgstr "{0, plural, one {# stembureau in {regionTitle}} other {# stembureaus in {regionTitle}}}"
+
+#. placeholder {0}: remaining.value
+#: src/utils/date.ts
+msgid "{0, plural, one {U heeft nog # dag om een melding te maken} other {U heeft nog # dagen om een melding te maken}}"
+msgstr "{0, plural, one {U heeft nog # dag om een melding te maken} other {U heeft nog # dagen om een melding te maken}}"
+
+#. placeholder {0}: remaining.value
+#: src/utils/date.ts
+msgid "{0, plural, one {U heeft nog # minuut om een melding te maken} other {U heeft nog # minuten om een melding te maken}}"
+msgstr "{0, plural, one {U heeft nog # minuut om een melding te maken} other {U heeft nog # minuten om een melding te maken}}"
+
+#. placeholder {0}: remaining.value
+#: src/utils/date.ts
+msgid "{0, plural, one {U heeft nog # uur om een melding te maken} other {U heeft nog # uur om een melding te maken}}"
+msgstr "{0, plural, one {U heeft nog # uur om een melding te maken} other {U heeft nog # uur om een melding te maken}}"
+
+#: src/components/PageQueryBoundary.tsx
+msgid "{entityLabel} laden…"
+msgstr "{entityLabel} laden…"
+
+#: src/components/PageQueryBoundary.tsx
+msgid "{entityLabel} niet gevonden"
+msgstr "{entityLabel} niet gevonden"
+
+#: src/pages/CSBPage/CSBMunicipalityListPage.tsx
+#: src/pages/CSBPage/CSBResultsPage.tsx
+msgid "{regionType} - {regionName}"
+msgstr "{regionType} - {regionName}"
+
+#: src/components/ResultsPage/ResultsPageIndex.tsx
+msgid "<0>Telresultaten</0> zoals ze meetellen in de officiele uitslag"
+msgstr "<0>Telresultaten</0> zoals ze meetellen in de officiele uitslag"
+
+#: src/components/ResultsPage/ResultsPageIndex.tsx
+msgid "<0>Uitleg</0> hoe deze resultaten tot stand zijn gekomen"
+msgstr "<0>Uitleg</0> hoe deze resultaten tot stand zijn gekomen"
+
+#: src/components/ResultsPage/VotesList.tsx
+msgid "Aantal stemmen"
+msgstr "Aantal stemmen"
+
+#: src/pages/HomePage.tsx
+msgid "Bekijk de tellingen per stembureau voor {electionLabel}"
+msgstr "Bekijk de tellingen per stembureau voor {electionLabel}"
+
+#: src/pages/HomePage.tsx
+msgid "Bekijk de telresultaten"
+msgstr "Bekijk de telresultaten"
+
+#: src/pages/CSBPage/CSBMunicipalityListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+msgid "Bekijk de telresultaten per gemeente van de {electionLabel}."
+msgstr "Bekijk de telresultaten per gemeente van de {electionLabel}."
+
+#: src/pages/HomePage.tsx
+msgid "Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?"
+msgstr "Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?"
+
+#: src/components/SearchBar.tsx
+msgid "Bijv. {regionSingular}"
+msgstr "Bijv. {regionSingular}"
+
+#: src/components/SearchBar.tsx
+msgid "Bijv. De Stichtse Rijnlanden"
+msgstr "Bijv. De Stichtse Rijnlanden"
+
+#: src/components/SearchBar.tsx
+msgid "Bijv. Gymzaal de Boom"
+msgstr "Bijv. Gymzaal de Boom"
+
+#: src/components/SearchBar.tsx
+msgid "Bijv. Zoetermeer"
+msgstr "Bijv. Zoetermeer"
+
+#: src/components/ResultsPage/VotesResume.tsx
+msgid "Blanco stemmen"
+msgstr "Blanco stemmen"
+
+#: src/components/ResultsPage/RegionResultsContent.tsx
+msgid "Brondocumenten"
+msgstr "Brondocumenten"
+
+#: src/pages/HomePage.tsx
+msgid "Databank verkiezinguitslag"
+msgstr "Databank verkiezinguitslag"
+
+#: src/utils/region.ts
+msgid "de gemeente"
+msgstr "de gemeente"
+
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
+msgstr "De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
+
+#: src/utils/region.ts
+msgid "de kieskring"
+msgstr "de kieskring"
+
+#: src/pages/ReportIssuePage.tsx
+msgid "De melding moet duidelijk en onderbouwd zijn: geef aan wat er precies fout is gegaan, in welke gemeente of bij welk stembureau, en waar de fout in zit."
+msgstr "De melding moet duidelijk en onderbouwd zijn: geef aan wat er precies fout is gegaan, in welke gemeente of bij welk stembureau, en waar de fout in zit."
+
+#: src/pages/ReportIssuePage.tsx
+msgid "De melding moet gaan over een mogelijke fout in het (op)tellen van de stemmen in het proces-verbaal of in het digitale bestand van de gemeente. Andere klachten, zoals over een stembureau dat te laat open was, horen thuis bij de zitting van het betreffende stembureau."
+msgstr "De melding moet gaan over een mogelijke fout in het (op)tellen van de stemmen in het proces-verbaal of in het digitale bestand van de gemeente. Andere klachten, zoals over een stembureau dat te laat open was, horen thuis bij de zitting van het betreffende stembureau."
+
+#: src/pages/ReportIssuePage.tsx
+msgid "De melding moet gaan over iets wat u zelf heeft gezien of meegemaakt, niet over iets wat u van iemand anders heeft gehoord."
+msgstr "De melding moet gaan over iets wat u zelf heeft gezien of meegemaakt, niet over iets wat u van iemand anders heeft gehoord."
+
+#: src/pages/ReportIssuePage.tsx
+msgid "De melding moet voor {closesAt} bij de Kiesraad binnen zijn."
+msgstr "De melding moet voor {closesAt} bij de Kiesraad binnen zijn."
+
+#: src/pages/NotFoundPage.tsx
+msgid "De pagina die u wilde zien of het bestand dat u wilde bekijken is niet gevonden."
+msgstr "De pagina die u wilde zien of het bestand dat u wilde bekijken is niet gevonden."
+
+#: src/utils/region.ts
+msgid "de provincie"
+msgstr "de provincie"
+
+#: src/utils/region.ts
+msgid "de regio"
+msgstr "de regio"
+
+#: src/utils/region.ts
+msgid "de staat"
+msgstr "de staat"
+
+#: src/components/ResultsPage/ResultsNotPublished.tsx
+msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra de {regionLabel} ze publiceert."
+msgstr "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra de {regionLabel} ze publiceert."
+
+#: src/components/ResultsPage/ResultsNotPublished.tsx
+msgid "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
+msgstr "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
+
+#: src/pages/HomePage.tsx
+msgid "De telresultaten van alle <0/> stembureaus in Nederland."
+msgstr "De telresultaten van alle <0/> stembureaus in Nederland."
+
+#: src/pages/HomePage.tsx
+msgid "De telresultaten van alle stembureaus in Nederland."
+msgstr "De telresultaten van alle stembureaus in Nederland."
+
+#: src/pages/ReportIssuePage.tsx
+msgid "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
+msgstr "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
+
+#: src/components/Footer.tsx
+msgid "Deze website in andere talen:"
+msgstr "Deze website in andere talen:"
+
+#: src/pages/HomePage.tsx
+msgid "Deze website is actief vanaf 1 dag vóór de verkiezingen tot drie maanden erna. Wilt u uitslagen van eerdere verkiezingen bekijken?"
+msgstr "Deze website is actief vanaf 1 dag vóór de verkiezingen tot drie maanden erna. Wilt u uitslagen van eerdere verkiezingen bekijken?"
+
+#: src/pages/ReportIssuePage.tsx
+msgid "Een fout melden"
+msgstr "Een fout melden"
+
+#: src/pages/ReportIssuePage.tsx
+msgid "Een melding aan het centraal stembureau kan van {opensAt} tot {closesAt} (uiterlijk 48 uur voor de zitting van het centraal stembureau). Meldingen die later binnenkomen worden niet in behandeling genomen."
+msgstr "Een melding aan het centraal stembureau kan van {opensAt} tot {closesAt} (uiterlijk 48 uur voor de zitting van het centraal stembureau). Meldingen die later binnenkomen worden niet in behandeling genomen."
+
+#: src/components/PageQueryBoundary.tsx
+msgid "Een moment geduld, de gegevens worden opgehaald."
+msgstr "Een moment geduld, de gegevens worden opgehaald."
+
+#: src/components/ResultsPage/ResultsTimeline.tsx
+msgid "Eerste stap bovenaan"
+msgstr "Eerste stap bovenaan"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "EML_NL tellingbestand 510b"
+msgstr "EML_NL tellingbestand 510b"
+
+#: src/pages/ReportIssuePage.tsx
+msgid "Fout melden"
+msgstr "Fout melden"
+
+#: src/pages/HomePage.tsx
+msgid "Ga dan naar"
+msgstr "Ga dan naar"
+
+#: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
+#: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
+#: src/utils/region.ts
+msgid "gemeente"
+msgstr "gemeente"
+
+#: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
+#: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
+#: src/utils/region.ts
+msgid "Gemeente"
+msgstr "Gemeente"
+
+#: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
+#: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "Gemeente {regionName}"
+msgstr "Gemeente {regionName}"
+
+#: src/utils/region.ts
+msgid "Gemeenten"
+msgstr "Gemeenten"
+
+#: src/pages/CSBPage/CSBMunicipalityListPage.tsx
+#: src/pages/CSBPage/CSBPartyResultsPage.tsx
+#: src/pages/CSBPage/CSBResultsPage.tsx
+#: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
+#: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
+#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "Geplaatst op: {publishedAt}"
+msgstr "Geplaatst op: {publishedAt}"
+
+#: src/utils/region.ts
+msgid "Heel stembureau"
+msgstr "Heel stembureau"
+
+#: src/utils/region.ts
+msgid "Heel waterschap"
+msgstr "Heel waterschap"
+
+#: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
+#: src/utils/region.ts
+msgid "Hele gemeente"
+msgstr "Hele gemeente"
+
+#: src/utils/region.ts
+msgid "Hele kieskring"
+msgstr "Hele kieskring"
+
+#: src/utils/region.ts
+msgid "Hele provincie"
+msgstr "Hele provincie"
+
+#: src/utils/region.ts
+msgid "Hele regio"
+msgstr "Hele regio"
+
+#: src/utils/region.ts
+msgid "Hele staat"
+msgstr "Hele staat"
+
+#: src/pages/CSBPage/CSBPartyResultsPage.tsx
+msgid "Het centraal stembureau heeft de telresultaten van alle gemeenten en kieskringen gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het centraal stembureau."
+msgstr "Het centraal stembureau heeft de telresultaten van alle gemeenten en kieskringen gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het centraal stembureau."
+
+#: src/pages/MunicipalityPage/MunicipalityResultsPage.tsx
+msgid "Het gemeentelijk stembureau heeft de telresultaten van alle stembureaus in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van de gemeente."
+msgstr "Het gemeentelijk stembureau heeft de telresultaten van alle stembureaus in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van de gemeente."
+
+#: src/pages/CSBPage/CSBResultsPage.tsx
+msgid "Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
+msgstr "Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
+
+#: src/utils/region.ts
+msgid "het stembureau"
+msgstr "het stembureau"
+
+#: src/components/ResultsPage/ResultsTimeline.tsx
+msgid "Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
+msgstr "Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
+
+#: src/components/ResultsPage/ResultsTimeline.tsx
+msgid "Het stembureau doet een uitgebreide telling op het stembureau. Het gemeentelijk stembureau telt de volgende dag de uitkomsten bij elkaar op. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
+msgstr "Het stembureau doet een uitgebreide telling op het stembureau. Het gemeentelijk stembureau telt de volgende dag de uitkomsten bij elkaar op. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
+
+#: src/utils/region.ts
+msgid "het waterschap"
+msgstr "het waterschap"
+
+#: src/pages/HomePage.tsx
+msgid "Hieronder wordt stap voor stap uitgelegd hoe het resultaat van de verkiezing tot stand komt. Het begint bij het stembureau en eindigt bij de definitieve uitslag die de Kiesraad publiceert. Bij iedere stap is er controle, zodat de uitslag klopt."
+msgstr "Hieronder wordt stap voor stap uitgelegd hoe het resultaat van de verkiezing tot stand komt. Het begint bij het stembureau en eindigt bij de definitieve uitslag die de Kiesraad publiceert. Bij iedere stap is er controle, zodat de uitslag klopt."
+
+#: src/pages/HomePage.tsx
+msgid "Hoe komt de uitslag tot stand?"
+msgstr "Hoe komt de uitslag tot stand?"
+
+#: src/components/ResultsPage/ResultsPageIndex.tsx
+msgid "Hoe u een fout kunt melden"
+msgstr "Hoe u een fout kunt melden"
+
+#: src/components/ResultsPage/ResultsTimeline.tsx
+msgid "Hoe zijn de resultaten tot stand gekomen?"
+msgstr "Hoe zijn de resultaten tot stand gekomen?"
+
+#: src/pages/CSBPage/CSBMunicipalityListPage.tsx
+#: src/pages/CSBPage/CSBPartyResultsPage.tsx
+#: src/pages/CSBPage/CSBResultsPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/pages/HomePage.tsx
+#: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
+#: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
+#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+#: src/pages/ReportIssuePage.tsx
+msgid "Home"
+msgstr "Home"
+
+#: src/pages/NotFoundPage.tsx
+msgid "Homepage"
+msgstr "Homepage"
+
+#: src/components/Footer.tsx
+msgid "In samenwerking met de Kiesraad"
+msgstr "In samenwerking met de Kiesraad"
+
+#: src/components/PageQueryBoundary.tsx
+msgid "Kan {labelInline} niet laden."
+msgstr "Kan {labelInline} niet laden."
+
+#: src/pages/HomePage.tsx
+msgid "Kan verkiezingen niet laden."
+msgstr "Kan verkiezingen niet laden."
+
+#: src/components/ResultsPage/PartyCandidatesResultsContent.tsx
+#: src/components/ResultsPage/PartyVoteMatrixTable.tsx
+msgid "Kandidaat"
+msgstr "Kandidaat"
+
+#: src/utils/region.ts
+msgid "kieskring"
+msgstr "kieskring"
+
+#: src/utils/region.ts
+msgid "Kieskring"
+msgstr "Kieskring"
+
+#: src/utils/region.ts
+msgid "Kieskringen"
+msgstr "Kieskringen"
+
+#: src/components/ResultsPage/VotesResume.tsx
+msgid "Kiezerspassen"
+msgstr "Kiezerspassen"
+
+#: src/components/ResultsPage/RegionResultsContent.tsx
+msgid "Klik op een lijst om de stemmen per kandidaat te zien"
+msgstr "Klik op een lijst om de stemmen per kandidaat te zien"
+
+#: src/components/ResultsPage/IssueNotice.tsx
+msgid "Klopt er iets niet?"
+msgstr "Klopt er iets niet?"
+
+#: src/components/PageTop.tsx
+#: src/pages/ReportIssuePage.tsx
+msgid "Kruimelpad"
+msgstr "Kruimelpad"
+
+#: src/components/ResultsPage/ResultsTimeline.tsx
+msgid "Laatste stap bovenaan"
+msgstr "Laatste stap bovenaan"
+
+#: src/components/ResultsPage/PartyCandidatesResultsContent.tsx
+#: src/components/ResultsPage/RegionResultsContent.tsx
+#: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
+#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
+msgid "Lijst"
+msgstr "Lijst"
+
+#: src/pages/ReportIssuePage.tsx
+msgid "Meld een fout"
+msgstr "Meld een fout"
+
+#: src/components/ResultsPage/IssueNotice.tsx
+msgid "Meld een fout of iets dat niet klopt"
+msgstr "Meld een fout of iets dat niet klopt"
+
+#: src/components/Footer.tsx
+msgid "Melding maken"
+msgstr "Melding maken"
+
+#: src/pages/ReportIssuePage.tsx
+msgid "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is. Als dat nodig is, nemen we contact op met de gemeente of het stembureau. In sommige gevallen kan er een hertelling plaatsvinden. Als blijkt dat er inderdaad een fout is gemaakt, bijvoorbeeld bij het tellen van de stemmen, dan wordt die fout hersteld. De correctie wordt vastgelegd in een corrigendum en openbaar gemaakt door dit te publiceren. Je ontvangt geen persoonlijk bericht over wat er met je melding is gedaan."
+msgstr "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is. Als dat nodig is, nemen we contact op met de gemeente of het stembureau. In sommige gevallen kan er een hertelling plaatsvinden. Als blijkt dat er inderdaad een fout is gemaakt, bijvoorbeeld bij het tellen van de stemmen, dan wordt die fout hersteld. De correctie wordt vastgelegd in een corrigendum en openbaar gemaakt door dit te publiceren. Je ontvangt geen persoonlijk bericht over wat er met je melding is gedaan."
+
+#: src/pages/CSBPage/CSBResultsPage.tsx
+msgid "Onderstaande documenten bevatten de laatste telresultaten van {regionWithArticle}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
+msgstr "Onderstaande documenten bevatten de laatste telresultaten van {regionWithArticle}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
+
+#: src/pages/MunicipalityPage/MunicipalityResultsPage.tsx
+msgid "Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
+msgstr "Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
+
+#: src/components/ResultsPage/VotesResume.tsx
+msgid "Ongeldige stemmen"
+msgstr "Ongeldige stemmen"
+
+#: src/components/PageIndex.tsx
+msgid "Op deze pagina:"
+msgstr "Op deze pagina:"
+
+#: src/pages/HomePage.tsx
+msgid "Op deze website publiceert de Kiesraad de telresultaten van alle gemeenten en stembureaus. Je vindt hier ook de brondocumenten waarin stembureaus hun tellingen hebben opgeschreven. Zo kan iedereen controleren of de stemmen goed zijn geteld en in de definitieve uitslag terecht zijn gekomen."
+msgstr "Op deze website publiceert de Kiesraad de telresultaten van alle gemeenten en stembureaus. Je vindt hier ook de brondocumenten waarin stembureaus hun tellingen hebben opgeschreven. Zo kan iedereen controleren of de stemmen goed zijn geteld en in de definitieve uitslag terecht zijn gekomen."
+
+#: src/pages/HomePage.tsx
+msgid "Op dit moment zijn er nog geen telresultaten van een verkiezing beschikbaar. Wanneer de dag van stemming nadert, zal een verkiezing met bijbehorende regio's worden aangemaakt. Vanaf de dag van stemming zullen via deze pagina de tellingen worden weergegeven. Na 3 maanden worden de resultaten weer verwijderd."
+msgstr "Op dit moment zijn er nog geen telresultaten van een verkiezing beschikbaar. Wanneer de dag van stemming nadert, zal een verkiezing met bijbehorende regio's worden aangemaakt. Vanaf de dag van stemming zullen via deze pagina de tellingen worden weergegeven. Na 3 maanden worden de resultaten weer verwijderd."
+
+#: src/components/PageQueryBoundary.tsx
+#: src/pages/HomePage.tsx
+msgid "Opnieuw proberen"
+msgstr "Opnieuw proberen"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Output van de optelsoftware, bevat de resultaten van alle stembureaus en de optelling van de hele gemeente."
+msgstr "Output van de optelsoftware, bevat de resultaten van alle stembureaus en de optelling van de hele gemeente."
+
+#: src/pages/NotFoundPage.tsx
+msgid "Pagina niet gevonden"
+msgstr "Pagina niet gevonden"
+
+#: src/pages/CSBPage/CSBMunicipalityListPage.tsx
+#: src/pages/CSBPage/CSBResultsPage.tsx
+msgid "Per gemeente"
+msgstr "Per gemeente"
+
+#: src/utils/region.ts
+msgid "provincie"
+msgstr "provincie"
+
+#: src/utils/region.ts
+msgid "Provincie"
+msgstr "Provincie"
+
+#: src/utils/region.ts
+msgid "Provincies"
+msgstr "Provincies"
+
+#: src/pages/ReportIssuePage.tsx
+msgid "Punten waar uw melding aan moet voldoen"
+msgstr "Punten waar uw melding aan moet voldoen"
+
+#: src/utils/region.ts
+msgid "regio"
+msgstr "regio"
+
+#: src/utils/region.ts
+msgid "Regio"
+msgstr "Regio"
+
+#: src/utils/region.ts
+msgid "Regio's"
+msgstr "Regio's"
+
+#: src/pages/CSBPage/CSBPartyResultsPage.tsx
+#: src/pages/CSBPage/CSBResultsPage.tsx
+msgid "Resultaten"
+msgstr "Resultaten"
+
+#: src/pages/MunicipalityPage/MunicipalityResultsPage.tsx
+msgid "Resultaten {municipalityTitle}"
+msgstr "Resultaten {municipalityTitle}"
+
+#: src/pages/MunicipalityPage/MunicipalityPollingstationListPage.tsx
+msgid "Resultaten {municipalityTitle} per stembureau"
+msgstr "Resultaten {municipalityTitle} per stembureau"
+
+#: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
+msgid "Resultaten per stembureau"
+msgstr "Resultaten per stembureau"
+
+#: src/components/ResultsPage/IssueNotice.tsx
+msgid "Soms gaat er iets mis bij het tellen, opschrijven of overtypen van de stemmen. Fouten die na {deadline} worden gemeld, kunnen we nog onderzoeken en herstellen. Dan kan de juiste informatie mee in de officiele uitslag."
+msgstr "Soms gaat er iets mis bij het tellen, opschrijven of overtypen van de stemmen. Fouten die na {deadline} worden gemeld, kunnen we nog onderzoeken en herstellen. Dan kan de juiste informatie mee in de officiele uitslag."
+
+#: src/utils/region.ts
+msgid "staat"
+msgstr "staat"
+
+#: src/utils/region.ts
+msgid "Staat"
+msgstr "Staat"
+
+#: src/utils/region.ts
+msgid "Staten"
+msgstr "Staten"
+
+#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+#: src/utils/region.ts
+msgid "stembureau"
+msgstr "stembureau"
+
+#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+#: src/utils/region.ts
+msgid "Stembureau"
+msgstr "Stembureau"
+
+#: src/pages/MunicipalityPage/MunicipalityPollingstationListPage.tsx
+msgid "stembureaus"
+msgstr "stembureaus"
+
+#: src/pages/MunicipalityPage/MunicipalityPollingstationListPage.tsx
+#: src/utils/region.ts
+msgid "Stembureaus"
+msgstr "Stembureaus"
+
+#: src/components/Footer.tsx
+msgid "Stemmen"
+msgstr "Stemmen"
+
+#: src/components/ResultsPage/VotesResume.tsx
+msgid "Stempassen"
+msgstr "Stempassen"
+
+#: src/components/ResultsPage/RegionResultsContent.tsx
+msgid "Telresultaten"
+msgstr "Telresultaten"
+
+#: src/pages/CSBPage/CSBMunicipalityListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+msgid "Telresultaten {electionLabel}"
+msgstr "Telresultaten {electionLabel}"
+
+#: src/pages/CSBPage/CSBPartyResultsPage.tsx
+msgid "Telresultaten {regionType} {regionName}"
+msgstr "Telresultaten {regionType} {regionName}"
+
+#: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
+msgid "Telresultaten gemeente"
+msgstr "Telresultaten gemeente"
+
+#: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
+msgid "Telresultaten gemeente – {regionName}"
+msgstr "Telresultaten gemeente – {regionName}"
+
+#: src/components/ResultsPage/PartyCandidatesResultsContent.tsx
+#: src/pages/CSBPage/CSBPartyResultsPage.tsx
+msgid "Telresultaten lijst {listNumber}"
+msgstr "Telresultaten lijst {listNumber}"
+
+#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "Telresultaten stembureau"
+msgstr "Telresultaten stembureau"
+
+#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "Telresultaten stembureau – {stationName}"
+msgstr "Telresultaten stembureau – {stationName}"
+
+#: src/pages/HomePage.tsx
+msgid "Telresultaten volgen binnenkort"
+msgstr "Telresultaten volgen binnenkort"
+
+#: src/components/ResultsPage/VotesResume.tsx
+msgid "Toegelaten kiezers"
+msgstr "Toegelaten kiezers"
+
+#: src/components/ResultsPage/PartyVoteMatrixTable.tsx
+msgid "Totaal"
+msgstr "Totaal"
+
+#: src/components/ResultsPage/PartyCandidatesResultsContent.tsx
+msgid "Totaal stemmen lijst {listNumber}"
+msgstr "Totaal stemmen lijst {listNumber}"
+
+#: src/components/ResultsPage/VotesResume.tsx
+msgid "Totaal stemmen op kandidaten"
+msgstr "Totaal stemmen op kandidaten"
+
+#: src/components/ResultsPage/VotesResume.tsx
+msgid "Totaal uitgebrachte stemmen"
+msgstr "Totaal uitgebrachte stemmen"
+
+#: src/pages/NotFoundPage.tsx
+msgid "U kunt de informatie die u zoekt mogelijk vinden via de volgende pagina's:"
+msgstr "U kunt de informatie die u zoekt mogelijk vinden via de volgende pagina's:"
+
+#: src/pages/ReportIssuePage.tsx
+msgid "U kunt een melding maken van mogelijke fouten die zijn gemaakt bij het tellen, opschrijven of overtypen van de stemmen in de uitslagensoftware. Dit kan voor de processen-verbaal van het lokaal stembureau, het gemeentelijk stembureau, het hoofdstembureau, het briefstembureau en het nationaal briefstembureau."
+msgstr "U kunt een melding maken van mogelijke fouten die zijn gemaakt bij het tellen, opschrijven of overtypen van de stemmen in de uitslagensoftware. Dit kan voor de processen-verbaal van het lokaal stembureau, het gemeentelijk stembureau, het hoofdstembureau, het briefstembureau en het nationaal briefstembureau."
+
+#: src/utils/date.ts
+msgid "U kunt geen fout meer melden"
+msgstr "U kunt geen fout meer melden"
+
+#: src/components/ResultsPage/RegionResultsContent.tsx
+msgid "Uitgebrachte stemmen"
+msgstr "Uitgebrachte stemmen"
+
+#: src/components/Footer.tsx
+msgid "Uitleg over telproces"
+msgstr "Uitleg over telproces"
+
+#: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/pages/ReportIssuePage.tsx
+msgid "Verkiezing"
+msgstr "Verkiezing"
+
+#: src/pages/HomePage.tsx
+msgid "Verkiezingen laden…"
+msgstr "Verkiezingen laden…"
+
+#: src/components/Footer.tsx
+msgid "Verkiezingen waar de samenleving op kan vertrouwen"
+msgstr "Verkiezingen waar de samenleving op kan vertrouwen"
+
+#: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+msgid "Verkiezingsdag: {electionDay}"
+msgstr "Verkiezingsdag: {electionDay}"
+
+#: src/pages/ReportIssuePage.tsx
+msgid "Vermeld geen persoonsgegevens in uw melding; dat is niet nodig."
+msgstr "Vermeld geen persoonsgegevens in uw melding; dat is niet nodig."
+
+#: src/components/ListPage/RegionList.tsx
+msgid "Vind een {regionInline} van A tot Z"
+msgstr "Vind een {regionInline} van A tot Z"
+
+#: src/components/ResultsPage/VotesResume.tsx
+msgid "Volmachtbewijzen"
+msgstr "Volmachtbewijzen"
+
+#: src/pages/ReportIssuePage.tsx
+msgid "Waarvoor kunt u een melding maken?"
+msgstr "Waarvoor kunt u een melding maken?"
+
+#: src/pages/ReportIssuePage.tsx
+msgid "Wat wordt er met een melding gedaan?"
+msgstr "Wat wordt er met een melding gedaan?"
+
+#: src/utils/region.ts
+msgid "waterschap"
+msgstr "waterschap"
+
+#: src/utils/region.ts
+msgid "Waterschap"
+msgstr "Waterschap"
+
+#: src/utils/region.ts
+msgid "Waterschappen"
+msgstr "Waterschappen"
+
+#: src/components/Footer.tsx
+msgid "Zie je een fout?"
+msgstr "Zie je een fout?"
+
+#: src/components/SearchBar.tsx
+msgid "Zoek {regionInline}"
+msgstr "Zoek {regionInline}"
+
+#: src/components/SearchBar.tsx
+msgid "Zoek gemeente"
+msgstr "Zoek gemeente"
+
+#: src/components/SearchBar.tsx
+msgid "Zoek op naam, adres of stembureau-nummer"
+msgstr "Zoek op naam, adres of stembureau-nummer"
+
+#: src/components/SearchBar.tsx
+msgid "Zoek waterschap"
+msgstr "Zoek waterschap"
+
+#: src/components/SearchBar.tsx
+msgid "Zoeken"
+msgstr "Zoeken"

@@ -12,6 +12,12 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'on-first-retry',
+    // The specs assert on Dutch text, so pin the interface language rather than
+    // letting it fall back to the browser's own preference.
+    storageState: {
+      cookies: [],
+      origins: [{ origin: baseURL, localStorage: [{ name: 'lang', value: 'nl' }] }],
+    },
   },
   webServer: {
     command: 'bash ../.docker/playwright/start.sh',
