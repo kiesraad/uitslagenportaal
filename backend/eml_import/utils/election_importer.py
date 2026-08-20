@@ -91,7 +91,6 @@ class FolderEMLImporter(BaseFileHandler):
                     f"Failed importing {parser_type} file {xml_file_path} with exception: {type(e).__name__} {e}"
                 )
 
-    # TODO: this one goes out of this class
     def import_folder(self, folder: Path, workers: int = 1) -> None:
         """
         Import all XML files from the given folder.

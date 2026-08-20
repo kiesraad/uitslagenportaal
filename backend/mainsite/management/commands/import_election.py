@@ -11,38 +11,6 @@ def default_workers() -> int:
     return max(1, (os.cpu_count() or 1))
 
 
-class FolderEMLIMporter(object):
-    # TODO: this one goes out of this class
-    def import_folder(self, folder: Path, workers: int = 1) -> None:
-        """
-        Import all XML files from the given folder.
-
-        With `workers` > 1 the files of each document type are imported
-        concurrently. The document types themselves stay sequential.
-        """
-        files = sorted(folder.rglob("*.xml"))
-        xml_files = self._classify_files(files)
-
-        workers = self._usable_workers(workers)
-        if workers == 1:
-            for parser_type in self._DOCUMENT_TYPES:
-                self._process_file_paths(parser_type, xml_files[parser_type])
-            return
-
-        # Hand no open connection to the children, and force "spawn" so a forked
-        # child can never inherit this process's socket.
-        connections.close_all()
-        with ProcessPoolExecutor(
-            max_workers=workers,
-            mp_context=multiprocessing.get_context("spawn"),
-            initializer=django.setup,
-        ) as pool:
-            for parser_type in self._DOCUMENT_TYPES:
-                # Each phase is a barrier: _process_file_paths_parallel does not
-                # return until every file of this document type is imported.
-                self._process_file_paths_parallel(pool, parser_type, xml_files[parser_type], workers)
-
-
 class Command(BaseCommand):
     help = "Import an election fixture folder into the database."
 
