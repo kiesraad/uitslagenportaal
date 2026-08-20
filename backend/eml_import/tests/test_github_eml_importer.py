@@ -13,7 +13,7 @@ from eml_import.models import BranchType, ImportedCommit
 from eml_import.tests.factories import ImportedCommitFactory
 from eml_import.tests.fakes import FakeCommit, FakeFile, FakeGithub, FakeRepo
 from eml_import.utils import github_eml_importer
-from eml_import.utils.github_eml_importer import COMMIT_BATCH_SIZE, LOCK_TIMEOUT, GithubEmlImporter
+from eml_import.utils.github_eml_importer import LOCK_TIMEOUT, GithubEmlImporter
 
 XML_110A = b"<EML Id='110a'/>"
 XML_230B = b"<EML Id='230b'/>"
@@ -76,14 +76,14 @@ def stored_election_config(db):
 
 @pytest.fixture
 def imported_batches(monkeypatch):
-    """Capture what run() hands to ElectionImporter, without parsing any real EML."""
+    """Capture what run() hands to FolderEMLImporter, without parsing any real EML."""
     batches = []
 
-    class RecordingElectionImporter:
+    class RecordingFolderEMLImporter:
         def import_file_objects(self, files):
             batches.append(files)
 
-    monkeypatch.setattr(github_eml_importer, "ElectionImporter", RecordingElectionImporter)
+    monkeypatch.setattr(github_eml_importer, "FolderEMLImporter", RecordingFolderEMLImporter)
     return batches
 
 
@@ -200,13 +200,13 @@ def test_get_next_batch_of_files_starts_at_the_oldest_commit(fake_repo, build_im
 
 
 def test_get_next_batch_of_files_caps_the_batch_size(fake_repo, build_importer, election_config):
-    commits = [FakeCommit(f"c{index}", [FakeFile(f"{index}.xml")]) for index in range(COMMIT_BATCH_SIZE + 2)]
+    commits = [FakeCommit(f"c{index}", [FakeFile(f"{index}.xml")]) for index in range(1 + 2)]
     repo = fake_repo(commits=commits)
 
     head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
 
-    assert head_sha == f"c{COMMIT_BATCH_SIZE - 1}"
-    assert len(files) == COMMIT_BATCH_SIZE
+    assert head_sha == f"c{1 - 1}"
+    assert len(files) == 1
 
 
 def test_get_next_batch_of_files_resumes_after_the_base_commit(fake_repo, build_importer, election_config):
@@ -498,11 +498,11 @@ def test_run_holds_a_lock_that_expires_on_its_own(fake_repo, monkeypatch, stored
     importer = GithubEmlImporter(stored_election_config)
     remaining = []
 
-    class TtlObservingElectionImporter:
+    class TtlObservingFolderEMLImporter:
         def import_file_objects(self, files):
             remaining.append(cache.ttl(importer.cache_lock_key))
 
-    monkeypatch.setattr(github_eml_importer, "ElectionImporter", TtlObservingElectionImporter)
+    monkeypatch.setattr(github_eml_importer, "FolderEMLImporter", TtlObservingFolderEMLImporter)
 
     importer.run()
 
@@ -513,12 +513,12 @@ def test_run_keeps_its_result_when_the_lock_expires_mid_import(fake_repo, monkey
     fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
     importer = GithubEmlImporter(stored_election_config)
 
-    class LockExpiringElectionImporter:
+    class LockExpiringFolderEMLImporter:
         def import_file_objects(self, files):
             # As if LOCK_TIMEOUT elapsed while this import was still running
             cache.delete(importer.cache_lock_key)
 
-    monkeypatch.setattr(github_eml_importer, "ElectionImporter", LockExpiringElectionImporter)
+    monkeypatch.setattr(github_eml_importer, "FolderEMLImporter", LockExpiringFolderEMLImporter)
 
     file_count = importer.run()
 

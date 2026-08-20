@@ -17,7 +17,7 @@ from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 
 from election.models import Election, ElectionCategory, ElectionConfig, VoteCount, VoterTurnoutCount
-from eml_import.utils.election_importer import ElectionImporter
+from eml_import.utils.election_importer import FolderEMLImporter
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
 from party.models import Party
@@ -61,7 +61,7 @@ def ab2023_config(db):
 
 @pytest.fixture
 def ws_election(ab2023_config, ws_import_folder):
-    ElectionImporter().import_folder(ws_import_folder)
+    FolderEMLImporter().import_folder(ws_import_folder)
     return Election.objects.get(election_config=ab2023_config)
 
 

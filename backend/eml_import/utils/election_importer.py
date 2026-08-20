@@ -21,7 +21,7 @@ from eml_import.utils.eml_110_importer import EML110aImporter
 from eml_import.utils.eml_230_importer import EML230bImporter
 from eml_import.utils.eml_510_importer import EML510bImporter, EML510dImporter
 from eml_import.utils.eml_base_importer import EMLBaseImporter
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from eml_import.utils.file_handler import BaseFileHandler
 from mainsite.utils.eml_type import EmlType
 
 
@@ -39,8 +39,8 @@ def build_parser() -> XmlParser:
     )
 
 
-class ElectionImporter:
-    # Set once per worker process by ElectionImporter._import_file
+class FolderEMLImporter(BaseFileHandler):
+    # Set once per worker process by FolderEMLImporter._import_file
     _WORKER_PARSER: XmlParser | None = None
 
     def __init__(self):
@@ -91,14 +91,7 @@ class ElectionImporter:
                     f"Failed importing {parser_type} file {xml_file_path} with exception: {type(e).__name__} {e}"
                 )
 
-    def _classify_files[T = Path | BytesIO](self, input_files: list[T]) -> dict[str, list[T]]:
-        xml_files: dict[str, list[T]] = {key: [] for key in self._DOCUMENT_TYPES}
-        for xml_file_path in input_files:
-            document_id = self._document_id(xml_file_path)
-            if document_id and document_id in xml_files:
-                xml_files[document_id].append(xml_file_path)
-        return xml_files
-
+    # TODO: this one goes out of this class
     def import_folder(self, folder: Path, workers: int = 1) -> None:
         """
         Import all XML files from the given folder.
@@ -197,20 +190,3 @@ class ElectionImporter:
             importer_cls(eml, path).parse()
 
         return raw_path
-
-    def import_file_objects(self, files: list[NamedBytesIO]) -> None:
-        """
-        Import all given file-like objects.
-        """
-        xml_files = self._classify_files(files)
-        for parser_type, (binding, importer_cls) in self._DOCUMENT_TYPES.items():
-            for file in xml_files[parser_type]:
-                self.logger.info(f"Importing {parser_type} file {file.filename}")
-                eml = self._parser.from_bytes(file.getvalue(), binding)
-                try:
-                    with transaction.atomic():
-                        importer_cls(eml, file).parse()
-                except Exception as e:
-                    self.logger.error(
-                        f"Failed importing {parser_type} file {file.filename} with exception: {type(e).__name__} {e}"
-                    )
