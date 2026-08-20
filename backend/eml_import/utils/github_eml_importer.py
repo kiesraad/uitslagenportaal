@@ -88,7 +88,6 @@ class GithubEmlImporter(BaseFileHandler):
                 branch,
                 last_imported.commit_sha if last_imported else "first commit",
             )
-            # TODO: make into get next commit?
             batch_head_sha, files = self._get_files_for_next_commit(
                 last_imported.commit_sha if last_imported else None, branch
             )
