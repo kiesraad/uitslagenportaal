@@ -54,7 +54,6 @@ export function CSBMunicipalityListPage() {
                void refetchRegions();
             }}
             entityLabel={t(regionLabels.singular)}
-            entityLabelInline={t(regionLabels.inline)}
          />
       );
    }

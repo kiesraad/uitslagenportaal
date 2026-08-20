@@ -8,6 +8,7 @@ import type { ElectionConfig, Region, RegionCategory } from "../../api/types";
 import { useFormatters } from "../../utils/format";
 import { getRegionLabels } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
+import { lowercaseFirst } from "../../utils/text";
 import type { SearchListOption } from "../SearchBar";
 import SearchBar from "../SearchBar";
 
@@ -35,7 +36,7 @@ export function RegionList({
    const navigate = useNavigate();
    const { t } = useLingui();
    const { collator } = useFormatters();
-   const regionInline = t(getRegionLabels(regionCategory).inline);
+   const regionInline = lowercaseFirst(t(getRegionLabels(regionCategory).singular));
 
    function navigateToGemeente(option: SearchListOption) {
       navigate(appRoutes.municipalityPollingstationList(electionConfig.slug ?? "", option.id, option.csbSlug));

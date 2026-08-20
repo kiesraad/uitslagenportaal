@@ -49,7 +49,6 @@ export function CSBResultsPage() {
                void refetchRegion();
             }}
             entityLabel={t(regionLabels.singular)}
-            entityLabelInline={t(regionLabels.inline)}
          />
       );
    }

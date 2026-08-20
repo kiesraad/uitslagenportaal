@@ -59,7 +59,6 @@ export function MunicipalityPartyResultsPage() {
                void refetchRegion();
             }}
             entityLabel={t`Gemeente`}
-            entityLabelInline={t`gemeente`}
          />
       );
    }

@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
+import { lowercaseFirst } from "../utils/text";
 import { Layout } from "./Layout";
 
 type PageQueryBoundaryProps = {
@@ -8,8 +9,6 @@ type PageQueryBoundaryProps = {
    onRetry: () => void;
    /** Capitalised, standalone: "Gemeente". */
    entityLabel: string;
-   /** The same noun mid-sentence: "gemeente". Falls back to `entityLabel`. */
-   entityLabelInline?: string;
    withLayout?: boolean;
 };
 
@@ -22,13 +21,10 @@ export function PageQueryBoundary({
    isError,
    onRetry,
    entityLabel,
-   entityLabelInline,
    withLayout = true,
 }: PageQueryBoundaryProps) {
    const { t } = useLingui();
-   // Not `entityLabel.toLowerCase()`: which casing a noun takes mid-sentence is
-   // a property of the language, so the caller passes the right form.
-   const labelInline = entityLabelInline ?? entityLabel;
+   const labelInline = lowercaseFirst(entityLabel);
 
    const wrap = (title: string, description: string, children: ReactNode) =>
       withLayout ? (

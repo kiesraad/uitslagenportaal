@@ -204,12 +204,6 @@ msgstr "Fout melden"
 msgid "Ga dan naar"
 msgstr "Ga dan naar"
 
-#: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
-#: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
-#: src/utils/region.ts
-msgid "gemeente"
-msgstr "gemeente"
-
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
 #: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
@@ -347,10 +341,6 @@ msgid "Kandidaat"
 msgstr "Kandidaat"
 
 #: src/utils/region.ts
-msgid "kieskring"
-msgstr "kieskring"
-
-#: src/utils/region.ts
 msgid "Kieskring"
 msgstr "Kieskring"
 
@@ -440,10 +430,6 @@ msgid "Per gemeente"
 msgstr "Per gemeente"
 
 #: src/utils/region.ts
-msgid "provincie"
-msgstr "provincie"
-
-#: src/utils/region.ts
 msgid "Provincie"
 msgstr "Provincie"
 
@@ -454,10 +440,6 @@ msgstr "Provincies"
 #: src/pages/ReportIssuePage.tsx
 msgid "Punten waar uw melding aan moet voldoen"
 msgstr "Punten waar uw melding aan moet voldoen"
-
-#: src/utils/region.ts
-msgid "regio"
-msgstr "regio"
 
 #: src/utils/region.ts
 msgid "Regio"
@@ -489,10 +471,6 @@ msgid "Soms gaat er iets mis bij het tellen, opschrijven of overtypen van de ste
 msgstr "Soms gaat er iets mis bij het tellen, opschrijven of overtypen van de stemmen. Fouten die na {deadline} worden gemeld, kunnen we nog onderzoeken en herstellen. Dan kan de juiste informatie mee in de officiele uitslag."
 
 #: src/utils/region.ts
-msgid "staat"
-msgstr "staat"
-
-#: src/utils/region.ts
 msgid "Staat"
 msgstr "Staat"
 
@@ -503,18 +481,8 @@ msgstr "Staten"
 #: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
 #: src/utils/region.ts
-msgid "stembureau"
-msgstr "stembureau"
-
-#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
-#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
-#: src/utils/region.ts
 msgid "Stembureau"
 msgstr "Stembureau"
-
-#: src/pages/MunicipalityPage/MunicipalityPollingstationListPage.tsx
-msgid "stembureaus"
-msgstr "stembureaus"
 
 #: src/pages/MunicipalityPage/MunicipalityPollingstationListPage.tsx
 #: src/utils/region.ts
@@ -648,10 +616,6 @@ msgstr "Waarvoor kunt u een melding maken?"
 #: src/pages/ReportIssuePage.tsx
 msgid "Wat wordt er met een melding gedaan?"
 msgstr "Wat wordt er met een melding gedaan?"
-
-#: src/utils/region.ts
-msgid "waterschap"
-msgstr "waterschap"
 
 #: src/utils/region.ts
 msgid "Waterschap"

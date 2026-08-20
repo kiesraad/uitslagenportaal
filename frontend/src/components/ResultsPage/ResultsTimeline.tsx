@@ -10,7 +10,7 @@ import Timeline from "../Timeline";
 
 type SortDirection = "desc" | "asc";
 
-const VARIANT_DESCRIPTIONS: Record<TimelineVariant, MessageDescriptor | null> = /* @__PURE__ */ (() => ({
+const VARIANT_DESCRIPTIONS: Record<TimelineVariant, MessageDescriptor | null> = (() => ({
    CSO: msg`Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam.`,
    DSO: msg`Het stembureau doet een uitgebreide telling op het stembureau. Het gemeentelijk stembureau telt de volgende dag de uitkomsten bij elkaar op. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam.`,
    DEFAULT: null,

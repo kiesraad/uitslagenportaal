@@ -38,7 +38,6 @@ export function MunicipalityPollingstationListPage() {
                void refetchPollingStations();
             }}
             entityLabel={t`Stembureaus`}
-            entityLabelInline={t`stembureaus`}
             withLayout={false}
          />
       );

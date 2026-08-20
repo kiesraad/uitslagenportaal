@@ -5,6 +5,7 @@ import { type ChangeEvent, type KeyboardEvent, type ReactNode, useEffect, useMem
 
 import type { RegionCategory } from "../api/types";
 import { getRegionLabels } from "../utils/region";
+import { lowercaseFirst } from "../utils/text";
 
 export type SearchListOption = {
    id: string;
@@ -49,8 +50,8 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
    } as const;
 
    const labels = getRegionLabels(regionCategory);
-   const regionInline = t(labels.inline);
    const regionSingular = t(labels.singular);
+   const regionInline = lowercaseFirst(regionSingular);
    const config = SEARCH_CONFIG[regionCategory as keyof typeof SEARCH_CONFIG] ?? {
       label: t`Zoek ${regionInline}`,
       placeholder: t`Bijv. ${regionSingular}`,

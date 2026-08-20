@@ -65,7 +65,6 @@ export function CSBPartyResultsPage() {
                void refetchPartyVoteMatrix();
             }}
             entityLabel={t(regionLabels.singular)}
-            entityLabelInline={t(regionLabels.inline)}
          />
       );
    }

@@ -52,7 +52,6 @@ export default function MunicipalityPageLayout() {
                void refetchRegion();
             }}
             entityLabel={t`Gemeente`}
-            entityLabelInline={t`gemeente`}
          />
       );
    }

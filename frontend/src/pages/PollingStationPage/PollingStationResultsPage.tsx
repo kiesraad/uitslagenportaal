@@ -75,7 +75,6 @@ export default function PollingStationResultsPage() {
                void refetchPollingStation();
             }}
             entityLabel={t`Stembureau`}
-            entityLabelInline={t`stembureau`}
          />
       );
    }
