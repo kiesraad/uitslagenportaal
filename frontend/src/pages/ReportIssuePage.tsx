@@ -83,7 +83,7 @@ function ReportIssuePageContent({
          <div className="page-main">
             <div className="page-space-3 max-w-2xl">
                <div>
-                  <nav className="breadcrumb" aria-label={t`Kruimelpad`}>
+                  <nav className="breadcrumb" aria-label="Breadcrumb">
                      <span className="breadcrumb-item">
                         <Link to={appRoutes.home()}>
                            <Trans>Home</Trans>

@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo, useState } from "react";
+import { type MouseEvent, useMemo, useState } from "react";
 import type { TimelineVariant } from "@/api/types.ts";
 import type { TimelineEntry } from "../Timeline";
 import Timeline from "../Timeline";
@@ -33,7 +33,7 @@ export default function ResultsTimeline({ description, variant, entries }: Props
       return [...entries].sort((a, b) => factor * (new Date(a.date).getTime() - new Date(b.date).getTime()));
    }, [entries, direction]);
 
-   const toggleDirection = (event: React.MouseEvent<HTMLAnchorElement>) => {
+   const toggleDirection = (event: MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       setDirection((current) => (current === "desc" ? "asc" : "desc"));
    };
@@ -49,9 +49,9 @@ export default function ResultsTimeline({ description, variant, entries }: Props
                <FontAwesomeIcon icon={faArrowUp} color={direction === "desc" ? "Black" : "Grey"} />
                <FontAwesomeIcon icon={faArrowDown} color={direction === "asc" ? "Black" : "Grey"} />
             </span>
-            <a href="#" onClick={toggleDirection}>
+            <button type="button" onClick={toggleDirection} className="text-blue-500">
                {direction === "desc" ? t`Laatste stap bovenaan` : t`Eerste stap bovenaan`}
-            </a>
+            </button>
          </p>
 
          {/* Timeline */}

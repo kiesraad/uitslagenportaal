@@ -153,18 +153,15 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
                   onBlur={() => setTimeout(() => setOpen(false), 150)}
                   onFocus={() => suggestions.length > 0 && setOpen(true)}
                   aria-autocomplete="list"
-                  aria-expanded={isOpen}
                   aria-controls={suggestionsId}
                   aria-activedescendant={activeIndex >= 0 ? `${suggestionsId}-${activeIndex}` : undefined}
                />
                {isOpen && (
-                  <ul id={suggestionsId} ref={listRef} role="listbox" className="search-suggestions">
+                  <ul id={suggestionsId} ref={listRef} className="search-suggestions">
                      {suggestions.map((option, index) => (
                         <li
                            key={`${option.id}-${option.csbSlug ?? ""}`}
                            id={`${suggestionsId}-${index}`}
-                           role="option"
-                           aria-selected={index === activeIndex}
                            className={`search-suggestion-item${index === activeIndex ? " active" : ""}`}
                            onMouseDown={() => selectOption(option)}
                            onMouseEnter={() => setActiveIndex(index)}

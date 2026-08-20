@@ -100,7 +100,8 @@ export function RegionList({
          // handle 's-Gravenhage and 's-Hertogenbosch
          const name = sortName.startsWith("'s-") ? sortName.slice(3) : sortName;
          const letter = name[0].toUpperCase();
-         (grouped[letter] ??= []).push(option);
+         grouped[letter] ??= [];
+         grouped[letter].push(option);
          return grouped;
       }, {});
 

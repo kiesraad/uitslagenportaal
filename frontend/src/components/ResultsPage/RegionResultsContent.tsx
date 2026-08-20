@@ -28,8 +28,7 @@ type Props = {
    timelineVariant?: TimelineVariant;
    timelineEntries: TimelineEntry[];
    issueReportDeadline: string;
-   /** When set, show ResultsNotPublished instead of results when there are no vote counts. */
-   notPublishedRegionLabel?: string;
+   notPublishedRegionLabel: string;
 };
 
 export default function RegionResultsContent({
@@ -45,7 +44,6 @@ export default function RegionResultsContent({
    const { t } = useLingui();
    const hasResults = Array.isArray(voteCounts) && voteCounts.length > 0;
    const partyLevelVoteCounts = getPartyLevelVoteCounts(voteCounts);
-   const showNotPublished = Boolean(notPublishedRegionLabel) && !hasResults;
 
    const resultsContent = (
       <>
@@ -89,7 +87,7 @@ export default function RegionResultsContent({
 
    return (
       <>
-         {showNotPublished ? <ResultsNotPublished regionLabel={notPublishedRegionLabel!} /> : resultsContent}
+         {!hasResults ? <ResultsNotPublished regionLabel={notPublishedRegionLabel} /> : resultsContent}
          <ResultsTimeline variant={timelineVariant} entries={timelineEntries} />
          <IssueNotice issueReportDeadline={issueReportDeadline} />
       </>

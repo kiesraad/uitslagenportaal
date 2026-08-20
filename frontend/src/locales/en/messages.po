@@ -370,11 +370,6 @@ msgstr "Click a list to see the votes per candidate"
 msgid "Klopt er iets niet?"
 msgstr "Is something not right?"
 
-#: src/components/PageTop.tsx
-#: src/pages/ReportIssuePage.tsx
-msgid "Kruimelpad"
-msgstr "Breadcrumb"
-
 #: src/components/ResultsPage/ResultsTimeline.tsx
 msgid "Laatste stap bovenaan"
 msgstr "Latest step first"
