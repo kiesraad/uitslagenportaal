@@ -4,7 +4,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-from eml_import.utils.election_importer import FolderEMLImporter
+from eml_import.utils.folder_eml_importer import FolderEMLImporter
 
 
 def default_workers() -> int:

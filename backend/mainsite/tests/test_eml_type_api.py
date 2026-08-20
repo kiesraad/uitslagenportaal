@@ -17,7 +17,7 @@ from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 
 from election.models import Election, ElectionCategory, ElectionConfig, VoteCount, VoterTurnoutCount
-from eml_import.utils.election_importer import FolderEMLImporter
+from eml_import.utils.folder_eml_importer import FolderEMLImporter
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
 from party.models import Party

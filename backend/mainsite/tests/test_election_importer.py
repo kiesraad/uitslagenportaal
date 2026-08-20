@@ -5,7 +5,7 @@ from django.conf import settings
 
 from election.models import Election, ElectionCategory, VoteCount
 from election.tests.factories import ElectionConfigFactory
-from eml_import.utils.election_importer import FolderEMLImporter
+from eml_import.utils.folder_eml_importer import FolderEMLImporter
 from mainsite.models import RegionCategory
 from region.models import Region
 
