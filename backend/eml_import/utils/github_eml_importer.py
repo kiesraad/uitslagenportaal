@@ -19,8 +19,6 @@ from eml_import.models import BranchType, ImportedCommit
 from eml_import.utils.file_handler import BaseFileHandler
 from eml_import.utils.named_bytes_io import NamedBytesIO
 
-# COMMIT_BATCH_SIZE = 25
-
 # Seconds before the per-election lock expires on its own, so a worker that dies
 # mid-import does not block that election forever.
 LOCK_TIMEOUT = 5 * 60
@@ -163,24 +161,7 @@ class GithubEmlImporter(BaseFileHandler):
         batch_head_sha = commit.sha
         files = list(self.repo.get_commit(commit.sha).files)
 
-        # Compare does not return the files in the commit of the given sha,
-        # so get the files of the first commit separately
-        # if len(commits) == 1:
         return batch_head_sha, files
-        # TODO: verify if this file stuff is needed
-
-        # # Try to get the files using a diff, which works up to 300 files and is enough most of the time
-        # diff_files = self.repo.compare(commits[0].sha, batch_head_sha).files
-        # if len(diff_files) < 300:
-        #     return batch_head_sha, files + diff_files
-
-        # # Get files per commit instead, because we have 300 or more changed files.
-        # # This costs at least one extra request per commit
-        # self.logger.info("Fetch files for each commit, >= 300 files found...")
-        # for commit in commits[1:]:
-        #     files += list(self.repo.get_commit(commit.sha).files)
-
-        # return batch_head_sha, files
 
     def _iterate_all_xml_files(self, files: list[File]) -> Iterator[NamedBytesIO]:
         """
