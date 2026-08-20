@@ -89,7 +89,7 @@ class GithubEmlImporter(BaseFileHandler):
                 last_imported.commit_sha if last_imported else "first commit",
             )
             # TODO: make into get next commit?
-            batch_head_sha, files = self._get_next_batch_of_files(
+            batch_head_sha, files = self._get_files_for_next_commit(
                 last_imported.commit_sha if last_imported else None, branch
             )
             # This branch is fully imported, so continue with the next one
@@ -144,7 +144,7 @@ class GithubEmlImporter(BaseFileHandler):
             else:
                 self.logger.info("No %s branch configured for %s", branch_type, self.election_config.identifier)
 
-    def _get_next_batch_of_files(self, base_sha: str | None, branch: str) -> tuple[str | None, list[File]]:
+    def _get_files_for_next_commit(self, base_sha: str | None, branch: str) -> tuple[str | None, list[File]]:
         if base_sha is not None:
             # Get the commits ahead of the base_sha ref, so commits[0] is the first commit after base_Sha
             ahead = self.repo.compare(base_sha, branch)

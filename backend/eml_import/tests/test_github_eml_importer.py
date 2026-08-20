@@ -179,7 +179,7 @@ def test_iterate_branches_skips_branches_that_are_not_configured(fake_repo, elec
     assert branches == [(BranchType.COUNTING_RESULTS, BRANCH_COUNTING_RESULTS)]
 
 
-def test_get_next_batch_of_files_starts_at_the_oldest_commit(fake_repo, build_importer, election_config):
+def test_get_files_for_next_commit_starts_at_the_oldest_commit(fake_repo, build_importer, election_config):
     repo = fake_repo(
         commits=[
             FakeCommit("oldest", [FakeFile("a.xml")]),
@@ -188,7 +188,7 @@ def test_get_next_batch_of_files_starts_at_the_oldest_commit(fake_repo, build_im
         ]
     )
 
-    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit(None, BRANCH_EXCHANGE)
 
     assert head_sha == "newest"
     # compare() excludes the base commit, so the oldest commit is fetched separately;
@@ -199,17 +199,17 @@ def test_get_next_batch_of_files_starts_at_the_oldest_commit(fake_repo, build_im
     assert repo.calls_named("compare") == [("compare", "oldest", "newest")]
 
 
-def test_get_next_batch_of_files_caps_the_batch_size(fake_repo, build_importer, election_config):
+def test_get_files_for_next_commit_caps_the_batch_size(fake_repo, build_importer, election_config):
     commits = [FakeCommit(f"c{index}", [FakeFile(f"{index}.xml")]) for index in range(1 + 2)]
     repo = fake_repo(commits=commits)
 
-    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit(None, BRANCH_EXCHANGE)
 
     assert head_sha == f"c{1 - 1}"
     assert len(files) == 1
 
 
-def test_get_next_batch_of_files_resumes_after_the_base_commit(fake_repo, build_importer, election_config):
+def test_get_files_for_next_commit_resumes_after_the_base_commit(fake_repo, build_importer, election_config):
     repo = fake_repo(
         commits=[
             FakeCommit("imported", [FakeFile("already-done.xml")]),
@@ -218,7 +218,7 @@ def test_get_next_batch_of_files_resumes_after_the_base_commit(fake_repo, build_
         ]
     )
 
-    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files("imported", BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit("imported", BRANCH_EXCHANGE)
 
     assert head_sha == "last"
     # The base commit's own files are not imported a second time
@@ -226,10 +226,10 @@ def test_get_next_batch_of_files_resumes_after_the_base_commit(fake_repo, build_
     assert repo.calls_named("compare")[0] == ("compare", "imported", BRANCH_EXCHANGE)
 
 
-def test_get_next_batch_of_files_returns_nothing_when_up_to_date(fake_repo, build_importer, election_config):
+def test_get_files_for_next_commit_returns_nothing_when_up_to_date(fake_repo, build_importer, election_config):
     repo = fake_repo(commits=[FakeCommit("imported", [FakeFile("a.xml")])])
 
-    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files("imported", BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit("imported", BRANCH_EXCHANGE)
 
     assert head_sha is None
     assert files == []
@@ -238,7 +238,7 @@ def test_get_next_batch_of_files_returns_nothing_when_up_to_date(fake_repo, buil
     assert repo.calls_named("compare") == [("compare", "imported", BRANCH_EXCHANGE)]
 
 
-def test_get_next_batch_of_files_does_not_diff_a_single_commit(fake_repo, build_importer, election_config):
+def test_get_files_for_next_commit_does_not_diff_a_single_commit(fake_repo, build_importer, election_config):
     repo = fake_repo(
         commits=[
             FakeCommit("imported", [FakeFile("already-done.xml")]),
@@ -246,7 +246,7 @@ def test_get_next_batch_of_files_does_not_diff_a_single_commit(fake_repo, build_
         ]
     )
 
-    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files("imported", BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit("imported", BRANCH_EXCHANGE)
 
     assert head_sha == "only"
     assert [file.filename for file in files] == ["a.xml"]
@@ -255,14 +255,14 @@ def test_get_next_batch_of_files_does_not_diff_a_single_commit(fake_repo, build_
     assert repo.calls_named("get_commit") == [("get_commit", "only")]
 
 
-def test_get_next_batch_of_files_uses_the_diff_when_it_has_fewer_than_300_files(
+def test_get_files_for_next_commit_uses_the_diff_when_it_has_fewer_than_300_files(
     fake_repo, build_importer, election_config
 ):
     first_commit_files = [FakeFile("a.xml")]
     diff_files = [FakeFile(f"pad_{index}.xml") for index in range(299)]
     repo = fake_repo(commits=[FakeCommit("first", first_commit_files), FakeCommit("second", diff_files)])
 
-    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit(None, BRANCH_EXCHANGE)
 
     assert head_sha == "second"
     assert [file.filename for file in files] == ["a.xml"] + [f"pad_{index}.xml" for index in range(299)]
@@ -271,14 +271,14 @@ def test_get_next_batch_of_files_uses_the_diff_when_it_has_fewer_than_300_files(
     assert repo.calls_named("get_commit") == [("get_commit", "first")]
 
 
-def test_get_next_batch_of_files_fetches_files_per_commit_when_the_diff_has_300_or_more_files(
+def test_get_files_for_next_commit_fetches_files_per_commit_when_the_diff_has_300_or_more_files(
     fake_repo, build_importer, election_config
 ):
     first_commit_files = [FakeFile("a.xml")]
     diff_files = [FakeFile(f"pad_{index}.xml") for index in range(300)]
     repo = fake_repo(commits=[FakeCommit("first", first_commit_files), FakeCommit("second", diff_files)])
 
-    head_sha, files = build_importer(election_config, repo)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
+    head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit(None, BRANCH_EXCHANGE)
 
     assert head_sha == "second"
     assert [file.filename for file in files] == ["a.xml"] + [f"pad_{index}.xml" for index in range(300)]
