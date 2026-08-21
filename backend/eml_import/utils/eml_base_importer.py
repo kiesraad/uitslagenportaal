@@ -38,7 +38,7 @@ class EMLBaseImporter[T](ABC):
 
     def _parse_election(self) -> None:
         election_identifier = self._get_election_identifier_data().id.split("_")[0]
-        self.election_config = ElectionConfig.objects.get(identifier=election_identifier)
+        self.election_config = ElectionConfig.with_expired.get(identifier=election_identifier)
         election_identifier_object = self._get_election_identifier_data()
         election, _ = Election.objects.get_or_create(
             election_config=self.election_config,
