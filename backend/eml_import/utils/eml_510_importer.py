@@ -4,6 +4,7 @@ from io import BytesIO
 from pathlib import Path
 
 from django.core.files.storage import default_storage
+from django.db import transaction
 from django.utils import timezone
 from pyeml_bindings import (
     Count,
@@ -162,6 +163,21 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
             or VoterTurnoutCount.objects.filter(region=region, eml_type=self.eml_type).exists()
         )
 
+    def _archive_municipality_results(self, region: Region) -> None:
+        """
+        Toss the previous telling under this municipality so the normal import path
+        can recreate it. The municipality region itself is kept; its stembureaus and
+        this eml_type's counts are removed.
+        """
+        VoteCount.objects.filter(region=region, eml_type=self.eml_type).delete()
+        VoterTurnoutCount.objects.filter(region=region, eml_type=self.eml_type).delete()
+        # Station-level counts cascade when the stembureau regions are deleted.
+        Region.objects.filter(
+            election=self.election,
+            parent=region,
+            region_category=RegionCategory.STEMBUREAU,
+        ).delete()
+
     def _store_eml(self, region: Region) -> None:
         # Determine the name, it should be consistent based on the file content/type, so we store only one file
         # if the same file gets imported twice with a different filename.
@@ -294,68 +310,73 @@ class EML510bImporter(EML510BaseImporter):
                 f"does not exist in the election definition of election {self.election.name}"
             )
 
-        # Same (eml_type, election, authority) already imported → this file replaces that import.
-        if self._is_correction(region):
-            is_correction = True  # set debugger breakpoint on this line
+        # Same (eml_type, election, authority) already imported → replace the tree under it.
+        is_correction = self._is_correction(region)
+        if is_correction:
             self.logger.info(
-                "Correction detected for region %s (%s) eml_type=%s (is_correction=%s)",
+                "Correction detected for region %s (%s) eml_type=%s",
                 region.region_number,
                 region.region_name,
                 self.eml_type,
-                is_correction,
             )
 
-        if self.eml_file is not None:
-            self._store_eml(region)
+        # Archive + the existing import path below share one transaction on correction.
+        # First imports rely on the caller's atomic (if any); no second import method.
+        with transaction.atomic():
+            if is_correction:
+                self._archive_municipality_results(region)
 
-        region.results_available_at = timezone.now()
-        counting_method = self._counting_method(self.eml.count)
-        if counting_method is not None:
-            region.counting_method = counting_method
-        region.save()
+            if self.eml_file is not None:
+                self._store_eml(region)
 
-        # Preload party names dict
-        party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
-        polling_stations = self._ensure_polling_stations(region)
+            region.results_available_at = timezone.now()
+            counting_method = self._counting_method(self.eml.count)
+            if counting_method is not None:
+                region.counting_method = counting_method
+            region.save()
 
-        vote_counts: list[VoteCount] = []
-        turnout_counts: list[VoterTurnoutCount] = []
-        for contest_data in self.eml.count.election.contests.contest:
-            contest = Contest.objects.get(
-                identifier=contest_data.contest_identifier.id,
-                election=self.election,
-            )
-            candidate_by_key = {
-                (candidate.party_id, candidate.identifier): candidate
-                for candidate in Candidate.objects.filter(contest=contest)
-            }
-            self._parse_party_candidate_votecounts(
-                contest,
-                region,
-                contest_data.total_votes.selection,
-                party_by_list_number,
-                candidate_by_key,
-                vote_counts,
-            )
-            self._collect_turnout_counts(contest, region, contest_data.total_votes, turnout_counts)
-            for unit in contest_data.reporting_unit_votes:
-                polling_station = polling_stations[
-                    (str(unit.reporting_unit_identifier.id), self._polling_station_name(unit))
-                ]
+            # Preload party names dict
+            party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
+            polling_stations = self._ensure_polling_stations(region)
+
+            vote_counts: list[VoteCount] = []
+            turnout_counts: list[VoterTurnoutCount] = []
+            for contest_data in self.eml.count.election.contests.contest:
+                contest = Contest.objects.get(
+                    identifier=contest_data.contest_identifier.id,
+                    election=self.election,
+                )
+                candidate_by_key = {
+                    (candidate.party_id, candidate.identifier): candidate
+                    for candidate in Candidate.objects.filter(contest=contest)
+                }
                 self._parse_party_candidate_votecounts(
                     contest,
-                    polling_station,
-                    unit.selection,
+                    region,
+                    contest_data.total_votes.selection,
                     party_by_list_number,
                     candidate_by_key,
                     vote_counts,
                 )
-                self._collect_turnout_counts(contest, polling_station, unit, turnout_counts)
+                self._collect_turnout_counts(contest, region, contest_data.total_votes, turnout_counts)
+                for unit in contest_data.reporting_unit_votes:
+                    polling_station = polling_stations[
+                        (str(unit.reporting_unit_identifier.id), self._polling_station_name(unit))
+                    ]
+                    self._parse_party_candidate_votecounts(
+                        contest,
+                        polling_station,
+                        unit.selection,
+                        party_by_list_number,
+                        candidate_by_key,
+                        vote_counts,
+                    )
+                    self._collect_turnout_counts(contest, polling_station, unit, turnout_counts)
 
-        if vote_counts:
-            VoteCount.objects.bulk_create(vote_counts, batch_size=self.BULK_BATCH_SIZE)
-        if turnout_counts:
-            VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=self.BULK_BATCH_SIZE)
+            if vote_counts:
+                VoteCount.objects.bulk_create(vote_counts, batch_size=self.BULK_BATCH_SIZE)
+            if turnout_counts:
+                VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=self.BULK_BATCH_SIZE)
 
 
 class EML510dImporter(EML510BaseImporter):
