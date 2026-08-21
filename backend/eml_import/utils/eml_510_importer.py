@@ -164,28 +164,6 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
             or VoterTurnoutCount.objects.filter(region=region, eml_type=self.eml_type).exists()
         )
 
-    def _archive_municipality_results(self, region: Region) -> None:
-        """
-        Archive the previous telling under this municipality so the normal import path
-        can recreate it. The municipality region itself stays current; its stembureaus
-        and this eml_type's counts are archived.
-        """
-        stations = Region.objects.filter(
-            election=self.election,
-            parent=region,
-            region_category=RegionCategory.STEMBUREAU,
-        )
-        counts_filter = Q(region=region) | Q(region__in=stations)
-        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
-        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
-        stations.archive()
-
-    def _archive_csb_results(self, region: Region) -> None:
-        """Archive prior totaaltelling rows for this CSB and its descendants."""
-        counts_filter = Q(region=region) | Q(region__csb=region)
-        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
-        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
-
     def _store_eml(self, region: Region) -> None:
         # Determine the name, it should be consistent based on the file content/type, so we store only one file
         # if the same file gets imported twice with a different filename.
@@ -241,6 +219,22 @@ class EML510bImporter(EML510BaseImporter):
 
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
+
+    def _archive(self, region: Region) -> None:
+        """
+        Archive the previous telling under this municipality so the normal import path
+        can recreate it. The municipality region itself stays current; its stembureaus
+        and this eml_type's counts are archived.
+        """
+        stations = Region.objects.filter(
+            election=self.election,
+            parent=region,
+            region_category=RegionCategory.STEMBUREAU,
+        )
+        counts_filter = Q(region=region) | Q(region__in=stations)
+        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
+        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
+        stations.archive()
 
     @staticmethod
     def _polling_station_name(unit: ReportingUnitVotes) -> str:
@@ -332,7 +326,7 @@ class EML510bImporter(EML510BaseImporter):
         # First imports rely on the caller's atomic (if any); no second import method.
         with transaction.atomic():
             if is_correction:
-                self._archive_municipality_results(region)
+                self._archive(region)
 
             if self.eml_file is not None:
                 self._store_eml(region)
@@ -395,6 +389,12 @@ class EML510dImporter(EML510BaseImporter):
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
 
+    def _archive(self, region: Region) -> None:
+        """Archive prior totaaltelling rows for this CSB and its descendants."""
+        counts_filter = Q(region=region) | Q(region__csb=region)
+        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
+        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
+
     def _parse_data(self) -> None:
         election_domain = self._get_election_identifier_data().election_domain
         if not isinstance(election_domain, list):
@@ -428,7 +428,7 @@ class EML510dImporter(EML510BaseImporter):
 
         with transaction.atomic():
             if is_correction:
-                self._archive_csb_results(region)
+                self._archive(region)
 
             counting_method = self._counting_method(self.eml.count)
             if counting_method is not None and region.counting_method != counting_method:
