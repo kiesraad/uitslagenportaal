@@ -151,6 +151,17 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
             )
         )
 
+    def _is_correction(self, region: Region) -> bool:
+        """
+        True when this EML's logical file key is already imported.
+
+        Key: (eml_type, election via region, authority = region).
+        """
+        return (
+            VoteCount.objects.filter(region=region, eml_type=self.eml_type).exists()
+            or VoterTurnoutCount.objects.filter(region=region, eml_type=self.eml_type).exists()
+        )
+
     def _store_eml(self, region: Region) -> None:
         # Determine the name, it should be consistent based on the file content/type, so we store only one file
         # if the same file gets imported twice with a different filename.
@@ -281,6 +292,17 @@ class EML510bImporter(EML510BaseImporter):
             raise EMLImporterException(
                 f"Municipality {managing_authority_name} {authority_id} "
                 f"does not exist in the election definition of election {self.election.name}"
+            )
+
+        # Same (eml_type, election, authority) already imported → this file replaces that import.
+        if self._is_correction(region):
+            is_correction = True  # set debugger breakpoint on this line
+            self.logger.info(
+                "Correction detected for region %s (%s) eml_type=%s (is_correction=%s)",
+                region.region_number,
+                region.region_name,
+                self.eml_type,
+                is_correction,
             )
 
         if self.eml_file is not None:
