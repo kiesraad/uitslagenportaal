@@ -638,6 +638,51 @@ def test_510b_imports_votes_for_gsb_and_polling_stations(ws_regions, ws_contest,
     assert VoterTurnoutCount.objects.filter(region=station).count() == 4
 
 
+def test_510b_correction_replaces_municipality_tree(ws_regions, ws_contest, ws_parties, ws_candidates):
+    """A second telling for the same gemeente tosses stembureaus and 510b counts, then reimports."""
+    EML510bImporter(make_ws_telling(), None).parse()
+    original_station_id = Region.objects.get(region_category=RegionCategory.STEMBUREAU).pk
+
+    totals = make_total_votes(
+        [
+            party_selection(TotalVotes.Selection, 1, "Partij voor Zeeland", 1800),
+            candidate_selection(TotalVotes.Selection, 1200, number=1),
+        ]
+    )
+    unit = make_reporting_unit(
+        "0654::SB2",
+        "Stembureau Ander Bureau (postcode: 4451 AA)",
+        [
+            party_selection(ReportingUnitVotes.Selection, 1, "Partij voor Zeeland", 50),
+            candidate_selection(ReportingUnitVotes.Selection, 40, number=1),
+        ],
+    )
+    correction = make_ws_510b_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])])
+
+    EML510bImporter(correction, None).parse()
+
+    gemeente = ws_regions["gemeente"]
+    assert Region.objects.filter(pk=gemeente.pk).exists()
+    assert not Region.objects.filter(pk=original_station_id).exists()
+
+    stations = list(Region.objects.filter(parent=gemeente, region_category=RegionCategory.STEMBUREAU))
+    assert len(stations) == 1
+    assert stations[0].region_name == "Ander Bureau"
+
+    party, candidate = ws_parties[1], ws_candidates[(1, 1)]
+    assert [
+        (row.region, row.result_level, row.party, row.candidate, row.valid_votes)
+        for row in VoteCount.objects.filter(eml_type=EmlType.EML_510b).order_by("valid_votes")
+    ] == [
+        (stations[0], VoteCount.RESULT_LEVEL_CANDIDATE, party, candidate, 40),
+        (stations[0], VoteCount.RESULT_LEVEL_PARTY, party, None, 50),
+        (gemeente, VoteCount.RESULT_LEVEL_CANDIDATE, party, candidate, 1200),
+        (gemeente, VoteCount.RESULT_LEVEL_PARTY, party, None, 1800),
+    ]
+    assert VoterTurnoutCount.objects.filter(region=gemeente, eml_type=EmlType.EML_510b).count() == 4
+    assert VoterTurnoutCount.objects.filter(region=stations[0], eml_type=EmlType.EML_510b).count() == 4
+
+
 def test_510b_marks_region_as_counted_and_stores_document(ws_regions, ws_contest, ws_parties, ws_candidates):
     eml = make_ws_telling(counting_method=CountingMethodMethodCode.DECENTRALE_STEMOPNEMING)
 
