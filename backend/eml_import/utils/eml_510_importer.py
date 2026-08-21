@@ -5,6 +5,7 @@ from pathlib import Path
 
 from django.core.files.storage import default_storage
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from pyeml_bindings import (
     Count,
@@ -165,18 +166,25 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
 
     def _archive_municipality_results(self, region: Region) -> None:
         """
-        Toss the previous telling under this municipality so the normal import path
-        can recreate it. The municipality region itself is kept; its stembureaus and
-        this eml_type's counts are removed.
+        Archive the previous telling under this municipality so the normal import path
+        can recreate it. The municipality region itself stays current; its stembureaus
+        and this eml_type's counts are archived.
         """
-        VoteCount.objects.filter(region=region, eml_type=self.eml_type).delete()
-        VoterTurnoutCount.objects.filter(region=region, eml_type=self.eml_type).delete()
-        # Station-level counts cascade when the stembureau regions are deleted.
-        Region.objects.filter(
+        stations = Region.objects.filter(
             election=self.election,
             parent=region,
             region_category=RegionCategory.STEMBUREAU,
-        ).delete()
+        )
+        counts_filter = Q(region=region) | Q(region__in=stations)
+        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
+        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
+        stations.archive()
+
+    def _archive_csb_results(self, region: Region) -> None:
+        """Archive prior totaaltelling rows for this CSB and its descendants."""
+        counts_filter = Q(region=region) | Q(region__csb=region)
+        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
+        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
 
     def _store_eml(self, region: Region) -> None:
         # Determine the name, it should be consistent based on the file content/type, so we store only one file
@@ -409,21 +417,40 @@ class EML510dImporter(EML510BaseImporter):
                 region_name=region_name,
             )
 
-        counting_method = self._counting_method(self.eml.count)
-        if counting_method is not None and region.counting_method != counting_method:
-            region.counting_method = counting_method
-            region.save(update_fields=["counting_method", "updated_at"])
+        is_correction = self._is_correction(region)
+        if is_correction:
+            self.logger.info(
+                "Correction detected for region %s (%s) eml_type=%s",
+                region.region_number,
+                region.region_name,
+                self.eml_type,
+            )
 
-        # Store the EML file
-        if self.eml_file is not None:
-            self._store_eml(region)
+        with transaction.atomic():
+            if is_correction:
+                self._archive_csb_results(region)
 
+            counting_method = self._counting_method(self.eml.count)
+            if counting_method is not None and region.counting_method != counting_method:
+                region.counting_method = counting_method
+                region.save(update_fields=["counting_method", "updated_at"])
+
+            # Store the EML file
+            if self.eml_file is not None:
+                self._store_eml(region)
+
+            self._parse_csb_counts(region)
+
+    def _parse_csb_counts(self, region: Region) -> None:
         # Preload party names dict and child regions by name
         party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
-        child_region_category = RegionCategory.GEMEENTE if region.children.count() == 1 else RegionCategory.KIESKRING
+        current_children = Region.objects.filter(parent=region)
+        child_region_category = (
+            RegionCategory.GEMEENTE if current_children.count() == 1 else RegionCategory.KIESKRING
+        )
         child_region_by_name = {
-            region.region_name: region
-            for region in Region.objects.filter(election=self.election, region_category=child_region_category)
+            child.region_name: child
+            for child in Region.objects.filter(election=self.election, region_category=child_region_category)
         }
         child_region_category_re = re.compile(child_region_category.label, re.IGNORECASE)
 

@@ -4,10 +4,11 @@ from typing import Self
 from zoneinfo import ZoneInfo
 
 from django.db import models
+from django.db.models import Q
 from django.db.models.enums import Choices, TextChoices
 
 from election.utils import visibility_cutoff
-from mainsite.models import BaseModel, RegionCategory
+from mainsite.models import BaseModel, CurrentModel, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from mainsite.utils.utils import name_to_slug
 
@@ -128,7 +129,7 @@ class TimelineEntry(BaseModel):
         return f"{self.election_config.identifier} [{self.variant}]: {self.title}"
 
 
-class Contest(BaseModel):
+class Contest(CurrentModel):
     identifier = models.CharField(max_length=255, blank=True)
     election = models.ForeignKey(
         "election.Election",
@@ -138,9 +139,11 @@ class Contest(BaseModel):
     name = models.CharField(max_length=255, null=True)
 
     class Meta:
+        base_manager_name = "all_objects"
         constraints = [
             models.UniqueConstraint(
                 fields=["election", "identifier"],
+                condition=Q(is_current=True),
                 name="unique_contest_identifier_per_election",
             )
         ]
@@ -153,7 +156,7 @@ class EMLTypeMixin(models.Model):
     eml_type = models.CharField(max_length=32, choices=EmlType.choices, null=True)
 
 
-class VoteCount(EMLTypeMixin, BaseModel):
+class VoteCount(EMLTypeMixin, CurrentModel):
     contest = models.ForeignKey(
         "election.Contest",
         on_delete=models.CASCADE,
@@ -190,14 +193,8 @@ class VoteCount(EMLTypeMixin, BaseModel):
         default=RESULT_LEVEL_CANDIDATE,
     )
 
-    # TODO: create unique contstraint
-    # class Meta:
-    #     constraints = [
-    #         models.UniqueConstraint(
-    #             fields=["contest", "region", "party", "candidate"],
-    #             name="unique_vote_count_per_contest_region_party_candidate",
-    #         )
-    #     ]
+    class Meta:
+        base_manager_name = "all_objects"
 
 
 class ElectionDocument(BaseModel):
@@ -223,7 +220,7 @@ class ElectionDocument(BaseModel):
     )
 
 
-class VoterTurnoutCount(EMLTypeMixin, BaseModel):
+class VoterTurnoutCount(EMLTypeMixin, CurrentModel):
     contest = models.ForeignKey(
         "election.Contest",
         on_delete=models.CASCADE,
@@ -246,3 +243,6 @@ class VoterTurnoutCount(EMLTypeMixin, BaseModel):
     category = models.CharField(max_length=16, choices=CATEGORY_CHOICES)
     reason_code = models.CharField(max_length=64)
     votes = models.PositiveIntegerField()
+
+    class Meta:
+        base_manager_name = "all_objects"

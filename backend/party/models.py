@@ -1,10 +1,11 @@
 from django.db import models
+from django.db.models import Q
 
-from mainsite.models import BaseModel
+from mainsite.models import CurrentModel
 from mainsite.utils.utils import name_to_slug
 
 
-class Party(BaseModel):
+class Party(CurrentModel):
     election = models.ForeignKey(
         "election.Election",
         on_delete=models.CASCADE,
@@ -14,13 +15,16 @@ class Party(BaseModel):
     list_number = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
+        base_manager_name = "all_objects"
         constraints = [
             models.UniqueConstraint(
                 fields=["election", "registered_name"],
+                condition=Q(is_current=True),
                 name="unique_registered_name_per_election",
             ),
             models.UniqueConstraint(
                 fields=["election", "list_number"],
+                condition=Q(is_current=True),
                 name="unique_list_number_per_election",
             ),
         ]
@@ -35,11 +39,13 @@ class Party(BaseModel):
         super().save(*args, **kwargs)
 
 
-class Candidate(BaseModel):
+class Candidate(CurrentModel):
     class Meta:
+        base_manager_name = "all_objects"
         constraints = [
             models.UniqueConstraint(
                 fields=["contest", "party", "position"],
+                condition=Q(is_current=True),
                 name="unique_position_per_contest_and_party",
             ),
         ]

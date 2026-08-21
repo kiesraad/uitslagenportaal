@@ -38,13 +38,13 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     election_slug = serializers.CharField(source="election.slug", read_only=True)
 
     def get_vote_counts(self, obj):
-        vote_counts = list(obj.vote_counts.all())
+        vote_counts = list(obj.vote_counts.filter(is_current=True))
         if obj.region_category == RegionCategory.GEMEENTE:
             vote_counts = [vc for vc in vote_counts if vc.eml_type == EmlType.EML_510b]
         return VoteCountSummarySerializer(vote_counts, many=True).data
 
     def get_voter_turnout_counts(self, obj):
-        turnout_counts = list(obj.voter_turnout_counts.all())
+        turnout_counts = list(obj.voter_turnout_counts.filter(is_current=True))
         if obj.region_category == RegionCategory.GEMEENTE:
             turnout_counts = [tc for tc in turnout_counts if tc.eml_type == EmlType.EML_510b]
         return VoterTurnoutCountSummarySerializer(turnout_counts, many=True).data

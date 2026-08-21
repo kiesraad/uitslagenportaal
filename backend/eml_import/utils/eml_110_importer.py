@@ -1,11 +1,12 @@
+from django.db import transaction
 from pyeml_bindings import (
     Eml110a,
 )
 
-from election.models import Contest
+from election.models import Contest, VoteCount, VoterTurnoutCount
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from mainsite.utils.eml_type import EmlType
-from party.models import Party
+from party.models import Candidate, Party
 from region.models import Region
 
 
@@ -18,10 +19,29 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
         return self.eml.election_event.election.election_identifier
 
     def _parse_data(self):
-        self._parse_contest()
-        self._parse_regions()
-        self._parse_registered_parties()
+        with transaction.atomic():
+            if self._is_correction():
+                self._archive_prior_exchange()
+            self._parse_contest()
+            self._parse_regions()
+            self._parse_registered_parties()
         self.logger.info("Successfully imported data for Election")
+
+    def _is_correction(self) -> bool:
+        return Region.objects.filter(election=self.election).exists()
+
+    def _archive_prior_exchange(self) -> None:
+        """
+        Archive the previous UIT-derived tree for this election so a corrected 110a
+        can recreate contests, regions and parties.
+        """
+        self.logger.info("Correction detected for election %s eml_type=%s", self.election.name, self.eml_type)
+        VoteCount.objects.filter(region__election=self.election).archive()
+        VoterTurnoutCount.objects.filter(region__election=self.election).archive()
+        Candidate.objects.filter(contest__election=self.election).archive()
+        Party.objects.filter(election=self.election).archive()
+        Contest.objects.filter(election=self.election).archive()
+        Region.objects.filter(election=self.election).archive()
 
     def _parse_contest(self) -> None:
         """

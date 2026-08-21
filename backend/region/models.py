@@ -1,6 +1,7 @@
 from django.db import models
+from django.db.models import Q
 
-from mainsite.models import BaseModel, CountingMethod, RegionCategory
+from mainsite.models import CountingMethod, CurrentModel, RegionCategory
 from mainsite.utils.utils import name_to_slug
 
 
@@ -18,7 +19,7 @@ def build_region_slug(region_number, region_name: str) -> str:
     return f"{number_slug}-{name_to_slug(region_name)}"[:49]
 
 
-class Region(BaseModel):
+class Region(CurrentModel):
     election = models.ForeignKey(
         "election.Election",
         on_delete=models.CASCADE,
@@ -64,9 +65,11 @@ class Region(BaseModel):
         super().save(*args, **kwargs)
 
     class Meta:
+        base_manager_name = "all_objects"
         constraints = [
             models.UniqueConstraint(
                 fields=["election", "slug", "region_category", "parent"],
+                condition=Q(is_current=True),
                 name="unique_region_identifier_per_election",
             )
         ]
