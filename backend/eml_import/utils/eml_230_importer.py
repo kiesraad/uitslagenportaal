@@ -80,6 +80,7 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
                 Candidate.objects.bulk_create(candidates, batch_size=self.BULK_BATCH_SIZE)
 
     def _is_correction(self, contest: Contest) -> bool:
+        # There is always one candidate list per contest, so if any Candidate exists, its been imported already
         return Candidate.objects.filter(contest=contest).exists()
 
     def _archive(self, contest: Contest) -> None:
