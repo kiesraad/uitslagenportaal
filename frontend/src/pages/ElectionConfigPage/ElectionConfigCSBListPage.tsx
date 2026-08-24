@@ -16,12 +16,14 @@ export function ElectionConfigCSBListPage() {
     data: electionConfig,
     isLoading: isElectionLoading,
     isError: isElectionError,
+    error: electionError,
     refetch: refetchElection,
   } = useElectionConfig(electionConfigSlug)
   const {
     data: regions,
     isLoading: isRegionsLoading,
     isError: isRegionsError,
+    error: regionsError,
     refetch: refetchRegions,
   } = useRegions(electionConfigSlug, undefined, electionConfig?.csb_type)
 
@@ -38,6 +40,7 @@ export function ElectionConfigCSBListPage() {
           void refetchRegions()
         }}
         entityLabel="Verkiezing"
+        errors={[electionError, regionsError]}
       />
     )
   }

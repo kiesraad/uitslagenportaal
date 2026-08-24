@@ -20,12 +20,14 @@ export function CSBResultsPage() {
         data: electionConfig,
         isLoading: isElectionLoading,
         isError: isElectionError,
+        error: electionError,
         refetch: refetchElection,
     } = useElectionConfig(electionConfigSlug)
     const {
         data: region,
         isLoading: isRegionLoading,
         isError: isRegionError,
+        error: regionError,
         refetch: refetchRegion,
     } = useRegion(electionConfigSlug, regionSlug)
 
@@ -44,6 +46,7 @@ export function CSBResultsPage() {
                     void refetchRegion()
                 }}
                 entityLabel={regionLabels.singular}
+                errors={[electionError, regionError]}
             />
         )
     }

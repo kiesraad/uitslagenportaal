@@ -130,7 +130,7 @@ def test_region_detail_requires_query_params():
 
 
 @pytest.mark.django_db
-def test_region_detail_returns_400_for_nonexistent_region():
+def test_region_detail_returns_404_for_nonexistent_region():
     election = ElectionFactory()
     request = factory.get(
         "/api/region/",
@@ -139,7 +139,7 @@ def test_region_detail_returns_400_for_nonexistent_region():
 
     response = RegionDetailView.as_view()(request)
 
-    assert response.status_code == 400
+    assert response.status_code == 404
     assert response.data["detail"] == "Region not found for this election."
 
 

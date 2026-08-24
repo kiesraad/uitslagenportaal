@@ -26,18 +26,21 @@ export default function PollingStationResultsPage() {
     data: electionConfig,
     isLoading: isElectionLoading,
     isError: isElectionError,
+    error: electionError,
     refetch: refetchElection,
   } = useElectionConfig(electionConfigSlug)
   const {
     data: region,
     isLoading: isRegionLoading,
     isError: isRegionError,
+    error: regionError,
     refetch: refetchRegion,
   } = useRegion(electionConfigSlug, parentRegionSlug, csbSlug)
   const {
     data: pollingStation,
     isLoading: isPollingStationLoading,
     isError: isPollingStationError,
+    error: pollingStationError,
     refetch: refetchPollingStation,
   } = useRegion(electionConfigSlug, pollingStationSlug, csbSlug, parentRegionSlug)
 
@@ -64,6 +67,7 @@ export default function PollingStationResultsPage() {
           void refetchPollingStation()
         }}
         entityLabel="Stembureau"
+        errors={[electionError, regionError, pollingStationError]}
       />
     )
   }

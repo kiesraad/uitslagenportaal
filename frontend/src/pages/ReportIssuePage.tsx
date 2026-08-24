@@ -24,6 +24,7 @@ export function ReportIssuePage() {
     data: electionConfig,
     isLoading,
     isError,
+    error,
     refetch,
   } = useElectionConfig(electionConfigSlug)
 
@@ -36,6 +37,7 @@ export function ReportIssuePage() {
           void refetch()
         }}
         entityLabel="Verkiezing"
+        errors={[error]}
       />
     )
   }

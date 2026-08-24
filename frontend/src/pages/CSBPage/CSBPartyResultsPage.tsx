@@ -27,18 +27,21 @@ export function CSBPartyResultsPage() {
         data: electionConfig,
         isLoading: isElectionLoading,
         isError: isElectionError,
+        error: electionError,
         refetch: refetchElection,
     } = useElectionConfig(electionConfigSlug)
     const {
         data: region,
         isLoading: isRegionLoading,
         isError: isRegionError,
+        error: regionError,
         refetch: refetchRegion,
     } = useRegion(electionConfigSlug, regionSlug)
     const {
         data: partyVoteMatrix,
         isLoading: isPartyVoteMatrixLoading,
         isError: isPartyVoteMatrixError,
+        error: partyVoteMatrixError,
         refetch: refetchPartyVoteMatrix,
     } = usePartyVoteMatrix(region?.election_slug, regionSlug, partySlug)
 
@@ -62,6 +65,7 @@ export function CSBPartyResultsPage() {
                     void refetchPartyVoteMatrix()
                 }}
                 entityLabel={regionLabels.singular}
+                errors={[electionError, regionError, partyVoteMatrixError]}
             />
         )
     }

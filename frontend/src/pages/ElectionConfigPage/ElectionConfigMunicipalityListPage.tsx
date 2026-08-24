@@ -16,12 +16,14 @@ export function ElectionConfigMunicipalityListPage() {
     data: electionConfig,
     isLoading: isElectionLoading,
     isError: isElectionError,
+    error: electionError,
     refetch: refetchElection,
   } = useElectionConfig(electionConfigSlug)
   const {
     data: regions,
     isLoading: isRegionsLoading,
     isError: isRegionsError,
+    error: regionsError,
     refetch: refetchRegions,
   } = useRegions(electionConfigSlug, undefined, 'GEMEENTE')
 
@@ -38,6 +40,7 @@ export function ElectionConfigMunicipalityListPage() {
           void refetchRegions()
         }}
         entityLabel="Verkiezing"
+        errors={[electionError, regionsError]}
       />
     )
   }

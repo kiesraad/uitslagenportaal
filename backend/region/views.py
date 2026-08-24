@@ -1,4 +1,4 @@
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
 from election.utils import visibility_cutoff
@@ -89,7 +89,7 @@ class RegionDetailView(RetrieveAPIView):
         try:
             return queryset.get()
         except Region.DoesNotExist:
-            raise ValidationError({"detail": "Region not found for this election."})
+            raise NotFound({"detail": "Region not found for this election."})
         except Region.MultipleObjectsReturned:
             raise ValidationError(
                 {"detail": "Multiple regions match this slug. Specify the 'parent_region' or 'csb' query parameter."}

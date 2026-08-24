@@ -26,12 +26,14 @@ export function MunicipalityPartyResultsPage() {
     data: electionConfig,
     isLoading: isElectionLoading,
     isError: isElectionError,
+    error: electionError,
     refetch: refetchElection,
   } = useElectionConfig(electionConfigSlug)
   const {
     data: region,
     isLoading: isRegionLoading,
     isError: isRegionError,
+    error: regionError,
     refetch: refetchRegion,
   } = useRegion(electionConfigSlug, regionSlug, csbSlug)
 
@@ -51,6 +53,7 @@ export function MunicipalityPartyResultsPage() {
           void refetchRegion()
         }}
         entityLabel="Gemeente"
+        errors={[electionError, regionError]}
       />
     )
   }

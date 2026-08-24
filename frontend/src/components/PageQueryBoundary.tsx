@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { ApiError } from '../api/client'
+import { NotFoundPage } from '../pages/NotFoundPage'
 import { Layout } from './Layout'
 
 type PageQueryBoundaryProps = {
@@ -7,6 +9,11 @@ type PageQueryBoundaryProps = {
   onRetry: () => void
   entityLabel: string
   withLayout?: boolean
+  errors?: unknown[]
+}
+
+export function isNotFoundError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 404
 }
 
 /**
@@ -19,6 +26,7 @@ export function PageQueryBoundary({
   onRetry,
   entityLabel,
   withLayout = true,
+  errors,
 }: PageQueryBoundaryProps) {
   const labelLower = entityLabel.toLowerCase()
 
@@ -43,6 +51,10 @@ export function PageQueryBoundary({
         </div>
       </div>,
     )
+  }
+
+  if (errors?.some(isNotFoundError)) {
+    return <NotFoundPage />
   }
 
   if (isError) {

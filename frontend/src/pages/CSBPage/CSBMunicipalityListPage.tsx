@@ -19,18 +19,21 @@ export function CSBMunicipalityListPage() {
         data: electionConfig,
         isLoading: isElectionLoading,
         isError: isElectionError,
+        error: electionError,
         refetch: refetchElection,
     } = useElectionConfig(electionConfigSlug)
     const {
         data: region,
         isLoading: isRegionLoading,
         isError: isRegionError,
+        error: regionError,
         refetch: refetchRegion,
     } = useRegion(electionConfigSlug, regionSlug)
     const {
         data: regions,
         isLoading: isRegionsLoading,
         isError: isRegionsError,
+        error: regionsError,
         refetch: refetchRegions,
     } = useRegions(electionConfigSlug, undefined, 'GEMEENTE', regionSlug)
 
@@ -59,6 +62,7 @@ export function CSBMunicipalityListPage() {
                     void refetchRegions()
                 }}
                 entityLabel={regionLabels.singular}
+                errors={[electionError, regionError, regionsError]}
             />
         )
     }
