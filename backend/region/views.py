@@ -2,7 +2,7 @@ from django.db.models import Prefetch
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
-from election.models import VoteCount, VoterTurnoutCount
+from election.models import ElectionDocument, VoteCount, VoterTurnoutCount
 from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from region.models import Region
@@ -77,8 +77,8 @@ class RegionDetailView(RetrieveAPIView):
                     queryset=VoteCount.objects.select_related("party", "candidate"),
                 ),
                 Prefetch("voter_turnout_counts", queryset=VoterTurnoutCount.objects.all()),
+                Prefetch("documents", queryset=ElectionDocument.objects.all()),
                 "election__election_config__timeline_entries",
-                "documents",
             )
             .filter(
                 election__election_config__slug=election_config_slug,

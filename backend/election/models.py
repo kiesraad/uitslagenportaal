@@ -197,7 +197,7 @@ class VoteCount(EMLTypeMixin, CurrentModel):
         base_manager_name = "all_objects"
 
 
-class ElectionDocument(BaseModel):
+class ElectionDocument(CurrentModel):
     region = models.ForeignKey(
         "region.Region",
         on_delete=models.CASCADE,
@@ -218,6 +218,16 @@ class ElectionDocument(BaseModel):
         default=FileType.EML510B,
         help_text="Type of the election document",
     )
+
+    class Meta:
+        base_manager_name = "all_objects"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["region", "file_type"],
+                condition=Q(is_current=True),
+                name="unique_current_document_per_region_and_file_type",
+            )
+        ]
 
 
 class VoterTurnoutCount(EMLTypeMixin, CurrentModel):

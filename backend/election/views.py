@@ -41,7 +41,7 @@ class ContestViewSet(viewsets.ReadOnlyModelViewSet):
 
 def download_document(request, pk):
     document = get_object_or_404(
-        ElectionDocument.objects.filter(
+        ElectionDocument.all_objects.filter(
             Q(region__isnull=True) | Q(region__election__election_config__date__gte=visibility_cutoff()),
         ),
         pk=pk,

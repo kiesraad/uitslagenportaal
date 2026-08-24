@@ -165,8 +165,6 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
         )
 
     def _store_eml(self, region: Region) -> None:
-        # Determine the name, it should be consistent based on the file content/type, so we store only one file
-        # if the same file gets imported twice with a different filename.
         parent_number, parent_name = (
             (region.parent.region_number, region.parent.region_name) if region.parent else (None, None)
         )
@@ -180,13 +178,13 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
                     parent_name,
                     region.region_number,
                     region.region_name,
+                    timezone.now().strftime("%Y%m%dT%H%M%S%f"),
                 ],
             )
         )
         filename = re.sub(r"[^A-Za-z0-9_-]", "", filename.replace(" ", "_"))
         file_path = f"{self.election_config.identifier}/{filename}.eml.xml"
 
-        # Store the file into the default storage
         if isinstance(self.eml_file, Path):
             file_content = BytesIO(self.eml_file.read_bytes())
         else:
@@ -195,21 +193,13 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
         size = len(file_content.getvalue())
         stored_file_path = default_storage.save(file_path, file_content)
 
-        # We only call this once for the whole EML file, so a get_or_create doesn't result in an N+1 query.
-        # size is only a default (not a lookup key): storage_key is unique, so if a re-imported file's
-        # size differs from what's stored, looking it up by size too would miss the existing row and
-        # attempt to insert a duplicate storage_key.
-        doc, created = ElectionDocument.objects.get_or_create(
+        ElectionDocument.objects.create(
             storage_key=stored_file_path,
             region=region,
             content_type="application/xml",
             file_type=ElectionDocument.FileType.EML510B,
-            defaults={"size": size},
+            size=size,
         )
-        # Update size on re-import
-        if not created and doc.size != size:
-            doc.size = size
-            doc.save()
 
 
 class EML510bImporter(EML510BaseImporter):
@@ -234,6 +224,7 @@ class EML510bImporter(EML510BaseImporter):
         counts_filter = Q(region=region) | Q(region__in=stations)
         VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
         VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
+        ElectionDocument.objects.filter(region=region).archive()
         stations.archive()
 
     @staticmethod
@@ -394,6 +385,7 @@ class EML510dImporter(EML510BaseImporter):
         counts_filter = Q(region=region) | Q(region__csb=region)
         VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
         VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
+        ElectionDocument.objects.filter(region=region).archive()
 
     def _parse_data(self) -> None:
         election_domain = self._get_election_identifier_data().election_domain
