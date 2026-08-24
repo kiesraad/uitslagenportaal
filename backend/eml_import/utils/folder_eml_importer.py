@@ -125,7 +125,9 @@ class FolderEMLImporter(BaseFileHandler):
                 self.logger.info(f"[{done}/{len(ordered)}] Processed {parser_type} file {processed_path}...")
             except Exception as e:
                 # With any error the importer should continue as to not have everything fail
-                self.logger.error(f"Failed importing {parser_type} file {path} with exception: {type(e).__name__} {e}")
+                self.logger.error(
+                    f"\033[31mFailed importing {parser_type} file {path} with exception: {type(e).__name__} {e}\033[0m"
+                )
                 continue
 
     @classmethod
