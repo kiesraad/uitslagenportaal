@@ -20,6 +20,7 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
     def _parse_data(self):
         with transaction.atomic():
             if self._is_correction():
+                self._ensure_exchange_correction_allowed()
                 self._archive()
             self._parse_regions()
             self._parse_registered_parties()

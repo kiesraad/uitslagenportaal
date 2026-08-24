@@ -9,7 +9,10 @@ from pyeml_bindings import (
 from election.models import (
     Election,
     ElectionConfig,
+    VoteCount,
+    VoterTurnoutCount,
 )
+from eml_import.exceptions import EMLImporterException
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.utils.eml_type import EmlType
 from region.models import Region
@@ -56,6 +59,21 @@ class EMLBaseImporter[T](ABC):
             self._parse_data()
         except ElectionConfig.DoesNotExist:
             self.logger.warning("Election is not configured, skipping %s data import", self.eml_type.value)
+
+    def _ensure_exchange_correction_allowed(self) -> None:
+        """Reject 110a/230b corrections once any current telling exists for this election."""
+        counting_started = VoteCount.objects.filter(
+            region__election=self.election,
+            eml_type__in=(EmlType.EML_510b, EmlType.EML_510d),
+        ).exists() or VoterTurnoutCount.objects.filter(
+            region__election=self.election,
+            eml_type__in=(EmlType.EML_510b, EmlType.EML_510d),
+        ).exists()
+        if counting_started:
+            raise EMLImporterException(
+                f"Cannot correct {self.eml_type} for election {self.election.name}: "
+                "counting results already imported"
+            )
 
     @staticmethod
     def _csb_for_parent(parent: Region | None) -> Region | None:

@@ -25,6 +25,7 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
 
         with transaction.atomic():
             if self._is_correction(contest_data):
+                self._ensure_exchange_correction_allowed()
                 self._archive(contest_data)
 
             contest = Contest.objects.create(
