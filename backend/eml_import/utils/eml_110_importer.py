@@ -21,7 +21,7 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
     def _parse_data(self):
         with transaction.atomic():
             if self._is_correction():
-                self._archive_prior_exchange()
+                self._archive()
             self._parse_contest()
             self._parse_regions()
             self._parse_registered_parties()
@@ -30,7 +30,7 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
     def _is_correction(self) -> bool:
         return Region.objects.filter(election=self.election).exists()
 
-    def _archive_prior_exchange(self) -> None:
+    def _archive(self) -> None:
         """
         Archive the previous UIT-derived tree for this election so a corrected 110a
         can recreate contests, regions and parties.
