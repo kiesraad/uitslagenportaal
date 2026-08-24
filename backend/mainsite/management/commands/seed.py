@@ -194,7 +194,23 @@ GR2026_ELECTION_SEED = {
     **TIMELINE_ENTRIES,
 }
 
-ELECTION_SEED = [WS2023_ELECTION_SEED, PS2023_ELECTION_SEED, GR2026_ELECTION_SEED]
+
+TK2025_ELECTION_SEED = {
+    "election": {
+        "id": "TK2025",
+        "label": "Tweede Kamer Verkiezingen 2025",
+        "category": "TK",
+        "date": "2025-04-12T10:00:00",
+        "issue_report_opens_at": "2025-08-18T11:00:00",
+        "issue_report_deadline": "2025-09-12T10:00:00",
+        "gh_counting_results_branch": "auto-tk2025-tel",
+        "gh_exchange_branch": "auto-tk2025-uit",
+    },
+    **TIMELINE_ENTRIES,
+}
+
+
+ELECTION_SEED = [WS2023_ELECTION_SEED, PS2023_ELECTION_SEED, GR2026_ELECTION_SEED, TK2025_ELECTION_SEED]
 
 
 class Command(BaseCommand):
