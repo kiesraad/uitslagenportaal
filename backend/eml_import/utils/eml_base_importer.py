@@ -13,6 +13,7 @@ from election.models import (
     VoterTurnoutCount,
 )
 from eml_import.exceptions import EMLImporterException
+from eml_import.models import ImportedEmlHash
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.utils.eml_type import EmlType
 from region.models import Region
@@ -55,24 +56,36 @@ class EMLBaseImporter[T](ABC):
         self.election = election
 
     def parse(self):
+        if self.eml_file is not None and ImportedEmlHash.already_imported(self.eml_file):
+            self.logger.info(
+                "\033[32mSkipping duplicate %s file %s\033[0m",
+                self.eml_type.value,
+                self.eml_file,
+            )
+            return
         try:
             self._parse_data()
         except ElectionConfig.DoesNotExist:
             self.logger.warning("Election is not configured, skipping %s data import", self.eml_type.value)
+        else:
+            if self.eml_file is not None:
+                ImportedEmlHash.record(self.eml_file)
 
     def _ensure_exchange_correction_allowed(self) -> None:
         """Reject 110a/230b corrections once any current telling exists for this election."""
-        counting_started = VoteCount.objects.filter(
-            region__election=self.election,
-            eml_type__in=(EmlType.EML_510b, EmlType.EML_510d),
-        ).exists() or VoterTurnoutCount.objects.filter(
-            region__election=self.election,
-            eml_type__in=(EmlType.EML_510b, EmlType.EML_510d),
-        ).exists()
+        counting_started = (
+            VoteCount.objects.filter(
+                region__election=self.election,
+                eml_type__in=(EmlType.EML_510b, EmlType.EML_510d),
+            ).exists()
+            or VoterTurnoutCount.objects.filter(
+                region__election=self.election,
+                eml_type__in=(EmlType.EML_510b, EmlType.EML_510d),
+            ).exists()
+        )
         if counting_started:
             raise EMLImporterException(
-                f"Cannot correct {self.eml_type} for election {self.election.name}: "
-                "counting results already imported"
+                f"Cannot correct {self.eml_type} for election {self.election.name}: counting results already imported"
             )
 
     @staticmethod
