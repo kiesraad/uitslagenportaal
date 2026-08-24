@@ -29,14 +29,8 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
                 election=self.election,
                 name=contest_data.contest_identifier.contest_name,
             )
-            # Corrected kandidatenlijst: archive prior candidates for this contest, then recreate.
-            if Candidate.objects.filter(contest=contest).exists():
-                self.logger.info(
-                    "Correction detected for contest %s eml_type=%s",
-                    contest.identifier,
-                    self.eml_type,
-                )
-                Candidate.objects.filter(contest=contest).archive()
+            if self._is_correction(contest):
+                self._archive(contest)
 
             candidates: list[Candidate] = []
             for affiliation in contest_data.affiliation:
@@ -84,3 +78,15 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
 
             if candidates:
                 Candidate.objects.bulk_create(candidates, batch_size=self.BULK_BATCH_SIZE)
+
+    def _is_correction(self, contest: Contest) -> bool:
+        return Candidate.objects.filter(contest=contest).exists()
+
+    def _archive(self, contest: Contest) -> None:
+        """Archive prior candidates for this contest so a corrected 230b can recreate them."""
+        self.logger.info(
+            "Correction detected for contest %s eml_type=%s",
+            contest.identifier,
+            self.eml_type,
+        )
+        Candidate.objects.filter(contest=contest).archive()
