@@ -24,13 +24,14 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
         contest_data = self.eml.candidate_list.election.contest[0]
 
         with transaction.atomic():
-            contest, _ = Contest.objects.get_or_create(
+            if self._is_correction(contest_data):
+                self._archive(contest_data)
+
+            contest = Contest.objects.create(
                 identifier=contest_data.contest_identifier.id,
                 election=self.election,
                 name=contest_data.contest_identifier.contest_name,
             )
-            if self._is_correction(contest):
-                self._archive(contest)
 
             candidates: list[Candidate] = []
             for affiliation in contest_data.affiliation:
@@ -79,15 +80,28 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             if candidates:
                 Candidate.objects.bulk_create(candidates, batch_size=self.BULK_BATCH_SIZE)
 
-    def _is_correction(self, contest: Contest) -> bool:
-        # There is always one candidate list per contest, so if any Candidate exists, its been imported already
-        return Candidate.objects.filter(contest=contest).exists()
+    def _is_correction(self, contest_data) -> bool:
+        try:
+            contest = Contest.objects.get(
+                identifier=contest_data.contest_identifier.id,
+                election=self.election,
+                name=contest_data.contest_identifier.contest_name,
+            )
+            self.logger.info(
+                "\033[32mCorrection detected for contest %s eml_type=%s\033[0m",
+                contest.identifier,
+                self.eml_type,
+            )
+            return True
+        except Contest.DoesNotExist:
+            return False
 
-    def _archive(self, contest: Contest) -> None:
+    def _archive(self, contest_data) -> None:
         """Archive prior candidates for this contest so a corrected 230b can recreate them."""
-        self.logger.info(
-            "Correction detected for contest %s eml_type=%s",
-            contest.identifier,
-            self.eml_type,
+        contest = Contest.objects.get(
+            identifier=contest_data.contest_identifier.id,
+            election=self.election,
+            name=contest_data.contest_identifier.contest_name,
         )
         Candidate.objects.filter(contest=contest).archive()
+        contest.archive()
