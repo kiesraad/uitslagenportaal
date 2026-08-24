@@ -44,7 +44,7 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
         """
         Create a Contest object for the identifier in the Election
         """
-        Contest.objects.get_or_create(
+        Contest.objects.create(
             election=self.election,
             identifier=self.eml.election_event.election.contest.contest_identifier.id,
         )
