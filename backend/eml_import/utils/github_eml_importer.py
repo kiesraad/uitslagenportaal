@@ -127,7 +127,7 @@ class GithubEmlImporter(BaseFileHandler):
                         importer_cls(eml, file).parse()
                 except Exception as e:
                     self.logger.error(
-                        f"Failed importing {parser_type} file {file.filename} with exception: {type(e).__name__} {e}"
+                        f"\033[31mFailed importing {parser_type} file {file.filename} with exception: {type(e).__name__} {e}\033[0m"
                     )
 
     def _iterate_branches(self) -> Iterator[tuple[BranchType, str]]:

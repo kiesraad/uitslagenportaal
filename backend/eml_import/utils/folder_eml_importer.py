@@ -50,7 +50,7 @@ class FolderEMLImporter(BaseFileHandler):
                     importer_cls(eml, xml_file_path).parse()
             except Exception as e:
                 self.logger.error(
-                    f"Failed importing {parser_type} file {xml_file_path} with exception: {type(e).__name__} {e}"
+                    f"\033[31mFailed importing {parser_type} file {xml_file_path} with exception: {type(e).__name__} {e}\033[0m"
                 )
 
     def import_folder(self, folder: Path, workers: int = 1) -> None:
