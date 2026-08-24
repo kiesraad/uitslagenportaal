@@ -19,3 +19,7 @@ export function getCandidateVoteCountsForParty(
     (voteCount) => voteCount.party.slug === partySlug && voteCount.result_level === 'CANDIDATE',
   ) ?? []).sort((a, b) => (a.candidate?.position ?? 0) - (b.candidate?.position ?? 0))
 }
+
+export function hasParty(voteCounts: VoteCounts | undefined, partySlug: string): boolean {
+  return voteCounts?.some((voteCount) => voteCount.party.slug === partySlug) ?? false
+}
