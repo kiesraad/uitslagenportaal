@@ -37,10 +37,6 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
         return False
 
     def _archive(self) -> None:
-        """
-        Archive the previous UIT-derived tree for this election so a corrected 110a
-        can recreate contests, regions and parties.
-        """
         Party.objects.filter(election=self.election).archive()
         Region.objects.filter(election=self.election).archive()
 
