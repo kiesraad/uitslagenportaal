@@ -316,7 +316,7 @@ class EML510bImporter(EML510BaseImporter):
         is_correction = self._is_correction(region)
         if is_correction:
             self.logger.info(
-                "Correction detected for region %s (%s) eml_type=%s",
+                "\033[32mCorrection detected for region %s (%s) eml_type=%s\033[0m",
                 region.region_number,
                 region.region_name,
                 self.eml_type,
@@ -420,7 +420,7 @@ class EML510dImporter(EML510BaseImporter):
         is_correction = self._is_correction(region)
         if is_correction:
             self.logger.info(
-                "Correction detected for region %s (%s) eml_type=%s",
+                "\033[32mCorrection detected for region %s (%s) eml_type=%s\033[0m",
                 region.region_number,
                 region.region_name,
                 self.eml_type,
@@ -445,9 +445,7 @@ class EML510dImporter(EML510BaseImporter):
         # Preload party names dict and child regions by name
         party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
         current_children = Region.objects.filter(parent=region)
-        child_region_category = (
-            RegionCategory.GEMEENTE if current_children.count() == 1 else RegionCategory.KIESKRING
-        )
+        child_region_category = RegionCategory.GEMEENTE if current_children.count() == 1 else RegionCategory.KIESKRING
         child_region_by_name = {
             child.region_name: child
             for child in Region.objects.filter(election=self.election, region_category=child_region_category)
