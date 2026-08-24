@@ -3,10 +3,10 @@ from pyeml_bindings import (
     Eml110a,
 )
 
-from election.models import Contest, VoteCount, VoterTurnoutCount
+from election.models import Contest
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from mainsite.utils.eml_type import EmlType
-from party.models import Candidate, Party
+from party.models import Party
 from region.models import Region
 
 
@@ -36,9 +36,6 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
         can recreate contests, regions and parties.
         """
         self.logger.info("Correction detected for election %s eml_type=%s", self.election.name, self.eml_type)
-        VoteCount.objects.filter(region__election=self.election).archive()
-        VoterTurnoutCount.objects.filter(region__election=self.election).archive()
-        Candidate.objects.filter(contest__election=self.election).archive()
         Party.objects.filter(election=self.election).archive()
         Contest.objects.filter(election=self.election).archive()
         Region.objects.filter(election=self.election).archive()
