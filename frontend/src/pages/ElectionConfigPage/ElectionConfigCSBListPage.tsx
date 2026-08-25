@@ -1,14 +1,23 @@
 import { useLingui } from "@lingui/react/macro";
-import { useParams } from "react-router";
-import { Layout } from "../../components/Layout.tsx";
-import { RegionList } from "../../components/ListPage/RegionList.tsx";
-import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
-import PageTop from "../../components/PageTop.tsx";
-import SharedTabs from "../../components/SharedTabs.tsx";
-import { useElectionConfig, useRegions } from "../../hooks/queries.ts";
-import { useFormatters } from "../../utils/format.ts";
-import { getRegionLabels } from "../../utils/region.ts";
-import { appRoutes } from "../../utils/routes.ts";
+import { type QueryClient, useQuery } from "@tanstack/react-query";
+import { type LoaderFunctionArgs, useParams } from "react-router";
+import { Layout } from "@/components/Layout.tsx";
+import { RegionList } from "@/components/ListPage/RegionList.tsx";
+import { PageQueryBoundary } from "@/components/PageQueryBoundary.tsx";
+import PageTop from "@/components/PageTop.tsx";
+import SharedTabs from "@/components/SharedTabs.tsx";
+import { electionConfigQuery, useRegions } from "@/hooks/queries.ts";
+import { useFormatters } from "@/utils/format.ts";
+import { getRegionLabels } from "@/utils/region.ts";
+import { appRoutes } from "@/utils/routes.ts";
+
+export function electionConfigLoader(queryClient: QueryClient) {
+   return async ({ params }: LoaderFunctionArgs) => {
+      const query = electionConfigQuery(params.electionConfigSlug);
+
+      return queryClient.ensureQueryData(query);
+   };
+}
 
 export function ElectionConfigCSBListPage() {
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
@@ -20,7 +29,7 @@ export function ElectionConfigCSBListPage() {
       isError: isElectionError,
       error: electionError,
       refetch: refetchElection,
-   } = useElectionConfig(electionConfigSlug);
+   } = useQuery(electionConfigQuery(electionConfigSlug));
    const {
       data: regions,
       isLoading: isRegionsLoading,
