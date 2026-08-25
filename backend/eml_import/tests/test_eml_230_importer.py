@@ -186,4 +186,10 @@ def test_reimport_does_not_duplicate_candidates(contest, party):
     EML230bImporter(make_eml(), None).parse()
 
     assert Contest.objects.filter(election=party.election).count() == 1
-    assert Candidate.objects.filter(contest=contest).count() == 2
+    # Correction archives the old contest; candidates hang off the new current one
+    assert not Candidate.objects.filter(contest=contest).exists()
+    current_contest = Contest.objects.get(election=party.election)
+    assert current_contest.pk != contest.pk
+    assert Candidate.objects.filter(contest=current_contest).count() == 2
+    assert Contest.all_objects.filter(election=party.election).count() == 2
+    assert Candidate.all_objects.filter(party=party).count() == 4

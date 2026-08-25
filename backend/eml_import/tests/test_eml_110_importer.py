@@ -33,7 +33,7 @@ from pyeml_bindings import (
 )
 from xsdata.models.datatype import XmlDate
 
-from election.models import Contest, Election
+from election.models import Election
 from election.tests.factories import ElectionConfigFactory
 from eml_import.utils.eml_110_importer import EML110aImporter
 from mainsite.models import RegionCategory
@@ -127,12 +127,6 @@ def test_creates_election_from_identifier(election_config):
     assert election.date == ELECTION_DATE
 
 
-def test_creates_contest_for_identifier(election):
-    contest = Contest.objects.get(election=election)
-
-    assert contest.identifier == CONTEST_ID
-
-
 def test_creates_region_tree_with_parents(election, regions):
     waterschap = regions[RegionCategory.WATERSCHAP]
     kieskring = regions[RegionCategory.KIESKRING]
@@ -170,6 +164,8 @@ def test_import_is_idempotent(election_config):
     EML110aImporter(eml, None).parse()
 
     election = Election.objects.get(election_config=election_config)
-    assert Contest.objects.filter(election=election).count() == 1
     assert Region.objects.filter(election=election).count() == 3
     assert Party.objects.filter(election=election).count() == 2
+    # Archived rows from the correction stay out of the current managers
+    assert Region.all_objects.filter(election=election).count() == 6
+    assert Party.all_objects.filter(election=election).count() == 4
