@@ -39,7 +39,7 @@ def test_import_task_imports_the_election_config_it_was_queued_for(github_eml_fi
 
 @pytest.mark.django_db
 @patch.object(tasks, "GithubEmlFileHandler", autospec=True)
-def test_import_task_lets_importer_failures_escape_so_celery_can_retry(github_eml_file_handler):
+def test_import_task_lets_file_handler_failures_escape_so_celery_can_retry(github_eml_file_handler):
     election_config = ElectionConfigFactory()
     github_eml_file_handler.return_value.run.side_effect = RequestException("GitHub is unreachable")
 

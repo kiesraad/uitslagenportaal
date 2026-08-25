@@ -182,7 +182,7 @@ def test_creates_blanco_party_for_affiliation_without_registered_name(election):
     assert party.candidates.get().last_name == "Richel"
 
 
-def test_reimport_does_not_duplicate_candidates(contest, party):
+def test_correction_archives_prior_contest_and_candidates(contest, party):
     EML230bImporter(make_eml(), None).parse()
 
     assert Contest.objects.filter(election=party.election).count() == 1
