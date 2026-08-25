@@ -1,39 +1,44 @@
-import PageIndex from '../PageIndex'
+import { Trans } from "@lingui/react/macro";
+import PageIndex from "../PageIndex";
 
-type ResultsPageIndexVariant = 'full' | 'party'
+type ResultsPageIndexVariant = "full" | "party";
 
 type Props = {
-  variant?: ResultsPageIndexVariant
-}
+   variant?: ResultsPageIndexVariant;
+};
 
-const telresultatenLink = {
-  label: (
-    <>
-      <span className="font-semibold">Telresultaten</span> zoals ze meetellen in de officiele uitslag
-    </>
-  ),
-  url: '#telresultaten',
-}
+export default function ResultsPageIndex({ variant = "full" }: Props) {
+   // Built inside the component so the labels are re-created when the language
+   // changes, rather than captured once at module load.
+   const telresultatenLink = {
+      label: (
+         <Trans>
+            <span className="font-semibold">Telresultaten</span> zoals ze meetellen in de officiele uitslag
+         </Trans>
+      ),
+      url: "#telresultaten",
+   };
 
-const timelineLink = {
-  label: (
-    <>
-      <span className="font-semibold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen
-    </>
-  ),
-  url: '#results-timeline',
-}
+   const timelineLink = {
+      label: (
+         <Trans>
+            <span className="font-semibold">Uitleg</span> hoe deze resultaten tot stand zijn gekomen
+         </Trans>
+      ),
+      url: "#results-timeline",
+   };
 
-const issueReportLink = {
-  label: <span className="font-semibold">Hoe u een fout kunt melden</span>,
-  url: '#fout-melden',
-}
+   const issueReportLink = {
+      label: (
+         <span className="font-semibold">
+            <Trans>Hoe u een fout kunt melden</Trans>
+         </span>
+      ),
+      url: "#fout-melden",
+   };
 
-export default function ResultsPageIndex({ variant = 'full' }: Props) {
-  const links =
-    variant === 'party'
-      ? [telresultatenLink, issueReportLink]
-      : [telresultatenLink, timelineLink, issueReportLink]
+   const links =
+      variant === "party" ? [telresultatenLink, issueReportLink] : [telresultatenLink, timelineLink, issueReportLink];
 
-  return <PageIndex links={links} />
+   return <PageIndex links={links} />;
 }
