@@ -1,3 +1,4 @@
+import logging
 from io import BytesIO
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -8,12 +9,29 @@ from pyeml_bindings import (
     Eml510,
     Emlstructure,
 )
+from xsdata.formats.dataclass.parsers import XmlParser
+from xsdata.formats.dataclass.parsers.config import ParserConfig
+from xsdata.formats.dataclass.parsers.handlers import XmlEventHandler
 
 from eml_import.utils.eml_110_importer import EML110aImporter
 from eml_import.utils.eml_230_importer import EML230bImporter
 from eml_import.utils.eml_510_importer import EML510bImporter, EML510dImporter
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from mainsite.utils.eml_type import EmlType
+
+
+def build_parser() -> XmlParser:
+    """
+    Build the shared xsdata parser.
+
+    Pins the stdlib ElementTree handler: xsdata's default_handler() switches to
+    LxmlEventHandler whenever lxml is merely importable, and that measured ~25%
+    slower on GR2026 data.
+    """
+    return XmlParser(
+        ParserConfig(fail_on_unknown_properties=True),
+        handler=XmlEventHandler,
+    )
 
 
 class BaseFileHandler:
@@ -23,6 +41,10 @@ class BaseFileHandler:
         EmlType.EML_510b: (Eml510, EML510bImporter),  # Telling
         EmlType.EML_510d: (Eml510, EML510dImporter),  # Totaaltelling
     }
+
+    def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self._parser = build_parser()
 
     @staticmethod
     def _root_element_id(source) -> str | None:

@@ -1,4 +1,3 @@
-import logging
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
@@ -6,33 +5,13 @@ from pathlib import Path
 import django
 from django.db import connection, connections, transaction
 from xsdata.formats.dataclass.parsers import XmlParser
-from xsdata.formats.dataclass.parsers.config import ParserConfig
-from xsdata.formats.dataclass.parsers.handlers import XmlEventHandler
 
-from eml_import.utils.file_handler import BaseFileHandler
-
-
-def build_parser() -> XmlParser:
-    """
-    Build the shared xsdata parser.
-
-    Pins the stdlib ElementTree handler: xsdata's default_handler() switches to
-    LxmlEventHandler whenever lxml is merely importable, and that measured ~25%
-    slower on GR2026 data.
-    """
-    return XmlParser(
-        ParserConfig(fail_on_unknown_properties=True),
-        handler=XmlEventHandler,
-    )
+from eml_import.utils.file_handler import BaseFileHandler, build_parser
 
 
 class FolderEMLImporter(BaseFileHandler):
     # Set once per worker process by FolderEMLImporter._import_file
     _WORKER_PARSER: XmlParser | None = None
-
-    def __init__(self):
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self._parser = build_parser()
 
     def _process_file_paths(self, parser_type: str, xml_files: list[Path]) -> None:
         """

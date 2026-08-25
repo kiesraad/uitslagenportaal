@@ -1,7 +1,6 @@
 import base64
 import io
 import itertools
-import logging
 import zipfile
 from typing import Iterator
 
@@ -32,10 +31,10 @@ BRANCH_FIELDS: dict[BranchType, str] = {
 
 class GithubEmlImporter(BaseFileHandler):
     def __init__(self, election_config: ElectionConfig) -> None:
+        super().__init__()
         self.election_config = election_config
         self.gh: Github | None = None
         self.repo: Repository | None = None
-        self.logger = logging.getLogger(self.__class__.__name__)
 
     @property
     def cache_lock_key(self):
