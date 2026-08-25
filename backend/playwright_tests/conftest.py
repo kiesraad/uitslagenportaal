@@ -25,9 +25,8 @@ STACK_DB_PORT = os.environ.get("PLAYWRIGHT_DB_PORT", "5434")
 # use ip for faster connection times
 STACK_S3_ENDPOINT_URL = os.environ.get("PLAYWRIGHT_S3_ENDPOINT_URL", "http://127.0.0.1:19000")
 
-# No --wait: object-storage-bootstrap exits, and `up --wait` calls that a failure.
 START_STACK_HINT = """
-  docker compose -f docker-compose.yml -f docker-compose.playwright.yml up -d
+  docker compose -f docker-compose.yml -f docker-compose.playwright.yml up -d --wait
 """
 
 

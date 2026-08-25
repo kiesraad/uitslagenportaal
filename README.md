@@ -33,8 +33,10 @@ the `object-storage` service (RustFS); in production it is Scaleway Object Stora
 
 - API: http://localhost:9000
 - Console: http://localhost:9001 (user `uitslagenportaal`, password `password`)
-- Bucket: `uitslagenportaal`, created on first `docker compose up` by the
-  `object-storage-bootstrap` service, which also makes its objects publicly readable
+- Bucket: `uitslagenportaal`, created on `docker compose up` by a `pre_start` init
+  container on the `backend` service, which also makes its objects publicly readable.
+  To (re)create it by hand:
+  `docker compose run --rm backend-scripts python manage.py ensure_bucket --public`
 
 The backend reaches the bucket at `object-storage:9000` over the compose network,
 but generates public URLs pointing at `localhost:9000`, since that is the host the

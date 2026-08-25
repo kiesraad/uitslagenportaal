@@ -124,16 +124,9 @@ jobs:
       # ubuntu-latest already has the libs Chromium needs, and CI runs headless.
       - run: uv run playwright install --only-shell chromium
         working-directory: backend
-
-      # What the object-storage-bootstrap compose service does, using the mc binary so
-      # this job needs no Docker. MinIO's client speaks RustFS's S3 API.
       - name: Create the storage bucket
-        run: |
-          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o "$RUNNER_TEMP/mc"
-          chmod +x "$RUNNER_TEMP/mc"
-          "$RUNNER_TEMP/mc" alias set local "$S3_ENDPOINT_URL" "$S3_ACCESS_KEY" "$S3_SECRET_KEY"
-          "$RUNNER_TEMP/mc" mb --ignore-existing "local/$S3_BUCKET_NAME"
-          "$RUNNER_TEMP/mc" anonymous set download "local/$S3_BUCKET_NAME"
+        run: uv run python manage.py ensure_bucket --public
+        working-directory: backend
 
       # conftest.py migrates too, but doing it here lets the readiness check below hit a
       # real endpoint, and reports a schema problem before any browser starts.
