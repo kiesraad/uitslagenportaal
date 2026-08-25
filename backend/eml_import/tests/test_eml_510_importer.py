@@ -767,6 +767,81 @@ def test_510d_breaks_down_per_gemeente_when_csb_has_one_child(ws_totaaltelling, 
     ]
 
 
+def test_510d_correction_archives_csb_and_descendant_counts(ws_regions, ws_contest, ws_parties, ws_candidates):
+    """A second Totaaltelling for the same CSB replaces its counts and those of regions under it."""
+    totals = make_total_votes(
+        [
+            party_selection(TotalVotes.Selection, 1, "Partij voor Zeeland", 24949),
+            candidate_selection(TotalVotes.Selection, 10890, number=1),
+        ]
+    )
+    unit = make_reporting_unit(
+        "0654",
+        "Borsele",
+        [
+            party_selection(ReportingUnitVotes.Selection, 1, "Partij voor Zeeland", 1779),
+            candidate_selection(ReportingUnitVotes.Selection, 1107, number=1),
+        ],
+    )
+    first = make_ws_510d_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])])
+    EML510dImporter(first, NamedBytesIO(b"<eml>first</eml>", "totaal.eml.xml")).parse()
+
+    original_count_ids = set(VoteCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True))
+    original_turnout_ids = set(
+        VoterTurnoutCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True)
+    )
+    original_doc = ElectionDocument.objects.get(region=ws_regions["waterschap"])
+
+    corrected_totals = make_total_votes(
+        [
+            party_selection(TotalVotes.Selection, 1, "Partij voor Zeeland", 25000),
+            candidate_selection(TotalVotes.Selection, 11000, number=1),
+        ]
+    )
+    corrected_unit = make_reporting_unit(
+        "0654",
+        "Borsele",
+        [
+            party_selection(ReportingUnitVotes.Selection, 1, "Partij voor Zeeland", 1800),
+            candidate_selection(ReportingUnitVotes.Selection, 1200, number=1),
+        ],
+    )
+    correction = make_ws_510d_eml(
+        contests=[make_contest("geen", total_votes=corrected_totals, units=[corrected_unit])]
+    )
+    EML510dImporter(correction, NamedBytesIO(b"<eml>corrected</eml>", "totaal.eml.xml")).parse()
+
+    waterschap = ws_regions["waterschap"]
+    gemeente = ws_regions["gemeente"]
+    party, candidate = ws_parties[1], ws_candidates[(1, 1)]
+
+    assert set(VoteCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True)).isdisjoint(
+        original_count_ids
+    )
+    assert set(
+        VoterTurnoutCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True)
+    ).isdisjoint(original_turnout_ids)
+    assert VoteCount.all_objects.filter(pk__in=original_count_ids, is_current=False).count() == len(
+        original_count_ids
+    )
+
+    assert [
+        (row.region, row.result_level, row.party, row.candidate, row.valid_votes)
+        for row in VoteCount.objects.filter(eml_type=EmlType.EML_510d).order_by("valid_votes")
+    ] == [
+        (gemeente, VoteCount.RESULT_LEVEL_CANDIDATE, party, candidate, 1200),
+        (gemeente, VoteCount.RESULT_LEVEL_PARTY, party, None, 1800),
+        (waterschap, VoteCount.RESULT_LEVEL_CANDIDATE, party, candidate, 11000),
+        (waterschap, VoteCount.RESULT_LEVEL_PARTY, party, None, 25000),
+    ]
+
+    original_doc.refresh_from_db()
+    assert original_doc.is_current is False
+    doc = ElectionDocument.objects.get(region=waterschap)
+    assert doc.pk != original_doc.pk
+    assert default_storage.open(doc.storage_key).read() == b"<eml>corrected</eml>"
+
+
 @pytest.fixture
 def ps_election(db):
     config = ElectionConfigFactory(identifier=PS_CONFIG_IDENTIFIER, category=ElectionCategory.PS.value)
