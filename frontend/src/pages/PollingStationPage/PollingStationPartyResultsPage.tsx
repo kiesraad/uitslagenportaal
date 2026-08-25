@@ -1,10 +1,11 @@
+import { useLingui } from "@lingui/react/macro";
 import { useParams } from "react-router";
 import { Layout } from "../../components/Layout";
 import { PageQueryBoundary } from "../../components/PageQueryBoundary";
 import PageTop from "../../components/PageTop";
 import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCandidatesResultsContent";
 import { useElectionConfig, useRegion } from "../../hooks/queries";
-import { formatDate } from "../../utils/date";
+import { useFormatters } from "../../utils/format";
 import { getCsbCrumb } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
 import { getPartyVoteCount, hasParty } from "../../utils/voteCounts";
@@ -30,6 +31,8 @@ export default function PollingStationPartyResultsPage() {
    const pollingStationSlug = decodeURIComponent(pollingStationSlugParam ?? "");
    const partySlug = decodeURIComponent(partySlugParam ?? "");
    const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined;
+   const { t } = useLingui();
+   const { formatDate } = useFormatters();
 
    const {
       data: electionConfig,
@@ -86,11 +89,17 @@ export default function PollingStationPartyResultsPage() {
                void refetchRegion();
                void refetchPollingStation();
             }}
-            entityLabel="Stembureau"
             errors={[electionError, regionError, pollingStationError]}
+            entityLabel={t`Stembureau`}
          />
       );
    }
+
+   const partyName = getPartyVoteCount(pollingStation.vote_counts, partySlug)?.party.registered_name ?? t`Lijst`;
+   const stationName = pollingStation.region_name;
+   const publishedAt = formatDate(region.results_available_at);
+   const pageTitle = `${t`Telresultaten stembureau`}\n${stationName}`;
+   const documentTitle = t`Telresultaten stembureau – ${stationName}`;
 
    // Only an unknown party slug is a 404; empty results mean "not published yet"
    const hasAnyResults = (pollingStation.vote_counts?.length ?? 0) > 0;
@@ -98,19 +107,13 @@ export default function PollingStationPartyResultsPage() {
       return <NotFoundPage />;
    }
 
-   const partyName = getPartyVoteCount(pollingStation.vote_counts, partySlug)?.party.registered_name ?? "Lijst";
-   const pageTitle = `Telresultaten stembureau\n${pollingStation.region_name}`;
-
    return (
-      <Layout
-         title={`Telresultaten stembureau – ${pollingStation.region_name}`}
-         description={`Telresultaten stembureau – ${pollingStation.region_name}`}
-      >
+      <Layout title={documentTitle} description={documentTitle}>
          <PageTop
             title={pageTitle}
-            subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
+            subtitle={t`Geplaatst op: ${publishedAt}`}
             breadcrumb={[
-               { href: appRoutes.home(), label: "Home" },
+               { href: appRoutes.home(), label: t`Home` },
                { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig.label },
                getCsbCrumb(region, electionConfigSlug),
                { href: municipalityPollingstationListRoute, label: region.region_name },

@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { ApiError } from "../api/client";
 import { NotFoundPage } from "../pages/NotFoundPage";
+import { useLingui } from "@lingui/react/macro";
+import { lowercaseFirst } from "../utils/text";
 import { Layout } from "./Layout";
 
 type PageQueryBoundaryProps = {
@@ -28,7 +30,8 @@ export function PageQueryBoundary({
    withLayout = true,
    errors,
 }: PageQueryBoundaryProps) {
-   const labelLower = entityLabel.toLowerCase();
+   const { t } = useLingui();
+   const labelInline = lowercaseFirst(entityLabel);
 
    const wrap = (title: string, description: string, children: ReactNode) =>
       withLayout ? (
@@ -41,13 +44,14 @@ export function PageQueryBoundary({
       );
 
    if (isLoading) {
+      const loading = t`${entityLabel} laden…`;
       return wrap(
-         `${entityLabel} laden…`,
-         `${entityLabel} laden…`,
+         loading,
+         loading,
          <div className="page-main">
             <div className="page-status" role="status" aria-live="polite">
-               <p className="page-status-text">{entityLabel} laden…</p>
-               <p>Een moment geduld, de gegevens worden opgehaald.</p>
+               <p className="page-status-text">{loading}</p>
+               <p>{t`Een moment geduld, de gegevens worden opgehaald.`}</p>
             </div>
          </div>,
       );
@@ -58,14 +62,15 @@ export function PageQueryBoundary({
    }
 
    if (isError) {
+      const cannotLoad = t`Kan ${labelInline} niet laden.`;
       return wrap(
-         `${entityLabel} niet gevonden`,
-         `Kan ${labelLower} niet laden.`,
+         t`${entityLabel} niet gevonden`,
+         cannotLoad,
          <div className="page-main">
             <div className="page-status" role="alert">
-               <p className="page-status-text">Kan {labelLower} niet laden.</p>
+               <p className="page-status-text">{cannotLoad}</p>
                <button type="button" onClick={onRetry}>
-                  Opnieuw proberen
+                  {t`Opnieuw proberen`}
                </button>
             </div>
          </div>,

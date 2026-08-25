@@ -55,6 +55,22 @@ jobs:
       - run: npm run test
         working-directory: frontend
 
+  i18n-check:
+    # Fails when a message was added, changed or removed without re-running
+    # extraction, so the catalogues stay in step with the source.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run i18n:check
+        working-directory: frontend
+
   build:
     runs-on: ubuntu-latest
     steps:

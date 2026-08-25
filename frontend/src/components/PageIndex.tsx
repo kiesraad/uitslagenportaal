@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 
 type Props = {
@@ -10,7 +11,9 @@ type Props = {
 export default function PageIndex({ links }: Props) {
    return (
       <div className="on-this-page">
-         <div className="on-this-page-title">Op deze pagina:</div>
+         <div className="on-this-page-title">
+            <Trans>Op deze pagina:</Trans>
+         </div>
          <ul>
             {links.map((link) => (
                <li key={link.url}>

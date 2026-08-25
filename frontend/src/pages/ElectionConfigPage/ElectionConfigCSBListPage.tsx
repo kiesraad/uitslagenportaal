@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import { useParams } from "react-router";
 import { Layout } from "../../components/Layout.tsx";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
@@ -5,11 +6,14 @@ import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import SharedTabs from "../../components/SharedTabs.tsx";
 import { useElectionConfig, useRegions } from "../../hooks/queries.ts";
+import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 
 export function ElectionConfigCSBListPage() {
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
+   const { t } = useLingui();
+   const { formatElectionDate } = useFormatters();
    const {
       data: electionConfig,
       isLoading: isElectionLoading,
@@ -37,22 +41,25 @@ export function ElectionConfigCSBListPage() {
                void refetchElection();
                void refetchRegions();
             }}
-            entityLabel="Verkiezing"
             errors={[electionError, regionsError]}
+            entityLabel={t`Verkiezing`}
          />
       );
    }
 
+   const electionLabel = electionConfig.label;
+   const electionDay = electionConfig.date ? formatElectionDate(electionConfig.date) : "";
+
    return (
       <Layout
-         title={`Telresultaten ${electionConfig.label}`}
-         description={`Bekijk de telresultaten per gemeente van de ${electionConfig.label}.`}
+         title={t`Telresultaten ${electionLabel}`}
+         description={t`Bekijk de telresultaten per gemeente van de ${electionLabel}.`}
       >
          <PageTop
-            title={`Telresultaten ${electionConfig.label}`}
-            subtitle={`Verkiezingsdag: ${electionConfig.date ? new Date(electionConfig.date).toLocaleDateString("nl-NL", { year: "numeric", month: "long", day: "numeric" }) : ""}`}
+            title={t`Telresultaten ${electionLabel}`}
+            subtitle={t`Verkiezingsdag: ${electionDay}`}
             breadcrumb={[
-               { href: "/", label: "Home" },
+               { href: "/", label: t`Home` },
                {
                   href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ""),
                   label: electionConfig.label,
@@ -62,12 +69,12 @@ export function ElectionConfigCSBListPage() {
                <SharedTabs
                   tabs={[
                      {
-                        label: "Gemeente",
+                        label: t`Gemeente`,
                         value: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                         activePatterns: ["/:electionConfigSlug/gsb"],
                      },
                      {
-                        label: getRegionLabels(electionConfig.csb_type).plural,
+                        label: t(getRegionLabels(electionConfig.csb_type).plural),
                         value: appRoutes.electionConfigCSBList(electionConfig.slug),
                         activePatterns: ["/:electionConfigSlug/csb"],
                      },

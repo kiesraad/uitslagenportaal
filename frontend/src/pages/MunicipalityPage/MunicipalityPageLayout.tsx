@@ -1,10 +1,11 @@
+import { useLingui } from "@lingui/react/macro";
 import { Outlet, useParams } from "react-router";
 import { Layout } from "@/components/Layout.tsx";
 import { PageQueryBoundary } from "@/components/PageQueryBoundary.tsx";
 import PageTop from "@/components/PageTop.tsx";
 import SharedTabs from "@/components/SharedTabs.tsx";
 import { useElectionConfig, useRegion } from "@/hooks/queries.ts";
-import { formatDate } from "@/utils/date.ts";
+import { useFormatters } from "@/utils/format.ts";
 import { getCsbCrumb } from "@/utils/region.ts";
 import { appRoutes } from "@/utils/routes.ts";
 
@@ -22,6 +23,8 @@ export default function MunicipalityPageLayout() {
       csbSlug,
    );
    const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? "", regionSlug, csbSlug);
+   const { t } = useLingui();
+   const { formatDate } = useFormatters();
 
    const {
       data: electionConfig,
@@ -50,22 +53,24 @@ export default function MunicipalityPageLayout() {
                void refetchElectionConfig();
                void refetchRegion();
             }}
-            entityLabel="Gemeente"
             errors={[electionConfigError, regionError]}
+            entityLabel={t`Gemeente`}
          />
       );
    }
 
    const hasResults = Array.isArray(region.vote_counts) && region.vote_counts.length > 0;
-   const municipalityTitle = `Gemeente ${region.region_name}`;
+   const regionName = region.region_name;
+   const municipalityTitle = t`Gemeente ${regionName}`;
+   const publishedAt = formatDate(region.results_available_at);
 
    return (
       <Layout>
          <PageTop
             title={municipalityTitle}
-            subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
+            subtitle={t`Geplaatst op: ${publishedAt}`}
             breadcrumb={[
-               { href: appRoutes.home(), label: "Home" },
+               { href: appRoutes.home(), label: t`Home` },
                {
                   href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ""),
                   label: electionConfig.label,
@@ -78,12 +83,12 @@ export default function MunicipalityPageLayout() {
                   <SharedTabs
                      tabs={[
                         {
-                           label: "Resultaten per stembureau",
+                           label: t`Resultaten per stembureau`,
                            value: municipalityPollingstationListRoute,
                            activePatterns: [municipalityPollingstationListRoute],
                         },
                         {
-                           label: "Hele gemeente",
+                           label: t`Hele gemeente`,
                            value: municipalityResultsRoute,
                            activePatterns: [municipalityResultsRoute],
                         },

@@ -1,10 +1,11 @@
+import { useLingui } from "@lingui/react/macro";
 import { useParams } from "react-router";
 import { Layout } from "../../components/Layout";
 import { PageQueryBoundary } from "../../components/PageQueryBoundary";
 import PageTop from "../../components/PageTop";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent";
 import { useElectionConfig, useRegion } from "../../hooks/queries";
-import { formatDate } from "../../utils/date";
+import { useFormatters } from "../../utils/format";
 import { getCsbCrumb } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
 
@@ -25,6 +26,8 @@ export default function PollingStationResultsPage() {
    const parentRegionSlug = decodeURIComponent(parentRegionSlugParam ?? "");
    const pollingStationSlug = decodeURIComponent(pollingStationSlugParam ?? "");
    const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined;
+   const { t } = useLingui();
+   const { formatDate } = useFormatters();
 
    const {
       data: electionConfig,
@@ -74,39 +77,41 @@ export default function PollingStationResultsPage() {
                void refetchRegion();
                void refetchPollingStation();
             }}
-            entityLabel="Stembureau"
             errors={[electionError, regionError, pollingStationError]}
+            entityLabel={t`Stembureau`}
          />
       );
    }
 
-   const pageTitle = `Telresultaten stembureau\n${pollingStation.region_name}`;
+   const stationName = pollingStation.region_name;
+   const regionName = region.region_name;
+   const publishedAt = formatDate(region.results_available_at);
+   const pageTitle = `${t`Telresultaten stembureau`}\n${stationName}`;
+   const documentTitle = t`Telresultaten stembureau – ${stationName}`;
 
    return (
-      <Layout
-         title={`Telresultaten stembureau – ${pollingStation.region_name}`}
-         description={`Telresultaten stembureau – ${pollingStation.region_name}`}
-      >
+      <Layout title={documentTitle} description={documentTitle}>
          <PageTop
             title={pageTitle}
-            subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
+            subtitle={t`Geplaatst op: ${publishedAt}`}
             breadcrumb={[
-               { href: appRoutes.home(), label: "Home" },
+               { href: appRoutes.home(), label: t`Home` },
                { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig.label },
                getCsbCrumb(region, electionConfigSlug),
-               { href: municipalityPollingstationListRoute, label: `Gemeente ${region.region_name}` },
+               { href: municipalityPollingstationListRoute, label: t`Gemeente ${regionName}` },
                { href: pollingStationResultsRoute, label: pollingStation.region_name },
             ]}
          />
          <div className="page-main page-main-two-columns">
             <div className="page-space-3">
                <RegionResultsContent
-                  intro="De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
+                  intro={t`De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware.`}
                   voteCounts={pollingStation.vote_counts}
                   turnoutVotes={pollingStation.voter_turnout_counts}
                   timelineVariant={pollingStation.timeline_variant}
                   timelineEntries={pollingStation.timeline_entries ?? []}
                   issueReportDeadline={electionConfig.issue_report_deadline}
+                  notPublishedRegionLabel={region.region_name}
                />
             </div>
          </div>

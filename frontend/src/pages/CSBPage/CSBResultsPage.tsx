@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useParams } from "react-router";
 import { Layout } from "../../components/Layout.tsx";
 import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
@@ -5,7 +6,7 @@ import PageTop from "../../components/PageTop.tsx";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent.tsx";
 import SharedTabs from "../../components/SharedTabs.tsx";
 import { useElectionConfig, useRegion } from "../../hooks/queries.ts";
-import { formatDate } from "../../utils/date.ts";
+import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 
@@ -17,6 +18,8 @@ export function CSBResultsPage() {
    const regionSlug = decodeURIComponent(regionSlugParam ?? "");
    const csbResultsRoute = appRoutes.csbResults(electionConfigSlug ?? "", regionSlug);
    const csbMunicipalityListRoute = appRoutes.csbMunicipalityList(electionConfigSlug ?? "", regionSlug);
+   const { t } = useLingui();
+   const { formatDate } = useFormatters();
 
    const {
       data: electionConfig,
@@ -47,19 +50,26 @@ export function CSBResultsPage() {
                void refetchElection();
                void refetchRegion();
             }}
-            entityLabel={regionLabels.singular}
             errors={[electionError, regionError]}
+            entityLabel={t(regionLabels.singular)}
          />
       );
    }
 
+   const regionType = t(regionLabels.singular);
+   const regionName = region.region_name;
+   const publishedAt = formatDate(region.results_available_at);
+   // "de gemeente" / "het waterschap": article and noun as one translated
+   // phrase, because which article a noun takes is language-specific.
+   const regionWithArticle = t(regionLabels.withArticle);
+
    return (
-      <Layout title="Resultaten">
+      <Layout title={t`Resultaten`}>
          <PageTop
-            title={`${regionLabels.singular} - ${region.region_name}`}
-            subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
+            title={t`${regionType} - ${regionName}`}
+            subtitle={t`Geplaatst op: ${publishedAt}`}
             breadcrumb={[
-               { href: appRoutes.home(), label: "Home" },
+               { href: appRoutes.home(), label: t`Home` },
                {
                   href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ""),
                   label: electionConfig.label,
@@ -70,12 +80,12 @@ export function CSBResultsPage() {
                <SharedTabs
                   tabs={[
                      {
-                        label: `${regionLabels.whole} ${regionLabels.singular.toLowerCase()}`,
+                        label: t(regionLabels.whole),
                         value: csbResultsRoute,
                         activePatterns: [csbResultsRoute],
                      },
                      {
-                        label: "Per gemeente",
+                        label: t`Per gemeente`,
                         value: csbMunicipalityListRoute,
                         activePatterns: [csbMunicipalityListRoute],
                      },
@@ -87,16 +97,16 @@ export function CSBResultsPage() {
             <div className="page-space-3">
                <RegionResultsContent
                   intro={
-                     <>
-                        Het hoofdstembureau heeft de telresultaten van alle gemeentes in {region.region_name}{" "}
-                        gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze
-                        zijn opgenomen in het proces-verbaal van het hoofdstembureau.
-                     </>
+                     <Trans>
+                        Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd,
+                        overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in
+                        het proces-verbaal van het hoofdstembureau.
+                     </Trans>
                   }
                   voteCounts={region.vote_counts}
                   turnoutVotes={region.voter_turnout_counts}
                   reports={{
-                     description: `Onderstaande documenten bevatten de laatste telresultaten van ${regionLabels.article} ${regionLabels.singular.toLowerCase()}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`,
+                     description: t`Onderstaande documenten bevatten de laatste telresultaten van ${regionWithArticle}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`,
                      documents: region.documents,
                   }}
                   timelineVariant={region.timeline_variant}

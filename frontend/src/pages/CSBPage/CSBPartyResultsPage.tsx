@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useParams } from "react-router";
 import { Layout } from "../../components/Layout.tsx";
 import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
@@ -8,7 +9,7 @@ import ResultsNotPublished from "../../components/ResultsPage/ResultsNotPublishe
 import ResultsPageIndex from "../../components/ResultsPage/ResultsPageIndex";
 import ResultsTimeline from "../../components/ResultsPage/ResultsTimeline.tsx";
 import { useElectionConfig, usePartyVoteMatrix, useRegion } from "../../hooks/queries.ts";
-import { formatDate } from "../../utils/date.ts";
+import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 import { getPartyVoteCount } from "../../utils/voteCounts.ts";
@@ -21,6 +22,8 @@ export function CSBPartyResultsPage() {
    } = useParams<{ electionConfigSlug: string; regionSlug: string; partySlug: string }>();
    const regionSlug = decodeURIComponent(regionSlugParam ?? "");
    const partySlug = decodeURIComponent(partySlugParam ?? "");
+   const { t } = useLingui();
+   const { formatDate } = useFormatters();
 
    const {
       data: electionConfig,
@@ -64,23 +67,32 @@ export function CSBPartyResultsPage() {
                void refetchRegion();
                void refetchPartyVoteMatrix();
             }}
-            entityLabel={regionLabels.singular}
             errors={[electionError, regionError, partyVoteMatrixError]}
+            entityLabel={t(regionLabels.singular)}
          />
       );
    }
+
+   const listNumber = partyListNumber ?? "-";
+   const regionType = t(regionLabels.singular);
+   const regionName = region.region_name;
+   const publishedAt = formatDate(region.results_available_at);
 
    const resultsPageContent = (
       <>
          <ResultsPageIndex />
          <section id="telresultaten" className="party-vote-matrix-section">
-            <h2 className="text-lg mb-4.5 font-medium">Telresultaten lijst {partyListNumber ?? "-"}</h2>
+            <h2 className="text-lg mb-4.5 font-medium">
+               <Trans>Telresultaten lijst {listNumber}</Trans>
+            </h2>
             <h3 className="party-level-title mb-2">{partyName}</h3>
 
             <p className="mb-4 max-w-160">
-               Het centraal stembureau heeft de telresultaten van alle gemeenten en kieskringen gecontroleerd,
-               overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenmomen in het
-               proces-verbaal van het centraal stembureau.
+               <Trans>
+                  Het centraal stembureau heeft de telresultaten van alle gemeenten en kieskringen gecontroleerd,
+                  overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het
+                  proces-verbaal van het centraal stembureau.
+               </Trans>
             </p>
             <PartyVoteMatrixTable matrix={partyVoteMatrix} />
          </section>
@@ -88,12 +100,12 @@ export function CSBPartyResultsPage() {
    );
 
    return (
-      <Layout title="Resultaten">
+      <Layout title={t`Resultaten`}>
          <PageTop
-            title={`Telresultaten ${regionLabels.singular} ${region.region_name}\n ${partyName}`}
-            subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
+            title={`${t`Telresultaten ${regionType} ${regionName}`}\n ${partyName}`}
+            subtitle={t`Geplaatst op: ${publishedAt}`}
             breadcrumb={[
-               { href: appRoutes.home(), label: "Home" },
+               { href: appRoutes.home(), label: t`Home` },
                {
                   href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ""),
                   label: electionConfig.label,

@@ -1,10 +1,11 @@
+import { useLingui } from "@lingui/react/macro";
 import { Navigate, useOutletContext } from "react-router";
 import type { ElectionConfig, Region } from "@/api/types.ts";
 import HtmlHead from "@/components/HtmlHead.tsx";
+import { useRegions } from "@/hooks/queries.ts";
 import { appRoutes } from "@/utils/routes.ts";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
 import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
-import { useRegions } from "../../hooks/queries.ts";
 
 export function MunicipalityPollingstationListPage() {
    const { electionConfig, region, municipalityTitle, electionConfigSlug, regionSlug, csbSlug } = useOutletContext<{
@@ -16,6 +17,7 @@ export function MunicipalityPollingstationListPage() {
       csbSlug: string;
    }>();
    const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? "", regionSlug, csbSlug);
+   const { t } = useLingui();
 
    const {
       data: pollingStations,
@@ -36,8 +38,8 @@ export function MunicipalityPollingstationListPage() {
             onRetry={() => {
                void refetchPollingStations();
             }}
-            entityLabel="Stembureaus"
             errors={[pollingStationsError]}
+            entityLabel={t`Stembureaus`}
             withLayout={false}
          />
       );
@@ -50,7 +52,7 @@ export function MunicipalityPollingstationListPage() {
 
    return (
       <>
-         <HtmlHead title={`Resultaten ${municipalityTitle} per stembureau`} />
+         <HtmlHead title={t`Resultaten ${municipalityTitle} per stembureau`} />
          <RegionList
             electionConfig={electionConfig}
             regions={pollingStations}
