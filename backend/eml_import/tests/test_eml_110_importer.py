@@ -157,7 +157,7 @@ def test_creates_registered_parties(election_config):
     assert set(names) == {"Partij voor Zeeland", "CDA"}
 
 
-def test_import_is_idempotent(election_config):
+def test_correction_archives_prior_regions_and_parties(election_config):
     eml = make_eml(parties=("Partij voor Zeeland", "CDA"))
 
     EML110aImporter(eml, None).parse()

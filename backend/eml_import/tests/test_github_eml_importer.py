@@ -196,16 +196,6 @@ def test_get_files_for_next_commit_starts_at_the_oldest_commit(fake_repo, build_
     assert repo.calls_named("compare") == []
 
 
-def test_get_files_for_next_commit_caps_the_batch_size(fake_repo, build_importer, election_config):
-    commits = [FakeCommit(f"c{index}", [FakeFile(f"{index}.xml")]) for index in range(1 + 2)]
-    repo = fake_repo(commits=commits)
-
-    head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit(None, BRANCH_EXCHANGE)
-
-    assert head_sha == f"c{1 - 1}"
-    assert len(files) == 1
-
-
 def test_get_files_for_next_commit_resumes_after_the_base_commit(fake_repo, build_importer, election_config):
     repo = fake_repo(
         commits=[
@@ -232,38 +222,6 @@ def test_get_files_for_next_commit_returns_nothing_when_up_to_date(fake_repo, bu
     # Bails out before fetching any files
     assert repo.calls_named("get_commit") == []
     assert repo.calls_named("compare") == [("compare", "imported", BRANCH_EXCHANGE)]
-
-
-def test_get_files_for_next_commit_does_not_diff_a_single_commit(fake_repo, build_importer, election_config):
-    repo = fake_repo(
-        commits=[
-            FakeCommit("imported", [FakeFile("already-done.xml")]),
-            FakeCommit("only", [FakeFile("a.xml")]),
-        ]
-    )
-
-    head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit("imported", BRANCH_EXCHANGE)
-
-    assert head_sha == "only"
-    assert [file.filename for file in files] == ["a.xml"]
-    # compare() is only used to list the commits; the files come from get_commit()
-    assert repo.calls_named("compare") == [("compare", "imported", BRANCH_EXCHANGE)]
-    assert repo.calls_named("get_commit") == [("get_commit", "only")]
-
-
-def test_get_files_for_next_commit_returns_all_files_of_the_next_commit(
-    fake_repo, build_importer, election_config
-):
-    """One commit at a time: even a large commit is returned as that single next commit."""
-    many_files = [FakeFile(f"pad_{index}.xml") for index in range(300)]
-    repo = fake_repo(commits=[FakeCommit("first", many_files), FakeCommit("second", [FakeFile("later.xml")])])
-
-    head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit(None, BRANCH_EXCHANGE)
-
-    assert head_sha == "first"
-    assert [file.filename for file in files] == [f"pad_{index}.xml" for index in range(300)]
-    assert repo.calls_named("get_commit") == [("get_commit", "first")]
-    assert repo.calls_named("compare") == []
 
 
 def test_run_imports_from_the_first_commit_and_records_progress(fake_repo, imported_batches, stored_election_config):

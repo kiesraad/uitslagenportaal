@@ -351,8 +351,8 @@ def test_parse_party_candidate_votecounts_builds_party_and_candidate_rows(
     assert candidate_row.valid_votes == 60
 
 
-def test_parse_party_candidate_votecounts_logs_and_skips_unknown_candidate(
-    ws_importer, ws_regions, ws_contest, ws_parties, caplog
+def test_parse_party_candidate_votecounts_raises_for_unknown_candidate(
+    ws_importer, ws_regions, ws_contest, ws_parties
 ):
     party = ws_parties[1]
     items = [
@@ -420,8 +420,8 @@ def test_parse_party_candidate_votecounts_resolves_candidate_by_short_code(
     assert [row.candidate for row in vote_counts] == [None, candidate]
 
 
-def test_parse_party_candidate_votecounts_logs_and_skips_unknown_short_code(
-    ws_importer, ws_regions, ws_contest, ws_parties, caplog
+def test_parse_party_candidate_votecounts_raises_for_unknown_short_code(
+    ws_importer, ws_regions, ws_contest, ws_parties
 ):
     party = ws_parties[1]
     items = [
@@ -714,8 +714,8 @@ def test_510b_marks_region_as_counted_and_stores_document(ws_regions, ws_contest
     assert_storage_key(doc.storage_key, "AB2023/AB2023_Telling_GSB_17_Scheldestromen_654_Borsele")
 
 
-def test_510b_skips_file_of_region_outside_the_election(ws_regions, ws_contest, ws_parties, ws_candidates):
-    """A gemeente that the election definition does not mention has no results to import."""
+def test_510b_rejects_region_outside_the_election(ws_regions, ws_contest, ws_parties, ws_candidates):
+    """A gemeente that the election definition does not mention cannot be imported."""
     eml = make_ws_telling(authority_id="0999", authority_name="Onbekend")
 
     with pytest.raises(
