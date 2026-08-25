@@ -35,6 +35,12 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
         super().__init__(eml, eml_file)
         self.election_documents = {doc.storage_key: doc for doc in ElectionDocument.objects.all()}
 
+    @property
+    def document_file_type(self) -> ElectionDocument.FileType:
+        # TODO: clean this up, by making EML type strings the same everywhere
+        """Map this importer's EML type onto ElectionDocument.FileType (e.g. 510b → EML510b)."""
+        return ElectionDocument.FileType(f"EML{self.eml_type}")
+
     @staticmethod
     def _counting_method(count) -> str | None:
         counting_method = getattr(count, "counting_method", None)
@@ -197,7 +203,7 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
             storage_key=stored_file_path,
             region=region,
             content_type="application/xml",
-            file_type=ElectionDocument.FileType.EML510B,
+            file_type=self.document_file_type,
             size=size,
         )
 
@@ -224,7 +230,7 @@ class EML510bImporter(EML510BaseImporter):
         counts_filter = Q(region=region) | Q(region__in=stations)
         VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
         VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
-        ElectionDocument.objects.filter(region=region).archive()
+        ElectionDocument.objects.filter(region=region, file_type=self.document_file_type).archive()
         stations.archive()
 
     @staticmethod
@@ -385,7 +391,7 @@ class EML510dImporter(EML510BaseImporter):
         counts_filter = Q(region=region) | Q(region__csb=region)
         VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
         VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
-        ElectionDocument.objects.filter(region=region).archive()
+        ElectionDocument.objects.filter(region=region, file_type=self.document_file_type).archive()
 
     def _parse_data(self) -> None:
         election_domain = self._get_election_identifier_data().election_domain

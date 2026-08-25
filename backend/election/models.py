@@ -211,6 +211,7 @@ class ElectionDocument(CurrentModel):
 
     class FileType(TextChoices):
         EML510B = "EML510b"
+        EML510D = "EML510d"
 
     file_type = models.CharField(
         max_length=32,
