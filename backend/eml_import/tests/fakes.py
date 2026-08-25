@@ -31,6 +31,10 @@ class FakeComparison:
         self.commits = commits
         self.files = files
 
+    @property
+    def total_commits(self) -> int:
+        return len(self.commits)
+
 
 class FakeGitBlob:
     """Stands in for github.GitBlob.GitBlob."""
@@ -42,12 +46,17 @@ class FakeGitBlob:
 class FakePaginatedList(list):
     """Stands in for github.PaginatedList.PaginatedList.
 
-    PyGithub exposes ``reversed`` as a property, not a method.
+    PyGithub exposes ``reversed`` as a property, not a method, and spells its length
+    ``totalCount``.
     """
 
     @property
     def reversed(self) -> list:
         return list(reversed(self))
+
+    @property
+    def totalCount(self) -> int:
+        return len(self)
 
 
 class FakeRepo:

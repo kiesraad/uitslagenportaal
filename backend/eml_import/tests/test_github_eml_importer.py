@@ -42,6 +42,10 @@ def warnings_of(caplog) -> list[str]:
     return [record.getMessage() for record in caplog.records if record.levelno == logging.WARNING]
 
 
+def messages_containing(caplog, text: str) -> list[str]:
+    return [record.getMessage() for record in caplog.records if text in record.getMessage()]
+
+
 @pytest.fixture
 def fake_repo(monkeypatch, settings):
     """Build a FakeRepo and make GithubEmlImporter construct itself against it.
@@ -207,6 +211,47 @@ def test_get_next_batch_of_files_caps_the_batch_size(fake_repo, build_importer, 
 
     assert head_sha == f"c{COMMIT_BATCH_SIZE - 1}"
     assert len(files) == COMMIT_BATCH_SIZE
+
+
+def test_get_next_batch_of_files_logs_how_many_commits_are_left_on_the_branch(
+    fake_repo, build_importer, election_config, caplog
+):
+    caplog.set_level(logging.INFO)
+    commits = [FakeCommit(f"c{index}", [FakeFile(f"{index}.xml")]) for index in range(COMMIT_BATCH_SIZE + 2)]
+    repo = fake_repo(commits=commits)
+
+    build_importer(election_config, repo)._get_next_batch_of_files(None, BRANCH_EXCHANGE)
+
+    # The batch is capped, so the run only makes a dent in the branch; the log says how big a dent
+    assert messages_containing(caplog, "remaining commits") == [
+        f"Importing {COMMIT_BATCH_SIZE} of {COMMIT_BATCH_SIZE + 2} remaining commits "
+        f"on branch {BRANCH_EXCHANGE}, 2 left after this batch"
+    ]
+
+
+def test_get_next_batch_of_files_counts_only_the_commits_after_the_base_commit(
+    fake_repo, build_importer, election_config, caplog
+):
+    caplog.set_level(logging.INFO)
+    repo = fake_repo(commits=[FakeCommit("imported"), FakeCommit("next", [FakeFile("a.xml")])])
+
+    build_importer(election_config, repo)._get_next_batch_of_files("imported", BRANCH_EXCHANGE)
+
+    # The already imported commit is not part of what is left to do
+    assert messages_containing(caplog, "remaining commits") == [
+        f"Importing 1 of 1 remaining commits on branch {BRANCH_EXCHANGE}, 0 left after this batch"
+    ]
+
+
+def test_get_next_batch_of_files_logs_nothing_when_the_branch_is_up_to_date(
+    fake_repo, build_importer, election_config, caplog
+):
+    caplog.set_level(logging.INFO)
+    repo = fake_repo(commits=[FakeCommit("imported", [FakeFile("a.xml")])])
+
+    build_importer(election_config, repo)._get_next_batch_of_files("imported", BRANCH_EXCHANGE)
+
+    assert messages_containing(caplog, "remaining commits") == []
 
 
 def test_get_next_batch_of_files_resumes_after_the_base_commit(fake_repo, build_importer, election_config):

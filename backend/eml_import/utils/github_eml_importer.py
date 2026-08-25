@@ -36,7 +36,7 @@ class GithubEmlImporter:
         self.election_config = election_config
         self.gh: Github | None = None
         self.repo: Repository | None = None
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"{self.__class__.__name__}[{self.election_config.identifier}]")
 
     @property
     def cache_lock_key(self):
@@ -130,13 +130,25 @@ class GithubEmlImporter:
         if base_sha is not None:
             # Get the commits ahead of the base_sha ref, so commits[0] is the first commit after base_Sha
             ahead = self.repo.compare(base_sha, branch)
+            # compare() only pages out the first 250 commits, but total_commits counts them all
+            remaining = ahead.total_commits
             commits = list(itertools.islice(ahead.commits, COMMIT_BATCH_SIZE))
         else:
             # Get the first commits of the branch, so commits[0] is the first ever commit
-            commits = list(itertools.islice(self.repo.get_commits(sha=branch).reversed, COMMIT_BATCH_SIZE))
+            branch_commits = self.repo.get_commits(sha=branch)
+            remaining = branch_commits.totalCount
+            commits = list(itertools.islice(branch_commits.reversed, COMMIT_BATCH_SIZE))
 
         if not commits:
             return None, []
+
+        self.logger.info(
+            "Importing %s of %s remaining commits on branch %s, %s left after this batch",
+            len(commits),
+            remaining,
+            branch,
+            remaining - len(commits),
+        )
 
         batch_head_sha = commits[-1].sha
 
