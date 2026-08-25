@@ -1,22 +1,13 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
+import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "@/api/client";
 import { PageQueryBoundary } from "@/components/PageQueryBoundary";
+import { renderWithProviders } from "../testUtils";
 
 function renderBoundary(props: Partial<Parameters<typeof PageQueryBoundary>[0]> = {}) {
-   const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-   });
-
-   return render(
-      <QueryClientProvider client={queryClient}>
-         <MemoryRouter>
-            <PageQueryBoundary isLoading={false} isError={true} onRetry={vi.fn()} entityLabel="Stembureau" {...props} />
-         </MemoryRouter>
-      </QueryClientProvider>,
+   return renderWithProviders(
+      <PageQueryBoundary isLoading={false} isError={true} onRetry={vi.fn()} entityLabel="Stembureau" {...props} />,
    );
 }
 

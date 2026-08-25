@@ -1,7 +1,7 @@
+import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { ApiError } from "../api/client";
 import { NotFoundPage } from "../pages/NotFoundPage";
-import { useLingui } from "@lingui/react/macro";
 import { lowercaseFirst } from "../utils/text";
 import { Layout } from "./Layout";
 

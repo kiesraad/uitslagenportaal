@@ -8,7 +8,7 @@ import { useElectionConfig, useRegion } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getCsbCrumb } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
-import { getPartyVoteCount } from "../../utils/voteCounts.ts";
+import { getPartyVoteCount, hasParty } from "../../utils/voteCounts.ts";
 import { NotFoundPage } from "../NotFoundPage.tsx";
 
 export function MunicipalityPartyResultsPage() {
