@@ -582,10 +582,10 @@ def test_store_eml_filename_with_parent_sanitizes_special_characters(ws_election
     )
 
 
-def test_store_eml_updates_size_of_existing_document_on_reimport(ws_regions):
-    expected_storage_key = "AB2023/AB2023_Telling_GSB_17_Scheldestromen.eml.xml"
+def test_store_eml_archives_existing_document_on_reimport(ws_regions):
+    """Corrections archive the previous current document, then store a new one."""
     existing = ElectionDocumentFactory(
-        storage_key=expected_storage_key,
+        storage_key="AB2023/AB2023_Telling_GSB_17_Scheldestromen.eml.xml",
         region=ws_regions["waterschap"],
         content_type="application/xml",
         file_type=ElectionDocument.FileType.EML510B,
@@ -594,12 +594,17 @@ def test_store_eml_updates_size_of_existing_document_on_reimport(ws_regions):
     content = b"<eml>corrected counts, longer than before</eml>"
     importer = make_ws_importer(EML510bImporter, NamedBytesIO(content, "x.xml"))
 
+    importer._archive(ws_regions["waterschap"])
     importer._store_eml(ws_regions["waterschap"])
 
-    assert ElectionDocument.objects.filter(storage_key=expected_storage_key).count() == 1
     existing.refresh_from_db()
-    assert existing.size == len(content)
-    assert default_storage.open(existing.storage_key).read() == content
+    assert existing.is_current is False
+    assert ElectionDocument.objects.filter(region=ws_regions["waterschap"]).count() == 1
+    doc = ElectionDocument.objects.get(region=ws_regions["waterschap"])
+    assert doc.pk != existing.pk
+    assert doc.size == len(content)
+    assert default_storage.open(doc.storage_key).read() == content
+    assert_storage_key(doc.storage_key, "AB2023/AB2023_Telling_GSB_17_Scheldestromen")
 
 
 def make_ws_telling(*, authority_id="0654", authority_name="Borsele", counting_method=None):
