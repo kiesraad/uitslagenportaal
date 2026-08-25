@@ -4,9 +4,21 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
+import { ApiError } from "./api/client.ts";
 import { detectLocale, i18n, loadCatalog } from "./i18n";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+   defaultOptions: {
+      queries: {
+         retry: (failureCount, error) => {
+            if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
+               return false;
+            }
+            return failureCount < 3;
+         },
+      },
+   },
+});
 const rootElem = document.getElementById("root");
 
 if (rootElem === null) {

@@ -19,7 +19,7 @@ const DEADLINE_TICK_MS = 60_000;
 export function ReportIssuePage() {
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
    const { t } = useLingui();
-   const { data: electionConfig, isLoading, isError, refetch } = useElectionConfig(electionConfigSlug);
+   const { data: electionConfig, isLoading, isError, error, refetch } = useElectionConfig(electionConfigSlug);
 
    if (isLoading || isError || !electionConfig) {
       return (
@@ -29,6 +29,7 @@ export function ReportIssuePage() {
             onRetry={() => {
                void refetch();
             }}
+            errors={[error]}
             entityLabel={t`Verkiezing`}
          />
       );

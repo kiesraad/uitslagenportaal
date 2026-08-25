@@ -30,12 +30,14 @@ export default function MunicipalityPageLayout() {
       data: electionConfig,
       isLoading: isElectionConfigLoading,
       isError: isElectionConfigError,
+      error: electionConfigError,
       refetch: refetchElectionConfig,
    } = useElectionConfig(electionConfigSlug);
    const {
       data: region,
       isLoading: isRegionLoading,
       isError: isRegionError,
+      error: regionError,
       refetch: refetchRegion,
    } = useRegion(electionConfigSlug, regionSlug, csbSlug);
 
@@ -51,6 +53,7 @@ export default function MunicipalityPageLayout() {
                void refetchElectionConfig();
                void refetchRegion();
             }}
+            errors={[electionConfigError, regionError]}
             entityLabel={t`Gemeente`}
          />
       );

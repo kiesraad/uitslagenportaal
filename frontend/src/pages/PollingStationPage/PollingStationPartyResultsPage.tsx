@@ -8,7 +8,8 @@ import { useElectionConfig, useRegion } from "../../hooks/queries";
 import { useFormatters } from "../../utils/format";
 import { getCsbCrumb } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
-import { getPartyVoteCount } from "../../utils/voteCounts";
+import { getPartyVoteCount, hasParty } from "../../utils/voteCounts";
+import { NotFoundPage } from "../NotFoundPage";
 
 export default function PollingStationPartyResultsPage() {
    const {
@@ -37,18 +38,21 @@ export default function PollingStationPartyResultsPage() {
       data: electionConfig,
       isLoading: isElectionLoading,
       isError: isElectionError,
+      error: electionError,
       refetch: refetchElection,
    } = useElectionConfig(electionConfigSlug);
    const {
       data: region,
       isLoading: isRegionLoading,
       isError: isRegionError,
+      error: regionError,
       refetch: refetchRegion,
    } = useRegion(electionConfigSlug, parentRegionSlug, csbSlug);
    const {
       data: pollingStation,
       isLoading: isPollingStationLoading,
       isError: isPollingStationError,
+      error: pollingStationError,
       refetch: refetchPollingStation,
    } = useRegion(electionConfigSlug, pollingStationSlug, csbSlug, parentRegionSlug);
 
@@ -85,6 +89,7 @@ export default function PollingStationPartyResultsPage() {
                void refetchRegion();
                void refetchPollingStation();
             }}
+            errors={[electionError, regionError, pollingStationError]}
             entityLabel={t`Stembureau`}
          />
       );
@@ -95,6 +100,12 @@ export default function PollingStationPartyResultsPage() {
    const publishedAt = formatDate(region.results_available_at);
    const pageTitle = `${t`Telresultaten stembureau`}\n${stationName}`;
    const documentTitle = t`Telresultaten stembureau – ${stationName}`;
+
+   // Only an unknown party slug is a 404; empty results mean "not published yet"
+   const hasAnyResults = (pollingStation.vote_counts?.length ?? 0) > 0;
+   if (hasAnyResults && !hasParty(pollingStation.vote_counts, partySlug)) {
+      return <NotFoundPage />;
+   }
 
    return (
       <Layout title={documentTitle} description={documentTitle}>

@@ -1,5 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
+import { ApiError } from "../api/client";
+import { NotFoundPage } from "../pages/NotFoundPage";
 import { lowercaseFirst } from "../utils/text";
 import { Layout } from "./Layout";
 
@@ -7,10 +9,14 @@ type PageQueryBoundaryProps = {
    isLoading: boolean;
    isError: boolean;
    onRetry: () => void;
-   /** Capitalised, standalone: "Gemeente". */
    entityLabel: string;
    withLayout?: boolean;
+   errors?: unknown[];
 };
+
+export function isNotFoundError(error: unknown): boolean {
+   return error instanceof ApiError && error.status === 404;
+}
 
 /**
  * Full-page loading / error gate for query-backed pages.
@@ -22,6 +28,7 @@ export function PageQueryBoundary({
    onRetry,
    entityLabel,
    withLayout = true,
+   errors,
 }: PageQueryBoundaryProps) {
    const { t } = useLingui();
    const labelInline = lowercaseFirst(entityLabel);
@@ -48,6 +55,10 @@ export function PageQueryBoundary({
             </div>
          </div>,
       );
+   }
+
+   if (errors?.some(isNotFoundError)) {
+      return <NotFoundPage />;
    }
 
    if (isError) {

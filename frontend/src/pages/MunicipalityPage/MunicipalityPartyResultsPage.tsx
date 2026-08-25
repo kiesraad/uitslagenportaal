@@ -8,7 +8,8 @@ import { useElectionConfig, useRegion } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getCsbCrumb } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
-import { getPartyVoteCount } from "../../utils/voteCounts.ts";
+import { getPartyVoteCount, hasParty } from "../../utils/voteCounts.ts";
+import { NotFoundPage } from "../NotFoundPage.tsx";
 
 export function MunicipalityPartyResultsPage() {
    const {
@@ -29,12 +30,14 @@ export function MunicipalityPartyResultsPage() {
       data: electionConfig,
       isLoading: isElectionLoading,
       isError: isElectionError,
+      error: electionError,
       refetch: refetchElection,
    } = useElectionConfig(electionConfigSlug);
    const {
       data: region,
       isLoading: isRegionLoading,
       isError: isRegionError,
+      error: regionError,
       refetch: refetchRegion,
    } = useRegion(electionConfigSlug, regionSlug, csbSlug);
 
@@ -58,9 +61,16 @@ export function MunicipalityPartyResultsPage() {
                void refetchElection();
                void refetchRegion();
             }}
+            errors={[electionError, regionError]}
             entityLabel={t`Gemeente`}
          />
       );
+   }
+
+   // Only an unknown party slug is a 404; empty results mean "not published yet"
+   const hasAnyResults = (region.vote_counts?.length ?? 0) > 0;
+   if (hasAnyResults && !hasParty(region.vote_counts, partySlug)) {
+      return <NotFoundPage />;
    }
 
    const partyName = getPartyVoteCount(region.vote_counts, partySlug)?.party.registered_name ?? t`Lijst`;

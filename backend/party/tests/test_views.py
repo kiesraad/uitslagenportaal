@@ -31,14 +31,25 @@ def test_party_result_matrix_requires_query_params():
 
 
 @pytest.mark.django_db
-def test_party_result_matrix_returns_400_for_unknown_party():
+def test_party_result_matrix_returns_404_for_unknown_party():
     election = ElectionFactory()
     csb = RegionFactory(election=election, region_category=RegionCategory.WATERSCHAP)
 
     response = PartyResultMatrixView.as_view()(_matrix_request(election.slug, "unknown-party", csb.slug))
 
-    assert response.status_code == 400
+    assert response.status_code == 404
     assert response.data["party"] == "Party not found for this election."
+
+
+@pytest.mark.django_db
+def test_party_result_matrix_returns_404_for_unknown_csb():
+    election = ElectionFactory()
+    party = PartyFactory(election=election)
+
+    response = PartyResultMatrixView.as_view()(_matrix_request(election.slug, party.slug, "unknown-csb"))
+
+    assert response.status_code == 404
+    assert response.data["csb"] == "CSB not found for this election."
 
 
 @pytest.mark.django_db

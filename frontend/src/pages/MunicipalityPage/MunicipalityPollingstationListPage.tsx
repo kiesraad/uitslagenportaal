@@ -23,6 +23,7 @@ export function MunicipalityPollingstationListPage() {
       data: pollingStations,
       isLoading: isPollingStationsLoading,
       isError: isPollingStationsError,
+      error: pollingStationsError,
       refetch: refetchPollingStations,
    } = useRegions(electionConfigSlug, regionSlug, "STEMBUREAU", csbSlug);
 
@@ -37,6 +38,7 @@ export function MunicipalityPollingstationListPage() {
             onRetry={() => {
                void refetchPollingStations();
             }}
+            errors={[pollingStationsError]}
             entityLabel={t`Stembureaus`}
             withLayout={false}
          />
