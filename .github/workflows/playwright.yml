@@ -22,8 +22,6 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
         working-directory: frontend
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
       - name: Resolve Playwright version
         id: playwright-version
         working-directory: frontend
@@ -44,4 +42,134 @@ jobs:
         with:
           name: playwright-report
           path: frontend/playwright-report/
+          retention-days: 14
+
+  playwright-python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: uitslagenportaal
+          POSTGRES_USER: uitslagenportaal_user
+          POSTGRES_PASSWORD: password
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd "pg_isready -U uitslagenportaal_user -d uitslagenportaal"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      object-storage:
+        image: rustfs/rustfs:1.0.0-rc.1
+        env:
+          RUSTFS_ACCESS_KEY: uitslagenportaal
+          RUSTFS_SECRET_KEY: password
+          RUSTFS_ADDRESS: "0.0.0.0:9000"
+        ports:
+          - "9000:9000"
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/health"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_NAME: uitslagenportaal
+      DB_USER: uitslagenportaal_user
+      DB_PASSWORD: password
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      SECRET_KEY: super-secret
+      S3_ENDPOINT_URL: http://127.0.0.1:9000
+      S3_PUBLIC_DOMAIN: localhost:9000/uitslagenportaal
+      S3_BUCKET_NAME: uitslagenportaal
+      S3_ACCESS_KEY: uitslagenportaal
+      S3_SECRET_KEY: password
+      S3_URL_PROTOCOL: "http:"
+      S3_ADDRESSING_STYLE: path
+      # conftest.py defaults to the compose stack's published ports; point it here.
+      PLAYWRIGHT_DB_HOST: 127.0.0.1
+      PLAYWRIGHT_DB_PORT: "5432"
+      PLAYWRIGHT_S3_ENDPOINT_URL: http://127.0.0.1:9000
+      PLAYWRIGHT_BASE_URL: http://localhost:8081
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - name: Build the frontend
+        run: npm run build
+        working-directory: frontend
+        env:
+          # Same value docker-compose.yml gives the container: an empty base URL sends
+          # API calls to the origin the page came from, which `vite preview` proxies.
+          VITE_API_BASE_URL: ""
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+      - run: uv sync
+        working-directory: backend
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          # uv.lock pins the playwright version, so it doubles as the cache key.
+          key: ${{ runner.os }}-playwright-py-${{ hashFiles('backend/uv.lock') }}
+      # ubuntu-latest already has the libs Chromium needs, and CI runs headless.
+      - run: uv run playwright install --only-shell chromium
+        working-directory: backend
+
+      # What the object-storage-bootstrap compose service does, using the mc binary so
+      # this job needs no Docker. MinIO's client speaks RustFS's S3 API.
+      - name: Create the storage bucket
+        run: |
+          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o "$RUNNER_TEMP/mc"
+          chmod +x "$RUNNER_TEMP/mc"
+          "$RUNNER_TEMP/mc" alias set local "$S3_ENDPOINT_URL" "$S3_ACCESS_KEY" "$S3_SECRET_KEY"
+          "$RUNNER_TEMP/mc" mb --ignore-existing "local/$S3_BUCKET_NAME"
+          "$RUNNER_TEMP/mc" anonymous set download "local/$S3_BUCKET_NAME"
+
+      # conftest.py migrates too, but doing it here lets the readiness check below hit a
+      # real endpoint, and reports a schema problem before any browser starts.
+      - run: uv run python manage.py migrate
+        working-directory: backend
+
+      # --noreload: the autoreloader forks a child this job would leave behind.
+      - name: Start the backend
+        run: nohup uv run python manage.py runserver 127.0.0.1:8000 --noreload > "$RUNNER_TEMP/django.log" 2>&1 &
+        working-directory: backend
+      # Serves frontend/dist and proxies /api to the backend (see vite.config.ts).
+      - name: Serve the built frontend
+        run: nohup npm run preview -- --port 8081 --strictPort > "$RUNNER_TEMP/vite-preview.log" 2>&1 &
+        working-directory: frontend
+      # conftest.py waits for the frontend as well, but cannot tell a healthy app from a
+      # preview server with no backend behind it.
+      - name: Wait for both to answer
+        run: |
+          timeout 60 bash -c 'until curl -sf -o /dev/null http://127.0.0.1:8000/api/election_configs/; do sleep 1; done'
+          timeout 60 bash -c 'until curl -sf -o /dev/null http://localhost:8081/; do sleep 1; done'
+
+      # Run the tests
+      - run: uv run pytest playwright_tests -m playwright --tracing=retain-on-failure --screenshot=only-on-failure
+        working-directory: backend
+
+      - name: Server logs
+        if: failure()
+        run: tail -n 200 "$RUNNER_TEMP/django.log" "$RUNNER_TEMP/vite-preview.log"
+      - name: Collect server logs
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p backend/test-results
+          cp "$RUNNER_TEMP/django.log" "$RUNNER_TEMP/vite-preview.log" backend/test-results/
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-python-results
+          path: backend/test-results/
           retention-days: 14

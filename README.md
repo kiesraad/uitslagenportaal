@@ -155,3 +155,39 @@ Debug or watch the browser:
 npx playwright test ws-election --debug
 npx playwright test ws-election --headed
 ```
+
+### Python suite (`backend/playwright_tests/`)
+
+Make sure to have the playwright Docker Compose running before running tests.
+You can bring it down afterwards, and keep it running while working on tests:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.playwright.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.playwright.yml down -v
+```
+
+Install Chromium once, then run the suite from `backend/`:
+
+```bash
+cd backend
+uv run playwright install chromium
+uv run pytest playwright_tests -m playwright
+```
+
+The `-m playwright` marker is required: a bare `uv run pytest` deliberately deselects
+the browser tests, so `backend-ci` never tries to run them without a stack or a
+browser.
+
+Run a single module, or filter by test name:
+
+```bash
+uv run pytest playwright_tests/test_ws_election.py -m playwright
+uv run pytest playwright_tests -m playwright -k "aa_en_hunze"
+```
+
+Watch the browser, or slow it down:
+
+```bash
+uv run pytest playwright_tests -m playwright --headed
+uv run pytest playwright_tests -m playwright --headed --slowmo 500
+```

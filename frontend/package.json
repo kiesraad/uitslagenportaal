@@ -14,7 +14,7 @@
       "i18n:extract-clean": "lingui extract --clean",
       "i18n:check": "lingui extract --clean && git diff --exit-code -- src/locales",
       "test:playwright": "playwright test",
-      "postinstall": "node ./scripts/install-playwright-chromium.mjs"
+      "test:playwright-install": "playwright install chromium"
    },
    "dependencies": {
       "@fortawesome/fontawesome-svg-core": "^7.2.0",

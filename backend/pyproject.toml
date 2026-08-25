@@ -28,6 +28,7 @@ dev = [
     "watchdog>=6.0.0",
     "pytest>=8.4.0",
     "pytest-django>=4.13.0",
+    "pytest-playwright>=0.9.0",
     "factory-boy>=3.3.3",
     "fakeredis[lua]>=2.37.0",
 ]
@@ -46,3 +47,7 @@ select = ["E", "F", "I"]
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "mainsite.settings"
 python_files = ["test_*.py"]
+markers = ["playwright: browser test; needs the throwaway stack on :8081"]
+# Browser tests need a running stack and an installed Chromium, so a bare
+# `pytest` (backend-ci) skips them; the Playwright job opts in with -m playwright.
+addopts = ["-m", "not playwright"]
