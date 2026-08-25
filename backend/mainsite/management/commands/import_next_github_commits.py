@@ -5,7 +5,7 @@ from eml_import.utils.github_eml_importer import GithubEmlImporter
 
 
 class Command(BaseCommand):
-    help = "Import the next batch of commits from GitHub."
+    help = "Import all remaining commits from GitHub."
 
     def add_arguments(self, parser):
         parser.add_argument(

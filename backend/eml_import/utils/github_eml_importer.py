@@ -19,8 +19,9 @@ from eml_import.utils.file_handler import BaseFileHandler
 from eml_import.utils.named_bytes_io import NamedBytesIO
 
 # Seconds before the per-election lock expires on its own, so a worker that dies
-# mid-import does not block that election forever.
-LOCK_TIMEOUT = 5 * 60
+# mid-import does not block that election forever. Re-acquired after each commit
+# while a run is still draining the branch.
+LOCK_TIMEOUT = 20 * 60
 
 # The branches to import, in import order, mapped to the ElectionConfig field holding the branch name
 BRANCH_FIELDS: dict[BranchType, str] = {
@@ -53,8 +54,8 @@ class GithubEmlImporter(BaseFileHandler):
         self.repo = self.gh.get_repo(settings.GITHUB_INGRESS_REPO)
 
         # One import per election at a time, so two workers cannot import the same commits twice
-        lock = cache.lock(self.cache_lock_key, timeout=LOCK_TIMEOUT, blocking=False)
-        if not lock.acquire():
+        self._lock = cache.lock(self.cache_lock_key, timeout=LOCK_TIMEOUT, blocking=False)
+        if not self._lock.acquire():
             self.logger.warning(
                 "Could not acquire lock, GithubEmlImporter is already running for %s", self.election_config.identifier
             )
@@ -64,52 +65,75 @@ class GithubEmlImporter(BaseFileHandler):
             return self._run_import()
         finally:
             try:
-                lock.release()
+                self._lock.release()
             except LockError:
                 # The lock timed out before the import finished, so another worker may hold it by now.
                 # The import itself still ran to completion, so let its result stand.
                 self.logger.warning("Lock for %s expired before the import finished", self.election_config.identifier)
 
+    def _renew_lock(self) -> bool:
+        try:
+            self._lock.release()
+        except LockError:
+            self.logger.warning(
+                "Lock for %s expired while importing commits",
+                self.election_config.identifier,
+            )
+            return False
+
+        self._lock = cache.lock(self.cache_lock_key, timeout=LOCK_TIMEOUT, blocking=False)
+        if not self._lock.acquire():
+            self.logger.warning(
+                "Could not re-acquire lock for %s after commit",
+                self.election_config.identifier,
+            )
+            return False
+
+        return True
+
     def _run_import(self) -> int:
         """
-        Import the next batch of commits from the first branch that still has commits left.
+        Import all remaining commits, one at a time, from each configured branch.
         :return: the number of imported files
         """
+        imported_files = 0
+
         for branch_type, branch in self._iterate_branches():
-            last_imported = (
-                ImportedCommit.objects.filter(election_config=self.election_config, branch_type=branch_type)
-                .order_by("-created_at")
-                .first()
-            )
-
-            self.logger.info(
-                "Fetching files for next batch of commits on branch %s at %s...",
-                branch,
-                last_imported.commit_sha if last_imported else "first commit",
-            )
-            batch_head_sha, files = self._get_files_for_next_commit(
-                last_imported.commit_sha if last_imported else None, branch
-            )
-            # This branch is fully imported, so continue with the next one
-            if batch_head_sha is None:
-                self.logger.info(
-                    "No commits remaining on %s branch (%s)",
-                    branch_type,
-                    branch,
+            while True:
+                last_imported = (
+                    ImportedCommit.objects.filter(election_config=self.election_config, branch_type=branch_type)
+                    .order_by("-created_at")
+                    .first()
                 )
-                continue
 
-            xml_files = list(self._iterate_all_xml_files(files))
-            self.import_file_objects(xml_files)
-            ImportedCommit.objects.create(
-                election_config=self.election_config,
-                branch_type=branch_type,
-                commit_sha=batch_head_sha,
-            )
+                self.logger.info(
+                    "Fetching files for next batch of commits on branch %s at %s...",
+                    branch,
+                    last_imported.commit_sha if last_imported else "first commit",
+                )
+                batch_head_sha, files = self._get_files_for_next_commit(
+                    last_imported.commit_sha if last_imported else None, branch
+                )
+                if batch_head_sha is None:
+                    self.logger.info(
+                        "No commits remaining on %s branch (%s)",
+                        branch_type,
+                        branch,
+                    )
+                    break
 
-            return len(xml_files)
+                xml_files = list(self._iterate_all_xml_files(files))
+                self.import_file_objects(xml_files)
+                ImportedCommit.objects.create(
+                    election_config=self.election_config,
+                    branch_type=branch_type,
+                    commit_sha=batch_head_sha,
+                )
+                imported_files += len(xml_files)
+                if not self._renew_lock():
+                    return imported_files
 
-        return 0
+        return imported_files
 
     def import_file_objects(self, files: list[NamedBytesIO]) -> None:
         """
