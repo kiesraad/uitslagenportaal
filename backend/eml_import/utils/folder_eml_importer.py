@@ -9,8 +9,8 @@ from xsdata.formats.dataclass.parsers import XmlParser
 from eml_import.utils.file_handler import BaseFileHandler, build_parser
 
 
-class FolderEMLImporter(BaseFileHandler):
-    # Set once per worker process by FolderEMLImporter._import_file
+class FolderEMLFileHandler(BaseFileHandler):
+    # Set once per worker process by FolderEMLFileHandler._import_file
     _WORKER_PARSER: XmlParser | None = None
 
     def _process_file_paths(self, parser_type: str, xml_files: list[Path]) -> None:

@@ -1,4 +1,4 @@
-"""In-memory stand-ins for the slice of the PyGithub API that GithubEmlImporter uses.
+"""In-memory stand-ins for the slice of the PyGithub API that GithubEmlFileHandler uses.
 
 Hand-written rather than mocks so the contract with PyGithub is written down in one
 place, and so the importer asking for something that does not exist fails loudly.

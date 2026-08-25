@@ -30,7 +30,7 @@ BRANCH_FIELDS: dict[BranchType, str] = {
 }
 
 
-class GithubEmlImporter(BaseFileHandler):
+class GithubEmlFileHandler(BaseFileHandler):
     def __init__(self, election_config: ElectionConfig) -> None:
         super().__init__()
         self.election_config = election_config
@@ -57,7 +57,8 @@ class GithubEmlImporter(BaseFileHandler):
         self._lock = cache.lock(self.cache_lock_key, timeout=LOCK_TIMEOUT, blocking=False)
         if not self._lock.acquire():
             self.logger.warning(
-                "Could not acquire lock, GithubEmlImporter is already running for %s", self.election_config.identifier
+                "Could not acquire lock, GithubEmlFileHandler is already running for %s",
+                self.election_config.identifier,
             )
             return 0
 

@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 
 from election.models import ElectionConfig
-from eml_import.utils.github_eml_importer import GithubEmlImporter
+from eml_import.utils.github_eml_importer import GithubEmlFileHandler
 
 
 class Command(BaseCommand):
@@ -21,5 +21,5 @@ class Command(BaseCommand):
         except ElectionConfig.DoesNotExist:
             raise CommandError(f"Election config does not exist: {identifier}")
 
-        file_cnt = GithubEmlImporter(election_config).run()
+        file_cnt = GithubEmlFileHandler(election_config).run()
         self.stdout.write(self.style.SUCCESS(f"Processed {file_cnt} file(s)."))

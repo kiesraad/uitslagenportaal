@@ -13,7 +13,7 @@ from eml_import.models import BranchType, ImportedCommit
 from eml_import.tests.factories import ImportedCommitFactory
 from eml_import.tests.fakes import FakeCommit, FakeFile, FakeGithub, FakeRepo
 from eml_import.utils import github_eml_importer
-from eml_import.utils.github_eml_importer import LOCK_TIMEOUT, GithubEmlImporter
+from eml_import.utils.github_eml_importer import LOCK_TIMEOUT, GithubEmlFileHandler
 
 XML_110A = b"<EML Id='110a'/>"
 XML_230B = b"<EML Id='230b'/>"
@@ -44,7 +44,7 @@ def warnings_of(caplog) -> list[str]:
 
 @pytest.fixture
 def fake_repo(monkeypatch, settings):
-    """Build a FakeRepo and make GithubEmlImporter construct itself against it.
+    """Build a FakeRepo and make GithubEmlFileHandler construct itself against it.
 
     ``commits`` is either the commits of the exchange branch, or a branch name -> commits mapping.
     """
@@ -82,7 +82,7 @@ def imported_batches(monkeypatch):
     def record_import(self, files):
         batches.append(files)
 
-    monkeypatch.setattr(GithubEmlImporter, "import_file_objects", record_import)
+    monkeypatch.setattr(GithubEmlFileHandler, "import_file_objects", record_import)
     return batches
 
 
@@ -93,7 +93,7 @@ def build_importer():
     """
 
     def build(election_config, repo):
-        importer = GithubEmlImporter(election_config)
+        importer = GithubEmlFileHandler(election_config)
         importer.repo = repo
         return importer
 
@@ -164,7 +164,7 @@ def test_iterate_all_xml_files_unpacks_nested_zip(fake_repo, build_importer, ele
 def test_iterate_branches_yields_the_exchange_branch_before_the_counting_results_branch(fake_repo, election_config):
     fake_repo(commits=[])
 
-    branches = list(GithubEmlImporter(election_config)._iterate_branches())
+    branches = list(GithubEmlFileHandler(election_config)._iterate_branches())
 
     assert branches == [(BranchType.EXCHANGE, BRANCH_EXCHANGE), (BranchType.COUNTING_RESULTS, BRANCH_COUNTING_RESULTS)]
 
@@ -173,7 +173,7 @@ def test_iterate_branches_skips_branches_that_are_not_configured(fake_repo, elec
     fake_repo(commits=[])
     election_config.gh_exchange_branch = None
 
-    branches = list(GithubEmlImporter(election_config)._iterate_branches())
+    branches = list(GithubEmlFileHandler(election_config)._iterate_branches())
 
     assert branches == [(BranchType.COUNTING_RESULTS, BRANCH_COUNTING_RESULTS)]
 
@@ -233,7 +233,7 @@ def test_run_imports_from_the_first_commit_and_records_progress(fake_repo, impor
         contents={"verkiezingsdefinitie.xml": XML_110A, "kandidatenlijst.xml": XML_230B},
     )
 
-    file_count = GithubEmlImporter(stored_election_config).run()
+    file_count = GithubEmlFileHandler(stored_election_config).run()
 
     assert file_count == 2
     assert as_pairs(imported_batches[0]) == [("verkiezingsdefinitie.xml", XML_110A)]
@@ -255,7 +255,7 @@ def test_run_resumes_from_the_most_recently_imported_commit(fake_repo, imported_
     # deliberately disagree with created_at order
     ImportedCommit.objects.filter(pk=stale.pk).update(created_at=timezone.now() - timedelta(days=1))
 
-    GithubEmlImporter(stored_election_config).run()
+    GithubEmlFileHandler(stored_election_config).run()
 
     assert repo.calls_named("compare")[0] == ("compare", "recent", BRANCH_EXCHANGE)
     assert as_pairs(imported_batches[0]) == [("telling.xml", XML_510B)]
@@ -274,7 +274,7 @@ def test_run_ignores_the_progress_of_other_elections_and_branch_types(
         commit_sha="first",
     )
 
-    GithubEmlImporter(stored_election_config).run()
+    GithubEmlFileHandler(stored_election_config).run()
 
     # Neither row applies to this branch, so the exchange branch starts at its first commit
     assert as_pairs(imported_batches[0]) == [("telling.xml", XML_510B)]
@@ -289,7 +289,7 @@ def test_run_processes_exchange_before_counting_results(fake_repo, imported_batc
         contents={"uitslag.xml": XML_510B, "telling.xml": XML_510B},
     )
 
-    GithubEmlImporter(stored_election_config).run()
+    GithubEmlFileHandler(stored_election_config).run()
 
     assert as_pairs(imported_batches[0]) == [("uitslag.xml", XML_510B)]
     assert as_pairs(imported_batches[1]) == [("telling.xml", XML_510B)]
@@ -311,7 +311,7 @@ def test_run_continues_on_the_counting_results_branch_once_the_exchange_branch_i
     )
     ImportedCommitFactory(election_config=stored_election_config, commit_sha="exchange-1")
 
-    file_count = GithubEmlImporter(stored_election_config).run()
+    file_count = GithubEmlFileHandler(stored_election_config).run()
 
     assert file_count == 1
     assert as_pairs(imported_batches[0]) == [("telling.xml", XML_510B)]
@@ -332,7 +332,7 @@ def test_run_continues_on_the_counting_results_branch_after_exchange_even_withou
         contents={"telling.xml": XML_510B},
     )
 
-    file_count = GithubEmlImporter(stored_election_config).run()
+    file_count = GithubEmlFileHandler(stored_election_config).run()
 
     # The exchange commit is consumed even though it holds nothing to import
     assert file_count == 1
@@ -358,7 +358,7 @@ def test_run_does_nothing_when_no_branch_has_new_commits(fake_repo, imported_bat
         commit_sha="counting-1",
     )
 
-    file_count = GithubEmlImporter(stored_election_config).run()
+    file_count = GithubEmlFileHandler(stored_election_config).run()
 
     assert file_count == 0
     assert imported_batches == []
@@ -369,7 +369,7 @@ def test_run_does_nothing_when_no_branch_has_new_commits(fake_repo, imported_bat
 def test_run_refuses_to_start_when_github_is_not_configured(fake_repo, settings, election_config, missing_setting):
     fake_repo(commits=[FakeCommit("head")])
     setattr(settings, missing_setting, "")
-    importer = GithubEmlImporter(election_config)
+    importer = GithubEmlFileHandler(election_config)
 
     with pytest.raises(GithubImportException, match=missing_setting):
         importer.run()
@@ -381,7 +381,7 @@ def test_run_refuses_to_start_when_github_is_not_configured(fake_repo, settings,
 
 def test_run_connects_to_the_configured_repository(fake_repo, imported_batches, stored_election_config):
     fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
-    importer = GithubEmlImporter(stored_election_config)
+    importer = GithubEmlFileHandler(stored_election_config)
 
     importer.run()
 
@@ -392,7 +392,7 @@ def test_run_skips_the_import_while_another_worker_holds_the_lock(
     fake_repo, imported_batches, stored_election_config, caplog
 ):
     fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
-    importer = GithubEmlImporter(stored_election_config)
+    importer = GithubEmlFileHandler(stored_election_config)
 
     # Stand in for a second worker that is already importing this election
     with cache.lock(importer.cache_lock_key, timeout=LOCK_TIMEOUT):
@@ -405,17 +405,17 @@ def test_run_skips_the_import_while_another_worker_holds_the_lock(
     # Returning 0 is indistinguishable from an election with nothing left to import,
     # so the warning is the only trace the skipped run leaves behind
     assert warnings_of(caplog) == [
-        f"Could not acquire lock, GithubEmlImporter is already running for {stored_election_config.identifier}"
+        f"Could not acquire lock, GithubEmlFileHandler is already running for {stored_election_config.identifier}"
     ]
 
 
 def test_run_locks_per_election_and_not_globally(fake_repo, imported_batches, stored_election_config, caplog):
     fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
-    other_election = GithubEmlImporter(ElectionConfigFactory.build(identifier="OTHER2026"))
+    other_election = GithubEmlFileHandler(ElectionConfigFactory.build(identifier="OTHER2026"))
 
     # An import running for a different election must not hold this one up
     with cache.lock(other_election.cache_lock_key, timeout=LOCK_TIMEOUT):
-        file_count = GithubEmlImporter(stored_election_config).run()
+        file_count = GithubEmlFileHandler(stored_election_config).run()
 
     assert file_count == 1
     assert as_pairs(imported_batches[0]) == [("telling.xml", XML_510B)]
@@ -424,7 +424,7 @@ def test_run_locks_per_election_and_not_globally(fake_repo, imported_batches, st
 
 def test_run_releases_the_lock_when_it_finishes(fake_repo, imported_batches, stored_election_config):
     fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
-    importer = GithubEmlImporter(stored_election_config)
+    importer = GithubEmlFileHandler(stored_election_config)
 
     importer.run()
 
@@ -434,13 +434,13 @@ def test_run_releases_the_lock_when_it_finishes(fake_repo, imported_batches, sto
 def test_run_holds_a_lock_that_expires_on_its_own(fake_repo, monkeypatch, stored_election_config):
     """A worker that dies mid-import must not block its election forever."""
     fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
-    importer = GithubEmlImporter(stored_election_config)
+    importer = GithubEmlFileHandler(stored_election_config)
     remaining = []
 
     def observe_ttl(self, files):
         remaining.append(cache.ttl(importer.cache_lock_key))
 
-    monkeypatch.setattr(GithubEmlImporter, "import_file_objects", observe_ttl)
+    monkeypatch.setattr(GithubEmlFileHandler, "import_file_objects", observe_ttl)
 
     importer.run()
 
@@ -449,13 +449,13 @@ def test_run_holds_a_lock_that_expires_on_its_own(fake_repo, monkeypatch, stored
 
 def test_run_keeps_its_result_when_the_lock_expires_mid_import(fake_repo, monkeypatch, stored_election_config, caplog):
     fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
-    importer = GithubEmlImporter(stored_election_config)
+    importer = GithubEmlFileHandler(stored_election_config)
 
     def expire_lock(self, files):
         # As if LOCK_TIMEOUT elapsed while this import was still running
         cache.delete(importer.cache_lock_key)
 
-    monkeypatch.setattr(GithubEmlImporter, "import_file_objects", expire_lock)
+    monkeypatch.setattr(GithubEmlFileHandler, "import_file_objects", expire_lock)
 
     file_count = importer.run()
 
