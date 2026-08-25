@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 
 from election.models import ElectionConfig
-from eml_import.utils.github_eml_importer import GithubEmlFileHandler
+from eml_import.utils.github_eml_file_handler import GithubEmlFileHandler
 
 
 class Command(BaseCommand):

@@ -12,8 +12,8 @@ from eml_import.exceptions import GithubImportException
 from eml_import.models import BranchType, ImportedCommit
 from eml_import.tests.factories import ImportedCommitFactory
 from eml_import.tests.fakes import FakeCommit, FakeFile, FakeGithub, FakeRepo
-from eml_import.utils import github_eml_importer
-from eml_import.utils.github_eml_importer import LOCK_TIMEOUT, GithubEmlFileHandler
+from eml_import.utils import github_eml_file_handler
+from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
 
 XML_110A = b"<EML Id='110a'/>"
 XML_230B = b"<EML Id='230b'/>"
@@ -54,7 +54,7 @@ def fake_repo(monkeypatch, settings):
     def build(commits, contents=None):
         branches = commits if isinstance(commits, dict) else {BRANCH_EXCHANGE: commits}
         repo = FakeRepo(branches, contents)
-        monkeypatch.setattr(github_eml_importer, "Github", lambda auth, per_page: FakeGithub(repo))
+        monkeypatch.setattr(github_eml_file_handler, "Github", lambda auth, per_page: FakeGithub(repo))
         return repo
 
     return build
