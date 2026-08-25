@@ -76,14 +76,13 @@ def stored_election_config(db):
 
 @pytest.fixture
 def imported_batches(monkeypatch):
-    """Capture what run() hands to FolderEMLImporter, without parsing any real EML."""
+    """Capture what run() hands to import_file_objects, without parsing any real EML."""
     batches = []
 
-    class RecordingFolderEMLImporter:
-        def import_file_objects(self, files):
-            batches.append(files)
+    def record_import(self, files):
+        batches.append(files)
 
-    monkeypatch.setattr(github_eml_importer, "FolderEMLImporter", RecordingFolderEMLImporter)
+    monkeypatch.setattr(GithubEmlImporter, "import_file_objects", record_import)
     return batches
 
 
@@ -498,11 +497,10 @@ def test_run_holds_a_lock_that_expires_on_its_own(fake_repo, monkeypatch, stored
     importer = GithubEmlImporter(stored_election_config)
     remaining = []
 
-    class TtlObservingFolderEMLImporter:
-        def import_file_objects(self, files):
-            remaining.append(cache.ttl(importer.cache_lock_key))
+    def observe_ttl(self, files):
+        remaining.append(cache.ttl(importer.cache_lock_key))
 
-    monkeypatch.setattr(github_eml_importer, "FolderEMLImporter", TtlObservingFolderEMLImporter)
+    monkeypatch.setattr(GithubEmlImporter, "import_file_objects", observe_ttl)
 
     importer.run()
 
@@ -513,12 +511,11 @@ def test_run_keeps_its_result_when_the_lock_expires_mid_import(fake_repo, monkey
     fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
     importer = GithubEmlImporter(stored_election_config)
 
-    class LockExpiringFolderEMLImporter:
-        def import_file_objects(self, files):
-            # As if LOCK_TIMEOUT elapsed while this import was still running
-            cache.delete(importer.cache_lock_key)
+    def expire_lock(self, files):
+        # As if LOCK_TIMEOUT elapsed while this import was still running
+        cache.delete(importer.cache_lock_key)
 
-    monkeypatch.setattr(github_eml_importer, "FolderEMLImporter", LockExpiringFolderEMLImporter)
+    monkeypatch.setattr(GithubEmlImporter, "import_file_objects", expire_lock)
 
     file_count = importer.run()
 
