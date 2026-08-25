@@ -65,8 +65,8 @@ class FakeRepo:
 
     def get_commits(self, sha: str) -> FakePaginatedList:
         self.calls.append(("get_commits", sha))
-        # The real API returns the newest commit first; the importer flips it with .reversed
-        return FakePaginatedList(reversed(self.branches[sha]))
+        # The real API returns the newest commit first; the importer flips it with .reversed.
+        return FakePaginatedList(reversed(self.branches.get(sha, [])))
 
     def get_commit(self, sha: str) -> FakeCommit:
         self.calls.append(("get_commit", sha))
@@ -94,8 +94,16 @@ class FakeRepo:
         Mirrors the real API in two ways the importer depends on: the base commit itself
         is excluded, and head may be a branch name rather than a sha.
         """
-        commits = self.branches[head] if head in self.branches else self._branch_of(head)
+        if head in self.branches:
+            commits = self.branches[head]
+        else:
+            try:
+                commits = self._branch_of(head)
+            except StopIteration:
+                return []
         shas = [commit.sha for commit in commits]
+        if base not in shas:
+            return []
         end = shas.index(head) + 1 if head in shas else len(shas)
         return commits[shas.index(base) + 1 : end]
 

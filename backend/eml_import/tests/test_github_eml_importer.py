@@ -189,13 +189,11 @@ def test_get_files_for_next_commit_starts_at_the_oldest_commit(fake_repo, build_
 
     head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit(None, BRANCH_EXCHANGE)
 
-    assert head_sha == "newest"
-    # compare() excludes the base commit, so the oldest commit is fetched separately;
-    # the two sources must not overlap
-    assert [file.filename for file in files] == ["a.xml", "b.xml", "c.xml"]
+    assert head_sha == "oldest"
+    assert [file.filename for file in files] == ["a.xml"]
     assert repo.calls_named("get_commits") == [("get_commits", BRANCH_EXCHANGE)]
     assert repo.calls_named("get_commit") == [("get_commit", "oldest")]
-    assert repo.calls_named("compare") == [("compare", "oldest", "newest")]
+    assert repo.calls_named("compare") == []
 
 
 def test_get_files_for_next_commit_caps_the_batch_size(fake_repo, build_importer, election_config):
@@ -219,9 +217,8 @@ def test_get_files_for_next_commit_resumes_after_the_base_commit(fake_repo, buil
 
     head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit("imported", BRANCH_EXCHANGE)
 
-    assert head_sha == "last"
-    # The base commit's own files are not imported a second time
-    assert [file.filename for file in files] == ["a.xml", "b.xml"]
+    assert head_sha == "next"
+    assert [file.filename for file in files] == ["a.xml"]
     assert repo.calls_named("compare")[0] == ("compare", "imported", BRANCH_EXCHANGE)
 
 
@@ -254,37 +251,19 @@ def test_get_files_for_next_commit_does_not_diff_a_single_commit(fake_repo, buil
     assert repo.calls_named("get_commit") == [("get_commit", "only")]
 
 
-def test_get_files_for_next_commit_uses_the_diff_when_it_has_fewer_than_300_files(
+def test_get_files_for_next_commit_returns_all_files_of_the_next_commit(
     fake_repo, build_importer, election_config
 ):
-    first_commit_files = [FakeFile("a.xml")]
-    diff_files = [FakeFile(f"pad_{index}.xml") for index in range(299)]
-    repo = fake_repo(commits=[FakeCommit("first", first_commit_files), FakeCommit("second", diff_files)])
+    """One commit at a time: even a large commit is returned as that single next commit."""
+    many_files = [FakeFile(f"pad_{index}.xml") for index in range(300)]
+    repo = fake_repo(commits=[FakeCommit("first", many_files), FakeCommit("second", [FakeFile("later.xml")])])
 
     head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit(None, BRANCH_EXCHANGE)
 
-    assert head_sha == "second"
-    assert [file.filename for file in files] == ["a.xml"] + [f"pad_{index}.xml" for index in range(299)]
-    assert repo.calls_named("compare") == [("compare", "first", "second")]
-    # The diff is small enough to use directly, without fetching each commit separately
+    assert head_sha == "first"
+    assert [file.filename for file in files] == [f"pad_{index}.xml" for index in range(300)]
     assert repo.calls_named("get_commit") == [("get_commit", "first")]
-
-
-def test_get_files_for_next_commit_fetches_files_per_commit_when_the_diff_has_300_or_more_files(
-    fake_repo, build_importer, election_config
-):
-    first_commit_files = [FakeFile("a.xml")]
-    diff_files = [FakeFile(f"pad_{index}.xml") for index in range(300)]
-    repo = fake_repo(commits=[FakeCommit("first", first_commit_files), FakeCommit("second", diff_files)])
-
-    head_sha, files = build_importer(election_config, repo)._get_files_for_next_commit(None, BRANCH_EXCHANGE)
-
-    assert head_sha == "second"
-    assert [file.filename for file in files] == ["a.xml"] + [f"pad_{index}.xml" for index in range(300)]
-    # The diff is only used to measure its size; once it is 300 files or more, the files
-    # are fetched per commit instead, at the cost of one extra request per commit
-    assert repo.calls_named("compare") == [("compare", "first", "second")]
-    assert repo.calls_named("get_commit") == [("get_commit", "first"), ("get_commit", "second")]
+    assert repo.calls_named("compare") == []
 
 
 def test_run_imports_from_the_first_commit_and_records_progress(fake_repo, imported_batches, stored_election_config):
@@ -299,12 +278,11 @@ def test_run_imports_from_the_first_commit_and_records_progress(fake_repo, impor
     file_count = GithubEmlImporter(stored_election_config).run()
 
     assert file_count == 2
-    assert as_pairs(imported_batches[0]) == [
-        ("verkiezingsdefinitie.xml", XML_110A),
-        ("kandidatenlijst.xml", XML_230B),
-    ]
+    assert as_pairs(imported_batches[0]) == [("verkiezingsdefinitie.xml", XML_110A)]
+    assert as_pairs(imported_batches[1]) == [("kandidatenlijst.xml", XML_230B)]
     assert list(ImportedCommit.objects.values_list("election_config", "branch_type", "commit_sha")) == [
-        (stored_election_config.pk, BranchType.EXCHANGE, "second")
+        (stored_election_config.pk, BranchType.EXCHANGE, "first"),
+        (stored_election_config.pk, BranchType.EXCHANGE, "second"),
     ]
 
 
@@ -344,7 +322,7 @@ def test_run_ignores_the_progress_of_other_elections_and_branch_types(
     assert as_pairs(imported_batches[0]) == [("telling.xml", XML_510B)]
 
 
-def test_run_stays_on_the_exchange_branch_while_it_has_commits(fake_repo, imported_batches, stored_election_config):
+def test_run_processes_exchange_before_counting_results(fake_repo, imported_batches, stored_election_config):
     fake_repo(
         commits={
             BRANCH_EXCHANGE: [FakeCommit("exchange-1", [FakeFile("uitslag.xml")])],
@@ -356,8 +334,10 @@ def test_run_stays_on_the_exchange_branch_while_it_has_commits(fake_repo, import
     GithubEmlImporter(stored_election_config).run()
 
     assert as_pairs(imported_batches[0]) == [("uitslag.xml", XML_510B)]
+    assert as_pairs(imported_batches[1]) == [("telling.xml", XML_510B)]
     assert list(ImportedCommit.objects.values_list("branch_type", "commit_sha")) == [
         (BranchType.EXCHANGE, "exchange-1"),
+        (BranchType.COUNTING_RESULTS, "counting-1"),
     ]
 
 
@@ -383,7 +363,7 @@ def test_run_continues_on_the_counting_results_branch_once_the_exchange_branch_i
     ]
 
 
-def test_run_does_not_continue_on_the_counting_results_branch_when_the_exchange_batch_holds_no_xml(
+def test_run_continues_on_the_counting_results_branch_after_exchange_even_without_xml(
     fake_repo, imported_batches, stored_election_config
 ):
     fake_repo(
@@ -397,10 +377,12 @@ def test_run_does_not_continue_on_the_counting_results_branch_when_the_exchange_
     file_count = GithubEmlImporter(stored_election_config).run()
 
     # The exchange commit is consumed even though it holds nothing to import
-    assert file_count == 0
+    assert file_count == 1
     assert as_pairs(imported_batches[0]) == []
+    assert as_pairs(imported_batches[1]) == [("telling.xml", XML_510B)]
     assert list(ImportedCommit.objects.values_list("branch_type", "commit_sha")) == [
         (BranchType.EXCHANGE, "exchange-1"),
+        (BranchType.COUNTING_RESULTS, "counting-1"),
     ]
 
 
@@ -523,5 +505,8 @@ def test_run_keeps_its_result_when_the_lock_expires_mid_import(fake_repo, monkey
     # so its result and its bookkeeping stand rather than being reported as a skipped run
     assert file_count == 1
     assert list(ImportedCommit.objects.values_list("branch_type", "commit_sha")) == [(BranchType.EXCHANGE, "first")]
-    # Reported as an expired lock rather than as contention, so the two cannot be confused in the logs
-    assert warnings_of(caplog) == [f"Lock for {stored_election_config.identifier} expired before the import finished"]
+    # Renew fails mid-run, then the outer release also reports expiry
+    assert warnings_of(caplog) == [
+        f"Lock for {stored_election_config.identifier} expired while importing commits",
+        f"Lock for {stored_election_config.identifier} expired before the import finished",
+    ]
