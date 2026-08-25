@@ -1,3 +1,4 @@
+import re
 from datetime import date
 
 import pytest
@@ -506,10 +507,18 @@ def test_ensure_polling_stations_reuses_existing_stations(ws_regions):
     assert Region.objects.filter(parent=ws_regions["gemeente"], region_category=RegionCategory.STEMBUREAU).count() == 2
 
 
+STORAGE_KEY_TIMESTAMP = r"\d{8}T\d{12}"
+
+
 def make_ws_importer(importer_cls, eml_file):
     """A real importer for the waterschap election, whichever 510 flavour is under test."""
     eml = make_ws_510b_eml(contests=[]) if importer_cls is EML510bImporter else make_ws_510d_eml(contests=[])
     return importer_cls(eml, eml_file)
+
+
+def assert_storage_key(storage_key: str, expected_stem: str) -> None:
+    """storage_key is {election}/{stem}_{timestamp}.eml.xml after corrections."""
+    assert re.fullmatch(rf"{re.escape(expected_stem)}_{STORAGE_KEY_TIMESTAMP}\.eml\.xml", storage_key)
 
 
 @pytest.mark.parametrize("importer_cls", [EML510bImporter, EML510dImporter])
@@ -525,7 +534,7 @@ def test_store_eml_saves_path_input_and_creates_document(importer_cls, ws_region
     assert default_storage.open(doc.storage_key).read() == content
     assert doc.region == ws_regions["gemeente"]
     assert doc.content_type == "application/xml"
-    assert doc.file_type == ElectionDocument.FileType.EML510B
+    assert doc.file_type == importer.document_file_type
     assert doc.size == len(content)
 
 
@@ -551,7 +560,7 @@ def test_store_eml_filename_without_parent(importer_cls, expected_label, ws_regi
     importer._store_eml(ws_regions["waterschap"])
 
     doc = ElectionDocument.objects.get()
-    assert doc.storage_key == f"AB2023/AB2023_{expected_label}_17_Scheldestromen.eml.xml"
+    assert_storage_key(doc.storage_key, f"AB2023/AB2023_{expected_label}_17_Scheldestromen")
 
 
 def test_store_eml_filename_with_parent_sanitizes_special_characters(ws_election):
@@ -567,7 +576,10 @@ def test_store_eml_filename_with_parent_sanitizes_special_characters(ws_election
     importer._store_eml(region)
 
     doc = ElectionDocument.objects.get()
-    assert doc.storage_key == "AB2023/AB2023_Telling_GSB_1_Scheldestromen_Test_654_s-GravenhageVoorburg.eml.xml"
+    assert_storage_key(
+        doc.storage_key,
+        "AB2023/AB2023_Telling_GSB_1_Scheldestromen_Test_654_s-GravenhageVoorburg",
+    )
 
 
 def test_store_eml_updates_size_of_existing_document_on_reimport(ws_regions):
@@ -694,7 +706,7 @@ def test_510b_marks_region_as_counted_and_stores_document(ws_regions, ws_contest
     assert gemeente.counting_method == CountingMethod.DSO
     doc = ElectionDocument.objects.get()
     assert doc.region == gemeente
-    assert doc.storage_key == "AB2023/AB2023_Telling_GSB_17_Scheldestromen_654_Borsele.eml.xml"
+    assert_storage_key(doc.storage_key, "AB2023/AB2023_Telling_GSB_17_Scheldestromen_654_Borsele")
 
 
 def test_510b_skips_file_of_region_outside_the_election(ws_regions, ws_contest, ws_parties, ws_candidates):
