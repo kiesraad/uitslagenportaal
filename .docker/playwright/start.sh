@@ -18,7 +18,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-"${COMPOSE[@]}" up -d --wait db object-storage backend frontend
+"${COMPOSE[@]}" up -d --build --wait db object-storage backend frontend
 "${COMPOSE[@]}" up object-storage-bootstrap
 "${COMPOSE[@]}" run --rm backend-scripts python manage.py migrate
 "${COMPOSE[@]}" run --rm backend-scripts python manage.py reset_and_import mainsite/tests/fixtures/eml
