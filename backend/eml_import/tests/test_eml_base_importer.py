@@ -9,17 +9,28 @@ from election.tests.factories import ContestFactory, ElectionConfigFactory, Elec
 from election.utils import visibility_cutoff
 from eml_import.exceptions import EMLImporterException
 from eml_import.models import ImportedEmlHash
-from eml_import.tests.test_eml_110_importer import CONFIG_IDENTIFIER, ELECTION_NAME, make_eml as make_110a_eml
+from eml_import.tests.test_eml_110_importer import CONFIG_IDENTIFIER, ELECTION_NAME
+from eml_import.tests.test_eml_110_importer import make_eml as make_110a_eml
 from eml_import.tests.test_eml_230_importer import (
     CONFIG_IDENTIFIER as CFG_230,
+)
+from eml_import.tests.test_eml_230_importer import (
     ELECTION_DATE as DATE_230,
+)
+from eml_import.tests.test_eml_230_importer import (
     ELECTION_NAME as NAME_230,
+)
+from eml_import.tests.test_eml_230_importer import (
     ELECTION_SUBCATEGORY,
     REGISTERED_NAME,
+)
+from eml_import.tests.test_eml_230_importer import (
     make_eml as make_230b_eml,
 )
 from eml_import.tests.test_eml_510_importer import (
     ELECTION_DATE as WS_DATE,
+)
+from eml_import.tests.test_eml_510_importer import (
     WS_CONFIG_IDENTIFIER,
     WS_ELECTION_NAME,
     make_ws_telling,
