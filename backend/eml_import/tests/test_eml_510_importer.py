@@ -351,9 +351,7 @@ def test_parse_party_candidate_votecounts_builds_party_and_candidate_rows(
     assert candidate_row.valid_votes == 60
 
 
-def test_parse_party_candidate_votecounts_raises_for_unknown_candidate(
-    ws_importer, ws_regions, ws_contest, ws_parties
-):
+def test_parse_party_candidate_votecounts_raises_for_unknown_candidate(ws_importer, ws_regions, ws_contest, ws_parties):
     party = ws_parties[1]
     items = [
         party_selection(TotalVotes.Selection, 1, "Partij voor Zeeland", 100),
@@ -787,9 +785,7 @@ def test_510d_correction_archives_csb_and_descendant_counts(ws_regions, ws_conte
     EML510dImporter(first, NamedBytesIO(b"<eml>first</eml>", "totaal.eml.xml")).parse()
 
     original_count_ids = set(VoteCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True))
-    original_turnout_ids = set(
-        VoterTurnoutCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True)
-    )
+    original_turnout_ids = set(VoterTurnoutCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True))
     original_doc = ElectionDocument.objects.get(region=ws_regions["waterschap"])
 
     corrected_totals = make_total_votes(
@@ -806,9 +802,7 @@ def test_510d_correction_archives_csb_and_descendant_counts(ws_regions, ws_conte
             candidate_selection(ReportingUnitVotes.Selection, 1200, number=1),
         ],
     )
-    correction = make_ws_510d_eml(
-        contests=[make_contest("geen", total_votes=corrected_totals, units=[corrected_unit])]
-    )
+    correction = make_ws_510d_eml(contests=[make_contest("geen", total_votes=corrected_totals, units=[corrected_unit])])
     EML510dImporter(correction, NamedBytesIO(b"<eml>corrected</eml>", "totaal.eml.xml")).parse()
 
     waterschap = ws_regions["waterschap"]
@@ -818,12 +812,10 @@ def test_510d_correction_archives_csb_and_descendant_counts(ws_regions, ws_conte
     assert set(VoteCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True)).isdisjoint(
         original_count_ids
     )
-    assert set(
-        VoterTurnoutCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True)
-    ).isdisjoint(original_turnout_ids)
-    assert VoteCount.all_objects.filter(pk__in=original_count_ids, is_current=False).count() == len(
-        original_count_ids
+    assert set(VoterTurnoutCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True)).isdisjoint(
+        original_turnout_ids
     )
+    assert VoteCount.all_objects.filter(pk__in=original_count_ids, is_current=False).count() == len(original_count_ids)
 
     assert [
         (row.region, row.result_level, row.party, row.candidate, row.valid_votes)
