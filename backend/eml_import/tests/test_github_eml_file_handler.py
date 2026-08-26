@@ -7,13 +7,20 @@ import pytest
 from django.core.cache import cache
 from django.utils import timezone
 
+from election.models import Contest, Election
 from election.tests.factories import ElectionConfigFactory
 from eml_import.exceptions import GithubImportException
-from eml_import.models import BranchType, ImportedCommit
+from eml_import.models import BranchType, ImportedCommit, ImportedEmlHash
 from eml_import.tests.factories import ImportedCommitFactory
 from eml_import.tests.fakes import FakeCommit, FakeFile, FakeGithub, FakeRepo
+from eml_import.tests.test_eml_110_importer import CONFIG_IDENTIFIER, make_eml as make_110a_eml
+from eml_import.tests.test_eml_230_importer import make_eml as make_230b_eml
 from eml_import.utils import github_eml_file_handler
 from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
+from eml_import.utils.named_bytes_io import NamedBytesIO
+from party.models import Candidate
+from pyeml_bindings import Eml230
+from region.models import Region
 
 XML_110A = b"<EML Id='110a'/>"
 XML_230B = b"<EML Id='230b'/>"
@@ -222,6 +229,52 @@ def test_get_files_for_next_commit_returns_nothing_when_up_to_date(fake_repo, bu
     # Bails out before fetching any files
     assert repo.calls_named("get_commit") == []
     assert repo.calls_named("compare") == [("compare", "imported", BRANCH_EXCHANGE)]
+
+
+@pytest.mark.django_db
+def test_idempotency_within_one_commit_when_failing_halfway(monkeypatch):
+    """If a commit hard-fails after some files succeeded, a redo skips those via content hash.
+
+    Soft per-file parse errors are logged and the commit is still marked done; this test is the
+    other case: an exception escapes import_file_objects (so ImportedCommit is never written),
+    then the same files are imported again.
+    """
+    config = ElectionConfigFactory(identifier=CONFIG_IDENTIFIER)
+    file_110a = NamedBytesIO(b"<EML Id='110a'/>stable-bytes", "verkiezingsdefinitie.xml")
+    file_230b = NamedBytesIO(b"<EML Id='230b'/>later-bytes", "kandidatenlijst.xml")
+    files = [file_110a, file_230b]
+
+    parse_230b_attempts = {"count": 0}
+
+    def from_bytes(data, binding):
+        if binding is Eml230:
+            parse_230b_attempts["count"] += 1
+            if parse_230b_attempts["count"] == 1:
+                # Outside the per-file try/except in import_file_objects — aborts the commit batch
+                raise RuntimeError("hard failure mid-commit")
+            return make_230b_eml()
+        return make_110a_eml()
+
+    handler = GithubEmlFileHandler(config)
+    monkeypatch.setattr(handler._parser, "from_bytes", from_bytes)
+
+    with pytest.raises(RuntimeError, match="hard failure mid-commit"):
+        handler.import_file_objects(files)
+
+    assert ImportedEmlHash.objects.count() == 1
+    assert ImportedEmlHash.already_imported(file_110a)
+    assert not ImportedEmlHash.already_imported(file_230b)
+    region_ids = list(Region.objects.values_list("pk", flat=True))
+    assert region_ids
+    assert not Contest.objects.exists()
+
+    handler.import_file_objects(files)
+
+    # First file was skipped by hash: no correction archive of the regions it already wrote
+    assert list(Region.objects.values_list("pk", flat=True)) == region_ids
+    assert ImportedEmlHash.objects.count() == 2
+    assert Contest.objects.filter(election=Election.objects.get()).count() == 1
+    assert Candidate.objects.count() == 2
 
 
 def test_run_imports_from_the_first_commit_and_records_progress(fake_repo, imported_batches, stored_election_config):
