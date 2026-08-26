@@ -14,13 +14,13 @@ import { NotFoundPage } from "../NotFoundPage";
 export default function PollingStationPartyResultsPage() {
    const {
       electionConfigSlug: electionConfigSlugParam,
-      parentRegionSlug: parentRegionSlugParam,
+      regionSlug: parentRegionSlugParam,
       pollingStationSlug: pollingStationSlugParam,
       partySlug: partySlugParam,
       csbSlug: csbSlugParam,
    } = useParams<{
       electionConfigSlug: string;
-      parentRegionSlug: string;
+      regionSlug: string;
       pollingStationSlug: string;
       partySlug: string;
       csbSlug?: string;

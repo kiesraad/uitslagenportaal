@@ -140,6 +140,8 @@ h4,
 
 /* Wrapper */
 .layout-main {
+   display: flex;
+   flex-direction: column;
    flex: 1;
    width: 100%;
 }
@@ -267,7 +269,6 @@ h4,
 .tabs {
    display: flex;
    gap: 0;
-   margin-bottom: 20px;
 }
 
 .tab {

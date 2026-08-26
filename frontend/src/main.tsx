@@ -1,25 +1,13 @@
 import { I18nProvider } from "@lingui/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { RouterProvider } from "react-router/dom";
 import "./index.css";
-import App from "./App.tsx";
-import { ApiError } from "./api/client.ts";
 import { detectLocale, i18n, loadCatalog } from "./i18n";
+import { queryClient } from "./queryClient.ts";
+import { router } from "./router.tsx";
 
-const queryClient = new QueryClient({
-   defaultOptions: {
-      queries: {
-         retry: (failureCount, error) => {
-            if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
-               return false;
-            }
-            return failureCount < 3;
-         },
-         staleTime: 5 * 60 * 1000, // 5min
-      },
-   },
-});
 const rootElem = document.getElementById("root");
 
 if (rootElem === null) {
@@ -34,7 +22,7 @@ createRoot(rootElem).render(
    <StrictMode>
       <I18nProvider i18n={i18n}>
          <QueryClientProvider client={queryClient}>
-            <App />
+            <RouterProvider router={router} />
          </QueryClientProvider>
       </I18nProvider>
    </StrictMode>,

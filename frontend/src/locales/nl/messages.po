@@ -196,6 +196,14 @@ msgstr "Eerste stap bovenaan"
 msgid "EML_NL tellingbestand 510b"
 msgstr "EML_NL tellingbestand 510b"
 
+#: src/pages/ErrorBoundaryPage.tsx
+msgid "Er is een fout opgetreden"
+msgstr "Er is een fout opgetreden"
+
+#: src/pages/ErrorBoundaryPage.tsx
+msgid "Fout"
+msgstr "Fout"
+
 #: src/pages/ReportIssuePage.tsx
 msgid "Fout melden"
 msgstr "Fout melden"
@@ -363,6 +371,10 @@ msgstr "Klopt er iets niet?"
 #: src/components/ResultsPage/ResultsTimeline.tsx
 msgid "Laatste stap bovenaan"
 msgstr "Laatste stap bovenaan"
+
+#: src/pages/LoadingPage.tsx
+msgid "Laden…"
+msgstr "Laden…"
 
 #: src/components/ResultsPage/PartyCandidatesResultsContent.tsx
 #: src/components/ResultsPage/RegionResultsContent.tsx

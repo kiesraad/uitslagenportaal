@@ -14,13 +14,7 @@ export function ElectionConfigMunicipalityListPage() {
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
    const { t } = useLingui();
    const { formatElectionDate } = useFormatters();
-   const {
-      data: electionConfig,
-      isLoading: isElectionLoading,
-      isError: isElectionError,
-      error: electionError,
-      refetch: refetchElection,
-   } = useElectionConfig(electionConfigSlug);
+   const { data: electionConfig } = useElectionConfig(electionConfigSlug);
    const {
       data: regions,
       isLoading: isRegionsLoading,
@@ -29,8 +23,8 @@ export function ElectionConfigMunicipalityListPage() {
       refetch: refetchRegions,
    } = useRegions(electionConfigSlug, undefined, "GEMEENTE");
 
-   const isLoading = isElectionLoading || isRegionsLoading;
-   const isError = isElectionError || isRegionsError || !electionConfig || !regions;
+   const isLoading = isRegionsLoading;
+   const isError = isRegionsError || !electionConfig || !regions;
 
    if (isLoading || isError) {
       return (
@@ -38,10 +32,9 @@ export function ElectionConfigMunicipalityListPage() {
             isLoading={isLoading}
             isError={isError}
             onRetry={() => {
-               void refetchElection();
                void refetchRegions();
             }}
-            errors={[electionError, regionsError]}
+            errors={[regionsError]}
             entityLabel={t`Verkiezing`}
          />
       );
