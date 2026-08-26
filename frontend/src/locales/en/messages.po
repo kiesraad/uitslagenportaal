@@ -626,8 +626,8 @@ msgid "Waterschappen"
 msgstr "Water authorities"
 
 #: src/components/Footer.tsx
-msgid "Zie je een fout?"
-msgstr "Spotted a mistake?"
+msgid "Zie je een fout op de pagina?"
+msgstr "Spotted a mistake on the page?"
 
 #: src/components/SearchBar.tsx
 msgid "Zoek {regionInline}"

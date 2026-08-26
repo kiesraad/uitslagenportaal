@@ -51,6 +51,16 @@ describe("Footer", () => {
       expect(screen.getByText(`© ${currentYear} De Kiesraad`)).toBeInTheDocument();
    });
 
+   it("Always offers the shared report link, even without an election", () => {
+      mockElectionConfigs([]);
+      renderFooter();
+
+      expect(screen.getByRole("link", { name: /Melding maken/ })).toHaveAttribute(
+         "href",
+         "https://www.kiesraad.nl/service/contact",
+      );
+   });
+
    it("Always links to Kiesraad.nl", () => {
       mockElectionConfigs([]);
       renderFooter();
@@ -64,10 +74,6 @@ describe("Footer", () => {
 
       expect(await screen.findByRole("heading", { name: electionConfig.label })).toBeInTheDocument();
 
-      expect(screen.getByRole("link", { name: /Melding maken/ })).toHaveAttribute(
-         "href",
-         electionConfig.report_error_url,
-      );
       expect(screen.getByRole("link", { name: /Uitleg over telproces/ })).toHaveAttribute(
          "href",
          electionConfig.counting_info_url,
@@ -88,9 +94,9 @@ describe("Footer", () => {
       mockElectionConfigs([electionConfig]);
       renderFooter("en");
 
-      expect(await screen.findByRole("link", { name: /Report an issue/ })).toBeInTheDocument();
+      expect(await screen.findByRole("link", { name: /About the counting process/ })).toBeInTheDocument();
       expect(screen.getByText("This website in other languages:")).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /About the counting process/ })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /Report an issue/ })).toBeInTheDocument();
    });
 
    it("Offers the other language and switches to it when clicked", async () => {
