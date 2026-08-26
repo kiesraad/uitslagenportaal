@@ -38,8 +38,6 @@ export type RegionCategory = 'STAAT' | 'WATERSCHAP' | 'KIESKRING' | 'GEMEENTE' |
 export type VoterTurnoutCategory = 'REJECTED' | 'UNCOUNTED'
 
 export type VoterTurnoutCount = {
-  cast: number
-  total_counted: number
   category: VoterTurnoutCategory
   reason_code: string
   votes: number
