@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 from django.db import models
 from django.db.models import Q
-from django.db.models.enums import Choices, TextChoices
+from django.db.models.enums import Choices
 
 from election.utils import visibility_cutoff
 from mainsite.models import BaseModel, CurrentModel, RegionCategory
@@ -209,14 +209,10 @@ class ElectionDocument(CurrentModel):
     content_type = models.CharField(max_length=128, default="application/xml")
     size = models.PositiveIntegerField()
 
-    class FileType(TextChoices):
-        EML510B = "EML510b"
-        EML510D = "EML510d"
-
     file_type = models.CharField(
         max_length=32,
-        choices=FileType.choices,
-        default=FileType.EML510B,
+        choices=EmlType.choices,
+        default=EmlType.EML_510b,
         help_text="Type of the election document",
     )
 

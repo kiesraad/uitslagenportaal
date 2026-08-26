@@ -20,7 +20,7 @@ const FILE_TYPE_MAPPINGS: Record<
     string,
     { name: string; fileType: string; description: string; icon: IconDefinition }
 > = {
-    EML510b: {
+    '510b': {
         name: 'EML_NL tellingbestand 510b',
         fileType: 'xml',
         icon: faFolder,
