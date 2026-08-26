@@ -1,5 +1,5 @@
 from django.db.models import Prefetch
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
 from election.models import ElectionDocument, VoteCount, VoterTurnoutCount
@@ -94,7 +94,7 @@ class RegionDetailView(RetrieveAPIView):
         try:
             return queryset.get()
         except Region.DoesNotExist:
-            raise ValidationError({"detail": "Region not found for this election."})
+            raise NotFound({"detail": "Region not found for this election."})
         except Region.MultipleObjectsReturned:
             raise ValidationError(
                 {"detail": "Multiple regions match this slug. Specify the 'parent_region' or 'csb' query parameter."}

@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -35,7 +35,7 @@ class PartyResultMatrixView(APIView):
                 election__election_config__date__gte=cutoff,
             )
         except Party.DoesNotExist:
-            raise ValidationError({"party": "Party not found for this election."})
+            raise NotFound({"party": "Party not found for this election."})
 
         try:
             csb = Region.objects.get(
@@ -44,7 +44,7 @@ class PartyResultMatrixView(APIView):
                 election__election_config__date__gte=cutoff,
             )
         except Region.DoesNotExist:
-            raise ValidationError({"csb": "CSB not found for this election."})
+            raise NotFound({"csb": "CSB not found for this election."})
 
         gemeentes = list(
             Region.objects.filter(

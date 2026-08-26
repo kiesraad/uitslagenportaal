@@ -1,10 +1,21 @@
-import { Layout } from './Layout'
+import { useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
+import { ApiError } from "../api/client";
+import { NotFoundPage } from "../pages/NotFoundPage";
+import { lowercaseFirst } from "../utils/text";
+import { Layout } from "./Layout";
 
 type PageQueryBoundaryProps = {
-  isLoading: boolean
-  isError: boolean
-  onRetry: () => void
-  entityLabel: string
+   isLoading: boolean;
+   isError: boolean;
+   onRetry: () => void;
+   entityLabel: string;
+   withLayout?: boolean;
+   errors?: unknown[];
+};
+
+export function isNotFoundError(error: unknown): boolean {
+   return error instanceof ApiError && error.status === 404;
 }
 
 /**
@@ -12,34 +23,59 @@ type PageQueryBoundaryProps = {
  * Use as an early return when `isLoading || isError`.
  */
 export function PageQueryBoundary({
-  isLoading,
-  isError,
-  onRetry,
-  entityLabel,
+   isLoading,
+   isError,
+   onRetry,
+   entityLabel,
+   withLayout = true,
+   errors,
 }: PageQueryBoundaryProps) {
-  const labelLower = entityLabel.toLowerCase()
+   const { t } = useLingui();
+   const labelInline = lowercaseFirst(entityLabel);
 
-  if (isLoading) {
-    return (
-      <Layout title={`${entityLabel} laden…`} description={`${entityLabel} laden…`}>
-        <p>{labelLower} laden…</p>
-      </Layout>
-    )
-  }
+   const wrap = (title: string, description: string, children: ReactNode) =>
+      withLayout ? (
+         <Layout title={title} description={description}>
+            <div className="page-top page-top-placeholder" aria-hidden="true" />
+            {children}
+         </Layout>
+      ) : (
+         children
+      );
 
-  if (isError) {
-    return (
-      <Layout
-        title={`${entityLabel} niet gevonden`}
-        description={`Kan ${labelLower} niet laden.`}
-      >
-        <p>Kan {labelLower} niet laden.</p>
-        <button type="button" onClick={onRetry}>
-          Opnieuw proberen
-        </button>
-      </Layout>
-    )
-  }
+   if (isLoading) {
+      const loading = t`${entityLabel} laden…`;
+      return wrap(
+         loading,
+         loading,
+         <div className="page-main">
+            <div className="page-status" role="status" aria-live="polite">
+               <p className="page-status-text">{loading}</p>
+               <p>{t`Een moment geduld, de gegevens worden opgehaald.`}</p>
+            </div>
+         </div>,
+      );
+   }
 
-  return null
+   if (errors?.some(isNotFoundError)) {
+      return <NotFoundPage />;
+   }
+
+   if (isError) {
+      const cannotLoad = t`Kan ${labelInline} niet laden.`;
+      return wrap(
+         t`${entityLabel} niet gevonden`,
+         cannotLoad,
+         <div className="page-main">
+            <div className="page-status" role="alert">
+               <p className="page-status-text">{cannotLoad}</p>
+               <button type="button" onClick={onRetry}>
+                  {t`Opnieuw proberen`}
+               </button>
+            </div>
+         </div>,
+      );
+   }
+
+   return null;
 }

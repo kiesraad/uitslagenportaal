@@ -1,11 +1,3 @@
-"""Unit tests for EML110aImporter.
-
-The EML input is built in code rather than parsed from a file: these tests are about
-what the importer writes, not about XML. The real pyeml_bindings dataclasses are used
-(not stand-ins) so that a renamed binding attribute breaks the tests instead of being
-mirrored by a fake.
-"""
-
 from datetime import date
 
 import pytest

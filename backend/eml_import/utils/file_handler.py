@@ -43,7 +43,7 @@ class BaseFileHandler:
     }
 
     def __init__(self):
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"{self.__class__.__name__}[{self.election_config.identifier}]")
         self._parser = build_parser()
 
     @staticmethod

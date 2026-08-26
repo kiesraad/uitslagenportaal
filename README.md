@@ -10,6 +10,8 @@ Start the full stack (database, backend, frontend and reverse proxy) with Docker
 docker compose up -d --build
 ```
 
+Install plugins for `ruff` and `biome` in your IDE to use the required formatting/linting.
+
 ### Environment variables
 
 No `.env` file is required for Docker development. Database and backend settings are configured in `docker-compose.yml` and passed to the containers automatically (`DB_HOST=db`, etc.).
@@ -56,6 +58,17 @@ To import again without wiping (e.g. after adding files):
 docker compose run --rm backend-scripts python manage.py import_election .data
 ```
 
+### Importing from GitHub
+
+On production, we import the XML files from a GitHub repo. We can test this import by generating our own
+test-repo, based on the data in `.data`. Checkout the test-data repo next to this project and use 
+the `build_ingress_repo` command to add branches with commits similar to the official repo (from backend folder): 
+```bash
+uv run manage.py build_ingress_repo --source .data/AB23 --dest ../../uitslagenportaal-test-emls/ --election-id AB2023
+```
+Then push the branches to the remote, and configure the repo in the `.env` file to start importing its data using
+the Celery task `import_next_eml_commits`. 
+
 ### One-off commands
 
 The `backend-scripts` service can run management commands while the stack keeps running:
@@ -72,9 +85,14 @@ docker compose run --rm backend-scripts python manage.py seed
   docker compose run --rm backend-scripts ruff format
   ```
 
-- Eslint format:
+- Biome lint:
   ```bash
   docker compose run --rm frontend npm run lint
+  ```
+  
+- Biome format:
+  ```bash
+  docker compose run --rm frontend npm run format
   ```
 
 ### Election visibility and deletion

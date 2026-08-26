@@ -6,6 +6,7 @@ from datetime import timedelta
 import pytest
 from django.core.cache import cache
 from django.utils import timezone
+from pyeml_bindings import Eml230
 
 from election.models import Contest, Election
 from election.tests.factories import ElectionConfigFactory
@@ -13,13 +14,13 @@ from eml_import.exceptions import GithubImportException
 from eml_import.models import BranchType, ImportedCommit, ImportedEmlHash
 from eml_import.tests.factories import ImportedCommitFactory
 from eml_import.tests.fakes import FakeCommit, FakeFile, FakeGithub, FakeRepo
-from eml_import.tests.test_eml_110_importer import CONFIG_IDENTIFIER, make_eml as make_110a_eml
+from eml_import.tests.test_eml_110_importer import CONFIG_IDENTIFIER
+from eml_import.tests.test_eml_110_importer import make_eml as make_110a_eml
 from eml_import.tests.test_eml_230_importer import make_eml as make_230b_eml
 from eml_import.utils import github_eml_file_handler
 from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from party.models import Candidate
-from pyeml_bindings import Eml230
 from region.models import Region
 
 XML_110A = b"<EML Id='110a'/>"
@@ -47,6 +48,10 @@ def as_pairs(files) -> list[tuple[str, bytes]]:
 def warnings_of(caplog) -> list[str]:
     """The warnings the file handler logged, which is the only trace a lock problem leaves."""
     return [record.getMessage() for record in caplog.records if record.levelno == logging.WARNING]
+
+
+def messages_containing(caplog, text: str) -> list[str]:
+    return [record.getMessage() for record in caplog.records if text in record.getMessage()]
 
 
 @pytest.fixture

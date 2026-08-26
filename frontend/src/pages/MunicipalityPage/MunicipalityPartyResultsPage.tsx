@@ -1,88 +1,106 @@
-import { useParams } from 'react-router'
-import { Layout } from '../../components/Layout.tsx'
-import PageTop from '../../components/PageTop.tsx'
-import { PageQueryBoundary } from '../../components/PageQueryBoundary.tsx'
-import { useElectionConfig, useRegion } from '../../hooks/queries.ts'
-import { appRoutes } from '../../utils/routes.ts'
-import PartyCandidatesResultsContent from '../../components/ResultsPage/PartyCandidatesResultsContent.tsx'
-import { formatDate } from '../../utils/date.ts'
-import { getCsbCrumb } from '../../utils/region.ts'
-import { getPartyVoteCount } from '../../utils/voteCounts.ts'
+import { useLingui } from "@lingui/react/macro";
+import { useParams } from "react-router";
+import { Layout } from "../../components/Layout.tsx";
+import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
+import PageTop from "../../components/PageTop.tsx";
+import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCandidatesResultsContent.tsx";
+import { useElectionConfig, useRegion } from "../../hooks/queries.ts";
+import { useFormatters } from "../../utils/format.ts";
+import { getCsbCrumb } from "../../utils/region.ts";
+import { appRoutes } from "../../utils/routes.ts";
+import { getPartyVoteCount, hasParty } from "../../utils/voteCounts.ts";
+import { NotFoundPage } from "../NotFoundPage.tsx";
 
 export function MunicipalityPartyResultsPage() {
-  const {
-    electionConfigSlug: electionConfigSlugParam,
-    regionSlug: parentRegionSlugParam,
-    partySlug: partySlugParam,
-    csbSlug: csbSlugParam,
-  } = useParams<{ electionConfigSlug: string; regionSlug: string; partySlug: string; csbSlug?: string }>()
+   const {
+      electionConfigSlug: electionConfigSlugParam,
+      regionSlug: parentRegionSlugParam,
+      partySlug: partySlugParam,
+      csbSlug: csbSlugParam,
+   } = useParams<{ electionConfigSlug: string; regionSlug: string; partySlug: string; csbSlug?: string }>();
 
-  const electionConfigSlug = decodeURIComponent(electionConfigSlugParam ?? '')
-  const regionSlug = decodeURIComponent(parentRegionSlugParam ?? '')
-  const partySlug = decodeURIComponent(partySlugParam ?? '')
-  const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined
+   const electionConfigSlug = decodeURIComponent(electionConfigSlugParam ?? "");
+   const regionSlug = decodeURIComponent(parentRegionSlugParam ?? "");
+   const partySlug = decodeURIComponent(partySlugParam ?? "");
+   const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined;
+   const { t } = useLingui();
+   const { formatDate } = useFormatters();
 
-  const {
-    data: electionConfig,
-    isLoading: isElectionLoading,
-    isError: isElectionError,
-    refetch: refetchElection,
-  } = useElectionConfig(electionConfigSlug)
-  const {
-    data: region,
-    isLoading: isRegionLoading,
-    isError: isRegionError,
-    refetch: refetchRegion,
-  } = useRegion(electionConfigSlug, regionSlug, csbSlug)
+   const {
+      data: electionConfig,
+      isLoading: isElectionLoading,
+      isError: isElectionError,
+      error: electionError,
+      refetch: refetchElection,
+   } = useElectionConfig(electionConfigSlug);
+   const {
+      data: region,
+      isLoading: isRegionLoading,
+      isError: isRegionError,
+      error: regionError,
+      refetch: refetchRegion,
+   } = useRegion(electionConfigSlug, regionSlug, csbSlug);
 
-  const isLoading = isElectionLoading || isRegionLoading
-  const isError = isElectionError || isRegionError || !electionConfig || !region
+   const isLoading = isElectionLoading || isRegionLoading;
+   const isError = isElectionError || isRegionError || !electionConfig || !region;
 
-  const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug, regionSlug, csbSlug)
-  const municipalityPartyResultsRoute = appRoutes.municipalityPartyResults(electionConfigSlug, regionSlug, partySlug, csbSlug)
+   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug, regionSlug, csbSlug);
+   const municipalityPartyResultsRoute = appRoutes.municipalityPartyResults(
+      electionConfigSlug,
+      regionSlug,
+      partySlug,
+      csbSlug,
+   );
 
-  if (isLoading || isError) {
-    return (
-      <PageQueryBoundary
-        isLoading={isLoading}
-        isError={isError}
-        onRetry={() => {
-          void refetchElection()
-          void refetchRegion()
-        }}
-        entityLabel="Gemeente"
-      />
-    )
-  }
+   if (isLoading || isError) {
+      return (
+         <PageQueryBoundary
+            isLoading={isLoading}
+            isError={isError}
+            onRetry={() => {
+               void refetchElection();
+               void refetchRegion();
+            }}
+            errors={[electionError, regionError]}
+            entityLabel={t`Gemeente`}
+         />
+      );
+   }
 
-  const partyName = getPartyVoteCount(region.vote_counts, partySlug)?.party.registered_name ?? 'Lijst'
-  const pageTitle = `Telresultaten gemeente\n${region.region_name}`
+   // Only an unknown party slug is a 404; empty results mean "not published yet"
+   const hasAnyResults = (region.vote_counts?.length ?? 0) > 0;
+   if (hasAnyResults && !hasParty(region.vote_counts, partySlug)) {
+      return <NotFoundPage />;
+   }
 
-  return (
-    <Layout
-      title={`Telresultaten gemeente – ${region.region_name}`}
-      description={`Telresultaten gemeente – ${region.region_name}`}
-    >
-      <PageTop
-        title={pageTitle}
-        subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
-        breadcrumb={[
-          { href: appRoutes.home(), label: 'Home' },
-          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig.label },
-          getCsbCrumb(region, electionConfigSlug),
-          { href: municipalityResultsRoute, label: `Gemeente ${region.region_name}` },
-          { href: municipalityPartyResultsRoute, label: partyName },
-        ]}
-      />
-      <div className="page-main page-main-two-columns">
-        <div className="page-space-3">
-          <PartyCandidatesResultsContent
-            voteCounts={region.vote_counts}
-            partySlug={partySlug}
-            issueReportDeadline={electionConfig.issue_report_deadline}
-          />
-        </div>
-      </div>
-    </Layout>
-  )
+   const partyName = getPartyVoteCount(region.vote_counts, partySlug)?.party.registered_name ?? t`Lijst`;
+   const regionName = region.region_name;
+   const publishedAt = formatDate(region.results_available_at);
+   const pageTitle = `${t`Telresultaten gemeente`}\n${regionName}`;
+   const documentTitle = t`Telresultaten gemeente – ${regionName}`;
+
+   return (
+      <Layout title={documentTitle} description={documentTitle}>
+         <PageTop
+            title={pageTitle}
+            subtitle={t`Geplaatst op: ${publishedAt}`}
+            breadcrumb={[
+               { href: appRoutes.home(), label: t`Home` },
+               { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig.label },
+               getCsbCrumb(region, electionConfigSlug),
+               { href: municipalityResultsRoute, label: t`Gemeente ${regionName}` },
+               { href: municipalityPartyResultsRoute, label: partyName },
+            ]}
+         />
+         <div className="page-main page-main-two-columns">
+            <div className="page-space-3">
+               <PartyCandidatesResultsContent
+                  voteCounts={region.vote_counts}
+                  partySlug={partySlug}
+                  issueReportDeadline={electionConfig.issue_report_deadline}
+               />
+            </div>
+         </div>
+      </Layout>
+   );
 }

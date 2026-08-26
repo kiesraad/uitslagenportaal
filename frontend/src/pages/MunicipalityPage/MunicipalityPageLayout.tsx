@@ -1,91 +1,103 @@
-import {Outlet} from "react-router";
-import {useParams} from "react-router";
-import {appRoutes} from "@/utils/routes.ts";
-import {useElectionConfig, useRegion} from "@/hooks/queries.ts";
-import {PageQueryBoundary} from "@/components/PageQueryBoundary.tsx";
-import {Layout} from "@/components/Layout.tsx";
+import { useLingui } from "@lingui/react/macro";
+import { Outlet, useParams } from "react-router";
+import { Layout } from "@/components/Layout.tsx";
+import { PageQueryBoundary } from "@/components/PageQueryBoundary.tsx";
 import PageTop from "@/components/PageTop.tsx";
-import {formatDate} from "@/utils/date.ts";
-import {getCsbCrumb} from "@/utils/region.ts";
 import SharedTabs from "@/components/SharedTabs.tsx";
+import { useElectionConfig, useRegion } from "@/hooks/queries.ts";
+import { useFormatters } from "@/utils/format.ts";
+import { getCsbCrumb } from "@/utils/region.ts";
+import { appRoutes } from "@/utils/routes.ts";
 
 export default function MunicipalityPageLayout() {
-  const { electionConfigSlug, regionSlug: regionSlugParam, csbSlug: csbSlugParam } = useParams<{ electionConfigSlug: string; regionSlug: string; csbSlug?: string }>()
-  const regionSlug = decodeURIComponent(regionSlugParam ?? '')
-  const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined
-  const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(electionConfigSlug ?? '', regionSlug, csbSlug)
-  const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? '', regionSlug, csbSlug)
+   const {
+      electionConfigSlug,
+      regionSlug: regionSlugParam,
+      csbSlug: csbSlugParam,
+   } = useParams<{ electionConfigSlug: string; regionSlug: string; csbSlug?: string }>();
+   const regionSlug = decodeURIComponent(regionSlugParam ?? "");
+   const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined;
+   const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(
+      electionConfigSlug ?? "",
+      regionSlug,
+      csbSlug,
+   );
+   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? "", regionSlug, csbSlug);
+   const { t } = useLingui();
+   const { formatDate } = useFormatters();
 
-  const {
-    data: electionConfig,
-    isLoading: isElectionConfigLoading,
-    isError: isElectionConfigError,
-    refetch: refetchElectionConfig,
-  } = useElectionConfig(electionConfigSlug)
-  const {
-    data: region,
-    isLoading: isRegionLoading,
-    isError: isRegionError,
-    refetch: refetchRegion,
-  } = useRegion(electionConfigSlug, regionSlug, csbSlug)
+   const {
+      data: electionConfig,
+      isLoading: isElectionConfigLoading,
+      isError: isElectionConfigError,
+      error: electionConfigError,
+      refetch: refetchElectionConfig,
+   } = useElectionConfig(electionConfigSlug);
+   const {
+      data: region,
+      isLoading: isRegionLoading,
+      isError: isRegionError,
+      error: regionError,
+      refetch: refetchRegion,
+   } = useRegion(electionConfigSlug, regionSlug, csbSlug);
 
-  const isLoading = isElectionConfigLoading || isRegionLoading
-  const isError =
-    isElectionConfigError ||
-    isRegionError ||
-    !electionConfig ||
-    !region
+   const isLoading = isElectionConfigLoading || isRegionLoading;
+   const isError = isElectionConfigError || isRegionError || !electionConfig || !region;
 
-  if (isLoading || isError) {
-    return (
-      <PageQueryBoundary
-        isLoading={isLoading}
-        isError={isError}
-        onRetry={() => {
-          void refetchElectionConfig()
-          void refetchRegion()
-        }}
-        entityLabel="Gemeente"
-      />
-    )
-  }
+   if (isLoading || isError) {
+      return (
+         <PageQueryBoundary
+            isLoading={isLoading}
+            isError={isError}
+            onRetry={() => {
+               void refetchElectionConfig();
+               void refetchRegion();
+            }}
+            errors={[electionConfigError, regionError]}
+            entityLabel={t`Gemeente`}
+         />
+      );
+   }
 
-  const hasResults = Array.isArray(region.vote_counts) && region.vote_counts.length > 0
-  const municipalityTitle = `Gemeente ${region.region_name}`
+   const hasResults = Array.isArray(region.vote_counts) && region.vote_counts.length > 0;
+   const regionName = region.region_name;
+   const municipalityTitle = t`Gemeente ${regionName}`;
+   const publishedAt = formatDate(region.results_available_at);
 
-  return (
-    <Layout>
-      <PageTop
-        title={municipalityTitle}
-        subtitle={`Geplaatst op: ${formatDate(region.results_available_at)}`}
-        breadcrumb={[
-          { href: appRoutes.home(), label: 'Home' },
-          { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ''), label: electionConfig.label },
-          getCsbCrumb(region, electionConfigSlug ?? ''),
-          { href: municipalityPollingstationListRoute, label: municipalityTitle },
-        ]}
-        tabs={
-          hasResults && (<SharedTabs
-            tabs={[
-              {
-                label: 'Resultaten per stembureau',
-                value: municipalityPollingstationListRoute,
-                activePatterns: [municipalityPollingstationListRoute],
-              },
-              {
-                label: 'Hele gemeente',
-                value: municipalityResultsRoute,
-                activePatterns: [municipalityResultsRoute],
-              },
+   return (
+      <Layout>
+         <PageTop
+            title={municipalityTitle}
+            subtitle={t`Geplaatst op: ${publishedAt}`}
+            breadcrumb={[
+               { href: appRoutes.home(), label: t`Home` },
+               {
+                  href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ""),
+                  label: electionConfig.label,
+               },
+               getCsbCrumb(region, electionConfigSlug ?? ""),
+               { href: municipalityPollingstationListRoute, label: municipalityTitle },
             ]}
-          />)
-        }
-      />
-      <Outlet
-        context={{electionConfig, municipalityTitle, region, electionConfigSlug, regionSlug, csbSlug}}
-      />
-
-    </Layout>
-  )
-
+            tabs={
+               hasResults && (
+                  <SharedTabs
+                     tabs={[
+                        {
+                           label: t`Resultaten per stembureau`,
+                           value: municipalityPollingstationListRoute,
+                           activePatterns: [municipalityPollingstationListRoute],
+                        },
+                        {
+                           label: t`Hele gemeente`,
+                           value: municipalityResultsRoute,
+                           activePatterns: [municipalityResultsRoute],
+                        },
+                     ]}
+                  />
+               )
+            }
+         />
+         <Outlet context={{ electionConfig, municipalityTitle, region, electionConfigSlug, regionSlug, csbSlug }} />
+      </Layout>
+   );
 }
