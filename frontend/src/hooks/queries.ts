@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
+import type { Params } from "react-router";
 import {
    getElectionConfigBySlug,
    getElectionConfigs,
@@ -8,14 +9,30 @@ import {
 } from "../api/endpoints";
 import type { PartyVoteMatrix, Region, RegionCategory } from "../api/types";
 
-export const electionConfigQuery = (slug?: string) => ({
-   queryKey: ["elections", slug],
-   queryFn: () => getElectionConfigBySlug(slug),
-   enabled: Boolean(slug),
-});
+// The query factories carry no `enabled`: a suspense query cannot be disabled, and a route
+// loader always has its parameters. Callers whose slug may be absent add the guard themselves.
+export function electionConfigQuery(slug?: string) {
+   return queryOptions({
+      queryKey: ["elections", slug],
+      queryFn: () => getElectionConfigBySlug(slug),
+   });
+}
+
+export function regionsQuery(params: Params, regionCategory?: RegionCategory) {
+   return queryOptions({
+      queryKey: [
+         "regions",
+         params?.electionConfigSlug,
+         params?.regionSlug ?? null,
+         regionCategory ?? null,
+         params?.csbSlug ?? null,
+      ],
+      queryFn: () => getRegions(params?.electionConfigSlug, params?.regionSlug, regionCategory, params?.csbSlug),
+   });
+}
 
 export function useElectionConfig(slug?: string) {
-   return useQuery(electionConfigQuery(slug));
+   return useQuery({ ...electionConfigQuery(slug), enabled: Boolean(slug) });
 }
 
 export function useElectionConfigs() {
@@ -48,8 +65,7 @@ export function useRegions(
       Boolean(electionConfigSlug) && (Boolean(regionCategory) || Boolean(parentRegionSlug) || Boolean(csbSlug));
 
    return useQuery({
-      queryKey: ["regions", electionConfigSlug, parentRegionSlug ?? null, regionCategory ?? null, csbSlug ?? null],
-      queryFn: () => getRegions(electionConfigSlug!, parentRegionSlug, regionCategory, csbSlug),
+      ...regionsQuery({ electionConfigSlug, regionSlug: parentRegionSlug, csbSlug }, regionCategory),
       enabled,
    });
 }

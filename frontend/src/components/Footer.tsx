@@ -48,6 +48,7 @@ export function Footer() {
    // page) fall back to the only election when there is exactly one.
    const { data: routeElectionConfig } = useQuery({
       ...electionConfigQuery(electionConfigSlug),
+      enabled: Boolean(electionConfigSlug),
       throwOnError: false,
    });
    const { data: electionConfigs } = useElectionConfigs();

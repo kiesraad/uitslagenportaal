@@ -17,7 +17,7 @@ export function getElectionConfigBySlug(slug?: string) {
 }
 
 export function getRegions(
-   electionConfigSlug: string,
+   electionConfigSlug?: string,
    parentRegionSlug?: string,
    regionCategory?: RegionCategory,
    csbSlug?: string,
