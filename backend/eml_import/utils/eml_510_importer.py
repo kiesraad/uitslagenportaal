@@ -438,7 +438,9 @@ class EML510dImporter(EML510BaseImporter):
                 child_region_name = child_region_category_re.sub("", unit.reporting_unit_identifier.value).strip()
                 child_region = child_region_by_name.get(child_region_name)
                 if child_region is None:
-                    continue
+                    raise EMLImporterException(
+                        f"Cannot find child_region_name {child_region_name} in child_region_by_name"
+                    )
 
                 contest_filter = {"election": self.election}
                 # Get the contest from the DB by name, if the contest in the EML file is set to 'alle'. This means that
