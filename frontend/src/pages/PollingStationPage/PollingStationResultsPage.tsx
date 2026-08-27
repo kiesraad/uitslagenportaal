@@ -12,12 +12,12 @@ import { appRoutes } from "../../utils/routes";
 export default function PollingStationResultsPage() {
    const {
       electionConfigSlug: electionConfigSlugParam,
-      parentRegionSlug: parentRegionSlugParam,
+      regionSlug: parentRegionSlugParam,
       pollingStationSlug: pollingStationSlugParam,
       csbSlug: csbSlugParam,
    } = useParams<{
       electionConfigSlug: string;
-      parentRegionSlug: string;
+      regionSlug: string;
       pollingStationSlug: string;
       csbSlug?: string;
    }>();

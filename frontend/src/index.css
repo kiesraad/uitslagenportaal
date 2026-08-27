@@ -35,13 +35,17 @@
    --font-number: "Geist Mono", "Lucida Sans Typewriter", "Courier New", monospace;
 
    --color-*: initial;
-   /* Some colors are not defined in the Figma designs, so there are gaps in the numbers */
-   --color-blue-50: #f4f7fa; /* same as KR Blauw/25 */
-   --color-blue-100: #e5ebf4;
-   --color-blue-200: #ebf3f7;
-   --color-blue-500: #01689b;
+   /* Steps 50, 100, 500, 700 and 800 come from Figma; the rest are interpolated in OKLCH */
+   --color-blue-50: #f4f7fa; /* KR Blauw/25 */
+   --color-blue-100: #e5ebf4; /* KR Blauw/50 */
+   --color-blue-200: #b5c8e0;
+   --color-blue-300: #85a7ca;
+   --color-blue-400: #5187b4;
+   --color-blue-500: #01689b; /* Rijksoverheid/Primary */
+   --color-blue-600: #184f80;
    --color-blue-700: #1b3764;
    --color-blue-800: #113051;
+   --color-blue-900: #0e2640;
 
    /* Gray colors from figma */
    --color-gray-25: oklch(0.992 0.001 247.829);
@@ -65,7 +69,7 @@
    --c-navy: #102e53;
    --c-blue: #00619c;
    --c-blue-hov: #0f52a0;
-   --c-row-alt: var(--color-blue-200);
+   --c-row-alt: var(--color-blue-50);
    --c-text: var(--color-gray-900);
    --c-muted: #696f78;
    --c-border: #d0d7de;
@@ -140,6 +144,8 @@ h4,
 
 /* Wrapper */
 .layout-main {
+   display: flex;
+   flex-direction: column;
    flex: 1;
    width: 100%;
 }
@@ -267,7 +273,6 @@ h4,
 .tabs {
    display: flex;
    gap: 0;
-   margin-bottom: 20px;
 }
 
 .tab {

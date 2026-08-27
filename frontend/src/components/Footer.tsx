@@ -2,9 +2,10 @@ import { faArrowUpRightFromSquare, faChevronRight } from "@fortawesome/free-soli
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
+import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
 import { type Locale, loadCatalog, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
-import { useElectionConfig, useElectionConfigs } from "../hooks/queries.ts";
+import { electionConfigQuery, useElectionConfigs } from "../hooks/queries.ts";
 
 // Fixed URLs for non-changing elements
 const KIESRAAD_URL = "https://www.kiesraad.nl/";
@@ -47,7 +48,11 @@ export function Footer() {
 
    // On election pages the config comes from the route; elsewhere (e.g. the home
    // page) fall back to the only election when there is exactly one.
-   const { data: routeElectionConfig } = useElectionConfig(electionConfigSlug);
+   const { data: routeElectionConfig } = useQuery({
+      ...electionConfigQuery(electionConfigSlug),
+      enabled: Boolean(electionConfigSlug),
+      throwOnError: false,
+   });
    const { data: electionConfigs } = useElectionConfigs();
    const electionConfig = routeElectionConfig ?? (electionConfigs?.length === 1 ? electionConfigs[0] : undefined);
 

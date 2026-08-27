@@ -196,6 +196,14 @@ msgstr "First step first"
 msgid "EML_NL tellingbestand 510b"
 msgstr "EML_NL count file 510b"
 
+#: src/pages/ErrorBoundaryPage.tsx
+msgid "Er is een fout opgetreden"
+msgstr "Something went wrong"
+
+#: src/pages/ErrorBoundaryPage.tsx
+msgid "Fout"
+msgstr "Error"
+
 #: src/pages/ReportIssuePage.tsx
 msgid "Fout melden"
 msgstr "Report a mistake"
@@ -363,6 +371,10 @@ msgstr "Is something not right?"
 #: src/components/ResultsPage/ResultsTimeline.tsx
 msgid "Laatste stap bovenaan"
 msgstr "Latest step first"
+
+#: src/pages/LoadingPage.tsx
+msgid "Laden…"
+msgstr "Loading…"
 
 #: src/components/ResultsPage/PartyCandidatesResultsContent.tsx
 #: src/components/ResultsPage/RegionResultsContent.tsx
@@ -578,8 +590,6 @@ msgstr "Votes cast"
 msgid "Uitleg over telproces"
 msgstr "About the counting process"
 
-#: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
-#: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
 #: src/pages/ReportIssuePage.tsx
 msgid "Verkiezing"
 msgstr "Election"

@@ -1,51 +1,39 @@
 import { useLingui } from "@lingui/react/macro";
-import { useParams } from "react-router";
-import { Layout } from "../../components/Layout.tsx";
-import { RegionList } from "../../components/ListPage/RegionList.tsx";
-import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
-import PageTop from "../../components/PageTop.tsx";
-import SharedTabs from "../../components/SharedTabs.tsx";
-import { useElectionConfig, useRegions } from "../../hooks/queries.ts";
-import { useFormatters } from "../../utils/format.ts";
-import { getRegionLabels } from "../../utils/region.ts";
-import { appRoutes } from "../../utils/routes.ts";
+import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { Layout } from "@/components/Layout.tsx";
+import { RegionList } from "@/components/ListPage/RegionList.tsx";
+import PageTop from "@/components/PageTop.tsx";
+import SharedTabs from "@/components/SharedTabs.tsx";
+import { electionConfigQuery, regionsQuery } from "@/hooks/queries.ts";
+import { useFormatters } from "@/utils/format.ts";
+import { getRegionLabels } from "@/utils/region.ts";
+import { appRoutes } from "@/utils/routes.ts";
+
+export function electionConfigCSBListLoader(queryClient: QueryClient) {
+   return async ({ params }: LoaderFunctionArgs) => {
+      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
+      const electionConfig = await queryClient.ensureQueryData(electionConfigQueryOptions);
+
+      const regionsQueryOptions = regionsQuery(params, electionConfig?.csb_type);
+      await queryClient.ensureQueryData(regionsQueryOptions);
+
+      return {
+         electionConfigQuery: electionConfigQueryOptions,
+         regionsQuery: regionsQueryOptions,
+      };
+   };
+}
+
+type LoaderData = Awaited<ReturnType<ReturnType<typeof electionConfigCSBListLoader>>>;
 
 export function ElectionConfigCSBListPage() {
-   const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
+   const { electionConfigQuery, regionsQuery } = useLoaderData<LoaderData>();
    const { t } = useLingui();
    const { formatElectionDate } = useFormatters();
-   const {
-      data: electionConfig,
-      isLoading: isElectionLoading,
-      isError: isElectionError,
-      error: electionError,
-      refetch: refetchElection,
-   } = useElectionConfig(electionConfigSlug);
-   const {
-      data: regions,
-      isLoading: isRegionsLoading,
-      isError: isRegionsError,
-      error: regionsError,
-      refetch: refetchRegions,
-   } = useRegions(electionConfigSlug, undefined, electionConfig?.csb_type);
-
-   const isLoading = isElectionLoading || isRegionsLoading;
-   const isError = isElectionError || isRegionsError || !electionConfig || !regions;
-
-   if (isLoading || isError) {
-      return (
-         <PageQueryBoundary
-            isLoading={isLoading}
-            isError={isError}
-            onRetry={() => {
-               void refetchElection();
-               void refetchRegions();
-            }}
-            errors={[electionError, regionsError]}
-            entityLabel={t`Verkiezing`}
-         />
-      );
-   }
+   // The loader has already resolved both queries, so the data is never pending here.
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+   const { data: regions } = useSuspenseQuery(regionsQuery);
 
    const electionLabel = electionConfig.label;
    const electionDay = electionConfig.date ? formatElectionDate(electionConfig.date) : "";
@@ -61,7 +49,7 @@ export function ElectionConfigCSBListPage() {
             breadcrumb={[
                { href: "/", label: t`Home` },
                {
-                  href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ""),
+                  href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
             ]}
