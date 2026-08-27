@@ -230,10 +230,10 @@ class EML510bImporter(EML510BaseImporter):
             region_category=RegionCategory.STEMBUREAU,
         )
         counts_filter = Q(region=region) | Q(region__in=stations)
-        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
-        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
+        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
+        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
         ElectionDocument.objects.filter(region=region, file_type=self.eml_type).archive()
-        stations.archive()
+        stations.delete()
 
     @staticmethod
     def _polling_station_name(unit: ReportingUnitVotes) -> str:
@@ -384,8 +384,8 @@ class EML510dImporter(EML510BaseImporter):
     def _archive(self, region: Region) -> None:
         """Archive prior totaaltelling rows for this CSB and its descendants."""
         counts_filter = Q(region=region) | Q(region__csb=region)
-        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
-        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).archive()
+        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
+        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
         ElectionDocument.objects.filter(region=region, file_type=self.eml_type).archive()
 
     def _parse_data(self) -> None:

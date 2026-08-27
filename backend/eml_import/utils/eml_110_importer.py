@@ -37,8 +37,8 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
         return False
 
     def _archive(self) -> None:
-        Party.objects.filter(election=self.election).archive()
-        Region.objects.filter(election=self.election).archive()
+        Party.objects.filter(election=self.election).delete()
+        Region.objects.filter(election=self.election).delete()
 
     def _parse_regions(self) -> None:
         region_nodes = self.eml.election_event.election.election_tree.region

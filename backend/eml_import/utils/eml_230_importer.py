@@ -104,5 +104,5 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             election=self.election,
             name=contest_data.contest_identifier.contest_name,
         )
-        Candidate.objects.filter(contest=contest).archive()
-        Contest.objects.filter(pk=contest.pk).archive()
+        Candidate.objects.filter(contest=contest).delete()
+        Contest.objects.filter(pk=contest.pk).delete()
