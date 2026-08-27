@@ -159,10 +159,18 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
 
         Key: (eml_type, election via region, authority = region).
         """
-        return (
+        is_correction = (
             VoteCount.objects.filter(region=region, eml_type=self.eml_type).exists()
             or VoterTurnoutCount.objects.filter(region=region, eml_type=self.eml_type).exists()
         )
+        if is_correction:
+            self.logger.info(
+                "\033[32mCorrection detected for region %s (%s) eml_type=%s\033[0m",
+                region.region_number,
+                region.region_name,
+                self.eml_type,
+            )
+        return is_correction
 
     def _store_eml(self, region: Region) -> None:
         parent_number, parent_name = (
@@ -305,13 +313,6 @@ class EML510bImporter(EML510BaseImporter):
 
         # Same (eml_type, election, authority) already imported → replace the tree under it.
         is_correction = self._is_correction(region)
-        if is_correction:
-            self.logger.info(
-                "\033[32mCorrection detected for region %s (%s) eml_type=%s\033[0m",
-                region.region_number,
-                region.region_name,
-                self.eml_type,
-            )
 
         # Archive + the existing import path below share one transaction on correction.
         # First imports rely on the caller's atomic (if any); no second import method.
@@ -410,13 +411,6 @@ class EML510dImporter(EML510BaseImporter):
             )
 
         is_correction = self._is_correction(region)
-        if is_correction:
-            self.logger.info(
-                "\033[32mCorrection detected for region %s (%s) eml_type=%s\033[0m",
-                region.region_number,
-                region.region_name,
-                self.eml_type,
-            )
 
         with transaction.atomic():
             if is_correction:
