@@ -4,10 +4,11 @@ from typing import Self
 from zoneinfo import ZoneInfo
 
 from django.db import models
+from django.db.models import Q
 from django.db.models.enums import Choices
 
 from election.utils import visibility_cutoff
-from mainsite.models import BaseModel, RegionCategory
+from mainsite.models import BaseModel, CurrentModel, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from mainsite.utils.utils import name_to_slug
 
@@ -191,7 +192,7 @@ class VoteCount(EMLTypeMixin, BaseModel):
     )
 
 
-class ElectionDocument(BaseModel):
+class ElectionDocument(CurrentModel):
     region = models.ForeignKey(
         "region.Region",
         on_delete=models.CASCADE,
@@ -211,9 +212,11 @@ class ElectionDocument(BaseModel):
     )
 
     class Meta:
+        base_manager_name = "all_objects"
         constraints = [
             models.UniqueConstraint(
                 fields=["region", "file_type"],
+                condition=Q(is_current=True),
                 name="unique_current_document_per_region_and_file_type",
             )
         ]
