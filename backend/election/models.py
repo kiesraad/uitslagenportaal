@@ -8,7 +8,7 @@ from django.db.models import Q
 from django.db.models.enums import Choices
 
 from election.utils import visibility_cutoff
-from mainsite.models import BaseModel, CurrentModel, RegionCategory
+from mainsite.models import BaseModel, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from mainsite.utils.utils import name_to_slug
 
@@ -192,7 +192,21 @@ class VoteCount(EMLTypeMixin, BaseModel):
     )
 
 
-class ElectionDocument(CurrentModel):
+class CurrentQuerySet(models.QuerySet):
+    def archive(self):
+        return self.update(is_current=False)
+
+
+class CurrentManager(models.Manager.from_queryset(CurrentQuerySet)):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_current=True)
+
+
+class ElectionDocument(BaseModel):
+    """
+    Archivable ElectionDoc
+    """
+
     region = models.ForeignKey(
         "region.Region",
         on_delete=models.CASCADE,
@@ -210,6 +224,10 @@ class ElectionDocument(CurrentModel):
         default=EmlType.EML_510b,
         help_text="Type of the election document",
     )
+    is_current = models.BooleanField(default=True, db_index=True)
+
+    objects = CurrentManager()
+    all_objects = models.Manager()
 
     class Meta:
         base_manager_name = "all_objects"
