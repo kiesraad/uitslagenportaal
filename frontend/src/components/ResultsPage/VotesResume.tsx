@@ -55,10 +55,7 @@ function getAdmittedVoterVotes(voterTurnoutCounts: VoterTurnoutCount[] | undefin
 }
 
 function sumVotes(voterTurnoutCounts: VoterTurnoutCount[] | undefined, reasonCodes: string[]) {
-   const entries = voterTurnoutCounts?.filter(
-      (turnoutCount) => reasonCodes.includes(turnoutCount.reason_code)
-   );
-   
+   const entries = voterTurnoutCounts?.filter((turnoutCount) => reasonCodes.includes(turnoutCount.reason_code));
 
    return entries ? entries.reduce((total, entry) => total + entry.votes, 0) : undefined;
 }
