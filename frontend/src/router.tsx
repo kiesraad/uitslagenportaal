@@ -22,7 +22,7 @@ import { MunicipalityResultsPage } from "./pages/MunicipalityPage/MunicipalityRe
 import { NotFoundPage } from "./pages/NotFoundPage";
 import PollingStationPartyResultsPage from "./pages/PollingStationPage/PollingStationPartyResultsPage.tsx";
 import PollingStationResultsPage from "./pages/PollingStationPage/PollingStationResultsPage.tsx";
-import { ReportIssuePage } from "./pages/ReportIssuePage";
+import { ReportIssuePage, reportIssueLoader } from "./pages/ReportIssuePage";
 import { queryClient } from "./queryClient.ts";
 
 // The Suspense boundary catches the suspense queries the pages
@@ -56,7 +56,7 @@ export const routes: RouteObject[] = [
             path: ":electionConfigSlug",
             children: [
                { index: true, Component: NotFoundPage },
-               { path: "fout-melden", Component: ReportIssuePage },
+               { path: "fout-melden", loader: reportIssueLoader(queryClient), Component: ReportIssuePage },
                { path: "csb", loader: electionConfigCSBListLoader(queryClient), Component: ElectionConfigCSBListPage },
                {
                   path: "csb/:regionSlug",

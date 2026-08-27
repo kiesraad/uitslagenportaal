@@ -1,54 +1,39 @@
 import { faArrowUpRightFromSquare, faCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, type LoaderFunctionArgs, useLoaderData } from "react-router";
 import { twMerge } from "tailwind-merge";
-import type { ElectionConfig } from "../api/types.ts";
 import { InfoBox } from "../components/InfoBox.tsx";
 import { LayoutMain } from "../components/LayoutMain.tsx";
-import { PageQueryBoundary } from "../components/PageQueryBoundary.tsx";
-import { useElectionConfig } from "../hooks/queries.ts";
+import { electionConfigQuery } from "../hooks/queries.ts";
 import { formatIssueReportDeadlineHeading, getRemainingReportTime } from "../utils/date.ts";
 import { useFormatters } from "../utils/format.ts";
 import { appRoutes } from "../utils/routes.ts";
 
 const DEADLINE_TICK_MS = 60_000;
 
-export function ReportIssuePage() {
-   const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
-   const { t } = useLingui();
-   const { data: electionConfig, isLoading, isError, error, refetch } = useElectionConfig(electionConfigSlug);
+export function reportIssueLoader(queryClient: QueryClient) {
+   return async ({ params }: LoaderFunctionArgs) => {
+      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
+      await queryClient.ensureQueryData(electionConfigQueryOptions);
 
-   if (isLoading || isError || !electionConfig) {
-      return (
-         <PageQueryBoundary
-            isLoading={isLoading}
-            isError={isError || !electionConfig}
-            onRetry={() => {
-               void refetch();
-            }}
-            errors={[error]}
-            entityLabel={t`Verkiezing`}
-         />
-      );
-   }
-
-   return <ReportIssuePageContent electionConfig={electionConfig} electionConfigSlug={electionConfigSlug ?? ""} />;
+      return {
+         electionConfigQuery: electionConfigQueryOptions,
+      };
+   };
 }
 
-function ReportIssuePageContent({
-   electionConfig,
-   electionConfigSlug,
-}: {
-   electionConfig: ElectionConfig;
-   electionConfigSlug: string;
-}) {
+type LoaderData = Awaited<ReturnType<ReturnType<typeof reportIssueLoader>>>;
+
+export function ReportIssuePage() {
+   const { electionConfigQuery } = useLoaderData<LoaderData>();
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+   const electionConfigSlug = electionConfig.slug;
    const deadline = electionConfig.issue_report_deadline;
    const [now, setNow] = useState(() => new Date());
-   // Subscribes this component to locale changes, so the plural heading below and
-   // the formatted dates are recomputed when the language switches.
    const { t } = useLingui();
    const { formatDate } = useFormatters();
 
