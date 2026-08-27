@@ -4,11 +4,10 @@ from typing import Self
 from zoneinfo import ZoneInfo
 
 from django.db import models
-from django.db.models import Q
 from django.db.models.enums import Choices
 
 from election.utils import visibility_cutoff
-from mainsite.models import BaseModel, CurrentModel, RegionCategory
+from mainsite.models import BaseModel, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from mainsite.utils.utils import name_to_slug
 
@@ -129,7 +128,7 @@ class TimelineEntry(BaseModel):
         return f"{self.election_config.identifier} [{self.variant}]: {self.title}"
 
 
-class Contest(CurrentModel):
+class Contest(BaseModel):
     identifier = models.CharField(max_length=255, blank=True)
     election = models.ForeignKey(
         "election.Election",
@@ -139,11 +138,9 @@ class Contest(CurrentModel):
     name = models.CharField(max_length=255, null=True)
 
     class Meta:
-        base_manager_name = "all_objects"
         constraints = [
             models.UniqueConstraint(
                 fields=["election", "identifier"],
-                condition=Q(is_current=True),
                 name="unique_contest_identifier_per_election",
             )
         ]
@@ -156,7 +153,7 @@ class EMLTypeMixin(models.Model):
     eml_type = models.CharField(max_length=32, choices=EmlType.choices, null=True)
 
 
-class VoteCount(EMLTypeMixin, CurrentModel):
+class VoteCount(EMLTypeMixin, BaseModel):
     contest = models.ForeignKey(
         "election.Contest",
         on_delete=models.CASCADE,
@@ -193,11 +190,8 @@ class VoteCount(EMLTypeMixin, CurrentModel):
         default=RESULT_LEVEL_CANDIDATE,
     )
 
-    class Meta:
-        base_manager_name = "all_objects"
 
-
-class ElectionDocument(CurrentModel):
+class ElectionDocument(BaseModel):
     region = models.ForeignKey(
         "region.Region",
         on_delete=models.CASCADE,
@@ -217,17 +211,15 @@ class ElectionDocument(CurrentModel):
     )
 
     class Meta:
-        base_manager_name = "all_objects"
         constraints = [
             models.UniqueConstraint(
                 fields=["region", "file_type"],
-                condition=Q(is_current=True),
                 name="unique_current_document_per_region_and_file_type",
             )
         ]
 
 
-class VoterTurnoutCount(EMLTypeMixin, CurrentModel):
+class VoterTurnoutCount(EMLTypeMixin, BaseModel):
     contest = models.ForeignKey(
         "election.Contest",
         on_delete=models.CASCADE,
@@ -250,6 +242,3 @@ class VoterTurnoutCount(EMLTypeMixin, CurrentModel):
     category = models.CharField(max_length=16, choices=CATEGORY_CHOICES)
     reason_code = models.CharField(max_length=64)
     votes = models.PositiveIntegerField()
-
-    class Meta:
-        base_manager_name = "all_objects"
