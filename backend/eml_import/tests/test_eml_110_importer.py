@@ -27,7 +27,7 @@ from xsdata.models.datatype import XmlDate
 
 from election.models import Election
 from election.tests.factories import ElectionConfigFactory
-from eml_import.tests.helpers import fake_eml_file
+from eml_import.tests.fakes import fake_eml_file
 from eml_import.utils.eml_110_importer import EML110aImporter
 from mainsite.models import RegionCategory
 from party.models import Party

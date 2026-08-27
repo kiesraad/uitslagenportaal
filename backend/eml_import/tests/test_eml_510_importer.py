@@ -42,7 +42,7 @@ from election.tests.factories import (
     ElectionFactory,
 )
 from eml_import.exceptions import EMLImporterException
-from eml_import.tests.helpers import fake_eml_file
+from eml_import.tests.fakes import fake_eml_file
 from eml_import.utils.eml_510_importer import EML510bImporter, EML510dImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory

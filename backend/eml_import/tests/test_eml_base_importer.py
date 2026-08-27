@@ -9,6 +9,7 @@ from election.tests.factories import ContestFactory, ElectionConfigFactory, Elec
 from election.utils import visibility_cutoff
 from eml_import.exceptions import EMLImporterException
 from eml_import.models import ImportedEmlHash
+from eml_import.tests.fakes import fake_eml_file
 from eml_import.tests.test_eml_110_importer import CONFIG_IDENTIFIER, ELECTION_NAME
 from eml_import.tests.test_eml_110_importer import make_eml as make_110a_eml
 from eml_import.tests.test_eml_230_importer import (
@@ -35,7 +36,6 @@ from eml_import.tests.test_eml_510_importer import (
     WS_ELECTION_NAME,
     make_ws_telling,
 )
-from eml_import.tests.helpers import fake_eml_file
 from eml_import.utils.eml_110_importer import EML110aImporter
 from eml_import.utils.eml_230_importer import EML230bImporter
 from eml_import.utils.eml_510_importer import EML510bImporter
