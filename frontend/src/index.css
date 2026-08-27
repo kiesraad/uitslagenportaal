@@ -47,11 +47,6 @@
    --color-blue-800: #113051;
    --color-blue-900: #0e2640;
 
-   --color-kr-blauw-25: #f4f7fa;
-   --color-kr-blauw-50: #e5ebf4;
-   --color-blauw-900: #1b3764;
-   --color-basis-blauw: #113051;
-
    /* Gray colors from figma */
    --color-gray-25: oklch(0.992 0.001 247.829);
    --color-gray-50: oklch(0.967 0.004 264.537);
@@ -74,7 +69,7 @@
    --c-navy: #102e53;
    --c-blue: #00619c;
    --c-blue-hov: #0f52a0;
-   --c-row-alt: var(--color-blue-100);
+   --c-row-alt: var(--color-blue-50);
    --c-text: var(--color-gray-900);
    --c-muted: #696f78;
    --c-border: #d0d7de;
