@@ -35,6 +35,7 @@ from eml_import.tests.test_eml_510_importer import (
     WS_ELECTION_NAME,
     make_ws_telling,
 )
+from eml_import.tests.helpers import fake_eml_file
 from eml_import.utils.eml_110_importer import EML110aImporter
 from eml_import.utils.eml_230_importer import EML230bImporter
 from eml_import.utils.eml_510_importer import EML510bImporter
@@ -65,7 +66,7 @@ def test_resolves_election_config_from_identifier_prefix():
     """ElectionIdentifier/@Id may carry a suffix (e.g. re-election); only the prefix is the config id."""
     ElectionConfigFactory(identifier=CONFIG_IDENTIFIER)
 
-    EML110aImporter(make_110a_eml(), None).parse()
+    EML110aImporter(make_110a_eml(), fake_eml_file()).parse()
 
     election = Election.objects.get()
     assert election.election_config.identifier == CONFIG_IDENTIFIER
@@ -80,14 +81,14 @@ def test_imports_against_an_expired_election_config():
     )
     assert not ElectionConfig.objects.filter(identifier=CONFIG_IDENTIFIER).exists()
 
-    EML110aImporter(make_110a_eml(), None).parse()
+    EML110aImporter(make_110a_eml(), fake_eml_file()).parse()
 
     assert Election.objects.filter(election_config__identifier=CONFIG_IDENTIFIER).exists()
 
 
 @pytest.mark.django_db
 def test_raises_when_election_config_is_missing():
-    eml_file = NamedBytesIO(b"<eml/>", "definitie.eml.xml")
+    eml_file = fake_eml_file("definitie.eml.xml")
 
     with pytest.raises(ElectionConfig.DoesNotExist):
         EML110aImporter(make_110a_eml(), eml_file)
@@ -132,11 +133,11 @@ def test_failed_import_does_not_record_a_hash():
 @pytest.mark.django_db
 def test_110a_correction_blocked_once_counting_results_exist():
     ElectionConfigFactory(identifier=CONFIG_IDENTIFIER)
-    EML110aImporter(make_110a_eml(), None).parse()
+    EML110aImporter(make_110a_eml(), fake_eml_file()).parse()
     _seed_counting_result(Election.objects.get())
 
     with pytest.raises(EMLImporterException, match="counting results already imported"):
-        EML110aImporter(make_110a_eml(), None).parse()
+        EML110aImporter(make_110a_eml(), fake_eml_file()).parse()
 
 
 @pytest.mark.django_db
@@ -149,8 +150,8 @@ def test_230b_correction_blocked_once_counting_results_exist():
         date=DATE_230,
     )
     PartyFactory(election=election, registered_name=REGISTERED_NAME)
-    EML230bImporter(make_230b_eml(), None).parse()
+    EML230bImporter(make_230b_eml(), fake_eml_file()).parse()
     _seed_counting_result(election)
 
     with pytest.raises(EMLImporterException, match="counting results already imported"):
-        EML230bImporter(make_230b_eml(), None).parse()
+        EML230bImporter(make_230b_eml(), fake_eml_file()).parse()

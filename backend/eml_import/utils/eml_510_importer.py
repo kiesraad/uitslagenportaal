@@ -31,7 +31,7 @@ from region.models import Region, build_region_slug
 
 
 class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
-    def __init__(self, eml: Eml510, eml_file: Path | NamedBytesIO | None):
+    def __init__(self, eml: Eml510, eml_file: Path | NamedBytesIO):
         super().__init__(eml, eml_file)
         self.election_documents = {doc.storage_key: doc for doc in ElectionDocument.objects.all()}
 
@@ -310,8 +310,7 @@ class EML510bImporter(EML510BaseImporter):
             if is_correction:
                 self._archive(region)
 
-            if self.eml_file is not None:
-                self._store_eml(region)
+            self._store_eml(region)
 
             region.results_available_at = timezone.now()
             counting_method = self._counting_method(self.eml.count)
@@ -412,8 +411,7 @@ class EML510dImporter(EML510BaseImporter):
                 region.save(update_fields=["counting_method", "updated_at"])
 
             # Store the EML file
-            if self.eml_file is not None:
-                self._store_eml(region)
+            self._store_eml(region)
 
             self._parse_csb_counts(region)
 
