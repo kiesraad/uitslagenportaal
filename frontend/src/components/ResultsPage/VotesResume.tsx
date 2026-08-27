@@ -55,11 +55,12 @@ function getAdmittedVoterVotes(voterTurnoutCounts: VoterTurnoutCount[] | undefin
 }
 
 function sumVotes(voterTurnoutCounts: VoterTurnoutCount[] | undefined, reasonCodes: string[]) {
-   const entries = reasonCodes.flatMap(
-      (reason_code) => voterTurnoutCounts?.filter((entry) => entry.reason_code === reason_code) ?? [],
+   const entries = voterTurnoutCounts?.filter(
+      (turnoutCount) => reasonCodes.includes(turnoutCount.reason_code)
    );
+   
 
-   return entries.length > 0 ? entries.reduce((total, entry) => total + entry.votes, 0) : undefined;
+   return entries ? entries.reduce((total, entry) => total + entry.votes, 0) : undefined;
 }
 
 export type VotesResumeType = "admittedVoters" | "votesCast";
