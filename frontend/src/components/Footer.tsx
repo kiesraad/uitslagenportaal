@@ -4,6 +4,7 @@ import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
+import Button from "@/elements/Button.tsx";
 import { type Locale, loadCatalog, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
 import { electionConfigQuery, useElectionConfigs } from "../hooks/queries.ts";
 
@@ -30,9 +31,9 @@ function LanguageSwitcher() {
             <p className="footer-lang-label">
                <Trans>Deze website in andere talen:</Trans>
             </p>
-            <button className="footer-lang-btn" type="button" lang={other} onClick={() => switchTo(other)}>
+            <Button lang={other} onClick={() => switchTo(other)}>
                {localeDisplayName(other)}
-            </button>
+            </Button>
          </div>
       </div>
    );

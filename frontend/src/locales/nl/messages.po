@@ -168,6 +168,10 @@ msgstr "De telresultaten van alle stembureaus in Nederland."
 msgid "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
 msgstr "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
 
+#: src/pages/ErrorBoundaryPage.tsx
+msgid "Details:"
+msgstr "Details:"
+
 #: src/components/Footer.tsx
 msgid "Deze website in andere talen:"
 msgstr "Deze website in andere talen:"
@@ -440,6 +444,10 @@ msgstr "Pagina niet gevonden"
 #: src/pages/CSBPage/CSBResultsPage.tsx
 msgid "Per gemeente"
 msgstr "Per gemeente"
+
+#: src/pages/ErrorBoundaryPage.tsx
+msgid "Probeer opnieuw"
+msgstr "Probeer opnieuw"
 
 #: src/utils/region.ts
 msgid "Provincie"

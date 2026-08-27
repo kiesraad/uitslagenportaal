@@ -54,7 +54,6 @@ export const routes: RouteObject[] = [
          { index: true, Component: HomePage },
          {
             path: ":electionConfigSlug",
-            ErrorBoundary: ErrorBoundaryPage,
             children: [
                { index: true, Component: NotFoundPage },
                { path: "fout-melden", Component: ReportIssuePage },
