@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { ApiError } from "../api/client";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { lowercaseFirst } from "../utils/text";
-import { Layout } from "./Layout";
+import { LayoutMain } from "./LayoutMain.tsx";
 
 type PageQueryBoundaryProps = {
    isLoading: boolean;
@@ -35,10 +35,10 @@ export function PageQueryBoundary({
 
    const wrap = (title: string, description: string, children: ReactNode) =>
       withLayout ? (
-         <Layout title={title} description={description}>
+         <LayoutMain title={title} description={description}>
             <div className="page-top page-top-placeholder" aria-hidden="true" />
             {children}
-         </Layout>
+         </LayoutMain>
       ) : (
          children
       );

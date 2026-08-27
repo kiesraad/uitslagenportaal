@@ -1,6 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Link } from "react-router";
-import { Layout } from "../components/Layout.tsx";
+import { LayoutMain } from "../components/LayoutMain.tsx";
 import PageTop from "../components/PageTop.tsx";
 import { appRoutes } from "../utils/routes.ts";
 
@@ -9,7 +9,7 @@ export function NotFoundPage() {
    const title = t`Pagina niet gevonden`;
 
    return (
-      <Layout title={title}>
+      <LayoutMain title={title}>
          <div className="not-found-top">
             <PageTop title={title} />
          </div>
@@ -34,6 +34,6 @@ export function NotFoundPage() {
                </section>
             </div>
          </div>
-      </Layout>
+      </LayoutMain>
    );
 }

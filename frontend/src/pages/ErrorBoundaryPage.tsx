@@ -1,6 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { isRouteErrorResponse, useRouteError } from "react-router";
-import { Layout } from "@/components/Layout.tsx";
+import { BaseLayout } from "@/components/BaseLayout.tsx";
+import { LayoutMain } from "@/components/LayoutMain.tsx";
 import { isNotFoundError } from "@/components/PageQueryBoundary.tsx";
 import PageTop from "@/components/PageTop.tsx";
 import { ApiError } from "../api/client.ts";
@@ -38,14 +39,16 @@ export default function ErrorBoundaryPage() {
    const description = t`Er is een fout opgetreden`;
 
    return (
-      <Layout title={title} description={description}>
-         <div>
-            <PageTop title={title} subtitle={description} />
-         </div>
-         <div className="page-main">
-            <h1>{heading || <Trans>Er is een fout opgetreden</Trans>}</h1>
-            {detail && <p>{detail}</p>}
-         </div>
-      </Layout>
+      <BaseLayout>
+         <LayoutMain title={title} description={description}>
+            <div>
+               <PageTop title={title} subtitle={description} />
+            </div>
+            <div className="page-main">
+               <h1>{heading || <Trans>Er is een fout opgetreden</Trans>}</h1>
+               {detail && <p>{detail}</p>}
+            </div>
+         </LayoutMain>
+      </BaseLayout>
    );
 }

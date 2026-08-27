@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { useParams } from "react-router";
-import { Layout } from "../../components/Layout.tsx";
+import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
 import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -69,7 +69,7 @@ export function CSBMunicipalityListPage() {
    const electionLabel = electionConfig.label;
 
    return (
-      <Layout
+      <LayoutMain
          title={t`Telresultaten ${electionLabel}`}
          description={t`Bekijk de telresultaten per gemeente van de ${electionLabel}.`}
       >
@@ -102,6 +102,6 @@ export function CSBMunicipalityListPage() {
             }
          />
          <RegionList electionConfig={electionConfig} regions={regions} regionCategory="GEMEENTE" />
-      </Layout>
+      </LayoutMain>
    );
 }

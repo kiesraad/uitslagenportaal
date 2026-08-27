@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { useParams } from "react-router";
-import { Layout } from "../../components/Layout";
+import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { PageQueryBoundary } from "../../components/PageQueryBoundary";
 import PageTop from "../../components/PageTop";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent";
@@ -91,7 +91,7 @@ export default function PollingStationResultsPage() {
    const documentTitle = t`Telresultaten stembureau – ${stationName}`;
 
    return (
-      <Layout title={documentTitle} description={documentTitle}>
+      <LayoutMain title={documentTitle} description={documentTitle}>
          <PageTop
             title={pageTitle}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
@@ -116,6 +116,6 @@ export default function PollingStationResultsPage() {
                />
             </div>
          </div>
-      </Layout>
+      </LayoutMain>
    );
 }

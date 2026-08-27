@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { useParams } from "react-router";
-import { Layout } from "../../components/Layout";
+import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { PageQueryBoundary } from "../../components/PageQueryBoundary";
 import PageTop from "../../components/PageTop";
 import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCandidatesResultsContent";
@@ -109,7 +109,7 @@ export default function PollingStationPartyResultsPage() {
    }
 
    return (
-      <Layout title={documentTitle} description={documentTitle}>
+      <LayoutMain title={documentTitle} description={documentTitle}>
          <PageTop
             title={pageTitle}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
@@ -131,6 +131,6 @@ export default function PollingStationPartyResultsPage() {
                />
             </div>
          </div>
-      </Layout>
+      </LayoutMain>
    );
 }

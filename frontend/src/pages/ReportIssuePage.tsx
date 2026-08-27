@@ -7,7 +7,7 @@ import { Link, useParams } from "react-router";
 import { twMerge } from "tailwind-merge";
 import type { ElectionConfig } from "../api/types.ts";
 import { InfoBox } from "../components/InfoBox.tsx";
-import { Layout } from "../components/Layout.tsx";
+import { LayoutMain } from "../components/LayoutMain.tsx";
 import { PageQueryBoundary } from "../components/PageQueryBoundary.tsx";
 import { useElectionConfig } from "../hooks/queries.ts";
 import { formatIssueReportDeadlineHeading, getRemainingReportTime } from "../utils/date.ts";
@@ -80,7 +80,7 @@ function ReportIssuePageContent({
    const closesAt = formatDate(electionConfig.issue_report_deadline);
 
    return (
-      <Layout title={t`Een fout melden`}>
+      <LayoutMain title={t`Een fout melden`}>
          <div className="page-main">
             <div className="page-space-3 max-w-2xl">
                <div>
@@ -204,7 +204,7 @@ function ReportIssuePageContent({
                )}
             </div>
          </div>
-      </Layout>
+      </LayoutMain>
    );
 }
 

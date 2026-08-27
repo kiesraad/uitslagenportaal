@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { useParams } from "react-router";
-import { Layout } from "../../components/Layout.tsx";
+import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCandidatesResultsContent.tsx";
@@ -81,7 +81,7 @@ export function MunicipalityPartyResultsPage() {
    const documentTitle = t`Telresultaten gemeente – ${regionName}`;
 
    return (
-      <Layout title={documentTitle} description={documentTitle}>
+      <LayoutMain title={documentTitle} description={documentTitle}>
          <PageTop
             title={pageTitle}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
@@ -102,6 +102,6 @@ export function MunicipalityPartyResultsPage() {
                />
             </div>
          </div>
-      </Layout>
+      </LayoutMain>
    );
 }

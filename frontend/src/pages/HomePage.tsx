@@ -5,7 +5,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { Link } from "react-router";
 import type { ElectionConfig } from "../api/types.ts";
 import { HeroGrid } from "../components/HomePage/HeroGrid.tsx";
-import { Layout } from "../components/Layout.tsx";
+import { LayoutMain } from "../components/LayoutMain.tsx";
 import Timeline, { type TimelineEntry } from "../components/Timeline.tsx";
 import { useElectionConfigs } from "../hooks/queries.ts";
 import { appRoutes } from "../utils/routes.ts";
@@ -31,7 +31,7 @@ export function HomePage() {
    }
 
    return (
-      <Layout title={t`Home`} description={t`De telresultaten van alle stembureaus in Nederland.`}>
+      <LayoutMain title={t`Home`} description={t`De telresultaten van alle stembureaus in Nederland.`}>
          <section className={"page-top home-page-hero"}>
             <div className={"home-page-hero-left"}>
                <h1 className="text-3xl sm:text-4xl font-title font-bold">
@@ -169,6 +169,6 @@ export function HomePage() {
                </section>
             </>
          )}
-      </Layout>
+      </LayoutMain>
    );
 }

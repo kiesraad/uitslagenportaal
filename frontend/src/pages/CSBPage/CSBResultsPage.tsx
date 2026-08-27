@@ -1,6 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useParams } from "react-router";
-import { Layout } from "../../components/Layout.tsx";
+import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent.tsx";
@@ -65,7 +65,7 @@ export function CSBResultsPage() {
    const regionWithArticle = t(regionLabels.withArticle);
 
    return (
-      <Layout title={t`Resultaten`}>
+      <LayoutMain title={t`Resultaten`}>
          <PageTop
             title={t`${regionType} - ${regionName}`}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
@@ -117,6 +117,6 @@ export function CSBResultsPage() {
                />
             </div>
          </div>
-      </Layout>
+      </LayoutMain>
    );
 }

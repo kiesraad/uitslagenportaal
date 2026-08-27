@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { Outlet, useParams } from "react-router";
-import { Layout } from "@/components/Layout.tsx";
+import { LayoutMain } from "@/components/LayoutMain.tsx";
 import { PageQueryBoundary } from "@/components/PageQueryBoundary.tsx";
 import PageTop from "@/components/PageTop.tsx";
 import SharedTabs from "@/components/SharedTabs.tsx";
@@ -66,7 +66,7 @@ export default function MunicipalityPageLayout() {
    const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
 
    return (
-      <Layout>
+      <LayoutMain>
          <PageTop
             title={municipalityTitle}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
@@ -99,6 +99,6 @@ export default function MunicipalityPageLayout() {
             }
          />
          <Outlet context={{ electionConfig, municipalityTitle, region, electionConfigSlug, regionSlug, csbSlug }} />
-      </Layout>
+      </LayoutMain>
    );
 }

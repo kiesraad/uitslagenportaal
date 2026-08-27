@@ -20,7 +20,12 @@ export function NavigationProgressBar() {
          aria-hidden="true"
       >
          <div
-            className="h-full origin-left bg-blue-400 shadow-blue-700/50 shadow-md rounded-full will-change-transform transition-transform duration-300 ease-in-out motion-reduce:transition-none"
+            className={twMerge(
+               "h-full origin-left bg-blue-400 shadow-blue-700/50 shadow-md rounded-full",
+               // Only animate transforms when visible
+               isVisible && "transition-transform duration-300 ease-in-out will-change-transform",
+               "motion-reduce:transition-none",
+            )}
             style={{ transform: `scaleX(${progress})` }}
          />
       </div>

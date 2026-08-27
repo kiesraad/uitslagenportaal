@@ -1,6 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useParams } from "react-router";
-import { Layout } from "../../components/Layout.tsx";
+import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import IssueNotice from "../../components/ResultsPage/IssueNotice.tsx";
@@ -101,7 +101,7 @@ export function CSBPartyResultsPage() {
    );
 
    return (
-      <Layout title={t`Resultaten`}>
+      <LayoutMain title={t`Resultaten`}>
          <PageTop
             title={`${t`Telresultaten ${regionType} ${regionName}`}\n ${partyName}`}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
@@ -122,6 +122,6 @@ export function CSBPartyResultsPage() {
                <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
             </div>
          </div>
-      </Layout>
+      </LayoutMain>
    );
 }
