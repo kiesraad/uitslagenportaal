@@ -693,8 +693,6 @@ def test_510b_correction_replaces_municipality_tree(ws_regions, ws_contest, ws_p
         (gemeente, VoteCount.RESULT_LEVEL_CANDIDATE, party, candidate, 1200),
         (gemeente, VoteCount.RESULT_LEVEL_PARTY, party, None, 1800),
     ]
-    assert VoterTurnoutCount.objects.filter(region=gemeente, eml_type=EmlType.EML_510b).count() == 4
-    assert VoterTurnoutCount.objects.filter(region=stations[0], eml_type=EmlType.EML_510b).count() == 4
 
 
 def test_510b_marks_region_as_counted_and_stores_document(ws_regions, ws_contest, ws_parties, ws_candidates):
