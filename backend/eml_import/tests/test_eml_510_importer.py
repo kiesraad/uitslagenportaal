@@ -463,7 +463,6 @@ def test_collect_turnout_counts_builds_rejected_uncounted_and_total_rows(ws_csb_
     assert [(row.category, row.reason_code, row.votes) for row in turnout_counts] == [
         (VoterTurnoutCount.CATEGORY_REJECTED, "ongeldig", 27),
         (VoterTurnoutCount.CATEGORY_UNCOUNTED, "geldige stempassen", 5),
-        (VoterTurnoutCount.CATEGORY_TOTALS, "cast", 100),
         (VoterTurnoutCount.CATEGORY_TOTALS, "total counted", 80),
     ]
     assert all(row.eml_type == EmlType.EML_510d for row in turnout_counts)
@@ -649,8 +648,8 @@ def test_510b_imports_votes_for_gsb_and_polling_stations(ws_regions, ws_contest,
         (ws_regions["gemeente"], VoteCount.RESULT_LEVEL_PARTY, party, None, 1779),
     ]
     # Turnout is collected for the gemeente and for each polling station
-    assert VoterTurnoutCount.objects.filter(region=ws_regions["gemeente"]).count() == 4
-    assert VoterTurnoutCount.objects.filter(region=station).count() == 4
+    assert VoterTurnoutCount.objects.filter(region=ws_regions["gemeente"]).count() == 3
+    assert VoterTurnoutCount.objects.filter(region=station).count() == 3
 
 
 def test_510b_correction_replaces_municipality_tree(ws_regions, ws_contest, ws_parties, ws_candidates):

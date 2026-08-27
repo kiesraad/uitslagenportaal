@@ -6,7 +6,9 @@ import { useParams } from "react-router";
 import { type Locale, loadCatalog, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
 import { useElectionConfig, useElectionConfigs } from "../hooks/queries.ts";
 
+// Fixed URLs for non-changing elements
 const KIESRAAD_URL = "https://www.kiesraad.nl/";
+const REPORT_ERROR_URL = "https://www.kiesraad.nl/service/contact";
 
 function LanguageSwitcher() {
    // Reading the locale through the hook (rather than the imported singleton)
@@ -50,7 +52,6 @@ export function Footer() {
    const electionConfig = routeElectionConfig ?? (electionConfigs?.length === 1 ? electionConfigs[0] : undefined);
 
    const label = electionConfig?.label;
-   const reportErrorUrl = electionConfig?.report_error_url;
    const countingInfoUrl = electionConfig?.counting_info_url;
    const votingUrl = electionConfig?.voting_url;
 
@@ -84,14 +85,12 @@ export function Footer() {
                <div className="footer-right">
                   <div className="footer-col">
                      <h4>
-                        <Trans>Zie je een fout?</Trans>
+                        <Trans>Zie je een fout op de pagina?</Trans>
                      </h4>
-                     {reportErrorUrl && (
-                        <a href={reportErrorUrl} target="_blank" rel="noopener noreferrer">
-                           <FontAwesomeIcon icon={faChevronRight} />
-                           <Trans>Melding maken</Trans>
-                        </a>
-                     )}
+                     <a href={REPORT_ERROR_URL} target="_blank" rel="noopener noreferrer">
+                        <FontAwesomeIcon icon={faChevronRight} />
+                        <Trans>Melding maken</Trans>
+                     </a>
                   </div>
                   <div className="footer-col">
                      {label && <h4>{label}</h4>}

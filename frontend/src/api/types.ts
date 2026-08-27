@@ -1,114 +1,112 @@
 export type ElectionConfig = {
-  slug: string
-  label: string
-  date: string
-  issue_report_opens_at: string
-  issue_report_deadline: string
-  csb_type: RegionCategory
-  timeline_entries?: TimelineEntry[]
-  report_error_url: string
-  counting_info_url: string
-  voting_url: string
-}
+   slug: string;
+   label: string;
+   date: string;
+   issue_report_opens_at: string;
+   issue_report_deadline: string;
+   csb_type: RegionCategory;
+   timeline_entries?: TimelineEntry[];
+   report_error_url: string;
+   counting_info_url: string;
+   voting_url: string;
+};
 
-export type ElectionConfigsResponse = ElectionConfig[]
+export type ElectionConfigsResponse = ElectionConfig[];
 
-export type TimelineEntryStatus = 'pending' | 'in-progress' | 'done'
+export type TimelineEntryStatus = "pending" | "in-progress" | "done";
 
-export type TimelineVariant = 'CSO' | 'DSO' | 'DEFAULT'
+export type TimelineVariant = "CSO" | "DSO" | "DEFAULT";
 
 export type TimelineEntry = {
-  status: TimelineEntryStatus
-  title: string
-  date: string
-  body: string
-}
+   status: TimelineEntryStatus;
+   title: string;
+   date: string;
+   body: string;
+};
 
 export type ElectionDocument = {
-  name: string
-  url: string
-  type: string
-  size: string
-  description: string
-  file_type: string
-}
+   name: string;
+   url: string;
+   type: string;
+   size: string;
+   description: string;
+   file_type: string;
+};
 
-export type RegionCategory = 'STAAT' | 'WATERSCHAP' | 'KIESKRING' | 'GEMEENTE' | 'PROVINCIE' | "STEMBUREAU"
+export type RegionCategory = "STAAT" | "WATERSCHAP" | "KIESKRING" | "GEMEENTE" | "PROVINCIE" | "STEMBUREAU";
 
-export type VoterTurnoutCategory = 'REJECTED' | 'UNCOUNTED'
+export type VoterTurnoutCategory = "REJECTED" | "UNCOUNTED";
 
 export type VoterTurnoutCount = {
-  cast: number
-  total_counted: number
-  category: VoterTurnoutCategory
-  reason_code: string
-  votes: number
-}
+   category: VoterTurnoutCategory;
+   reason_code: string;
+   votes: number;
+};
 
 export type Region = {
-  region_name: string
-  slug: string
-  vote_counts: VoteCounts
-  voter_turnout_counts?: VoterTurnoutCount[]
-  timeline_entries?: TimelineEntry[]
-  timeline_variant?: TimelineVariant
-  documents?: ElectionDocument[]
-  region_category: RegionCategory
-  results_available_at: string
-  csb_name?: string | null
-  csb_slug?: string | null
-  election_slug?: string
-  station_number?: number | null
-}
+   region_name: string;
+   slug: string;
+   vote_counts: VoteCounts;
+   voter_turnout_counts?: VoterTurnoutCount[];
+   timeline_entries?: TimelineEntry[];
+   timeline_variant?: TimelineVariant;
+   documents?: ElectionDocument[];
+   region_category: RegionCategory;
+   results_available_at: string;
+   csb_name?: string | null;
+   csb_slug?: string | null;
+   election_slug?: string;
+   station_number?: number | null;
+};
 
-export type RegionResponse = Region[]
+export type RegionResponse = Region[];
 
 export type Party = {
-  registered_name: string
-  slug: string
-  list_number: number | null
-}
+   registered_name: string;
+   slug: string;
+   list_number: number | null;
+};
 
 export type Candidate = {
-  position: number
-  initials: string
-  first_name: string | null
-  name_prefix: string | null
-  last_name: string
-}
+   position: number;
+   initials: string;
+   first_name: string | null;
+   name_prefix: string | null;
+   last_name: string;
+};
 
-export type VoteResultLevel = "PARTY" | "CANDIDATE"
+export type VoteResultLevel = "PARTY" | "CANDIDATE";
 
 export type VoteCount = {
-  valid_votes: number
-  id: number
-  candidate: Candidate | null
-  party: Party
-  result_level: VoteResultLevel
-}
+   valid_votes: number;
+   id: number;
+   candidate: Candidate | null;
+   party: Party;
+   result_level: VoteResultLevel;
+};
 
-export type VoteCounts = VoteCount[]
+export type VoteCounts = VoteCount[];
 
 export type PartyVoteMatrixColumn = {
-  slug: string
-  region_name: string
-}
+   slug: string;
+   region_name: string;
+};
 
 export type PartyVoteMatrixRow = {
-  candidate: Candidate
-  total: number | null
-  votes: Record<string, number | null>
-}
+   candidate: Candidate;
+   total: number | null;
+   votes: Record<string, number | null>;
+};
 
 export type PartyVoteMatrixTotals = {
-  total: number | null
-  votes: Record<string, number | null>
-}
+   total: number | null;
+   votes: Record<string, number | null>;
+};
 
 export type PartyVoteMatrix = {
-  party: Party
-  csb: Pick<Region, 'region_name' | 'slug'>
-  columns: PartyVoteMatrixColumn[]
-  rows: PartyVoteMatrixRow[]
-  totals: PartyVoteMatrixTotals
-}
+   party: Party;
+   csb: Pick<Region, "region_name" | "slug">;
+   columns: PartyVoteMatrixColumn[];
+   rows: PartyVoteMatrixRow[];
+   totals: PartyVoteMatrixTotals;
+};
