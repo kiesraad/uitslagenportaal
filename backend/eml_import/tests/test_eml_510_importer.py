@@ -765,8 +765,8 @@ def test_510d_breaks_down_per_gemeente_when_csb_has_one_child(ws_totaaltelling, 
     ]
 
 
-def test_510d_correction_archives_csb_and_descendant_counts(ws_regions, ws_contest, ws_parties, ws_candidates):
-    """A second Totaaltelling for the same CSB replaces its counts and those of regions under it."""
+def test_510d_correction_deletes_csb_and_descendant_counts(ws_regions, ws_contest, ws_parties, ws_candidates):
+    """A second Totaaltelling for the same CSB deletes prior counts and archives the EML document."""
     totals = make_total_votes(
         [
             party_selection(TotalVotes.Selection, 1, "Partij voor Zeeland", 24949),
@@ -809,13 +809,8 @@ def test_510d_correction_archives_csb_and_descendant_counts(ws_regions, ws_conte
     gemeente = ws_regions["gemeente"]
     party, candidate = ws_parties[1], ws_candidates[(1, 1)]
 
-    assert set(VoteCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True)).isdisjoint(
-        original_count_ids
-    )
-    assert set(VoterTurnoutCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True)).isdisjoint(
-        original_turnout_ids
-    )
-    assert VoteCount.all_objects.filter(pk__in=original_count_ids, is_current=False).count() == len(original_count_ids)
+    assert not VoteCount.objects.filter(pk__in=original_count_ids).exists()
+    assert not VoterTurnoutCount.objects.filter(pk__in=original_turnout_ids).exists()
 
     assert [
         (row.region, row.result_level, row.party, row.candidate, row.valid_votes)

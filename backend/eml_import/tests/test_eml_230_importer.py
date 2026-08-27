@@ -182,14 +182,13 @@ def test_creates_blanco_party_for_affiliation_without_registered_name(election):
     assert party.candidates.get().last_name == "Richel"
 
 
-def test_correction_archives_prior_contest_and_candidates(contest, party):
+def test_correction_deletes_prior_contest_and_candidates(contest, party):
     EML230bImporter(make_eml(), None).parse()
 
     assert Contest.objects.filter(election=party.election).count() == 1
-    # Correction archives the old contest; candidates hang off the new current one
-    assert not Candidate.objects.filter(contest=contest).exists()
+    # Correction deletes the old contest; candidates hang off the recreated one
+    assert not Contest.objects.filter(pk=contest.pk).exists()
     current_contest = Contest.objects.get(election=party.election)
     assert current_contest.pk != contest.pk
     assert Candidate.objects.filter(contest=current_contest).count() == 2
-    assert Contest.all_objects.filter(election=party.election).count() == 2
-    assert Candidate.all_objects.filter(party=party).count() == 4
+    assert Candidate.objects.filter(party=party).count() == 2

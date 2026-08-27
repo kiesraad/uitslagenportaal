@@ -149,15 +149,17 @@ def test_creates_registered_parties(election_config):
     assert set(names) == {"Partij voor Zeeland", "CDA"}
 
 
-def test_correction_archives_prior_regions_and_parties(election_config):
+def test_correction_deletes_prior_regions_and_parties(election_config):
     eml = make_eml(parties=("Partij voor Zeeland", "CDA"))
 
     EML110aImporter(eml, None).parse()
+    election = Election.objects.get(election_config=election_config)
+    original_region_ids = set(Region.objects.filter(election=election).values_list("pk", flat=True))
+    original_party_ids = set(Party.objects.filter(election=election).values_list("pk", flat=True))
+
     EML110aImporter(eml, None).parse()
 
-    election = Election.objects.get(election_config=election_config)
     assert Region.objects.filter(election=election).count() == 3
     assert Party.objects.filter(election=election).count() == 2
-    # Archived rows from the correction stay out of the current managers
-    assert Region.all_objects.filter(election=election).count() == 6
-    assert Party.all_objects.filter(election=election).count() == 4
+    assert not Region.objects.filter(pk__in=original_region_ids).exists()
+    assert not Party.objects.filter(pk__in=original_party_ids).exists()
