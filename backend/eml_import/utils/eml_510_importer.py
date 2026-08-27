@@ -135,16 +135,6 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
                 contest=contest,
                 region=region,
                 category=VoterTurnoutCount.CATEGORY_TOTALS,
-                reason_code="cast",
-                votes=votes.cast,
-                eml_type=self.eml_type,
-            )
-        )
-        turnout_counts.append(
-            VoterTurnoutCount(
-                contest=contest,
-                region=region,
-                category=VoterTurnoutCount.CATEGORY_TOTALS,
                 reason_code="total counted",
                 votes=votes.total_counted,
                 eml_type=self.eml_type,
