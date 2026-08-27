@@ -29,16 +29,18 @@ describe("router", () => {
       expect(match("/ab2023/gsb/utrecht/csb/csb-1/sb-3").chain).not.toContain("MunicipalityPageLayout");
    });
 
-   it("gathers the parameters of every level and loads the election config once", () => {
-      const { params, loaders } = match("/ab2023/gsb/utrecht/csb/csb-1/sb-3/vvd");
-
-      expect(params).toEqual({
+   it("gathers the parameters of every level", () => {
+      expect(match("/ab2023/gsb/utrecht/csb/csb-1/sb-3/vvd").params).toEqual({
          electionConfigSlug: "ab2023",
          regionSlug: "utrecht",
          csbSlug: "csb-1",
          pollingStationSlug: "sb-3",
          partySlug: "vvd",
       });
-      expect(loaders).toBe(1);
+   });
+
+   // Each page owns its own loader, so no ancestor may fetch the same data again.
+   it.each([["/ab2023/gsb"], ["/ab2023/csb"]])("loads the data of %s exactly once", (pathname) => {
+      expect(match(pathname).loaders).toBe(1);
    });
 });

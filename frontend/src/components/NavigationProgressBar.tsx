@@ -20,7 +20,7 @@ export function NavigationProgressBar() {
          aria-hidden="true"
       >
          <div
-            className="h-full origin-left bg-blue-400 shadow-blue-700/75 shadow-md rounded-full will-change-transform transition-transform duration-300 ease-linear motion-reduce:transition-none"
+            className="h-full origin-left bg-blue-400 shadow-blue-700/50 shadow-md rounded-full will-change-transform transition-transform duration-300 ease-in-out motion-reduce:transition-none"
             style={{ transform: `scaleX(${progress})` }}
          />
       </div>

@@ -590,8 +590,6 @@ msgstr "Votes cast"
 msgid "Uitleg over telproces"
 msgstr "About the counting process"
 
-#: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
-#: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
 #: src/pages/ReportIssuePage.tsx
 msgid "Verkiezing"
 msgstr "Election"

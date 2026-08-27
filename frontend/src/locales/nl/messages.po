@@ -590,8 +590,6 @@ msgstr "Uitgebrachte stemmen"
 msgid "Uitleg over telproces"
 msgstr "Uitleg over telproces"
 
-#: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
-#: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
 #: src/pages/ReportIssuePage.tsx
 msgid "Verkiezing"
 msgstr "Verkiezing"

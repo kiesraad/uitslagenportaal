@@ -3,15 +3,14 @@ import { useEffect, useRef, useState } from "react";
 // Most navigations resolve from the warmed query cache within a few dozen milliseconds.
 // Holding off the first paint keeps the bar from flashing on those.
 const SHOW_DELAY_MS = 150;
-// Stays under the bar's own `duration-300` transition, so a step is always retargeted
-// while the bar is still travelling and the motion never stalls between steps.
+// Stays under the bar's own `duration-300` transition, to keep the animation smooth.
 const TRICKLE_INTERVAL_MS = 200;
 // Covers that same transition, so the bar reaches the end of its track before it fades.
 const EXIT_DURATION_MS = 350;
 
 const INITIAL_PROGRESS = 0.08;
 const TRICKLE_CEILING = 0.99;
-const TRICKLE_FRACTION = 0.12;
+const TRICKLE_FRACTION = 0.1;
 
 // Each step closes a fixed fraction of the distance still to run, so the bar decelerates
 // smoothly and approaches the ceiling without ever arriving: only a resolved navigation
