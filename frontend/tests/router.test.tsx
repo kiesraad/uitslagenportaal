@@ -40,7 +40,13 @@ describe("router", () => {
    });
 
    // Each page owns its own loader, so no ancestor may fetch the same data again.
-   it.each([["/ab2023/gsb"], ["/ab2023/csb"]])("loads the data of %s exactly once", (pathname) => {
+   it.each([
+      ["/ab2023/gsb"],
+      ["/ab2023/csb"],
+      ["/ab2023/csb/kieskring-1"],
+      ["/ab2023/csb/kieskring-1/resultaten"],
+      ["/ab2023/csb/kieskring-1/resultaten/vvd"],
+   ])("loads the data of %s exactly once", (pathname) => {
       expect(match(pathname).loaders).toBe(1);
    });
 });

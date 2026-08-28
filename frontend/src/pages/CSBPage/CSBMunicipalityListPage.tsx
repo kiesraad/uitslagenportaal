@@ -1,66 +1,53 @@
 import { useLingui } from "@lingui/react/macro";
-import { useParams } from "react-router";
+import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { type LoaderFunctionArgs, useLoaderData } from "react-router";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
-import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import SharedTabs from "../../components/SharedTabs.tsx";
-import { useElectionConfig, useRegion, useRegions } from "../../hooks/queries.ts";
+import { electionConfigQuery, regionQuery, regionsQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 
+export function csbMunicipalityListLoader(queryClient: QueryClient) {
+   return async ({ params }: LoaderFunctionArgs) => {
+      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
+      const regionQueryOptions = regionQuery(params);
+      // The region parameter names the CSB the gemeentes report to, not their parent region.
+      const regionsQueryOptions = regionsQuery(
+         { electionConfigSlug: params.electionConfigSlug, csbSlug: params.regionSlug },
+         "GEMEENTE",
+      );
+
+      await Promise.all([
+         queryClient.ensureQueryData(electionConfigQueryOptions),
+         queryClient.ensureQueryData(regionQueryOptions),
+         queryClient.ensureQueryData(regionsQueryOptions),
+      ]);
+
+      return {
+         electionConfigQuery: electionConfigQueryOptions,
+         regionQuery: regionQueryOptions,
+         regionsQuery: regionsQueryOptions,
+      };
+   };
+}
+
+type LoaderData = Awaited<ReturnType<ReturnType<typeof csbMunicipalityListLoader>>>;
+
 export function CSBMunicipalityListPage() {
-   const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
-   const { regionSlug } = useParams<{ regionSlug: string }>();
+   const { electionConfigQuery, regionQuery, regionsQuery } = useLoaderData<LoaderData>();
    const { t } = useLingui();
    const { formatDate } = useFormatters();
+   // The loader has already resolved every query, so the data is never pending here.
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+   const { data: region } = useSuspenseQuery(regionQuery);
+   const { data: regions } = useSuspenseQuery(regionsQuery);
 
-   const {
-      data: electionConfig,
-      isLoading: isElectionLoading,
-      isError: isElectionError,
-      error: electionError,
-      refetch: refetchElection,
-   } = useElectionConfig(electionConfigSlug);
-   const {
-      data: region,
-      isLoading: isRegionLoading,
-      isError: isRegionError,
-      error: regionError,
-      refetch: refetchRegion,
-   } = useRegion(electionConfigSlug, regionSlug);
-   const {
-      data: regions,
-      isLoading: isRegionsLoading,
-      isError: isRegionsError,
-      error: regionsError,
-      refetch: refetchRegions,
-   } = useRegions(electionConfigSlug, undefined, "GEMEENTE", regionSlug);
-
-   const regionLabels = getRegionLabels(electionConfig?.csb_type);
-
-   const isLoading = isElectionLoading || isRegionLoading || isRegionsLoading;
-   const isError = isElectionError || isRegionError || isRegionsError || !electionConfig || !region || !regions;
-
-   const csbResultsRoute = appRoutes.csbResults(electionConfigSlug ?? "", regionSlug ?? "");
-   const csbMunicipalityListRoute = appRoutes.csbMunicipalityList(electionConfigSlug ?? "", regionSlug ?? "");
-
-   if (isLoading || isError) {
-      return (
-         <PageQueryBoundary
-            isLoading={isLoading}
-            isError={isError}
-            onRetry={() => {
-               void refetchElection();
-               void refetchRegion();
-               void refetchRegions();
-            }}
-            errors={[electionError, regionError, regionsError]}
-            entityLabel={t(regionLabels.singular)}
-         />
-      );
-   }
+   const regionLabels = getRegionLabels(electionConfig.csb_type);
+   const csbResultsRoute = appRoutes.csbResults(electionConfig.slug, region.slug);
+   const csbMunicipalityListRoute = appRoutes.csbMunicipalityList(electionConfig.slug, region.slug);
 
    const regionType = t(regionLabels.singular);
    const regionName = region.region_name;
@@ -79,10 +66,10 @@ export function CSBMunicipalityListPage() {
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
                {
-                  href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ""),
+                  href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               { href: appRoutes.csbResults(electionConfigSlug ?? "", regionSlug ?? ""), label: region.region_name },
+               { href: csbResultsRoute, label: region.region_name },
             ]}
             tabs={
                <SharedTabs

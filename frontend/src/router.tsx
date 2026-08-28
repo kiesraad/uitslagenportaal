@@ -4,9 +4,9 @@ import { BaseLayout } from "@/components/BaseLayout.tsx";
 import ErrorBoundaryPage from "@/pages/ErrorBoundaryPage.tsx";
 import LoadingPage from "@/pages/LoadingPage.tsx";
 import MunicipalityPageLayout from "@/pages/MunicipalityPage/MunicipalityPageLayout.tsx";
-import { CSBMunicipalityListPage } from "./pages/CSBPage/CSBMunicipalityListPage.tsx";
-import { CSBPartyResultsPage } from "./pages/CSBPage/CSBPartyResultsPage.tsx";
-import { CSBResultsPage } from "./pages/CSBPage/CSBResultsPage.tsx";
+import { CSBMunicipalityListPage, csbMunicipalityListLoader } from "./pages/CSBPage/CSBMunicipalityListPage.tsx";
+import { CSBPartyResultsPage, csbPartyResultsLoader } from "./pages/CSBPage/CSBPartyResultsPage.tsx";
+import { CSBResultsPage, csbResultsLoader } from "./pages/CSBPage/CSBResultsPage.tsx";
 import {
    ElectionConfigCSBListPage,
    electionConfigCSBListLoader,
@@ -61,9 +61,17 @@ export const routes: RouteObject[] = [
                {
                   path: "csb/:regionSlug",
                   children: [
-                     { index: true, Component: CSBMunicipalityListPage },
-                     { path: "resultaten", Component: CSBResultsPage },
-                     { path: "resultaten/:partySlug", Component: CSBPartyResultsPage },
+                     {
+                        index: true,
+                        loader: csbMunicipalityListLoader(queryClient),
+                        Component: CSBMunicipalityListPage,
+                     },
+                     { path: "resultaten", loader: csbResultsLoader(queryClient), Component: CSBResultsPage },
+                     {
+                        path: "resultaten/:partySlug",
+                        loader: csbPartyResultsLoader(queryClient),
+                        Component: CSBPartyResultsPage,
+                     },
                   ],
                },
                {
