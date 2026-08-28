@@ -35,7 +35,7 @@ export function regionsQuery({ electionConfigSlug, regionSlug, csbSlug }: Params
 export function partyVoteMatrixQuery(electionSlug?: string, csbSlug?: string, partySlug?: string) {
    return queryOptions({
       queryKey: ["party-vote-matrix", electionSlug, csbSlug, partySlug],
-      queryFn: () => getPartyVoteMatrix(electionSlug!, partySlug!, csbSlug!),
+      queryFn: () => getPartyVoteMatrix(electionSlug, partySlug, csbSlug),
    });
 }
 
