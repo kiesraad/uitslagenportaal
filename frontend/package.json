@@ -12,9 +12,7 @@
       "test": "vitest run",
       "i18n:extract": "lingui extract",
       "i18n:extract-clean": "lingui extract --clean",
-      "i18n:check": "lingui extract --clean && git diff --exit-code -- src/locales",
-      "test:playwright": "playwright test",
-      "test:playwright-install": "playwright install chromium"
+      "i18n:check": "lingui extract --clean && git diff --exit-code -- src/locales"
    },
    "dependencies": {
       "@fortawesome/fontawesome-svg-core": "^7.2.0",
@@ -41,7 +39,6 @@
       "@lingui/cli": "^6.6.0",
       "@lingui/format-po": "^6.6.0",
       "@lingui/vite-plugin": "^6.6.0",
-      "@playwright/test": "^1.62.1",
       "@rolldown/plugin-babel": "^0.2.3",
       "@testing-library/jest-dom": "^7.0.0",
       "@testing-library/react": "^16.3.2",
