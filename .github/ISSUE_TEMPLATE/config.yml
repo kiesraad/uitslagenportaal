@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Beveiligingsprobleem melden
+    url: https://github.com/kiesraad/uitslagenportaal/blob/dev/SECURITY.md
+    about: Meld beveiligingsproblemen niet openbaar, maar via security[@]kiesraad.nl.
