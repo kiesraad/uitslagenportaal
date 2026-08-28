@@ -31,7 +31,9 @@ export function MunicipalityResultsPage() {
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
    const { data: region } = useSuspenseQuery(regionQuery);
 
-   const municipalityTitle = t`Gemeente ${region.region_name}`;
+   // Named rather than inlined, so the catalogue carries `{regionName}` instead of `{0}`.
+   const regionName = region.region_name;
+   const municipalityTitle = t`Gemeente ${regionName}`;
 
    return (
       <MunicipalityPageLayout electionConfig={electionConfig} region={region} municipalityTitle={municipalityTitle}>
@@ -41,7 +43,7 @@ export function MunicipalityResultsPage() {
                <RegionResultsContent
                   intro={
                      <Trans>
-                        Het gemeentelijk stembureau heeft de telresultaten van alle stembureaus in {region.region_name}{" "}
+                        Het gemeentelijk stembureau heeft de telresultaten van alle stembureaus in {regionName}{" "}
                         gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze
                         zijn opgenomen in het proces-verbaal van de gemeente.
                      </Trans>

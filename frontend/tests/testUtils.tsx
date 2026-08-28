@@ -27,6 +27,10 @@ type Options = Omit<RenderOptions, "wrapper"> & {
    initialEntries?: string[];
    /** Route path to mount the element at, when the component reads route params. */
    path?: string;
+   /** What the mounted route's loader hands the page, for components reading `useLoaderData`. */
+   loaderData?: unknown;
+   /** A pre-seeded client, for pages whose suspense queries have to resolve without a fetch. */
+   queryClient?: QueryClient;
 };
 
 /**
@@ -35,13 +39,11 @@ type Options = Omit<RenderOptions, "wrapper"> & {
  */
 export function renderWithProviders(
    ui: ReactElement,
-   { locale = "nl", initialEntries, path, ...options }: Options = {},
+   { locale = "nl", initialEntries, path, loaderData = null, queryClient, ...options }: Options = {},
 ) {
    activateLocale(locale);
 
-   const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-   });
+   const client = queryClient ?? new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
    const wrapper = ({ children }: { children: ReactNode }) => {
       // `createRoutesStub` returns a fresh component type per call, and the stub only
@@ -52,18 +54,26 @@ export function renderWithProviders(
 
       const [Stub] = useState(() =>
          createRoutesStub([
-            // The app carries the locale loader on its root route, so anything that switches
-            // language has one to revalidate.
-            { id: "root", path: path ?? "*", loader: localeLoader, Component: () => <>{childrenRef.current}</> },
+            {
+               id: "root",
+               path: path ?? "*",
+               loader: async () => {
+                  // The app carries the locale loader on its root route, so anything that
+                  // switches language has one to revalidate.
+                  await localeLoader();
+                  return loaderData;
+               },
+               Component: () => <>{childrenRef.current}</>,
+            },
          ]),
       );
 
       return (
          <I18nProvider i18n={i18n}>
-            <QueryClientProvider client={queryClient}>
+            <QueryClientProvider client={client}>
                {/* `activateLocale` above stands in for the catalogue the app loads before its first
                    render, so the stub hydrates rather than running the loader and rendering async. */}
-               <Stub initialEntries={initialEntries} hydrationData={{ loaderData: { root: null } }} />
+               <Stub initialEntries={initialEntries} hydrationData={{ loaderData: { root: loaderData } }} />
             </QueryClientProvider>
          </I18nProvider>
       );

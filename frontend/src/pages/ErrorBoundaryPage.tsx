@@ -4,9 +4,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { isRouteErrorResponse, useRouteError } from "react-router";
 import { BaseLayout } from "@/components/BaseLayout.tsx";
 import { LayoutMain } from "@/components/LayoutMain.tsx";
-import { isNotFoundError } from "@/components/PageQueryBoundary.tsx";
 import Button from "@/elements/Button.tsx";
-import { ApiError } from "../api/client.ts";
+import { ApiError, isNotFoundError } from "../api/client.ts";
 import { NotFoundPage } from "./NotFoundPage.tsx";
 
 /** Reduces whatever was thrown to a heading and a body, whichever shape it has. */

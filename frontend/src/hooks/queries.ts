@@ -9,8 +9,8 @@ import {
 } from "../api/endpoints";
 import type { RegionCategory } from "../api/types";
 
-// The query factories carry no `enabled`: a suspense query cannot be disabled, and a route
-// loader always has its parameters. Callers whose slug may be absent add the guard themselves.
+// The query factories carry no `enabled`: a suspense query cannot be disabled, and the route
+// loaders that build them always have their parameters.
 export function electionConfigQuery(slug?: string) {
    return queryOptions({
       queryKey: ["elections", slug],
@@ -39,51 +39,9 @@ export function partyVoteMatrixQuery(electionSlug?: string, csbSlug?: string, pa
    });
 }
 
-export function useElectionConfig(slug?: string) {
-   return useQuery({ ...electionConfigQuery(slug), enabled: Boolean(slug) });
-}
-
 export function useElectionConfigs() {
    return useQuery({
       queryKey: ["election_configs"],
       queryFn: getElectionConfigs,
-   });
-}
-
-export function useRegion(
-   electionConfigSlug: string | undefined,
-   regionSlug: string | undefined,
-   csbSlug?: string,
-   parentRegionSlug?: string,
-) {
-   return useQuery({
-      ...regionQuery({ electionConfigSlug, regionSlug, csbSlug, parentRegionSlug }),
-      enabled: Boolean(electionConfigSlug) && Boolean(regionSlug),
-   });
-}
-
-export function useRegions(
-   electionConfigSlug: string | undefined,
-   parentRegionSlug?: string,
-   regionCategory?: RegionCategory,
-   csbSlug?: string,
-) {
-   const enabled =
-      Boolean(electionConfigSlug) && (Boolean(regionCategory) || Boolean(parentRegionSlug) || Boolean(csbSlug));
-
-   return useQuery({
-      ...regionsQuery({ electionConfigSlug, regionSlug: parentRegionSlug, csbSlug }, regionCategory),
-      enabled,
-   });
-}
-
-export function usePartyVoteMatrix(
-   electionSlug: string | undefined,
-   csbSlug: string | undefined,
-   partySlug: string | undefined,
-) {
-   return useQuery({
-      ...partyVoteMatrixQuery(electionSlug, csbSlug, partySlug),
-      enabled: Boolean(electionSlug) && Boolean(csbSlug) && Boolean(partySlug),
    });
 }

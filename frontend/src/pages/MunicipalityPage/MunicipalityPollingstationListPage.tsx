@@ -38,7 +38,9 @@ export function MunicipalityPollingstationListPage() {
    const { data: pollingStations } = useSuspenseQuery(pollingStationsQuery);
 
    const csbSlug = region.csb_slug ?? undefined;
-   const municipalityTitle = t`Gemeente ${region.region_name}`;
+   // Named rather than inlined, so the catalogue carries `{regionName}` instead of `{0}`.
+   const regionName = region.region_name;
+   const municipalityTitle = t`Gemeente ${regionName}`;
 
    const hasResults = Array.isArray(region.vote_counts) && region.vote_counts.length > 0;
    if (!hasResults) {

@@ -33,14 +33,6 @@ msgstr "{0, plural, one {U heeft nog # minuut om een melding te maken} other {U 
 msgid "{0, plural, one {U heeft nog # uur om een melding te maken} other {U heeft nog # uur om een melding te maken}}"
 msgstr "{0, plural, one {U heeft nog # uur om een melding te maken} other {U heeft nog # uur om een melding te maken}}"
 
-#: src/components/PageQueryBoundary.tsx
-msgid "{entityLabel} laden…"
-msgstr "{entityLabel} laden…"
-
-#: src/components/PageQueryBoundary.tsx
-msgid "{entityLabel} niet gevonden"
-msgstr "{entityLabel} niet gevonden"
-
 #: src/pages/CSBPage/CSBMunicipalityListPage.tsx
 #: src/pages/CSBPage/CSBResultsPage.tsx
 msgid "{regionType} - {regionName}"
@@ -188,10 +180,6 @@ msgstr "Een fout melden"
 msgid "Een melding aan het centraal stembureau kan van {opensAt} tot {closesAt} (uiterlijk 48 uur voor de zitting van het centraal stembureau). Meldingen die later binnenkomen worden niet in behandeling genomen."
 msgstr "Een melding aan het centraal stembureau kan van {opensAt} tot {closesAt} (uiterlijk 48 uur voor de zitting van het centraal stembureau). Meldingen die later binnenkomen worden niet in behandeling genomen."
 
-#: src/components/PageQueryBoundary.tsx
-msgid "Een moment geduld, de gegevens worden opgehaald."
-msgstr "Een moment geduld, de gegevens worden opgehaald."
-
 #: src/components/ResultsPage/ResultsTimeline.tsx
 msgid "Eerste stap bovenaan"
 msgstr "Eerste stap bovenaan"
@@ -222,8 +210,9 @@ msgstr "Ga dan naar"
 msgid "Gemeente"
 msgstr "Gemeente"
 
-#: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
 #: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
+#: src/pages/MunicipalityPage/MunicipalityPollingstationListPage.tsx
+#: src/pages/MunicipalityPage/MunicipalityResultsPage.tsx
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
 msgid "Gemeente {regionName}"
 msgstr "Gemeente {regionName}"
@@ -337,10 +326,6 @@ msgstr "Homepage"
 msgid "In samenwerking met de Kiesraad"
 msgstr "In samenwerking met de Kiesraad"
 
-#: src/components/PageQueryBoundary.tsx
-msgid "Kan {labelInline} niet laden."
-msgstr "Kan {labelInline} niet laden."
-
 #: src/pages/HomePage.tsx
 msgid "Kan verkiezingen niet laden."
 msgstr "Kan verkiezingen niet laden."
@@ -425,7 +410,6 @@ msgstr "Op deze website publiceert de Kiesraad de telresultaten van alle gemeent
 msgid "Op dit moment zijn er nog geen telresultaten van een verkiezing beschikbaar. Wanneer de dag van stemming nadert, zal een verkiezing met bijbehorende regio's worden aangemaakt. Vanaf de dag van stemming zullen via deze pagina de tellingen worden weergegeven. Na 3 maanden worden de resultaten weer verwijderd."
 msgstr "Op dit moment zijn er nog geen telresultaten van een verkiezing beschikbaar. Wanneer de dag van stemming nadert, zal een verkiezing met bijbehorende regio's worden aangemaakt. Vanaf de dag van stemming zullen via deze pagina de tellingen worden weergegeven. Na 3 maanden worden de resultaten weer verwijderd."
 
-#: src/components/PageQueryBoundary.tsx
 #: src/pages/HomePage.tsx
 msgid "Opnieuw proberen"
 msgstr "Opnieuw proberen"

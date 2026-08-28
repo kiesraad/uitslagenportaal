@@ -10,6 +10,11 @@ export class ApiError extends Error {
    }
 }
 
+/** A 404 means the election, region or stembureau asked for does not exist. */
+export function isNotFoundError(error: unknown): boolean {
+   return error instanceof ApiError && error.status === 404;
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
    const response = await fetch(`${API_ORIGIN}${path}`);
 
