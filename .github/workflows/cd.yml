@@ -1,0 +1,25 @@
+name: CD
+on:
+  push:
+#    branches:
+#      - dev
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish-frontend-image:
+    uses: ./.github/workflows/publish-docker-image.yml
+    with:
+      context: frontend
+  publish-backend-image:
+    uses: ./.github/workflows/publish-docker-image.yml
+    with:
+      context: backend
