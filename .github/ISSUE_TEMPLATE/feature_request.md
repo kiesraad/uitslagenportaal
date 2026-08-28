@@ -6,14 +6,14 @@ labels: enhancement
 assignees: ''
 ---
 
-### What & why
+### What/Proposed solution
 
-<!-- What should change, and which problem does it solve? Who needs it? -->
+<!-- What should change, and which problem does it solve? How would it work? -->
 
-### Proposed solution
+### Why
 
-<!-- How you would expect it to work. Sketches or example flows help. -->
+<!-- Why does the application need this? -->
 
 ### Additional context
 
-<!-- Related issues, links to legislation/specs (EML, Kiesraad), anything else useful. -->
+<!-- Related issues, links to legislation/specs (EML, Kiesraad), anything useful. -->
