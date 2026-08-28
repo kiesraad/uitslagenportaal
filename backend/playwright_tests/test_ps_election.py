@@ -85,3 +85,15 @@ def test_stembureau_list_leads_to_stembureau_results_and_party_results(page: Pag
     expect(page.get_by_role("heading", level=3, name="VVD")).to_be_visible()
     expect(page.get_by_text(re.compile(r"Meeuwissen-Dekker"))).to_be_visible()
     expect(page.get_by_text(re.compile(r"Totaal stemmen lijst"))).to_be_visible()
+
+
+def test_csb_per_gemeente_lists_the_drenthe_gemeenten(page: Page):
+    page.goto("/ps2023/csb/3-drenthe")
+    expect(page.get_by_role("heading", level=1, name="Provincie - Drenthe")).to_be_visible()
+    expect(page.get_by_role("link", name="Hele provincie")).to_be_visible()
+    expect(page.get_by_role("link", name="Per gemeente")).to_be_visible()
+
+    # The gemeenten hang under a kieskring here, but the list is filtered by their CSB.
+    page.get_by_role("link", name="Aa en Hunze").click()
+    expect(page).to_have_url(re.compile(r"/gsb/1680-aa-en-hunze/csb/3-drenthe/?$"))
+    expect(page.get_by_role("heading", level=1, name="Gemeente Aa en Hunze")).to_be_visible()

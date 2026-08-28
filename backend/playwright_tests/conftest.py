@@ -82,7 +82,7 @@ def stack_services() -> Iterator[None]:
 
 @pytest.fixture(scope="session", autouse=True)
 def migrated_database(django_db_blocker, stack_services: None) -> None:
-    """Migrate once per run â and, being the first query, answer for an unreachable database."""
+    """Migrate once per run and, being the first query, answer for an unreachable database."""
     try:
         with django_db_blocker.unblock():
             call_command("migrate", verbosity=0)
