@@ -98,4 +98,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - run: docker build -f backend/Dockerfile backend/
+      - run: docker build -f backend/prod.dockerfile backend/
