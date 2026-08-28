@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Both suites run in full before anything is published: path filters apply to a
+  # Every suite runs in full before anything is published: path filters apply to a
   # workflow's own triggers, not to a call, and both images are published every run.
   backend-ci:
     name: Backend CI
@@ -21,10 +21,13 @@ jobs:
   frontend-ci:
     name: Frontend CI
     uses: ./.github/workflows/frontend-ci.yml
+  playwright:
+    name: Playwright
+    uses: ./.github/workflows/playwright.yml
 
   frontend-docker-image:
     name: Publish Frontend Image
-    needs: [backend-ci, frontend-ci]
+    needs: [backend-ci, frontend-ci, playwright]
     permissions:
       contents: read
       packages: write
@@ -37,7 +40,7 @@ jobs:
 
   backend-docker-image:
     name: Publish Backend Image
-    needs: [backend-ci, frontend-ci]
+    needs: [backend-ci, frontend-ci, playwright]
     permissions:
       contents: read
       packages: write
