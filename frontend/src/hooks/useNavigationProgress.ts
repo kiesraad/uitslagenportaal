@@ -35,6 +35,9 @@ export function useNavigationProgress(isNavigating: boolean) {
       if (isNavigating) {
          let interval: ReturnType<typeof setInterval> | undefined;
 
+         // Reset the progress bar as it's left at non-0 last time it was shown
+         setProgress(0);
+
          const delay = setTimeout(() => {
             isShown.current = true;
             setIsVisible(true);
@@ -52,12 +55,10 @@ export function useNavigationProgress(isNavigating: boolean) {
       isShown.current = false;
 
       setProgress(1);
-      const exit = setTimeout(() => {
-         setIsVisible(false);
-         setProgress(0);
-      }, EXIT_DURATION_MS);
+      // The bar is left at full width while it fades and reset next time it's shown
+      const hide = setTimeout(() => setIsVisible(false), EXIT_DURATION_MS);
 
-      return () => clearTimeout(exit);
+      return () => clearTimeout(hide);
    }, [isNavigating]);
 
    return { isVisible, progress };

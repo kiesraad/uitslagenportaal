@@ -7,10 +7,10 @@ import {
    getRegion,
    getRegions,
 } from "../api/endpoints";
-import type { PartyVoteMatrix, Region, RegionCategory } from "../api/types";
+import type { RegionCategory } from "../api/types";
 
-// The query factories carry no `enabled`: a suspense query cannot be disabled, and a route
-// loader always has its parameters. Callers whose slug may be absent add the guard themselves.
+// The query factories carry no `enabled`: a suspense query cannot be disabled, and the route
+// loaders that build them always have their parameters.
 export function electionConfigQuery(slug?: string) {
    return queryOptions({
       queryKey: ["elections", slug],
@@ -18,66 +18,30 @@ export function electionConfigQuery(slug?: string) {
    });
 }
 
-export function regionsQuery(params: Params, regionCategory?: RegionCategory) {
+export function regionQuery({ electionConfigSlug, regionSlug, csbSlug, parentRegionSlug }: Params) {
    return queryOptions({
-      queryKey: [
-         "regions",
-         params?.electionConfigSlug,
-         params?.regionSlug ?? null,
-         regionCategory ?? null,
-         params?.csbSlug ?? null,
-      ],
-      queryFn: () => getRegions(params?.electionConfigSlug, params?.regionSlug, regionCategory, params?.csbSlug),
+      queryKey: ["region", electionConfigSlug, regionSlug, csbSlug ?? null, parentRegionSlug ?? null],
+      queryFn: () => getRegion(electionConfigSlug, regionSlug, csbSlug, parentRegionSlug),
    });
 }
 
-export function useElectionConfig(slug?: string) {
-   return useQuery({ ...electionConfigQuery(slug), enabled: Boolean(slug) });
+export function regionsQuery({ electionConfigSlug, regionSlug, csbSlug }: Params, regionCategory?: RegionCategory) {
+   return queryOptions({
+      queryKey: ["regions", electionConfigSlug, regionSlug ?? null, regionCategory ?? null, csbSlug ?? null],
+      queryFn: () => getRegions(electionConfigSlug, regionSlug, regionCategory, csbSlug),
+   });
+}
+
+export function partyVoteMatrixQuery(electionSlug?: string, csbSlug?: string, partySlug?: string) {
+   return queryOptions({
+      queryKey: ["party-vote-matrix", electionSlug, csbSlug, partySlug],
+      queryFn: () => getPartyVoteMatrix(electionSlug, partySlug, csbSlug),
+   });
 }
 
 export function useElectionConfigs() {
    return useQuery({
       queryKey: ["election_configs"],
       queryFn: getElectionConfigs,
-   });
-}
-
-export function useRegion(
-   electionConfigSlug: string | undefined,
-   regionSlug: string | undefined,
-   csbSlug?: string,
-   parentRegionSlug?: string,
-) {
-   return useQuery<Region>({
-      queryKey: ["region", electionConfigSlug, regionSlug, csbSlug ?? null, parentRegionSlug ?? null],
-      queryFn: () => getRegion(electionConfigSlug!, regionSlug!, csbSlug, parentRegionSlug),
-      enabled: Boolean(electionConfigSlug) && Boolean(regionSlug),
-   });
-}
-
-export function useRegions(
-   electionConfigSlug: string | undefined,
-   parentRegionSlug?: string,
-   regionCategory?: RegionCategory,
-   csbSlug?: string,
-) {
-   const enabled =
-      Boolean(electionConfigSlug) && (Boolean(regionCategory) || Boolean(parentRegionSlug) || Boolean(csbSlug));
-
-   return useQuery({
-      ...regionsQuery({ electionConfigSlug, regionSlug: parentRegionSlug, csbSlug }, regionCategory),
-      enabled,
-   });
-}
-
-export function usePartyVoteMatrix(
-   electionSlug: string | undefined,
-   csbSlug: string | undefined,
-   partySlug: string | undefined,
-) {
-   return useQuery<PartyVoteMatrix>({
-      queryKey: ["party-vote-matrix", electionSlug, csbSlug, partySlug],
-      queryFn: () => getPartyVoteMatrix(electionSlug!, partySlug!, csbSlug!),
-      enabled: Boolean(electionSlug) && Boolean(csbSlug) && Boolean(partySlug),
    });
 }

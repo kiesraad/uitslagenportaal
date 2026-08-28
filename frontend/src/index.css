@@ -86,10 +86,6 @@
    --max-w: 1366px;
 }
 
-html {
-   scroll-behavior: smooth;
-}
-
 body {
    color: var(--c-text);
    background: var(--c-white);
@@ -157,8 +153,7 @@ h4,
 
 .page-top {
    background: #e3e9f4;
-   padding: 2rem 6rem;
-   padding-bottom: 0;
+   padding: 2rem 6rem 0;
 }
 
 .platform-header {
@@ -1066,21 +1061,6 @@ h4,
 .footer-lang-label {
    color: var(--c-text);
    margin-bottom: 8px;
-}
-
-.footer-lang-btn {
-   background: white;
-   border: 1px solid var(--c-blue);
-   color: var(--c-blue);
-   font-family: var(--f-body);
-   padding: 12px 16px;
-   border-radius: 3px;
-   cursor: pointer;
-}
-
-.footer-lang-btn:hover {
-   background: var(--c-blue);
-   color: var(--c-white);
 }
 
 .home-page-hero {

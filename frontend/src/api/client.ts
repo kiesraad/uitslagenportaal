@@ -10,6 +10,10 @@ export class ApiError extends Error {
    }
 }
 
+export function isNotFoundError(error: unknown): boolean {
+   return error instanceof ApiError && error.status === 404;
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
    const response = await fetch(`${API_ORIGIN}${path}`);
 

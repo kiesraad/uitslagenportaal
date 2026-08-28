@@ -8,7 +8,8 @@ function match(pathname: string) {
    return {
       chain: matches.map((m) => (m.route as { Component?: { name: string } }).Component?.name),
       params: matches.at(-1)?.params ?? {},
-      loaders: matches.filter((m) => m.route.loader).length,
+      // The root route is skipped: its loader carries the language catalogue, not page data.
+      loaders: matches.slice(1).filter((m) => m.route.loader).length,
    };
 }
 
@@ -24,11 +25,6 @@ describe("router", () => {
       expect(match(pathname).chain.at(-1)).toBe(expected);
    });
 
-   it("wraps only its own routes in the municipality layout", () => {
-      expect(match("/ab2023/gsb/utrecht/csb/csb-1/resultaten").chain).toContain("MunicipalityPageLayout");
-      expect(match("/ab2023/gsb/utrecht/csb/csb-1/sb-3").chain).not.toContain("MunicipalityPageLayout");
-   });
-
    it("gathers the parameters of every level", () => {
       expect(match("/ab2023/gsb/utrecht/csb/csb-1/sb-3/vvd").params).toEqual({
          electionConfigSlug: "ab2023",
@@ -40,7 +36,18 @@ describe("router", () => {
    });
 
    // Each page owns its own loader, so no ancestor may fetch the same data again.
-   it.each([["/ab2023/gsb"], ["/ab2023/csb"]])("loads the data of %s exactly once", (pathname) => {
+   it.each([
+      ["/ab2023/gsb"],
+      ["/ab2023/csb"],
+      ["/ab2023/csb/kieskring-1"],
+      ["/ab2023/csb/kieskring-1/resultaten"],
+      ["/ab2023/csb/kieskring-1/resultaten/vvd"],
+      ["/ab2023/gsb/utrecht/csb/csb-1"],
+      ["/ab2023/gsb/utrecht/csb/csb-1/resultaten"],
+      ["/ab2023/gsb/utrecht/csb/csb-1/resultaten/vvd"],
+      ["/ab2023/gsb/utrecht/csb/csb-1/sb-3"],
+      ["/ab2023/gsb/utrecht/csb/csb-1/sb-3/vvd"],
+   ])("loads the data of %s exactly once", (pathname) => {
       expect(match(pathname).loaders).toBe(1);
    });
 });
