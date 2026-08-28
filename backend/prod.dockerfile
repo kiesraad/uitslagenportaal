@@ -1,4 +1,4 @@
-FROM python:3.14-alpine AS builder
+FROM python:3.14-alpine
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -10,6 +10,9 @@ ENV UV_COMPILE_BYTECODE=1
 ENV UV_PYTHON_CACHE_DIR=/root/.cache/uv/python
 ENV UV_SYSTEM_PYTHON=1
 ENV UV_LINK_MODE=copy
+
+# Disable debug mode
+ENV DEBUG=false
 
 # Add a user and let it own /app
 RUN addgroup -S backend \
@@ -23,7 +26,8 @@ WORKDIR /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv pip install -e .
+    uv export --locked --no-dev --no-emit-project --format requirements-txt > /tmp/requirements.txt \
+    && uv pip install --system -r /tmp/requirements.txt
 
 # Copy application code
 COPY --chown=backend:backend . .

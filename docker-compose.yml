@@ -1,6 +1,8 @@
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: dev.dockerfile
     # Run Django under debugpy so VS Code can attach ("Django: attach (Docker)").
     command: python -m debugpy --listen 0.0.0.0:5678 manage.py runserver 0.0.0.0:8000
     ports:
@@ -53,7 +55,9 @@ services:
     ports: !reset []
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: dev.dockerfile
     environment:
       # Empty base URL -> requests go to the same origin the page was loaded
       # from, which the proxy then routes to the backend.

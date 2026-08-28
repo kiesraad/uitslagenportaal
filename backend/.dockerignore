@@ -5,3 +5,6 @@ __pycache__
 .env
 .git
 .vscode
+.ruff_cache
+.pytest_cache
+celerybeat-schedule*
