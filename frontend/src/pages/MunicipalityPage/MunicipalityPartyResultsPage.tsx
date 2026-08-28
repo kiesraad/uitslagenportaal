@@ -1,71 +1,34 @@
 import { useLingui } from "@lingui/react/macro";
-import { useParams } from "react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useLoaderData, useParams } from "react-router";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
-import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCandidatesResultsContent.tsx";
-import { useElectionConfig, useRegion } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getCsbCrumb } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 import { getPartyVoteCount, hasParty } from "../../utils/voteCounts.ts";
 import { NotFoundPage } from "../NotFoundPage.tsx";
+import type { MunicipalityLoaderData } from "./MunicipalityPageLayout.tsx";
 
 export function MunicipalityPartyResultsPage() {
-   const {
-      electionConfigSlug: electionConfigSlugParam,
-      regionSlug: parentRegionSlugParam,
-      partySlug: partySlugParam,
-      csbSlug: csbSlugParam,
-   } = useParams<{ electionConfigSlug: string; regionSlug: string; partySlug: string; csbSlug?: string }>();
-
-   const electionConfigSlug = decodeURIComponent(electionConfigSlugParam ?? "");
-   const regionSlug = decodeURIComponent(parentRegionSlugParam ?? "");
-   const partySlug = decodeURIComponent(partySlugParam ?? "");
-   const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined;
+   const { electionConfigQuery, regionQuery } = useLoaderData<MunicipalityLoaderData>();
+   // The party is not part of the gemeente request, so its slug is read from the route.
+   const { partySlug = "" } = useParams<{ partySlug: string }>();
    const { t } = useLingui();
    const { formatDate } = useFormatters();
+   // The loader has already resolved both queries, so the data is never pending here.
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+   const { data: region } = useSuspenseQuery(regionQuery);
 
-   const {
-      data: electionConfig,
-      isLoading: isElectionLoading,
-      isError: isElectionError,
-      error: electionError,
-      refetch: refetchElection,
-   } = useElectionConfig(electionConfigSlug);
-   const {
-      data: region,
-      isLoading: isRegionLoading,
-      isError: isRegionError,
-      error: regionError,
-      refetch: refetchRegion,
-   } = useRegion(electionConfigSlug, regionSlug, csbSlug);
-
-   const isLoading = isElectionLoading || isRegionLoading;
-   const isError = isElectionError || isRegionError || !electionConfig || !region;
-
-   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug, regionSlug, csbSlug);
+   const csbSlug = region.csb_slug ?? undefined;
+   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfig.slug, region.slug, csbSlug);
    const municipalityPartyResultsRoute = appRoutes.municipalityPartyResults(
-      electionConfigSlug,
-      regionSlug,
+      electionConfig.slug,
+      region.slug,
       partySlug,
       csbSlug,
    );
-
-   if (isLoading || isError) {
-      return (
-         <PageQueryBoundary
-            isLoading={isLoading}
-            isError={isError}
-            onRetry={() => {
-               void refetchElection();
-               void refetchRegion();
-            }}
-            errors={[electionError, regionError]}
-            entityLabel={t`Gemeente`}
-         />
-      );
-   }
 
    // Only an unknown party slug is a 404; empty results mean "not published yet"
    const hasAnyResults = (region.vote_counts?.length ?? 0) > 0;
@@ -87,8 +50,8 @@ export function MunicipalityPartyResultsPage() {
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
-               { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig.label },
-               getCsbCrumb(region, electionConfigSlug),
+               { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
+               getCsbCrumb(region, electionConfig.slug),
                { href: municipalityResultsRoute, label: t`Gemeente ${regionName}` },
                { href: municipalityPartyResultsRoute, label: partyName },
             ]}

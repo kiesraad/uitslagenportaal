@@ -46,7 +46,17 @@ describe("router", () => {
       ["/ab2023/csb/kieskring-1"],
       ["/ab2023/csb/kieskring-1/resultaten"],
       ["/ab2023/csb/kieskring-1/resultaten/vvd"],
+      ["/ab2023/gsb/utrecht/csb/csb-1/resultaten"],
+      ["/ab2023/gsb/utrecht/csb/csb-1/resultaten/vvd"],
+      ["/ab2023/gsb/utrecht/csb/csb-1/sb-3"],
+      ["/ab2023/gsb/utrecht/csb/csb-1/sb-3/vvd"],
    ])("loads the data of %s exactly once", (pathname) => {
       expect(match(pathname).loaders).toBe(1);
+   });
+
+   // The stembureau list is the one page that adds a loader of its own on top of the
+   // gemeente the layout around it loads.
+   it("loads the gemeente and its stembureaus in separate loaders", () => {
+      expect(match("/ab2023/gsb/utrecht/csb/csb-1").loaders).toBe(2);
    });
 });

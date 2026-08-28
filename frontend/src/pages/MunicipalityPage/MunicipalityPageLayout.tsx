@@ -1,63 +1,56 @@
 import { useLingui } from "@lingui/react/macro";
-import { Outlet, useParams } from "react-router";
+import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { type LoaderFunctionArgs, Outlet, useLoaderData } from "react-router";
+import type { ElectionConfig, Region } from "@/api/types.ts";
 import { LayoutMain } from "@/components/LayoutMain.tsx";
-import { PageQueryBoundary } from "@/components/PageQueryBoundary.tsx";
 import PageTop from "@/components/PageTop.tsx";
 import SharedTabs from "@/components/SharedTabs.tsx";
-import { useElectionConfig, useRegion } from "@/hooks/queries.ts";
+import { electionConfigQuery, regionQuery } from "@/hooks/queries.ts";
 import { useFormatters } from "@/utils/format.ts";
 import { getCsbCrumb } from "@/utils/region.ts";
 import { appRoutes } from "@/utils/routes.ts";
 
+/** The gemeente the whole `gsb/:regionSlug/csb/:csbSlug` subtree is about. */
+export function municipalityLoader(queryClient: QueryClient) {
+   return async ({ params }: LoaderFunctionArgs) => {
+      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
+      const regionQueryOptions = regionQuery(params);
+
+      await Promise.all([
+         queryClient.ensureQueryData(electionConfigQueryOptions),
+         queryClient.ensureQueryData(regionQueryOptions),
+      ]);
+
+      return {
+         electionConfigQuery: electionConfigQueryOptions,
+         regionQuery: regionQueryOptions,
+      };
+   };
+}
+
+export type MunicipalityLoaderData = Awaited<ReturnType<ReturnType<typeof municipalityLoader>>>;
+
+export type MunicipalityOutletContext = {
+   electionConfig: ElectionConfig;
+   region: Region;
+   municipalityTitle: string;
+};
+
 export default function MunicipalityPageLayout() {
-   const {
-      electionConfigSlug,
-      regionSlug: regionSlugParam,
-      csbSlug: csbSlugParam,
-   } = useParams<{ electionConfigSlug: string; regionSlug: string; csbSlug?: string }>();
-   const regionSlug = decodeURIComponent(regionSlugParam ?? "");
-   const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined;
-   const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(
-      electionConfigSlug ?? "",
-      regionSlug,
-      csbSlug,
-   );
-   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? "", regionSlug, csbSlug);
+   const { electionConfigQuery, regionQuery } = useLoaderData<MunicipalityLoaderData>();
    const { t } = useLingui();
    const { formatDate } = useFormatters();
+   // The loader has already resolved both queries, so the data is never pending here.
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+   const { data: region } = useSuspenseQuery(regionQuery);
 
-   const {
-      data: electionConfig,
-      isLoading: isElectionConfigLoading,
-      isError: isElectionConfigError,
-      error: electionConfigError,
-      refetch: refetchElectionConfig,
-   } = useElectionConfig(electionConfigSlug);
-   const {
-      data: region,
-      isLoading: isRegionLoading,
-      isError: isRegionError,
-      error: regionError,
-      refetch: refetchRegion,
-   } = useRegion(electionConfigSlug, regionSlug, csbSlug);
-
-   const isLoading = isElectionConfigLoading || isRegionLoading;
-   const isError = isElectionConfigError || isRegionError || !electionConfig || !region;
-
-   if (isLoading || isError) {
-      return (
-         <PageQueryBoundary
-            isLoading={isLoading}
-            isError={isError}
-            onRetry={() => {
-               void refetchElectionConfig();
-               void refetchRegion();
-            }}
-            errors={[electionConfigError, regionError]}
-            entityLabel={t`Gemeente`}
-         />
-      );
-   }
+   const csbSlug = region.csb_slug ?? undefined;
+   const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(
+      electionConfig.slug,
+      region.slug,
+      csbSlug,
+   );
+   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfig.slug, region.slug, csbSlug);
 
    const hasResults = Array.isArray(region.vote_counts) && region.vote_counts.length > 0;
    const regionName = region.region_name;
@@ -73,10 +66,10 @@ export default function MunicipalityPageLayout() {
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
                {
-                  href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ""),
+                  href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               getCsbCrumb(region, electionConfigSlug ?? ""),
+               getCsbCrumb(region, electionConfig.slug),
                { href: municipalityPollingstationListRoute, label: municipalityTitle },
             ]}
             tabs={
@@ -98,7 +91,7 @@ export default function MunicipalityPageLayout() {
                )
             }
          />
-         <Outlet context={{ electionConfig, municipalityTitle, region, electionConfigSlug, regionSlug, csbSlug }} />
+         <Outlet context={{ electionConfig, region, municipalityTitle } satisfies MunicipalityOutletContext} />
       </LayoutMain>
    );
 }

@@ -218,8 +218,6 @@ msgstr "Then go to"
 
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
-#: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
-#: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
 #: src/utils/region.ts
 msgid "Gemeente"
 msgstr "Municipality"
@@ -498,13 +496,10 @@ msgstr "State"
 msgid "Staten"
 msgstr "States"
 
-#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
-#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
 #: src/utils/region.ts
 msgid "Stembureau"
 msgstr "Polling station"
 
-#: src/pages/MunicipalityPage/MunicipalityPollingstationListPage.tsx
 #: src/utils/region.ts
 msgid "Stembureaus"
 msgstr "Polling stations"
@@ -597,10 +592,6 @@ msgstr "Votes cast"
 #: src/components/Footer.tsx
 msgid "Uitleg over telproces"
 msgstr "About the counting process"
-
-#: src/pages/ReportIssuePage.tsx
-msgid "Verkiezing"
-msgstr "Election"
 
 #: src/pages/HomePage.tsx
 msgid "Verkiezingen laden…"

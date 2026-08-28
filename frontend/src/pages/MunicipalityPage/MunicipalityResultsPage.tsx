@@ -1,15 +1,11 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useOutletContext } from "react-router";
-import type { ElectionConfig, Region } from "@/api/types.ts";
 import HtmlHead from "@/components/HtmlHead.tsx";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent.tsx";
+import type { MunicipalityOutletContext } from "./MunicipalityPageLayout.tsx";
 
 export function MunicipalityResultsPage() {
-   const { electionConfig, region, municipalityTitle } = useOutletContext<{
-      electionConfig: ElectionConfig;
-      region: Region;
-      municipalityTitle: string;
-   }>();
+   const { electionConfig, region, municipalityTitle } = useOutletContext<MunicipalityOutletContext>();
    const { t } = useLingui();
    const regionName = region.region_name;
 

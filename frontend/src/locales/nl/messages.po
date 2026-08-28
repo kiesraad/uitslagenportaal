@@ -218,8 +218,6 @@ msgstr "Ga dan naar"
 
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
-#: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
-#: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
 #: src/utils/region.ts
 msgid "Gemeente"
 msgstr "Gemeente"
@@ -498,13 +496,10 @@ msgstr "Staat"
 msgid "Staten"
 msgstr "Staten"
 
-#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
-#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
 #: src/utils/region.ts
 msgid "Stembureau"
 msgstr "Stembureau"
 
-#: src/pages/MunicipalityPage/MunicipalityPollingstationListPage.tsx
 #: src/utils/region.ts
 msgid "Stembureaus"
 msgstr "Stembureaus"
@@ -597,10 +592,6 @@ msgstr "Uitgebrachte stemmen"
 #: src/components/Footer.tsx
 msgid "Uitleg over telproces"
 msgstr "Uitleg over telproces"
-
-#: src/pages/ReportIssuePage.tsx
-msgid "Verkiezing"
-msgstr "Verkiezing"
 
 #: src/pages/HomePage.tsx
 msgid "Verkiezingen laden…"

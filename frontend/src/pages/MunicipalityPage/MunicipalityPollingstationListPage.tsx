@@ -1,53 +1,38 @@
 import { useLingui } from "@lingui/react/macro";
-import { Navigate, useOutletContext } from "react-router";
-import type { ElectionConfig, Region } from "@/api/types.ts";
+import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { type LoaderFunctionArgs, Navigate, useLoaderData, useOutletContext } from "react-router";
 import HtmlHead from "@/components/HtmlHead.tsx";
-import { useRegions } from "@/hooks/queries.ts";
+import { regionsQuery } from "@/hooks/queries.ts";
 import { appRoutes } from "@/utils/routes.ts";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
-import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
+import type { MunicipalityOutletContext } from "./MunicipalityPageLayout.tsx";
+
+export function municipalityPollingstationListLoader(queryClient: QueryClient) {
+   return async ({ params }: LoaderFunctionArgs) => {
+      // The gemeente itself is loaded one level up, by the layout this page renders in.
+      const pollingStationsQueryOptions = regionsQuery(params, "STEMBUREAU");
+      await queryClient.ensureQueryData(pollingStationsQueryOptions);
+
+      return {
+         pollingStationsQuery: pollingStationsQueryOptions,
+      };
+   };
+}
+
+type LoaderData = Awaited<ReturnType<ReturnType<typeof municipalityPollingstationListLoader>>>;
 
 export function MunicipalityPollingstationListPage() {
-   const { electionConfig, region, municipalityTitle, electionConfigSlug, regionSlug, csbSlug } = useOutletContext<{
-      electionConfig: ElectionConfig;
-      region: Region;
-      municipalityTitle: string;
-      electionConfigSlug: string;
-      regionSlug: string;
-      csbSlug: string;
-   }>();
-   const municipalityResultsRoute = appRoutes.municipalityResults(electionConfigSlug ?? "", regionSlug, csbSlug);
+   const { electionConfig, region, municipalityTitle } = useOutletContext<MunicipalityOutletContext>();
+   const { pollingStationsQuery } = useLoaderData<LoaderData>();
    const { t } = useLingui();
+   // The loader has already resolved the query, so the data is never pending here.
+   const { data: pollingStations } = useSuspenseQuery(pollingStationsQuery);
 
-   const {
-      data: pollingStations,
-      isLoading: isPollingStationsLoading,
-      isError: isPollingStationsError,
-      error: pollingStationsError,
-      refetch: refetchPollingStations,
-   } = useRegions(electionConfigSlug, regionSlug, "STEMBUREAU", csbSlug);
-
-   const isLoading = isPollingStationsLoading;
-   const isError = isPollingStationsError || !electionConfig || !pollingStations;
-
-   if (isLoading || isError) {
-      return (
-         <PageQueryBoundary
-            isLoading={isLoading}
-            isError={isError}
-            onRetry={() => {
-               void refetchPollingStations();
-            }}
-            errors={[pollingStationsError]}
-            entityLabel={t`Stembureaus`}
-            withLayout={false}
-         />
-      );
-   }
+   const csbSlug = region.csb_slug ?? undefined;
 
    const hasResults = Array.isArray(region.vote_counts) && region.vote_counts.length > 0;
    if (!hasResults) {
-      return <Navigate to={municipalityResultsRoute} replace />;
+      return <Navigate to={appRoutes.municipalityResults(electionConfig.slug, region.slug, csbSlug)} replace />;
    }
 
    return (
@@ -56,7 +41,7 @@ export function MunicipalityPollingstationListPage() {
          <RegionList
             electionConfig={electionConfig}
             regions={pollingStations}
-            parentRegionSlug={regionSlug}
+            parentRegionSlug={region.slug}
             parentCsbSlug={csbSlug}
             regionTitle={municipalityTitle}
             regionCategory="STEMBUREAU"
