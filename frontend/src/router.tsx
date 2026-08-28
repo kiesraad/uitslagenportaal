@@ -3,7 +3,6 @@ import { createBrowserRouter, Outlet, type RouteObject, ScrollRestoration } from
 import { BaseLayout } from "@/components/BaseLayout.tsx";
 import ErrorBoundaryPage from "@/pages/ErrorBoundaryPage.tsx";
 import LoadingPage from "@/pages/LoadingPage.tsx";
-import MunicipalityPageLayout, { municipalityLoader } from "@/pages/MunicipalityPage/MunicipalityPageLayout.tsx";
 import { CSBMunicipalityListPage, csbMunicipalityListLoader } from "./pages/CSBPage/CSBMunicipalityListPage.tsx";
 import { CSBPartyResultsPage, csbPartyResultsLoader } from "./pages/CSBPage/CSBPartyResultsPage.tsx";
 import { CSBResultsPage, csbResultsLoader } from "./pages/CSBPage/CSBResultsPage.tsx";
@@ -21,7 +20,7 @@ import {
    MunicipalityPollingstationListPage,
    municipalityPollingstationListLoader,
 } from "./pages/MunicipalityPage/MunicipalityPollingstationListPage";
-import { MunicipalityResultsPage } from "./pages/MunicipalityPage/MunicipalityResultsPage";
+import { MunicipalityResultsPage, municipalityResultsLoader } from "./pages/MunicipalityPage/MunicipalityResultsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import PollingStationPartyResultsPage from "./pages/PollingStationPage/PollingStationPartyResultsPage.tsx";
 import PollingStationResultsPage, {
@@ -88,37 +87,29 @@ export const routes: RouteObject[] = [
                   path: "gsb/:regionSlug/csb/:csbSlug",
                   children: [
                      {
-                        // The layout loads the gemeente its two children render.
-                        loader: municipalityLoader(queryClient),
-                        Component: MunicipalityPageLayout,
-                        children: [
-                           {
-                              index: true,
-                              loader: municipalityPollingstationListLoader(queryClient),
-                              Component: MunicipalityPollingstationListPage,
-                           },
-                           { path: "resultaten", Component: MunicipalityResultsPage },
-                        ],
+                        index: true,
+                        loader: municipalityPollingstationListLoader(queryClient),
+                        Component: MunicipalityPollingstationListPage,
+                     },
+                     {
+                        path: "resultaten",
+                        loader: municipalityResultsLoader(queryClient),
+                        Component: MunicipalityResultsPage,
                      },
                      {
                         path: "resultaten/:partySlug",
-                        loader: municipalityLoader(queryClient),
+                        loader: municipalityResultsLoader(queryClient),
                         Component: MunicipalityPartyResultsPage,
                      },
                      {
                         path: ":pollingStationSlug",
-                        children: [
-                           {
-                              index: true,
-                              loader: pollingStationLoader(queryClient),
-                              Component: PollingStationResultsPage,
-                           },
-                           {
-                              path: ":partySlug",
-                              loader: pollingStationLoader(queryClient),
-                              Component: PollingStationPartyResultsPage,
-                           },
-                        ],
+                        loader: pollingStationLoader(queryClient),
+                        Component: PollingStationResultsPage,
+                     },
+                     {
+                        path: ":pollingStationSlug/:partySlug",
+                        loader: pollingStationLoader(queryClient),
+                        Component: PollingStationPartyResultsPage,
                      },
                   ],
                },

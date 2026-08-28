@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useLoaderData, useParams } from "react-router";
+import type { MunicipalityLoaderData } from "@/pages/MunicipalityPage/MunicipalityResultsPage.tsx";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCandidatesResultsContent.tsx";
@@ -9,7 +10,6 @@ import { getCsbCrumb } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 import { getPartyVoteCount, hasParty } from "../../utils/voteCounts.ts";
 import { NotFoundPage } from "../NotFoundPage.tsx";
-import type { MunicipalityLoaderData } from "./MunicipalityPageLayout.tsx";
 
 export function MunicipalityPartyResultsPage() {
    const { electionConfigQuery, regionQuery } = useLoaderData<MunicipalityLoaderData>();

@@ -86,10 +86,6 @@
    --max-w: 1366px;
 }
 
-html {
-   scroll-behavior: smooth;
-}
-
 body {
    color: var(--c-text);
    background: var(--c-white);
@@ -157,8 +153,8 @@ h4,
 
 .page-top {
    background: #e3e9f4;
-   padding: 2rem 6rem;
-   padding-bottom: 0;
+   padding: 2rem 6rem 0;
+   flex: 1;
 }
 
 .platform-header {

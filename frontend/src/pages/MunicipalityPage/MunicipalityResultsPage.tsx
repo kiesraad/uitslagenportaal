@@ -1,23 +1,47 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useOutletContext } from "react-router";
+import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { type LoaderFunctionArgs, useLoaderData } from "react-router";
 import HtmlHead from "@/components/HtmlHead.tsx";
+import { electionConfigQuery, regionQuery } from "@/hooks/queries.ts";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent.tsx";
-import type { MunicipalityOutletContext } from "./MunicipalityPageLayout.tsx";
+import MunicipalityPageLayout from "./MunicipalityPageLayout.tsx";
+
+export function municipalityResultsLoader(queryClient: QueryClient) {
+   return async ({ params }: LoaderFunctionArgs) => {
+      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
+      const regionQueryOptions = regionQuery(params);
+
+      await Promise.all([
+         queryClient.ensureQueryData(electionConfigQueryOptions),
+         queryClient.ensureQueryData(regionQueryOptions),
+      ]);
+
+      return {
+         electionConfigQuery: electionConfigQueryOptions,
+         regionQuery: regionQueryOptions,
+      };
+   };
+}
+
+export type MunicipalityLoaderData = Awaited<ReturnType<ReturnType<typeof municipalityResultsLoader>>>;
 
 export function MunicipalityResultsPage() {
-   const { electionConfig, region, municipalityTitle } = useOutletContext<MunicipalityOutletContext>();
    const { t } = useLingui();
-   const regionName = region.region_name;
+   const { electionConfigQuery, regionQuery } = useLoaderData<MunicipalityLoaderData>();
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+   const { data: region } = useSuspenseQuery(regionQuery);
+
+   const municipalityTitle = t`Gemeente ${region.region_name}`;
 
    return (
-      <>
+      <MunicipalityPageLayout electionConfig={electionConfig} region={region} municipalityTitle={municipalityTitle}>
          <HtmlHead title={t`Resultaten ${municipalityTitle}`} />
          <div className="page-main page-main-two-columns">
             <div className="page-space-3">
                <RegionResultsContent
                   intro={
                      <Trans>
-                        Het gemeentelijk stembureau heeft de telresultaten van alle stembureaus in {regionName}{" "}
+                        Het gemeentelijk stembureau heeft de telresultaten van alle stembureaus in {region.region_name}{" "}
                         gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze
                         zijn opgenomen in het proces-verbaal van de gemeente.
                      </Trans>
@@ -35,6 +59,6 @@ export function MunicipalityResultsPage() {
                />
             </div>
          </div>
-      </>
+      </MunicipalityPageLayout>
    );
 }
