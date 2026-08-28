@@ -5,10 +5,17 @@ import { LOCALE_STORAGE_KEY, type Locale, resolveLocale, sourceLocale } from "./
 export * from "./locales";
 export { i18n };
 
+// The choice made in this session. Local storage is the durable copy, but it is unwritable
+// in a sandboxed iframe, and the loader has to be able to read back what the switcher set.
+let selectedLocale: Locale | null = null;
+
 /**
- * The locale to start in: a previously saved choice from local storage, `sourceLocale` otherwise (Dutch).
+ * The locale to render in: the choice made in this session, a previously saved one from local
+ * storage otherwise, and `sourceLocale` (Dutch) when there is neither.
  */
 export function detectLocale(): Locale {
+   if (selectedLocale) return selectedLocale;
+
    try {
       return resolveLocale(detect(fromStorage(LOCALE_STORAGE_KEY)));
    } catch {
@@ -35,9 +42,24 @@ export async function loadCatalog(locale: Locale): Promise<void> {
 }
 
 export function saveLocale(locale: Locale): void {
+   selectedLocale = locale;
+
    try {
       localStorage.setItem(LOCALE_STORAGE_KEY, locale);
    } catch {
       // Sandboxed iframe: the choice simply does not survive a reload.
    }
+}
+
+/**
+ * Root route loader: activates the catalogue of the chosen locale. Loading it here rather
+ * than in the language switcher is what makes a switch a piece of router work, so it runs
+ * behind the navigation progress bar like every other load.
+ */
+export async function localeLoader(): Promise<null> {
+   const locale = detectLocale();
+   if (i18n.locale !== locale) {
+      await loadCatalog(locale);
+   }
+   return null;
 }

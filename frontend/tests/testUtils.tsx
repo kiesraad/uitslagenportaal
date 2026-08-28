@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type RenderOptions, render } from "@testing-library/react";
 import { type ReactElement, type ReactNode, useRef, useState } from "react";
 import { createRoutesStub } from "react-router";
+import { localeLoader } from "@/i18n";
 import type { Locale } from "@/i18n/locales";
 import { messages as enMessages } from "@/locales/en/messages.po";
 import { messages as nlMessages } from "@/locales/nl/messages.po";
@@ -50,13 +51,19 @@ export function renderWithProviders(
       childrenRef.current = children;
 
       const [Stub] = useState(() =>
-         createRoutesStub([{ path: path ?? "*", Component: () => <>{childrenRef.current}</> }]),
+         createRoutesStub([
+            // The app carries the locale loader on its root route, so anything that switches
+            // language has one to revalidate.
+            { id: "root", path: path ?? "*", loader: localeLoader, Component: () => <>{childrenRef.current}</> },
+         ]),
       );
 
       return (
          <I18nProvider i18n={i18n}>
             <QueryClientProvider client={queryClient}>
-               <Stub initialEntries={initialEntries} />
+               {/* `activateLocale` above stands in for the catalogue the app loads before its first
+                   render, so the stub hydrates rather than running the loader and rendering async. */}
+               <Stub initialEntries={initialEntries} hydrationData={{ loaderData: { root: null } }} />
             </QueryClientProvider>
          </I18nProvider>
       );

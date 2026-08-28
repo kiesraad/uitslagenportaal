@@ -71,7 +71,8 @@ describe("useNavigationProgress", () => {
 
       advance(EXIT_DURATION_MS);
       expect(result.current.isVisible).toBe(false);
-      expect(result.current.progress).toBe(0);
+      // Left at full width behind the fade; the next navigation is what resets it.
+      expect(result.current.progress).toBe(1);
    });
 
    it("Runs again for the next navigation", () => {

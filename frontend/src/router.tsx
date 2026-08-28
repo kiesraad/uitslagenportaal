@@ -3,6 +3,7 @@ import { createBrowserRouter, Outlet, type RouteObject, ScrollRestoration } from
 import { BaseLayout } from "@/components/BaseLayout.tsx";
 import ErrorBoundaryPage from "@/pages/ErrorBoundaryPage.tsx";
 import LoadingPage from "@/pages/LoadingPage.tsx";
+import { localeLoader } from "./i18n";
 import { CSBMunicipalityListPage, csbMunicipalityListLoader } from "./pages/CSBPage/CSBMunicipalityListPage.tsx";
 import { CSBPartyResultsPage, csbPartyResultsLoader } from "./pages/CSBPage/CSBPartyResultsPage.tsx";
 import { CSBResultsPage, csbResultsLoader } from "./pages/CSBPage/CSBResultsPage.tsx";
@@ -51,6 +52,7 @@ function RootLayout() {
 export const routes: RouteObject[] = [
    {
       path: "/",
+      loader: localeLoader,
       Component: RootLayout,
       ErrorBoundary: ErrorBoundaryPage,
       HydrateFallback: LoadingPage,

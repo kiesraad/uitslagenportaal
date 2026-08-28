@@ -3,9 +3,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router";
+import { useParams, useRevalidator } from "react-router";
 import Button from "@/elements/Button.tsx";
-import { type Locale, loadCatalog, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
+import { type Locale, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
 import { electionConfigQuery, useElectionConfigs } from "../hooks/queries.ts";
 
 // Fixed URLs for non-changing elements
@@ -16,12 +16,14 @@ function LanguageSwitcher() {
    // Reading the locale through the hook (rather than the imported singleton)
    // is what subscribes this component to locale changes.
    const { i18n } = useLingui();
+   const revalidator = useRevalidator();
    const current: Locale = resolveLocale(i18n.locale);
    const other: Locale = current === "nl" ? "en" : "nl";
 
    async function switchTo(locale: Locale) {
       saveLocale(locale);
-      await loadCatalog(locale);
+      // Revalidate the React Router loaders so the new locale is loaded by the root route's loader.
+      await revalidator.revalidate();
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
    }
 

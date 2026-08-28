@@ -72,7 +72,9 @@ active locale. Dates keep the `Europe/Amsterdam` zone whatever the interface lan
 election times are always Dutch local time.
 
 The language switcher lives in the footer; the choice is stored in `localStorage` and is
-deliberately not part of the URL.
+deliberately not part of the URL. Activating a catalogue is the root route's loader
+(`localeLoader`), and the switcher only saves the choice and revalidates: that way a language
+change is router work like any other, and the navigation progress bar covers the download.
 
 > **When changing the build config:** the Lingui macros need a Babel pass, added in
 > `vite.config.ts` via `@rolldown/plugin-babel`. `@vitejs/plugin-react` v6 removed the `babel`

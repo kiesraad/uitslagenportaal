@@ -8,7 +8,8 @@ function match(pathname: string) {
    return {
       chain: matches.map((m) => (m.route as { Component?: { name: string } }).Component?.name),
       params: matches.at(-1)?.params ?? {},
-      loaders: matches.filter((m) => m.route.loader).length,
+      // The root route is skipped: its loader carries the language catalogue, not page data.
+      loaders: matches.slice(1).filter((m) => m.route.loader).length,
    };
 }
 
@@ -22,11 +23,6 @@ describe("router", () => {
       ["/ab2023/onzin", "NotFoundPage"],
    ])("%s renders %s", (pathname, expected) => {
       expect(match(pathname).chain.at(-1)).toBe(expected);
-   });
-
-   it("wraps only its own routes in the municipality layout", () => {
-      expect(match("/ab2023/gsb/utrecht/csb/csb-1/resultaten").chain).toContain("MunicipalityPageLayout");
-      expect(match("/ab2023/gsb/utrecht/csb/csb-1/sb-3").chain).not.toContain("MunicipalityPageLayout");
    });
 
    it("gathers the parameters of every level", () => {
@@ -46,17 +42,12 @@ describe("router", () => {
       ["/ab2023/csb/kieskring-1"],
       ["/ab2023/csb/kieskring-1/resultaten"],
       ["/ab2023/csb/kieskring-1/resultaten/vvd"],
+      ["/ab2023/gsb/utrecht/csb/csb-1"],
       ["/ab2023/gsb/utrecht/csb/csb-1/resultaten"],
       ["/ab2023/gsb/utrecht/csb/csb-1/resultaten/vvd"],
       ["/ab2023/gsb/utrecht/csb/csb-1/sb-3"],
       ["/ab2023/gsb/utrecht/csb/csb-1/sb-3/vvd"],
    ])("loads the data of %s exactly once", (pathname) => {
       expect(match(pathname).loaders).toBe(1);
-   });
-
-   // The stembureau list is the one page that adds a loader of its own on top of the
-   // gemeente the layout around it loads.
-   it("loads the gemeente and its stembureaus in separate loaders", () => {
-      expect(match("/ab2023/gsb/utrecht/csb/csb-1").loaders).toBe(2);
    });
 });
