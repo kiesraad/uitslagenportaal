@@ -97,7 +97,8 @@ export default function PollingStationPartyResultsPage() {
 
    const partyName = getPartyVoteCount(pollingStation.vote_counts, partySlug)?.party.registered_name ?? t`Lijst`;
    const stationName = pollingStation.region_name;
-   const publishedAt = formatDate(region.results_available_at);
+   // No publication date until the region's results have been imported; the line is then omitted.
+   const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
    const pageTitle = `${t`Telresultaten stembureau`}\n${stationName}`;
    const documentTitle = t`Telresultaten stembureau – ${stationName}`;
 
@@ -111,7 +112,7 @@ export default function PollingStationPartyResultsPage() {
       <Layout title={documentTitle} description={documentTitle}>
          <PageTop
             title={pageTitle}
-            subtitle={t`Geplaatst op: ${publishedAt}`}
+            subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
                { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig.label },

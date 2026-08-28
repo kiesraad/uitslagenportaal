@@ -58,7 +58,8 @@ export function CSBResultsPage() {
 
    const regionType = t(regionLabels.singular);
    const regionName = region.region_name;
-   const publishedAt = formatDate(region.results_available_at);
+   // No publication date until the region's results have been imported; the line is then omitted.
+   const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
    // "de gemeente" / "het waterschap": article and noun as one translated
    // phrase, because which article a noun takes is language-specific.
    const regionWithArticle = t(regionLabels.withArticle);
@@ -67,7 +68,7 @@ export function CSBResultsPage() {
       <Layout title={t`Resultaten`}>
          <PageTop
             title={t`${regionType} - ${regionName}`}
-            subtitle={t`Geplaatst op: ${publishedAt}`}
+            subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
                {

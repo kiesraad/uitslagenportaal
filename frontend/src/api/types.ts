@@ -52,7 +52,7 @@ export type Region = {
    timeline_variant?: TimelineVariant;
    documents?: ElectionDocument[];
    region_category: RegionCategory;
-   results_available_at: string;
+   results_available_at: string | null;
    csb_name?: string | null;
    csb_slug?: string | null;
    election_slug?: string;
