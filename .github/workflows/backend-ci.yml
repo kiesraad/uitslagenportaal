@@ -1,18 +1,15 @@
 name: Backend CI
 
 on:
-  push:
-    branches: [main, dev]
-    paths:
-      - "backend/**"
-      - ".github/workflows/backend-ci.yml"
+  # Workflow only runs on pull_requests and is run from
   pull_request:
     paths:
       - "backend/**"
       - ".github/workflows/backend-ci.yml"
+  workflow_call:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: backend-ci-${{ github.ref }}
   cancel-in-progress: true
 
 env:

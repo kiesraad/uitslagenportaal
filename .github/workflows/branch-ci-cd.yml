@@ -1,0 +1,49 @@
+# Workflow for pushes to main branches, references the backend/frontend CI pipelines which run only for PRs.
+name: Main branches CI/CD
+on:
+  push:
+#    branches:
+#      - dev
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Both suites run in full before anything is published: path filters apply to a
+  # workflow's own triggers, not to a call, and both images are published every run.
+  backend-ci:
+    name: Backend CI
+    uses: ./.github/workflows/backend-ci.yml
+  frontend-ci:
+    name: Frontend CI
+    uses: ./.github/workflows/frontend-ci.yml
+
+  frontend-docker-image:
+    name: Publish Frontend Image
+    needs: [backend-ci, frontend-ci]
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+      artifact-metadata: write
+    uses: ./.github/workflows/publish-docker-image.yml
+    with:
+      context: frontend
+
+  backend-docker-image:
+    name: Publish Backend Image
+    needs: [backend-ci, frontend-ci]
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+      artifact-metadata: write
+    uses: ./.github/workflows/publish-docker-image.yml
+    with:
+      context: backend
