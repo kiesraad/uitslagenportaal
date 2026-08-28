@@ -93,9 +93,3 @@ jobs:
         working-directory: backend
       - run: uv run python manage.py makemigrations --check --dry-run
         working-directory: backend
-
-  docker-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - run: docker build -f backend/prod.dockerfile backend/

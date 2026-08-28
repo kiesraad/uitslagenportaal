@@ -9,6 +9,7 @@ permissions:
   packages: write
   attestations: write
   id-token: write
+  artifact-metadata: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,10 +17,12 @@ concurrency:
 
 jobs:
   publish-frontend-image:
+    name: Publish Frontend Image
     uses: ./.github/workflows/publish-docker-image.yml
     with:
       context: frontend
   publish-backend-image:
+    name: Publish Backend Image
     uses: ./.github/workflows/publish-docker-image.yml
     with:
       context: backend
