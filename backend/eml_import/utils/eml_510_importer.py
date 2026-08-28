@@ -1,5 +1,6 @@
 import re
 from abc import ABC
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
@@ -32,6 +33,23 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
     def __init__(self, eml: Eml510, eml_file: Path | NamedBytesIO | None):
         super().__init__(eml, eml_file)
         self.election_documents = {doc.storage_key: doc for doc in ElectionDocument.objects.all()}
+
+    def _results_available_at(self) -> datetime | None:
+        """
+        Publication time of the results, from the EML's <kr:CreationDateTime>.
+        Optional and repeatable in the schema, and the Kiesraad writes it
+        without a UTC offset, so it is read as a naive datetime in the local timezone.
+        """
+        creation_date_time = self.eml.creation_date_time
+        if not creation_date_time:
+            return None
+        value = creation_date_time[0].value
+        if value is None:
+            return None
+        created = value.to_datetime()
+        if timezone.is_naive(created):
+            created = timezone.make_aware(created)
+        return created
 
     @staticmethod
     def _counting_method(count) -> str | None:
@@ -276,7 +294,7 @@ class EML510bImporter(EML510BaseImporter):
         if self.eml_file is not None:
             self._store_eml(region)
 
-        region.results_available_at = timezone.now()
+        region.results_available_at = self._results_available_at()
         counting_method = self._counting_method(self.eml.count)
         if counting_method is not None:
             region.counting_method = counting_method
@@ -356,10 +374,13 @@ class EML510dImporter(EML510BaseImporter):
                 region_name=region_name,
             )
 
+        update_fields = ["results_available_at", "updated_at"]
+        region.results_available_at = self._results_available_at()
         counting_method = self._counting_method(self.eml.count)
         if counting_method is not None and region.counting_method != counting_method:
             region.counting_method = counting_method
-            region.save(update_fields=["counting_method", "updated_at"])
+            update_fields.append("counting_method")
+        region.save(update_fields=update_fields)
 
         # Store the EML file
         if self.eml_file is not None:
