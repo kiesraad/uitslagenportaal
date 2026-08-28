@@ -5,8 +5,7 @@ import { LOCALE_STORAGE_KEY, type Locale, resolveLocale, sourceLocale } from "./
 export * from "./locales";
 export { i18n };
 
-// The choice made in this session. Local storage is the durable copy, but it is unwritable
-// in a sandboxed iframe, and the loader has to be able to read back what the switcher set.
+// A local copy of the selected locale, which is persisted to local storage
 let selectedLocale: Locale | null = null;
 
 /**

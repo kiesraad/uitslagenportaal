@@ -32,7 +32,7 @@ export function HomePage() {
 
    return (
       <LayoutMain title={t`Home`} description={t`De telresultaten van alle stembureaus in Nederland.`}>
-         <section className={"page-top home-page-hero"}>
+         <section className={"page-top home-page-hero flex-1"}>
             <div className={"home-page-hero-left"}>
                <h1 className="text-3xl sm:text-4xl font-title font-bold">
                   <Trans>

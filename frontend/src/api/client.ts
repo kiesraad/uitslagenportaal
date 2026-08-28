@@ -10,7 +10,6 @@ export class ApiError extends Error {
    }
 }
 
-/** A 404 means the election, region or stembureau asked for does not exist. */
 export function isNotFoundError(error: unknown): boolean {
    return error instanceof ApiError && error.status === 404;
 }
