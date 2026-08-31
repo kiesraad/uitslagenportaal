@@ -2,8 +2,10 @@
 name: Main branches CI/CD
 on:
   push:
-#    branches:
-#      - dev
+    branches:
+      - dev
+    tags:
+      - *
 
 permissions:
   contents: read
