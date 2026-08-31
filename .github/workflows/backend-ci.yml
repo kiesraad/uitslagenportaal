@@ -1,7 +1,7 @@
 name: Backend CI
 
 on:
-  # Workflow only runs on pull_requests and is run from
+  # Workflow only runs on pull_requests and is run from branch-ci-cd.yml
   pull_request:
     paths:
       - "backend/**"

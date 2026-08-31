@@ -1,9 +1,10 @@
-# Workflow for pushes to main branches, references the backend/frontend CI pipelines which run only for PRs.
+# Workflow for pushes to main branches/tags, references the backend/frontend CI pipelines which run only for PRs.
 name: Main branches CI/CD
 on:
   push:
     branches:
       - dev
+      - main
     tags:
       - *
 
