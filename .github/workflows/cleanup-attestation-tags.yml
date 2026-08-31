@@ -1,0 +1,46 @@
+# One-off cleanup, safe to delete once it has run.
+# Removes the `sha256-<digest>` referrer manifests that actions/attest left in GHCR
+# while it pushed attestations to the registry.
+name: Cleanup Attestation Tags
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        type: boolean
+        default: true
+        description: List the versions without deleting them
+
+permissions:
+  packages: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [uitslagenportaal-frontend, uitslagenportaal-backend]
+
+    steps:
+      - name: Remove attestation referrer manifests
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE: ${{ matrix.package }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          set -euo pipefail
+          # Only versions whose sole tag is a referrer tag are eligible. Untagged versions
+          # are left alone: they can be platform children of a multi-arch manifest.
+          gh api --paginate \
+            "orgs/${{ github.repository_owner }}/packages/container/$PACKAGE/versions?per_page=100" \
+            --jq '.[] | select((.metadata.container.tags | length) == 1)
+                      | select(.metadata.container.tags[0] | startswith("sha256-"))
+                      | [.id, .metadata.container.tags[0]] | @tsv' \
+          | while IFS=$'\t' read -r id tag; do
+              if [ "$DRY_RUN" = "true" ]; then
+                echo "would delete  $id  $tag"
+              else
+                gh api -X DELETE \
+                  "orgs/${{ github.repository_owner }}/packages/container/$PACKAGE/versions/$id" --silent
+                echo "deleted  $id  $tag"
+              fi
+            done

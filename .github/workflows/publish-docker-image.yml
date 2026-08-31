@@ -61,11 +61,13 @@ jobs:
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.context }}/prod.dockerfile
-          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
+          # Cache build artefacts in a dedicated tag
+          cache-from: type=registry,ref=${{ env.FULL_IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.FULL_IMAGE_NAME }}:buildcache,mode=max
 
       # This step generates an artefact attestation for the image,
       # which is an unforgeable statement about where and how it was built.
@@ -74,7 +76,6 @@ jobs:
         with:
           subject-name: ${{ env.FULL_IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
 
       - name: Remove old images
         uses: actions/delete-package-versions@v5
