@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-celery-worker
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.celery.worker.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-celery-worker
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-celery-worker
+    spec:
+      # An EML import fans out over a process pool and can run for minutes;
+      # cut it short and the election is left half-imported.
+      terminationGracePeriodSeconds: 300
+      initContainers:
+        # Tasks reach for the ORM as soon as one is picked up.
+        {{- include "uitslagenportaal.waitForMigrations" . | nindent 8 }}
+      containers:
+        - name: celery-worker
+          image: {{ .Values.celery.image }}
+          imagePullPolicy: {{ .Values.celery.pullPolicy }}
+          command: ["celery", "-A", "mainsite", "worker", "--loglevel=INFO"]
+          envFrom:
+            {{- include "uitslagenportaal.envFrom" . | nindent 12 }}
+          env:
+            - name: REDIS_HOST
+              value: {{ .Values.redis.host | quote }}
+            - name: REDIS_PORT
+              value: {{ .Values.redis.port | quote }}
+          # A worker serves no traffic, so only liveness is meaningful. The
+          # thresholds are loose: a busy worker answers ping slowly.
+          livenessProbe:
+            exec:
+              command: ["celery", "-A", "mainsite", "inspect", "ping", "--destination", "celery@$(HOSTNAME)"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 15
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.celery.worker.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          {{- include "uitslagenportaal.dbCaMount" . | nindent 10 }}
+      {{- include "uitslagenportaal.dbCaVolume" . | nindent 6 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-celery-beat
+  namespace: {{ .Values.namespace }}
+spec:
+  # Exactly one beat, ever: a second scheduler would queue every periodic task
+  # twice. Recreate stops a rolling update from briefly running two.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-celery-beat
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-celery-beat
+    spec:
+      initContainers:
+        # Beat starts enqueuing on its own schedule the moment it comes up.
+        {{- include "uitslagenportaal.waitForMigrations" . | nindent 8 }}
+      containers:
+        - name: celery-beat
+          image: {{ .Values.celery.image }}
+          imagePullPolicy: {{ .Values.celery.pullPolicy }}
+          # The schedule file only holds last-run times; the schedule itself is
+          # declared in code. Keeping it in /tmp means a restart may re-run a
+          # task early, never miss one.
+          command:
+            - celery
+            - -A
+            - mainsite
+            - beat
+            - --loglevel=INFO
+            - --schedule=/tmp/celerybeat-schedule
+          envFrom:
+            {{- include "uitslagenportaal.envFrom" . | nindent 12 }}
+          env:
+            - name: REDIS_HOST
+              value: {{ .Values.redis.host | quote }}
+            - name: REDIS_PORT
+              value: {{ .Values.redis.port | quote }}
+          resources:
+            {{- toYaml .Values.celery.beat.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          {{- include "uitslagenportaal.dbCaMount" . | nindent 10 }}
+      {{- include "uitslagenportaal.dbCaVolume" . | nindent 6 }}

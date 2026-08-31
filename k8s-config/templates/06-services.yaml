@@ -1,0 +1,238 @@
+{{- if .Values.services.enabled }}
+# Stand-ins for the managed database, cache and object storage, mirroring
+# docker-compose.yml. Names match the compose service names so the defaults in
+# values.yaml resolve unchanged. Local clusters only: the credentials below are
+# the ones from compose, and they are in version control.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.db.credentialsSecret }}
+  namespace: {{ .Values.namespace }}
+stringData:
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_USER: {{ .Values.services.username | quote }}
+  DB_PASSWORD: {{ .Values.services.password | quote }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.secrets.app }}
+  namespace: {{ .Values.namespace }}
+stringData:
+  SECRET_KEY: {{ .Values.services.secretKey | quote }}
+  S3_BUCKET_NAME: {{ .Values.db.name | quote }}
+  S3_ACCESS_KEY: {{ .Values.services.username | quote }}
+  S3_SECRET_KEY: {{ .Values.services.password | quote }}
+  S3_ADDRESSING_STYLE: "path"
+  # Uploads travel over the cluster network, but the URLs handed to the browser
+  # have to be reachable from the host instead.
+  S3_ENDPOINT_URL: "http://object-storage:9000"
+  S3_PUBLIC_DOMAIN: "localhost:9000/{{ .Values.db.name }}"
+  S3_URL_PROTOCOL: "http:"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: {{ .Values.namespace }}
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.services.postgres.image }}
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.db.name | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.services.username | quote }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.services.password | quote }}
+            # initdb refuses a non-empty directory, which a freshly provisioned
+            # volume can be; a subdirectory is always its own.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "{{ .Values.services.username }}", "-d", "{{ .Values.db.name }}"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: {{ .Values.services.postgres.storage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.redis.host }}
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: {{ .Values.redis.port }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: {{ .Values.namespace }}
+spec:
+  serviceName: {{ .Values.redis.host }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.services.redis.image }}
+          ports:
+            - containerPort: {{ .Values.redis.port }}
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: {{ .Values.services.redis.storage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: object-storage
+  namespace: {{ .Values.namespace }}
+spec:
+  # LoadBalancer, not ClusterIP: the browser follows the storage URLs itself,
+  # so on Docker Desktop this has to answer on localhost:9000 as compose does.
+  type: LoadBalancer
+  selector:
+    app: object-storage
+  ports:
+    - name: s3
+      port: 9000
+      targetPort: 9000
+    - name: console
+      port: 9001
+      targetPort: 9001
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: object-storage
+  namespace: {{ .Values.namespace }}
+spec:
+  serviceName: object-storage
+  replicas: 1
+  selector:
+    matchLabels:
+      app: object-storage
+  template:
+    metadata:
+      labels:
+        app: object-storage
+    spec:
+      containers:
+        - name: object-storage
+          image: {{ .Values.services.objectStorage.image }}
+          ports:
+            - containerPort: 9000
+            - containerPort: 9001
+          env:
+            - name: RUSTFS_ACCESS_KEY
+              value: {{ .Values.services.username | quote }}
+            - name: RUSTFS_SECRET_KEY
+              value: {{ .Values.services.password | quote }}
+            - name: RUSTFS_ADDRESS
+              value: "0.0.0.0:9000"
+            - name: RUSTFS_CONSOLE_ADDRESS
+              value: "0.0.0.0:9001"
+            - name: RUSTFS_CONSOLE_ENABLE
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: {{ .Values.services.objectStorage.storage }}
+---
+# Compose runs this as the backend's pre_start; here it waits for the release
+# to be up. Idempotent, so re-running it on every upgrade costs nothing.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-ensure-bucket
+  namespace: {{ .Values.namespace }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    # Only the previous Job is cleared, so the last run's logs stay readable.
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  # Object storage may still be starting; let the Job retry rather than fail
+  # the release.
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: ensure-bucket
+          image: {{ .Values.backend.image }}
+          imagePullPolicy: {{ .Values.backend.pullPolicy }}
+          command: ["python", "manage.py", "ensure_bucket", "--public"]
+          envFrom:
+            {{- include "uitslagenportaal.envFrom" . | nindent 12 }}
+{{- end }}

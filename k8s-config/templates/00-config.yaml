@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  namespace: {{ .Values.namespace }}
+data:
+  # Database. Host/port/user/password come from the db-credentials secret.
+  DB: "postgres"
+  DB_NAME: "{{ .Values.db.name }}"
+  DB_SSLMODE: "{{ .Values.db.sslmode }}"
+{{- if .Values.db.caSecret }}
+  # Django cannot set sslrootcert, so use libpq's env var.
+  PGSSLROOTCERT: "/etc/ssl/rdb/ca.pem"
+{{- end }}
+  DB_CONN_MAX_AGE: "60"
+
+  # Both default to True upstream. Unsafe when internet-facing.
+  DEBUG: "{{ .Values.debug }}"
+  SITE_ROOT: "https://{{ .Values.app.hostname }}"
+  SITE_NAME: "{{ .Values.app.site_name }}"
+  ALLOWED_HOSTS: "{{ .Values.app.hostname }}"
+  # Behind a TLS-terminating proxy.
+  SECURE_PROXY_SSL_HEADER: "HTTP_X_FORWARDED_PROTO,https"
