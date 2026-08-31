@@ -1,9 +1,11 @@
+import { faArrowRotateRight } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { isRouteErrorResponse, useRouteError } from "react-router";
-import { Layout } from "@/components/Layout.tsx";
-import { isNotFoundError } from "@/components/PageQueryBoundary.tsx";
-import PageTop from "@/components/PageTop.tsx";
-import { ApiError } from "../api/client.ts";
+import { BaseLayout } from "@/components/BaseLayout.tsx";
+import { LayoutMain } from "@/components/LayoutMain.tsx";
+import Button from "@/elements/Button.tsx";
+import { ApiError, isNotFoundError } from "../api/client.ts";
 import { NotFoundPage } from "./NotFoundPage.tsx";
 
 /** Reduces whatever was thrown to a heading and a body, whichever shape it has. */
@@ -37,15 +39,27 @@ export default function ErrorBoundaryPage() {
    const title = t`Fout`;
    const description = t`Er is een fout opgetreden`;
 
+   function reloadPage() {
+      window.location.reload();
+   }
+
    return (
-      <Layout title={title} description={description}>
-         <div>
-            <PageTop title={title} subtitle={description} />
-         </div>
-         <div className="page-main">
-            <h1>{heading || <Trans>Er is een fout opgetreden</Trans>}</h1>
-            {detail && <p>{detail}</p>}
-         </div>
-      </Layout>
+      <BaseLayout>
+         <LayoutMain title={title} description={description}>
+            <div className="page-top flex-1 flex flex-col gap-3">
+               <h1 className="text-3xl sm:text-4xl font-title font-bold whitespace-pre-line">{title}</h1>
+               <p>{description}</p>
+               <Button onClick={reloadPage} className="w-fit">
+                  <FontAwesomeIcon icon={faArrowRotateRight} /> <Trans>Probeer opnieuw</Trans>
+               </Button>
+               <span>
+                  <Trans>Details:</Trans>
+               </span>
+               <code className="text-xs whitespace-pre-line">
+                  {heading} - {detail}
+               </code>
+            </div>
+         </LayoutMain>
+      </BaseLayout>
    );
 }

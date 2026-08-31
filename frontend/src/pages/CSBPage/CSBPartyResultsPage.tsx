@@ -1,79 +1,62 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useParams } from "react-router";
-import { Layout } from "../../components/Layout.tsx";
-import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
+import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import IssueNotice from "../../components/ResultsPage/IssueNotice.tsx";
 import PartyVoteMatrixTable from "../../components/ResultsPage/PartyVoteMatrixTable.tsx";
 import ResultsNotPublished from "../../components/ResultsPage/ResultsNotPublished.tsx";
 import ResultsPageIndex from "../../components/ResultsPage/ResultsPageIndex";
 import ResultsTimeline from "../../components/ResultsPage/ResultsTimeline.tsx";
-import { useElectionConfig, usePartyVoteMatrix, useRegion } from "../../hooks/queries.ts";
+import { electionConfigQuery, partyVoteMatrixQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 import { getPartyVoteCount } from "../../utils/voteCounts.ts";
 
+export function csbPartyResultsLoader(queryClient: QueryClient) {
+   return async ({ params }: LoaderFunctionArgs) => {
+      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
+      const regionQueryOptions = regionQuery(params);
+
+      const [, region] = await Promise.all([
+         queryClient.ensureQueryData(electionConfigQueryOptions),
+         queryClient.ensureQueryData(regionQueryOptions),
+      ]);
+
+      // Only the region response names the election the matrix is asked for.
+      const partyVoteMatrixQueryOptions = partyVoteMatrixQuery(
+         region.election_slug,
+         params.regionSlug,
+         params.partySlug,
+      );
+      await queryClient.ensureQueryData(partyVoteMatrixQueryOptions);
+
+      return {
+         electionConfigQuery: electionConfigQueryOptions,
+         regionQuery: regionQueryOptions,
+         partyVoteMatrixQuery: partyVoteMatrixQueryOptions,
+      };
+   };
+}
+
+type LoaderData = Awaited<ReturnType<ReturnType<typeof csbPartyResultsLoader>>>;
+
 export function CSBPartyResultsPage() {
-   const {
-      electionConfigSlug,
-      regionSlug: regionSlugParam,
-      partySlug: partySlugParam,
-   } = useParams<{ electionConfigSlug: string; regionSlug: string; partySlug: string }>();
-   const regionSlug = decodeURIComponent(regionSlugParam ?? "");
-   const partySlug = decodeURIComponent(partySlugParam ?? "");
+   const { electionConfigQuery, regionQuery, partyVoteMatrixQuery } = useLoaderData<LoaderData>();
    const { t } = useLingui();
    const { formatDate } = useFormatters();
+   // The loader has already resolved every query, so the data is never pending here.
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+   const { data: region } = useSuspenseQuery(regionQuery);
+   const { data: partyVoteMatrix } = useSuspenseQuery(partyVoteMatrixQuery);
 
-   const {
-      data: electionConfig,
-      isLoading: isElectionLoading,
-      isError: isElectionError,
-      error: electionError,
-      refetch: refetchElection,
-   } = useElectionConfig(electionConfigSlug);
-   const {
-      data: region,
-      isLoading: isRegionLoading,
-      isError: isRegionError,
-      error: regionError,
-      refetch: refetchRegion,
-   } = useRegion(electionConfigSlug, regionSlug);
-   const {
-      data: partyVoteMatrix,
-      isLoading: isPartyVoteMatrixLoading,
-      isError: isPartyVoteMatrixError,
-      error: partyVoteMatrixError,
-      refetch: refetchPartyVoteMatrix,
-   } = usePartyVoteMatrix(region?.election_slug, regionSlug, partySlug);
+   const regionLabels = getRegionLabels(electionConfig.csb_type);
+   const partySlug = partyVoteMatrix.party.slug;
+   const partyName = partyVoteMatrix.party.registered_name;
+   const hasResults = partyVoteMatrix.rows.length > 0;
 
-   const regionLabels = getRegionLabels(electionConfig?.csb_type);
-   const partyName = partyVoteMatrix?.party.registered_name ?? partySlug;
-   const partyListNumber = getPartyVoteCount(region?.vote_counts, partySlug)?.party.list_number;
-
-   const isLoading = isElectionLoading || isRegionLoading || isPartyVoteMatrixLoading;
-   const isError =
-      isElectionError || isRegionError || isPartyVoteMatrixError || !electionConfig || !region || !partyVoteMatrix;
-
-   const hasResults = (partyVoteMatrix?.rows.length ?? 0) > 0;
-
-   if (isLoading || isError) {
-      return (
-         <PageQueryBoundary
-            isLoading={isLoading}
-            isError={isError}
-            onRetry={() => {
-               void refetchElection();
-               void refetchRegion();
-               void refetchPartyVoteMatrix();
-            }}
-            errors={[electionError, regionError, partyVoteMatrixError]}
-            entityLabel={t(regionLabels.singular)}
-         />
-      );
-   }
-
-   const listNumber = partyListNumber ?? "-";
+   const listNumber = getPartyVoteCount(region.vote_counts, partySlug)?.party.list_number ?? "-";
    const regionType = t(regionLabels.singular);
    const regionName = region.region_name;
    // No publication date until the region's results have been imported; the line is then omitted.
@@ -101,18 +84,18 @@ export function CSBPartyResultsPage() {
    );
 
    return (
-      <Layout title={t`Resultaten`}>
+      <LayoutMain title={t`Resultaten`}>
          <PageTop
             title={`${t`Telresultaten ${regionType} ${regionName}`}\n ${partyName}`}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
                {
-                  href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ""),
+                  href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               { href: appRoutes.csbResults(electionConfigSlug ?? "", regionSlug), label: region.region_name },
-               { href: appRoutes.csbPartyResults(electionConfigSlug ?? "", regionSlug, partySlug), label: partyName },
+               { href: appRoutes.csbResults(electionConfig.slug, region.slug), label: region.region_name },
+               { href: appRoutes.csbPartyResults(electionConfig.slug, region.slug, partySlug), label: partyName },
             ]}
          />
          <div className="page-main">
@@ -122,6 +105,6 @@ export function CSBPartyResultsPage() {
                <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
             </div>
          </div>
-      </Layout>
+      </LayoutMain>
    );
 }

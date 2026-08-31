@@ -1,60 +1,45 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useParams } from "react-router";
-import { Layout } from "../../components/Layout.tsx";
-import { PageQueryBoundary } from "../../components/PageQueryBoundary.tsx";
+import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent.tsx";
 import SharedTabs from "../../components/SharedTabs.tsx";
-import { useElectionConfig, useRegion } from "../../hooks/queries.ts";
+import { electionConfigQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 
+export function csbResultsLoader(queryClient: QueryClient) {
+   return async ({ params }: LoaderFunctionArgs) => {
+      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
+      const regionQueryOptions = regionQuery(params);
+
+      await Promise.all([
+         queryClient.ensureQueryData(electionConfigQueryOptions),
+         queryClient.ensureQueryData(regionQueryOptions),
+      ]);
+
+      return {
+         electionConfigQuery: electionConfigQueryOptions,
+         regionQuery: regionQueryOptions,
+      };
+   };
+}
+
+type LoaderData = Awaited<ReturnType<ReturnType<typeof csbResultsLoader>>>;
+
 export function CSBResultsPage() {
-   const { electionConfigSlug, regionSlug: regionSlugParam } = useParams<{
-      electionConfigSlug: string;
-      regionSlug: string;
-   }>();
-   const regionSlug = decodeURIComponent(regionSlugParam ?? "");
-   const csbResultsRoute = appRoutes.csbResults(electionConfigSlug ?? "", regionSlug);
-   const csbMunicipalityListRoute = appRoutes.csbMunicipalityList(electionConfigSlug ?? "", regionSlug);
+   const { electionConfigQuery, regionQuery } = useLoaderData<LoaderData>();
    const { t } = useLingui();
    const { formatDate } = useFormatters();
+   // The loader has already resolved both queries, so the data is never pending here.
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+   const { data: region } = useSuspenseQuery(regionQuery);
 
-   const {
-      data: electionConfig,
-      isLoading: isElectionLoading,
-      isError: isElectionError,
-      error: electionError,
-      refetch: refetchElection,
-   } = useElectionConfig(electionConfigSlug);
-   const {
-      data: region,
-      isLoading: isRegionLoading,
-      isError: isRegionError,
-      error: regionError,
-      refetch: refetchRegion,
-   } = useRegion(electionConfigSlug, regionSlug);
-
-   const regionLabels = getRegionLabels(electionConfig?.csb_type);
-
-   const isLoading = isElectionLoading || isRegionLoading;
-   const isError = isElectionError || isRegionError || !electionConfig || !region;
-
-   if (isLoading || isError) {
-      return (
-         <PageQueryBoundary
-            isLoading={isLoading}
-            isError={isError}
-            onRetry={() => {
-               void refetchElection();
-               void refetchRegion();
-            }}
-            errors={[electionError, regionError]}
-            entityLabel={t(regionLabels.singular)}
-         />
-      );
-   }
+   const regionLabels = getRegionLabels(electionConfig.csb_type);
+   const csbResultsRoute = appRoutes.csbResults(electionConfig.slug, region.slug);
+   const csbMunicipalityListRoute = appRoutes.csbMunicipalityList(electionConfig.slug, region.slug);
 
    const regionType = t(regionLabels.singular);
    const regionName = region.region_name;
@@ -65,17 +50,17 @@ export function CSBResultsPage() {
    const regionWithArticle = t(regionLabels.withArticle);
 
    return (
-      <Layout title={t`Resultaten`}>
+      <LayoutMain title={t`Resultaten`}>
          <PageTop
             title={t`${regionType} - ${regionName}`}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
                {
-                  href: appRoutes.electionConfigMunicipalityList(electionConfigSlug ?? ""),
+                  href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               { href: appRoutes.csbResults(electionConfigSlug ?? "", regionSlug), label: region.region_name },
+               { href: csbResultsRoute, label: region.region_name },
             ]}
             tabs={
                <SharedTabs
@@ -117,6 +102,6 @@ export function CSBResultsPage() {
                />
             </div>
          </div>
-      </Layout>
+      </LayoutMain>
    );
 }

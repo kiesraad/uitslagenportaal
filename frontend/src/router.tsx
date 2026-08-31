@@ -1,11 +1,12 @@
 import { Suspense } from "react";
 import { createBrowserRouter, Outlet, type RouteObject, ScrollRestoration } from "react-router";
+import { BaseLayout } from "@/components/BaseLayout.tsx";
 import ErrorBoundaryPage from "@/pages/ErrorBoundaryPage.tsx";
 import LoadingPage from "@/pages/LoadingPage.tsx";
-import MunicipalityPageLayout from "@/pages/MunicipalityPage/MunicipalityPageLayout.tsx";
-import { CSBMunicipalityListPage } from "./pages/CSBPage/CSBMunicipalityListPage.tsx";
-import { CSBPartyResultsPage } from "./pages/CSBPage/CSBPartyResultsPage.tsx";
-import { CSBResultsPage } from "./pages/CSBPage/CSBResultsPage.tsx";
+import { localeLoader } from "./i18n";
+import { CSBMunicipalityListPage, csbMunicipalityListLoader } from "./pages/CSBPage/CSBMunicipalityListPage.tsx";
+import { CSBPartyResultsPage, csbPartyResultsLoader } from "./pages/CSBPage/CSBPartyResultsPage.tsx";
+import { CSBResultsPage, csbResultsLoader } from "./pages/CSBPage/CSBResultsPage.tsx";
 import {
    ElectionConfigCSBListPage,
    electionConfigCSBListLoader,
@@ -16,12 +17,17 @@ import {
 } from "./pages/ElectionConfigPage/ElectionConfigMunicipalityListPage";
 import { HomePage } from "./pages/HomePage";
 import { MunicipalityPartyResultsPage } from "./pages/MunicipalityPage/MunicipalityPartyResultsPage";
-import { MunicipalityPollingstationListPage } from "./pages/MunicipalityPage/MunicipalityPollingstationListPage";
-import { MunicipalityResultsPage } from "./pages/MunicipalityPage/MunicipalityResultsPage";
+import {
+   MunicipalityPollingstationListPage,
+   municipalityPollingstationListLoader,
+} from "./pages/MunicipalityPage/MunicipalityPollingstationListPage";
+import { MunicipalityResultsPage, municipalityResultsLoader } from "./pages/MunicipalityPage/MunicipalityResultsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import PollingStationPartyResultsPage from "./pages/PollingStationPage/PollingStationPartyResultsPage.tsx";
-import PollingStationResultsPage from "./pages/PollingStationPage/PollingStationResultsPage.tsx";
-import { ReportIssuePage } from "./pages/ReportIssuePage";
+import PollingStationResultsPage, {
+   pollingStationLoader,
+} from "./pages/PollingStationPage/PollingStationResultsPage.tsx";
+import { ReportIssuePage, reportIssueLoader } from "./pages/ReportIssuePage";
 import { queryClient } from "./queryClient.ts";
 
 // The Suspense boundary catches the suspense queries the pages
@@ -32,7 +38,9 @@ function RootLayout() {
       <>
          <ScrollRestoration />
          <Suspense fallback={<LoadingPage />}>
-            <Outlet />
+            <BaseLayout>
+               <Outlet />
+            </BaseLayout>
          </Suspense>
       </>
    );
@@ -44,6 +52,7 @@ function RootLayout() {
 export const routes: RouteObject[] = [
    {
       path: "/",
+      loader: localeLoader,
       Component: RootLayout,
       ErrorBoundary: ErrorBoundaryPage,
       HydrateFallback: LoadingPage,
@@ -51,17 +60,24 @@ export const routes: RouteObject[] = [
          { index: true, Component: HomePage },
          {
             path: ":electionConfigSlug",
-            ErrorBoundary: ErrorBoundaryPage,
             children: [
                { index: true, Component: NotFoundPage },
-               { path: "fout-melden", Component: ReportIssuePage },
+               { path: "fout-melden", loader: reportIssueLoader(queryClient), Component: ReportIssuePage },
                { path: "csb", loader: electionConfigCSBListLoader(queryClient), Component: ElectionConfigCSBListPage },
                {
                   path: "csb/:regionSlug",
                   children: [
-                     { index: true, Component: CSBMunicipalityListPage },
-                     { path: "resultaten", Component: CSBResultsPage },
-                     { path: "resultaten/:partySlug", Component: CSBPartyResultsPage },
+                     {
+                        index: true,
+                        loader: csbMunicipalityListLoader(queryClient),
+                        Component: CSBMunicipalityListPage,
+                     },
+                     { path: "resultaten", loader: csbResultsLoader(queryClient), Component: CSBResultsPage },
+                     {
+                        path: "resultaten/:partySlug",
+                        loader: csbPartyResultsLoader(queryClient),
+                        Component: CSBPartyResultsPage,
+                     },
                   ],
                },
                {
@@ -73,19 +89,29 @@ export const routes: RouteObject[] = [
                   path: "gsb/:regionSlug/csb/:csbSlug",
                   children: [
                      {
-                        Component: MunicipalityPageLayout,
-                        children: [
-                           { index: true, Component: MunicipalityPollingstationListPage },
-                           { path: "resultaten", Component: MunicipalityResultsPage },
-                        ],
+                        index: true,
+                        loader: municipalityPollingstationListLoader(queryClient),
+                        Component: MunicipalityPollingstationListPage,
                      },
-                     { path: "resultaten/:partySlug", Component: MunicipalityPartyResultsPage },
+                     {
+                        path: "resultaten",
+                        loader: municipalityResultsLoader(queryClient),
+                        Component: MunicipalityResultsPage,
+                     },
+                     {
+                        path: "resultaten/:partySlug",
+                        loader: municipalityResultsLoader(queryClient),
+                        Component: MunicipalityPartyResultsPage,
+                     },
                      {
                         path: ":pollingStationSlug",
-                        children: [
-                           { index: true, Component: PollingStationResultsPage },
-                           { path: ":partySlug", Component: PollingStationPartyResultsPage },
-                        ],
+                        loader: pollingStationLoader(queryClient),
+                        Component: PollingStationResultsPage,
+                     },
+                     {
+                        path: ":pollingStationSlug/:partySlug",
+                        loader: pollingStationLoader(queryClient),
+                        Component: PollingStationPartyResultsPage,
                      },
                   ],
                },

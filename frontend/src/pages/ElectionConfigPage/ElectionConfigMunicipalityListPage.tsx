@@ -2,7 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
 import { electionConfigQuery, regionsQuery } from "@/hooks/queries.ts";
-import { Layout } from "../../components/Layout.tsx";
+import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import SharedTabs from "../../components/SharedTabs.tsx";
@@ -41,7 +41,7 @@ export function ElectionConfigMunicipalityListPage() {
    const electionDay = electionConfig.date ? formatElectionDate(electionConfig.date) : "";
 
    return (
-      <Layout
+      <LayoutMain
          title={t`Telresultaten ${electionLabel}`}
          description={t`Bekijk de telresultaten per gemeente van de ${electionLabel}.`}
       >
@@ -73,6 +73,6 @@ export function ElectionConfigMunicipalityListPage() {
             }
          />
          <RegionList electionConfig={electionConfig} regions={regions} regionCategory="GEMEENTE" />
-      </Layout>
+      </LayoutMain>
    );
 }

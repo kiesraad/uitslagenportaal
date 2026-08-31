@@ -1,4 +1,5 @@
-const API_ORIGIN = import.meta.env.VITE_API_BASE_URL;
+// Empty when the API is served from the same origin
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL ?? "";
 
 export class ApiError extends Error {
    readonly status: number;
@@ -8,6 +9,10 @@ export class ApiError extends Error {
       this.name = "ApiError";
       this.status = status;
    }
+}
+
+export function isNotFoundError(error: unknown): boolean {
+   return error instanceof ApiError && error.status === 404;
 }
 
 export async function apiGet<T>(path: string): Promise<T> {

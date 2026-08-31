@@ -1,99 +1,46 @@
 import { useLingui } from "@lingui/react/macro";
-import { useParams } from "react-router";
-import { Layout } from "../../components/Layout";
-import { PageQueryBoundary } from "../../components/PageQueryBoundary";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useLoaderData, useParams } from "react-router";
+import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop";
 import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCandidatesResultsContent";
-import { useElectionConfig, useRegion } from "../../hooks/queries";
 import { useFormatters } from "../../utils/format";
 import { getCsbCrumb } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
 import { getPartyVoteCount, hasParty } from "../../utils/voteCounts";
 import { NotFoundPage } from "../NotFoundPage";
+import type { PollingStationLoaderData } from "./PollingStationResultsPage.tsx";
 
 export default function PollingStationPartyResultsPage() {
-   const {
-      electionConfigSlug: electionConfigSlugParam,
-      regionSlug: parentRegionSlugParam,
-      pollingStationSlug: pollingStationSlugParam,
-      partySlug: partySlugParam,
-      csbSlug: csbSlugParam,
-   } = useParams<{
-      electionConfigSlug: string;
-      regionSlug: string;
-      pollingStationSlug: string;
-      partySlug: string;
-      csbSlug?: string;
-   }>();
-
-   const electionConfigSlug = decodeURIComponent(electionConfigSlugParam ?? "");
-   const parentRegionSlug = decodeURIComponent(parentRegionSlugParam ?? "");
-   const pollingStationSlug = decodeURIComponent(pollingStationSlugParam ?? "");
-   const partySlug = decodeURIComponent(partySlugParam ?? "");
-   const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined;
+   const { electionConfigQuery, regionQuery, pollingStationQuery } = useLoaderData<PollingStationLoaderData>();
+   // The party is not part of the stembureau request, so its slug is read from the route.
+   const { partySlug = "" } = useParams<{ partySlug: string }>();
    const { t } = useLingui();
    const { formatDate } = useFormatters();
+   // The loader has already resolved every query, so the data is never pending here.
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+   const { data: region } = useSuspenseQuery(regionQuery);
+   const { data: pollingStation } = useSuspenseQuery(pollingStationQuery);
 
-   const {
-      data: electionConfig,
-      isLoading: isElectionLoading,
-      isError: isElectionError,
-      error: electionError,
-      refetch: refetchElection,
-   } = useElectionConfig(electionConfigSlug);
-   const {
-      data: region,
-      isLoading: isRegionLoading,
-      isError: isRegionError,
-      error: regionError,
-      refetch: refetchRegion,
-   } = useRegion(electionConfigSlug, parentRegionSlug, csbSlug);
-   const {
-      data: pollingStation,
-      isLoading: isPollingStationLoading,
-      isError: isPollingStationError,
-      error: pollingStationError,
-      refetch: refetchPollingStation,
-   } = useRegion(electionConfigSlug, pollingStationSlug, csbSlug, parentRegionSlug);
-
-   const isLoading = isElectionLoading || isRegionLoading || isPollingStationLoading;
-   const isError =
-      isElectionError || isRegionError || isPollingStationError || !electionConfig || !region || !pollingStation;
-
+   const csbSlug = region.csb_slug ?? undefined;
    const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(
-      electionConfigSlug,
-      parentRegionSlug,
+      electionConfig.slug,
+      region.slug,
       csbSlug,
    );
    const pollingStationResultsRoute = appRoutes.pollingStationResults(
-      electionConfigSlug,
-      parentRegionSlug,
-      pollingStationSlug,
+      electionConfig.slug,
+      region.slug,
+      pollingStation.slug,
       csbSlug,
    );
    const pollingStationPartyResultsRoute = appRoutes.pollingStationPartyResults(
-      electionConfigSlug,
-      parentRegionSlug,
-      pollingStationSlug,
+      electionConfig.slug,
+      region.slug,
+      pollingStation.slug,
       partySlug,
       csbSlug,
    );
-
-   if (isLoading || isError) {
-      return (
-         <PageQueryBoundary
-            isLoading={isLoading}
-            isError={isError}
-            onRetry={() => {
-               void refetchElection();
-               void refetchRegion();
-               void refetchPollingStation();
-            }}
-            errors={[electionError, regionError, pollingStationError]}
-            entityLabel={t`Stembureau`}
-         />
-      );
-   }
 
    const partyName = getPartyVoteCount(pollingStation.vote_counts, partySlug)?.party.registered_name ?? t`Lijst`;
    const stationName = pollingStation.region_name;
@@ -109,14 +56,14 @@ export default function PollingStationPartyResultsPage() {
    }
 
    return (
-      <Layout title={documentTitle} description={documentTitle}>
+      <LayoutMain title={documentTitle} description={documentTitle}>
          <PageTop
             title={pageTitle}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
-               { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig.label },
-               getCsbCrumb(region, electionConfigSlug),
+               { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
+               getCsbCrumb(region, electionConfig.slug),
                { href: municipalityPollingstationListRoute, label: region.region_name },
                { href: pollingStationResultsRoute, label: pollingStation.region_name },
                { href: pollingStationPartyResultsRoute, label: partyName },
@@ -131,6 +78,6 @@ export default function PollingStationPartyResultsPage() {
                />
             </div>
          </div>
-      </Layout>
+      </LayoutMain>
    );
 }
