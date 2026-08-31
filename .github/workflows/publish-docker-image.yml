@@ -6,10 +6,15 @@ on:
         required: true
         type: string
         description: Directory to build the image from
+      image-name:
+        required: true
+        type: string
+        description: Name of the image to build
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-${{ inputs.context }}
+  # Image name with the registry/owner prefix.
+  FULL_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}
 
 jobs:
   docker-build-push:
@@ -42,7 +47,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.FULL_IMAGE_NAME }}
           flavor: |
             latest=false
           tags: |
@@ -67,12 +72,15 @@ jobs:
       - name: Generate artifact attestation
         uses: actions/attest@v4
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-name: ${{ env.FULL_IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
       - name: Remove old images
-        uses: "tweedegolf/cleanup-untagged-images-action@main"
+        uses: actions/delete-package-versions@v5
         with:
-          package: ${{ env.IMAGE_NAME }}
-          older_than: 1 # day
+          package-type: container
+          # Package name does not work with registry/owner prefix.
+          package-name: ${{ inputs.image-name }}
+          min-versions-to-keep: 5
+          delete-only-untagged-versions: true

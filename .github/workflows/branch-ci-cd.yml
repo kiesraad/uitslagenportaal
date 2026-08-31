@@ -37,6 +37,7 @@ jobs:
     uses: ./.github/workflows/publish-docker-image.yml
     with:
       context: frontend
+      image-name: uitslagenportaal-frontend
 
   backend-docker-image:
     name: Publish Backend Image
@@ -50,3 +51,4 @@ jobs:
     uses: ./.github/workflows/publish-docker-image.yml
     with:
       context: backend
+      image-name: uitslagenportaal-backend
