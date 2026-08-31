@@ -72,9 +72,7 @@ jobs:
           push-to-registry: true
 
       - name: Remove old images
-        uses: actions/delete-package-versions@v5
+        uses: "tweedegolf/cleanup-untagged-images-action@main"
         with:
-          package-type: container
-          package-name: ${{ env.IMAGE_NAME }}
-          min-versions-to-keep: 5
-          delete-only-untagged-versions: true
+          package: ${{ env.IMAGE_NAME }}
+          older_than: 1 # day
