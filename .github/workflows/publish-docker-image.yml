@@ -34,7 +34,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      # A build for refs/tags/* will be tagged with the version, e.g. `1.0.0`.
+      # A build for refs/tags/v* will be tagged with the version, e.g. `1.0.0`.
       # A build for refs/heads/dev will be tagged with the branch name, `dev`.
       # `latest` tags are disabled.
       # See https://github.com/docker/metadata-action#semver
@@ -46,7 +46,8 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/heads/') }}
+            type=ref,event=branch,enable=${{ github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/heads/') }}
+            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
 
       # Build and push the image
       - name: Build and push
