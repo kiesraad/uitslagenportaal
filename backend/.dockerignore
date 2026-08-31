@@ -1,6 +1,8 @@
 .venv
 __pycache__
-*.pyc
+*.py[cod]
+*.so
+
 .data
 .env
 .git
@@ -8,3 +10,6 @@ __pycache__
 .ruff_cache
 .pytest_cache
 celerybeat-schedule*
+celerybeat.pid
+.DS_Store
+recreate_db_*.sh
