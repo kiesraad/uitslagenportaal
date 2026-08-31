@@ -1,0 +1,52 @@
+{{- if .Values.gateway.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  parentRefs:
+    - name: {{ .Release.Name }}
+      sectionName: websecure
+  hostnames:
+    - {{ .Values.app.hostname | quote }}
+  # Rule order does not decide the winner: the Gateway API matches the longest
+  # path prefix first, so /api wins over / wherever it is listed.
+  rules:
+    # Mirrors the compose proxy: everything Django owns goes to the backend,
+    # the rest is the built frontend.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: {{ .Release.Name }}-backend
+          port: {{ .Values.backend.port }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ .Release.Name }}-frontend
+          port: {{ .Values.frontend.port }}
+---
+# Plain HTTP exists only to be redirected. The ACME challenge still resolves:
+# cert-manager's own route matches a longer prefix and so takes precedence.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .Release.Name }}-redirect
+  namespace: {{ .Values.namespace }}
+spec:
+  parentRefs:
+    - name: {{ .Release.Name }}
+      sectionName: web
+  hostnames:
+    - {{ .Values.app.hostname | quote }}
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+{{- end }}

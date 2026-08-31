@@ -1,0 +1,43 @@
+# cert-manager: issues and renews the TLS certificates referenced by the
+# Gateway. Installed once per cluster, outside the application chart.
+
+# The chart does not install the CRDs by default. They are cluster-scoped and
+# outlive the release: `crds.keep` (on by default) stops a `helm uninstall`
+# from taking every Certificate and Issuer in the cluster with it.
+crds:
+  enabled: true
+
+config:
+  apiVersion: controller.config.cert-manager.io/v1alpha1
+  kind: ControllerConfiguration
+  # Traefik serves no Ingress objects here, so an Ingress-based HTTP-01 solver
+  # would never be routed. This lets cert-manager solve challenges over
+  # HTTPRoute instead.
+  gatewayAPI:
+    enabled: true
+
+# Requests keep the pods off BestEffort, where the kubelet evicts them first
+# under node memory pressure. No CPU limits: throttling certificate issuance
+# only makes a renewal take longer to recover.
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+
+webhook:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 64Mi
+
+cainjector:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 128Mi

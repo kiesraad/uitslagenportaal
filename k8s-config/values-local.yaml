@@ -1,0 +1,38 @@
+# Overrides for a local single-node cluster (Docker Desktop):
+#   helm upgrade --install uitslagenportaal . -n uitslagenportaal \
+#     --create-namespace -f values.yaml -f values-local.yaml
+#
+# Requires 127.0.0.1 uitslagenportaal.localdev in the hosts file: both the
+# Gateway listeners and the routes match on hostname, so a request that does
+# not carry it reaches nothing. Avoid a .localhost suffix — browsers resolve
+# those to loopback themselves, Windows DNS does not.
+
+debug: true
+
+app:
+  hostname: "uitslagenportaal.localdev"
+
+issuer:
+  # Let's Encrypt validates by connecting inbound to the hostname, which no
+  # local cluster can satisfy; staging relaxes the rate limits, not that.
+  type: "selfsigned"
+
+db:
+  # The in-cluster Postgres speaks plain TCP, unlike the managed database.
+  sslmode: "disable"
+
+# In-cluster stand-ins for the managed database, cache and object storage.
+services:
+  enabled: true
+  username: "uitslagenportaal_user"
+  password: "password"
+  secretKey: "super-secret"
+  postgres:
+    image: "postgres:16"
+    storage: 2Gi
+  redis:
+    image: "redis:8"
+    storage: 1Gi
+  objectStorage:
+    image: "rustfs/rustfs:1.0.0-rc.1"
+    storage: 5Gi
