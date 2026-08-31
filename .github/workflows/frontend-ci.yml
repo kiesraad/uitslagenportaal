@@ -1,18 +1,17 @@
 name: Frontend CI
 
 on:
-  push:
-    branches: [main, dev]
-    paths:
-      - "frontend/**"
-      - ".github/workflows/frontend-ci.yml"
   pull_request:
     paths:
       - "frontend/**"
       - ".github/workflows/frontend-ci.yml"
+  workflow_call:
+
+permissions:
+  contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: frontend-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -28,7 +27,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
@@ -47,7 +46,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
@@ -63,7 +62,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
@@ -77,16 +76,10 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
         working-directory: frontend
       - run: npm run build
         working-directory: frontend
-
-  docker-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - run: docker build -f frontend/Dockerfile frontend/

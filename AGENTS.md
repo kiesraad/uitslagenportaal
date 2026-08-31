@@ -152,11 +152,18 @@ Stub `fetch` with `vi.stubGlobal`; wrap components in `QueryClientProvider` and
 ## CI
 
 `.github/workflows/backend-ci.yml`: ruff check + format check, `pytest` against Postgres 16,
-`makemigrations --check --dry-run`, and a Docker build.
-`.github/workflows/frontend-ci.yml`: `biome ci`, vitest, `npm run i18n:check`, `npm run build`
-(`tsc -b` + vite), Docker build.
+and `makemigrations --check --dry-run`.
+`.github/workflows/frontend-ci.yml`: `biome ci`, vitest, `npm run i18n:check` and
+`npm run build` (`tsc -b` + vite).
+`.github/workflows/playwright.yml`: the browser tests, against a throwaway stack.
 
-Both run on PRs and both check that generated files are in step with the source, so
-regenerate them as part of the change: `makemigrations` after a model change,
+All three run on PRs — the backend and frontend suites filtered by path, Playwright on every
+PR — and the first two check that generated files are in step with the source, so regenerate
+them as part of the change: `makemigrations` after a model change,
 `npm run i18n:extract-clean` after a message change. A missing migration or a stale
 catalogue fails CI. PRs target `dev`.
+
+`.github/workflows/branch-ci-cd.yml` runs on pushes to `dev` and `main`. It calls all three
+workflows above in full — path filters apply to a workflow's own triggers, not to a call —
+and publishes the frontend and backend images to ghcr.io only once every one of them passes.
+`publish-docker-image.yml` is the reusable workflow that builds and pushes one image.

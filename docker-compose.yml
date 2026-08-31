@@ -1,6 +1,8 @@
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: dev.dockerfile
     # Init container: creates the bucket and makes its objects publicly readable.
     pre_start:
       - command: ["python", "manage.py", "ensure_bucket", "--public"]
@@ -58,7 +60,9 @@ services:
     pre_start: !reset []
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: dev.dockerfile
     environment:
       # Empty base URL -> requests go to the same origin the page was loaded
       # from, which the proxy then routes to the backend.

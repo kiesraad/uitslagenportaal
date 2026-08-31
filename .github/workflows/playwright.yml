@@ -1,12 +1,14 @@
 name: Playwright
 
 on:
-  push:
-    branches: [main, dev]
   pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: playwright-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
