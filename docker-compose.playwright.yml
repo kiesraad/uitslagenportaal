@@ -17,6 +17,10 @@ services:
     profiles:
       - donotstart
 
+  celery:
+    profiles:
+      - donotstart
+
   frontend:
     environment:
       VITE_HMR_CLIENT_PORT: "8081"
@@ -25,11 +29,16 @@ services:
     ports: !override
       - "8081:80"
 
+  # Published for the host-side pytest process, which migrates the database, seeds
+  # it, and writes EML documents to storage directly (backend/playwright_tests/).
   db:
-    # Do not publish 5433 — that port belongs to the daily stack.
-    ports: !override []
+    ports: !override
+      - "5434:5432" # 5433 belongs to the daily stack
 
   object-storage:
-    # Remap S3 so :9000/:9001 stay free for local development.
     ports: !override
-      - "19000:9000"
+      - "19000:9000" # matches the backend's S3_PUBLIC_DOMAIN above
+
+  # Nothing on the host talks to the cache; the browser suite never reaches it.
+  redis:
+    ports: !override []
