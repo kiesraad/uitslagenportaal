@@ -67,7 +67,7 @@ jobs:
       - name: Generate artifact attestation
         uses: actions/attest@v4
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
@@ -75,6 +75,6 @@ jobs:
         uses: actions/delete-package-versions@v5
         with:
           package-type: container
-          package-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          package-name: ${{ env.IMAGE_NAME }}
           min-versions-to-keep: 5
           delete-only-untagged-versions: true
