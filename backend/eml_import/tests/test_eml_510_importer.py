@@ -591,7 +591,7 @@ def test_store_eml_archives_existing_document_on_reimport(ws_regions):
     content = b"<eml>corrected counts, longer than before</eml>"
     importer = make_ws_importer(EML510bImporter, NamedBytesIO(content, "x.xml"))
 
-    importer._archive(ws_regions["waterschap"])
+    importer._delete(ws_regions["waterschap"])
     importer._store_eml(ws_regions["waterschap"])
 
     existing.refresh_from_db()

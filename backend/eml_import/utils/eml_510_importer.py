@@ -208,7 +208,7 @@ class EML510bImporter(EML510BaseImporter):
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
 
-    def _archive(self, region: Region) -> None:
+    def _delete(self, region: Region) -> None:
         """
         Archive the previous telling under this municipality so the normal import path
         can recreate it. The municipality region itself stays current; its stembureaus
@@ -308,7 +308,7 @@ class EML510bImporter(EML510BaseImporter):
         # First imports rely on the caller's atomic (if any); no second import method.
         with transaction.atomic():
             if is_correction:
-                self._archive(region)
+                self._delete(region)
 
             if self.eml_file is not None:
                 self._store_eml(region)
@@ -371,7 +371,7 @@ class EML510dImporter(EML510BaseImporter):
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
 
-    def _archive(self, region: Region) -> None:
+    def _delete(self, region: Region) -> None:
         """Archive prior totaaltelling rows for this CSB and its descendants."""
         counts_filter = Q(region=region) | Q(region__csb=region)
         VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
@@ -404,7 +404,7 @@ class EML510dImporter(EML510BaseImporter):
 
         with transaction.atomic():
             if is_correction:
-                self._archive(region)
+                self._delete(region)
 
             counting_method = self._counting_method(self.eml.count)
             if counting_method is not None and region.counting_method != counting_method:

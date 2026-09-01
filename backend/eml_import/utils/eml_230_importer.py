@@ -26,7 +26,7 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
         with transaction.atomic():
             if self._is_correction(contest_data):
                 self._ensure_exchange_correction_allowed()
-                self._archive(contest_data)
+                self._delete(contest_data)
 
             contest = Contest.objects.create(
                 identifier=contest_data.contest_identifier.id,
@@ -97,7 +97,7 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
         except Contest.DoesNotExist:
             return False
 
-    def _archive(self, contest_data) -> None:
+    def _delete(self, contest_data) -> None:
         """Archive prior candidates for this contest so a corrected 230b can recreate them."""
         contest = Contest.objects.get(
             identifier=contest_data.contest_identifier.id,
