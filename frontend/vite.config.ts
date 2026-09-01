@@ -34,6 +34,15 @@ export default defineConfig({
          usePolling: true,
       },
    },
+   preview: {
+      // The built app calls the API on its own origin (VITE_API_BASE_URL is empty), so
+      // whatever serves dist/ has to forward /api to Django the way the nginx proxy
+      // does in compose. Used by the Python browser suite in CI, which drives the
+      // build rather than the dev server.
+      proxy: {
+         "/api": "http://127.0.0.1:8000",
+      },
+   },
    test: {
       environment: "jsdom",
       setupFiles: ["./tests/setup.ts"],

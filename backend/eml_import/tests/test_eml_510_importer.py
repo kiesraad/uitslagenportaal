@@ -1,8 +1,9 @@
 import re
-from datetime import date
+from datetime import date, datetime
 
 import pytest
 from django.core.files.storage import default_storage
+from django.utils import timezone
 from pyeml_bindings import (
     AffiliationIdentifierStructure510,
     AuthorityAddressStructure,
@@ -12,6 +13,7 @@ from pyeml_bindings import (
     ContestIdentifierStructureKr,
     Count,
     CountingMethodMethodCode,
+    CreationDateTime,
     ElectionCategoryType,
     ElectionDate,
     ElectionDomain,
@@ -32,7 +34,7 @@ from pyeml_bindings import (
 from pyeml_bindings import (
     CountingMethod as EmlCountingMethod,
 )
-from xsdata.models.datatype import XmlDate
+from xsdata.models.datatype import XmlDate, XmlDateTime
 
 from election.models import ElectionCategory, ElectionDocument, VoteCount, VoterTurnoutCount
 from election.tests.factories import (
@@ -51,6 +53,8 @@ from region.models import Region
 from region.tests.factories import RegionFactory
 
 ELECTION_DATE = date(2023, 3, 15)
+# <kr:CreationDateTime>: when the counting body published the results. Naive, as the Kiesraad writes it.
+CREATION_DATE_TIME = datetime(2023, 3, 20, 15, 15, 38, 222000)
 
 WS_ELECTION_ID = "AB2023_Scheldestromen"
 WS_CONFIG_IDENTIFIER = "AB2023"  # the part of the election id before the "_"
@@ -143,12 +147,16 @@ def make_eml(
     subcategory=ElectionSubcategoryType.AB2,
     domain=None,
     counting_method=None,
+    creation_date_time=CREATION_DATE_TIME,
 ) -> Eml510:
     """A 510 document. Everything the importers do not read is filled in with constants."""
     return Eml510(
         id=eml_id,
         schema_version="5",
         transaction_id=TransactionId(value="1"),
+        creation_date_time=(
+            [CreationDateTime(value=XmlDateTime.from_datetime(creation_date_time))] if creation_date_time else []
+        ),
         managing_authority=ManagingAuthorityStructureKr(
             authority_identifier=AuthorityIdentifierStructureKr(id=authority_id, value=authority_name),
             authority_address=AuthorityAddressStructure(),
@@ -171,7 +179,14 @@ def make_eml(
     )
 
 
-def make_ws_510b_eml(*, contests, authority_id="0654", authority_name="Borsele", counting_method=None):
+def make_ws_510b_eml(
+    *,
+    contests,
+    authority_id="0654",
+    authority_name="Borsele",
+    counting_method=None,
+    creation_date_time=CREATION_DATE_TIME,
+):
     """A Telling published by a municipality."""
     return make_eml(
         eml_id="510b",
@@ -179,10 +194,11 @@ def make_ws_510b_eml(*, contests, authority_id="0654", authority_name="Borsele",
         authority_name=authority_name,
         contests=contests,
         counting_method=counting_method,
+        creation_date_time=creation_date_time,
     )
 
 
-def make_ws_510d_eml(*, contests):
+def make_ws_510d_eml(*, contests, creation_date_time=CREATION_DATE_TIME):
     """A Totaaltelling published by a waterschap; its election domain carries a region number."""
     return make_eml(
         eml_id="510d",
@@ -190,6 +206,7 @@ def make_ws_510d_eml(*, contests):
         authority_name="Scheldestromen",
         contests=contests,
         domain=ElectionDomain(id="17", value="Scheldestromen"),
+        creation_date_time=creation_date_time,
     )
 
 
@@ -604,7 +621,9 @@ def test_store_eml_archives_existing_document_on_reimport(ws_regions):
     assert_storage_key(doc.storage_key, "AB2023/AB2023_Telling_GSB_17_Scheldestromen")
 
 
-def make_ws_telling(*, authority_id="0654", authority_name="Borsele", counting_method=None):
+def make_ws_telling(
+    *, authority_id="0654", authority_name="Borsele", counting_method=None, creation_date_time=CREATION_DATE_TIME
+):
     """The Telling of gemeente Borsele: totals plus the votes of one polling station."""
     totals = make_total_votes(
         [
@@ -625,6 +644,7 @@ def make_ws_telling(*, authority_id="0654", authority_name="Borsele", counting_m
         authority_id=authority_id,
         authority_name=authority_name,
         counting_method=counting_method,
+        creation_date_time=creation_date_time,
     )
 
 
@@ -702,7 +722,7 @@ def test_510b_marks_region_as_counted_and_stores_document(ws_regions, ws_contest
 
     gemeente = ws_regions["gemeente"]
     gemeente.refresh_from_db()
-    assert gemeente.results_available_at is not None
+    assert gemeente.results_available_at == timezone.make_aware(CREATION_DATE_TIME)
     assert gemeente.counting_method == CountingMethod.DSO
     doc = ElectionDocument.objects.get()
     assert doc.region == gemeente
@@ -743,6 +763,39 @@ def ws_totaaltelling(ws_regions, ws_contest, ws_parties, ws_candidates):
         ],
     )
     EML510dImporter(make_ws_510d_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])]), None).parse()
+
+
+def test_510d_publishes_the_csb_region_at_the_emls_creation_date(ws_totaaltelling, ws_regions):
+    """The CSB's own results carry a publication date, so "Geplaatst op" is not an epoch fallback."""
+    waterschap = ws_regions["waterschap"]
+    waterschap.refresh_from_db()
+
+    assert waterschap.results_available_at == timezone.make_aware(CREATION_DATE_TIME)
+
+
+def test_510d_keeps_the_counting_method_while_setting_the_publication_date(
+    ws_regions, ws_contest, ws_parties, ws_candidates
+):
+    """Both fields are written in one save; neither update_fields list may drop the other."""
+    eml = make_ws_510d_eml(contests=[])
+    eml.count.counting_method = EmlCountingMethod(method_code=CountingMethodMethodCode.CENTRALE_STEMOPNEMING)
+
+    EML510dImporter(eml, None).parse()
+
+    waterschap = ws_regions["waterschap"]
+    waterschap.refresh_from_db()
+    assert waterschap.counting_method == CountingMethod.CSO
+    assert waterschap.results_available_at == timezone.make_aware(CREATION_DATE_TIME)
+
+
+def test_510d_leaves_results_available_at_unset_without_a_creation_date(
+    ws_regions, ws_contest, ws_parties, ws_candidates
+):
+    EML510dImporter(make_ws_510d_eml(contests=[], creation_date_time=None), None).parse()
+
+    waterschap = ws_regions["waterschap"]
+    waterschap.refresh_from_db()
+    assert waterschap.results_available_at is None
 
 
 def test_510d_resolves_csb_region_from_election_category(ws_totaaltelling, ws_regions):
@@ -950,3 +1003,14 @@ def test_510d_resolves_total_candidate_votes_by_short_code(ps_totaaltelling, ps_
         (ps_candidates["Venlo"], 8262),
         (ps_candidates["Maastricht"], 10406),
     ]
+
+
+def test_510b_leaves_results_available_at_unset_without_a_creation_date(
+    ws_regions, ws_contest, ws_parties, ws_candidates
+):
+    """<kr:CreationDateTime> is optional; without it there is no publication date to show."""
+    EML510bImporter(make_ws_telling(creation_date_time=None), None).parse()
+
+    gemeente = ws_regions["gemeente"]
+    gemeente.refresh_from_db()
+    assert gemeente.results_available_at is None

@@ -1,18 +1,18 @@
 name: Backend CI
 
 on:
-  push:
-    branches: [main, dev]
-    paths:
-      - "backend/**"
-      - ".github/workflows/backend-ci.yml"
+  # Workflow only runs on pull_requests and is run from branch-ci-cd.yml
   pull_request:
     paths:
       - "backend/**"
       - ".github/workflows/backend-ci.yml"
+  workflow_call:
+
+permissions:
+  contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: backend-ci-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -93,9 +93,3 @@ jobs:
         working-directory: backend
       - run: uv run python manage.py makemigrations --check --dry-run
         working-directory: backend
-
-  docker-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - run: docker build -f backend/Dockerfile backend/

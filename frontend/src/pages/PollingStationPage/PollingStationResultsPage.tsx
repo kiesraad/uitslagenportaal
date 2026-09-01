@@ -1,103 +1,81 @@
 import { useLingui } from "@lingui/react/macro";
-import { useParams } from "react-router";
-import { Layout } from "../../components/Layout";
-import { PageQueryBoundary } from "../../components/PageQueryBoundary";
+import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent";
-import { useElectionConfig, useRegion } from "../../hooks/queries";
+import { electionConfigQuery, regionQuery } from "../../hooks/queries";
 import { useFormatters } from "../../utils/format";
 import { getCsbCrumb } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
 
-export default function PollingStationResultsPage() {
-   const {
-      electionConfigSlug: electionConfigSlugParam,
-      parentRegionSlug: parentRegionSlugParam,
-      pollingStationSlug: pollingStationSlugParam,
-      csbSlug: csbSlugParam,
-   } = useParams<{
-      electionConfigSlug: string;
-      parentRegionSlug: string;
-      pollingStationSlug: string;
-      csbSlug?: string;
-   }>();
+/** The stembureau and the gemeente it belongs to, for both stembureau pages. */
+export function pollingStationLoader(queryClient: QueryClient) {
+   return async ({ params }: LoaderFunctionArgs) => {
+      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
+      const regionQueryOptions = regionQuery(params);
+      // The stembureau is the region being fetched here; the gemeente in the URL is its parent.
+      const pollingStationQueryOptions = regionQuery({
+         electionConfigSlug: params.electionConfigSlug,
+         regionSlug: params.pollingStationSlug,
+         csbSlug: params.csbSlug,
+         parentRegionSlug: params.regionSlug,
+      });
 
-   const electionConfigSlug = decodeURIComponent(electionConfigSlugParam ?? "");
-   const parentRegionSlug = decodeURIComponent(parentRegionSlugParam ?? "");
-   const pollingStationSlug = decodeURIComponent(pollingStationSlugParam ?? "");
-   const csbSlug = csbSlugParam ? decodeURIComponent(csbSlugParam) : undefined;
+      await Promise.all([
+         queryClient.ensureQueryData(electionConfigQueryOptions),
+         queryClient.ensureQueryData(regionQueryOptions),
+         queryClient.ensureQueryData(pollingStationQueryOptions),
+      ]);
+
+      return {
+         electionConfigQuery: electionConfigQueryOptions,
+         regionQuery: regionQueryOptions,
+         pollingStationQuery: pollingStationQueryOptions,
+      };
+   };
+}
+
+export type PollingStationLoaderData = Awaited<ReturnType<ReturnType<typeof pollingStationLoader>>>;
+
+export default function PollingStationResultsPage() {
+   const { electionConfigQuery, regionQuery, pollingStationQuery } = useLoaderData<PollingStationLoaderData>();
    const { t } = useLingui();
    const { formatDate } = useFormatters();
+   // The loader has already resolved every query, so the data is never pending here.
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+   const { data: region } = useSuspenseQuery(regionQuery);
+   const { data: pollingStation } = useSuspenseQuery(pollingStationQuery);
 
-   const {
-      data: electionConfig,
-      isLoading: isElectionLoading,
-      isError: isElectionError,
-      error: electionError,
-      refetch: refetchElection,
-   } = useElectionConfig(electionConfigSlug);
-   const {
-      data: region,
-      isLoading: isRegionLoading,
-      isError: isRegionError,
-      error: regionError,
-      refetch: refetchRegion,
-   } = useRegion(electionConfigSlug, parentRegionSlug, csbSlug);
-   const {
-      data: pollingStation,
-      isLoading: isPollingStationLoading,
-      isError: isPollingStationError,
-      error: pollingStationError,
-      refetch: refetchPollingStation,
-   } = useRegion(electionConfigSlug, pollingStationSlug, csbSlug, parentRegionSlug);
-
-   const isLoading = isElectionLoading || isRegionLoading || isPollingStationLoading;
-   const isError =
-      isElectionError || isRegionError || isPollingStationError || !electionConfig || !region || !pollingStation;
-
+   const csbSlug = region.csb_slug ?? undefined;
    const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(
-      electionConfigSlug,
-      parentRegionSlug,
+      electionConfig.slug,
+      region.slug,
       csbSlug,
    );
    const pollingStationResultsRoute = appRoutes.pollingStationResults(
-      electionConfigSlug,
-      parentRegionSlug,
-      pollingStationSlug,
+      electionConfig.slug,
+      region.slug,
+      pollingStation.slug,
       csbSlug,
    );
 
-   if (isLoading || isError) {
-      return (
-         <PageQueryBoundary
-            isLoading={isLoading}
-            isError={isError}
-            onRetry={() => {
-               void refetchElection();
-               void refetchRegion();
-               void refetchPollingStation();
-            }}
-            errors={[electionError, regionError, pollingStationError]}
-            entityLabel={t`Stembureau`}
-         />
-      );
-   }
-
    const stationName = pollingStation.region_name;
    const regionName = region.region_name;
-   const publishedAt = formatDate(region.results_available_at);
+   // No publication date until the region's results have been imported; the line is then omitted.
+   const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
    const pageTitle = `${t`Telresultaten stembureau`}\n${stationName}`;
    const documentTitle = t`Telresultaten stembureau – ${stationName}`;
 
    return (
-      <Layout title={documentTitle} description={documentTitle}>
+      <LayoutMain title={documentTitle} description={documentTitle}>
          <PageTop
             title={pageTitle}
-            subtitle={t`Geplaatst op: ${publishedAt}`}
+            subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
-               { href: appRoutes.electionConfigMunicipalityList(electionConfigSlug), label: electionConfig.label },
-               getCsbCrumb(region, electionConfigSlug),
+               { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
+               getCsbCrumb(region, electionConfig.slug),
                { href: municipalityPollingstationListRoute, label: t`Gemeente ${regionName}` },
                { href: pollingStationResultsRoute, label: pollingStation.region_name },
             ]}
@@ -115,6 +93,6 @@ export default function PollingStationResultsPage() {
                />
             </div>
          </div>
-      </Layout>
+      </LayoutMain>
    );
 }
