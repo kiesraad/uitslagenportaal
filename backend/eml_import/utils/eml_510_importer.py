@@ -340,12 +340,6 @@ class EML510bImporter(EML510BaseImporter):
             if self.eml_file is not None:
                 self._store_eml(region)
 
-            region.results_available_at = timezone.now()
-            counting_method = self._counting_method(self.eml.count)
-            if counting_method is not None:
-                region.counting_method = counting_method
-            region.save()
-
             # Preload party names dict
             party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
             polling_stations = self._ensure_polling_stations(region)
@@ -441,11 +435,6 @@ class EML510dImporter(EML510BaseImporter):
                 region.counting_method = counting_method
                 update_fields.append("counting_method")
             region.save(update_fields=update_fields)
-
-            counting_method = self._counting_method(self.eml.count)
-            if counting_method is not None and region.counting_method != counting_method:
-                region.counting_method = counting_method
-                region.save(update_fields=["counting_method", "updated_at"])
 
             # Store the EML file
             if self.eml_file is not None:
