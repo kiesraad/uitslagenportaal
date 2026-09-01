@@ -110,7 +110,7 @@ class GithubEmlFileHandler(BaseFileHandler):
                 )
 
                 self.logger.info(
-                    "Fetching files for next batch of commits on branch %s at %s...",
+                    "Fetching files for next commit on branch %s at %s...",
                     branch,
                     last_imported.commit_sha if last_imported else "first commit",
                 )
