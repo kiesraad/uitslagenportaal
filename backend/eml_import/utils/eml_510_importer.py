@@ -31,6 +31,8 @@ from region.models import Region, build_region_slug
 
 
 class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
+    file_type: ElectionDocument.FileType
+
     def __init__(self, eml: Eml510, eml_file: Path | NamedBytesIO | None):
         super().__init__(eml, eml_file)
         self.election_documents = {doc.storage_key: doc for doc in ElectionDocument.objects.all()}
@@ -195,7 +197,7 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
             storage_key=stored_file_path,
             region=region,
             content_type="application/xml",
-            file_type=self.eml_type,
+            file_type=self.file_type,
             size=size,
         )
 
@@ -204,6 +206,7 @@ class EML510bImporter(EML510BaseImporter):
     """Telling"""
 
     eml_type = EmlType.EML_510b
+    file_type = ElectionDocument.FileType.EML_510B
 
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
@@ -222,7 +225,7 @@ class EML510bImporter(EML510BaseImporter):
         counts_filter = Q(region=region) | Q(region__in=stations)
         VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
         VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
-        ElectionDocument.objects.filter(region=region, file_type=self.eml_type).archive()
+        ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
         stations.delete()
 
     @staticmethod
@@ -367,6 +370,7 @@ class EML510dImporter(EML510BaseImporter):
     """Totaaltelling."""
 
     eml_type = EmlType.EML_510d
+    file_type = ElectionDocument.FileType.EML_510D
 
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
@@ -376,7 +380,7 @@ class EML510dImporter(EML510BaseImporter):
         counts_filter = Q(region=region) | Q(region__csb=region)
         VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
         VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
-        ElectionDocument.objects.filter(region=region, file_type=self.eml_type).archive()
+        ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
 
     def _parse_data(self) -> None:
         election_domain = self._get_election_identifier_data().election_domain

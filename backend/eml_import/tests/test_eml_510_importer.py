@@ -531,7 +531,7 @@ def test_store_eml_saves_path_input_and_creates_document(importer_cls, ws_region
     assert default_storage.open(doc.storage_key).read() == content
     assert doc.region == ws_regions["gemeente"]
     assert doc.content_type == "application/xml"
-    assert doc.file_type == importer.eml_type
+    assert doc.file_type == importer.file_type
     assert doc.size == len(content)
 
 
@@ -585,7 +585,7 @@ def test_store_eml_archives_existing_document_on_reimport(ws_regions):
         storage_key="AB2023/AB2023_Telling_GSB_17_Scheldestromen.eml.xml",
         region=ws_regions["waterschap"],
         content_type="application/xml",
-        file_type=EmlType.EML_510b,
+        file_type=ElectionDocument.FileType.EML_510B,
         size=1,
     )
     content = b"<eml>corrected counts, longer than before</eml>"
