@@ -13,6 +13,12 @@ data:
   PGSSLROOTCERT: "/etc/ssl/rdb/ca.pem"
   DB_CONN_MAX_AGE: "60"
 
+  # Set Celery concurrency and trigger a worker recycle after MAX_TASKS_PER_CHILD
+  # to prevent memory leaks from persisting between tasks.
+  CELERY_WORKER_CONCURRENCY: "{{ .Values.celery.worker.concurrency }}"
+  CELERY_WORKER_MAX_TASKS_PER_CHILD: "{{ .Values.celery.worker.maxTasksPerChild }}"
+  CELERY_WORKER_PREFETCH_MULTIPLIER: "{{ .Values.celery.worker.prefetchMultiplier }}"
+
   # Both default to True upstream. Unsafe when internet-facing.
   DEBUG: "{{ .Values.debug }}"
   SITE_ROOT: "https://{{ .Values.app.hostname }}"
