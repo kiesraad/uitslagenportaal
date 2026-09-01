@@ -1,0 +1,63 @@
+# Traefik: cluster ingress, installed once per cluster and kept outside the
+# application chart so it survives any redeploy of the app.
+#
+# Routing is done through the Gateway API; certificates come from cert-manager.
+
+deployment:
+  replicas: 2
+
+providers:
+  kubernetesGateway:
+    enabled: true
+  # Kept on for Middlewares (rate limiting, auth, IP allowlists) and TLSOption,
+  # which the Gateway API standard channel has no equivalent for.
+  kubernetesCRD:
+    enabled: true
+  kubernetesIngress:
+    enabled: false
+
+# Without the Ingress provider there is nothing to advertise an IngressClass for.
+ingressClass:
+  enabled: false
+
+# The GatewayClass belongs to the controller; the Gateway is declared alongside
+# the application so it can own its listeners and TLS.
+gatewayClass:
+  enabled: true
+gateway:
+  enabled: false
+
+service:
+  type: LoadBalancer
+
+log:
+  level: INFO
+accessLog:
+  enabled: true
+  format: json
+
+# No CPU limit on purpose: throttling the proxy hurts most during the traffic
+# spike it exists to absorb. The memory limit restarts a leaking pod instead of
+# letting it take the node down.
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Two replicas only buy availability if they land on different nodes.
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: traefik
+
+global:
+  checkNewVersion: false

@@ -1,0 +1,88 @@
+namespace: uitslagenportaal
+debug: false
+
+app:
+  hostname: "uitslagenportaal.kiesraad.net"
+  site_name: "Uitslagenportaal"
+
+db:
+  name: "uitslagenportaal"
+  # verify-full would fail: the RDB cert CN is an IP, not the private endpoint.
+  sslmode: "verify-ca"
+  # Created outside the chart: DB_HOST, DB_PORT, DB_USER, DB_PASSWORD and, for
+  # the verify-* sslmodes, the CA of the managed database under CA_PEM.
+  credSecret: "db-credentials"
+
+redis:
+  credSecret: "redis-creds"
+
+gateway:
+  enabled: true
+  # Created by the Traefik release; see infra setup in README.md.
+  className: "traefik"
+
+issuer:
+  enabled: true
+  # "acme" requires the hostname to be reachable from the internet;
+  # "selfsigned" issues offline, for local clusters.
+  type: "acme"
+  # ACME account address, used for expiry warnings. Must be set.
+  email: "kiesraad@kiesraad.nl"
+  server: "staging" # or "production"
+
+backend:
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
+  # Pull always because we publish new images to the same tag
+  pullPolicy: "Always"
+  appSecret: "uitslagenportaal-secrets"
+  importerSecret: "importer-creds"
+  port: 8000
+  replicas: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+frontend:
+  image: "ghcr.io/kiesraad/uitslagenportaal-frontend:dev"
+  # Pull always because we publish new images to the same tag
+  pullPolicy: "Always"
+  port: 80
+  replicas: 2
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 64Mi
+
+celery:
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
+  pullPolicy: "Always"
+  worker:
+    replicas: 1
+    # See the CELERY_WORKER_* keys in the ConfigMap for why these are pinned.
+    concurrency: 2
+    maxTasksPerChild: 5
+    prefetchMultiplier: 1
+    resources:
+      requests:
+        # Parsing EML is CPU-bound; starved of CPU an import holds its peak memory for
+        # longer. Requesting far less memory than the pod uses makes it evict first.
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        memory: 2Gi
+  beat:
+    # Beat only enqueues; it never runs a task itself.
+    resources:
+      requests:
+        cpu: 10m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+
+services:
+  enabled: false

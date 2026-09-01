@@ -87,6 +87,16 @@ CELERY_RESULT_BACKEND = REDIS_URL + "/2"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 0.5h
 
+# Prefork sizes its pool from the host's CPU count, which bears no relation to what the
+# worker is allowed to use, and a child never hands an EML batch's peak memory back to the
+# OS. So bound the fan-out and retire a child every few tasks. Both are read between tasks,
+# so neither can cut a running import short.
+CELERY_WORKER_CONCURRENCY = int(os.environ.get("CELERY_WORKER_CONCURRENCY", "2"))
+CELERY_WORKER_MAX_TASKS_PER_CHILD = int(os.environ.get("CELERY_WORKER_MAX_TASKS_PER_CHILD", "5"))
+# An import runs for minutes, so reserving more than one message per child only leaves work
+# queued behind a busy one.
+CELERY_WORKER_PREFETCH_MULTIPLIER = int(os.environ.get("CELERY_WORKER_PREFETCH_MULTIPLIER", "1"))
+
 # Cache config
 CACHES = {
     "default": {
