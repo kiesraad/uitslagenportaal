@@ -63,10 +63,16 @@ celery:
   pullPolicy: "Always"
   worker:
     replicas: 1
+    # See the CELERY_WORKER_* keys in the ConfigMap for why these are pinned.
+    concurrency: 2
+    maxTasksPerChild: 5
+    prefetchMultiplier: 1
     resources:
       requests:
-        cpu: 100m
-        memory: 512Mi
+        # Parsing EML is CPU-bound; starved of CPU an import holds its peak memory for
+        # longer. Requesting far less memory than the pod uses makes it evict first.
+        cpu: 500m
+        memory: 1Gi
       limits:
         memory: 2Gi
   beat:
