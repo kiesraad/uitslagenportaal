@@ -6,7 +6,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ .Values.db.credentialsSecret }}
+  name: {{ .Values.db.credSecret }}
   namespace: {{ .Values.namespace }}
 stringData:
   DB_HOST: "postgres"
@@ -17,7 +17,18 @@ stringData:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ .Values.secrets.app }}
+  name: {{ .Values.redis.credSecret }}
+  namespace: {{ .Values.namespace }}
+stringData:
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_USER: ""
+  REDIS_PASSWORD: ""
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.backend.appSecret }}
   namespace: {{ .Values.namespace }}
 stringData:
   SECRET_KEY: {{ .Values.services.secretKey | quote }}
@@ -94,13 +105,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.redis.host }}
+  name: redis
   namespace: {{ .Values.namespace }}
 spec:
   selector:
     app: redis
   ports:
-    - port: {{ .Values.redis.port }}
+    - port: 6379
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -108,7 +119,7 @@ metadata:
   name: redis
   namespace: {{ .Values.namespace }}
 spec:
-  serviceName: {{ .Values.redis.host }}
+  serviceName: redis
   replicas: 1
   selector:
     matchLabels:
@@ -122,7 +133,7 @@ spec:
         - name: redis
           image: {{ .Values.services.redis.image }}
           ports:
-            - containerPort: {{ .Values.redis.port }}
+            - containerPort: 6379
           readinessProbe:
             exec:
               command: ["redis-cli", "ping"]

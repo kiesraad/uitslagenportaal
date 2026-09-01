@@ -49,11 +49,6 @@ spec:
             - containerPort: {{ .Values.backend.port }}
           envFrom:
             {{- include "uitslagenportaal.envFrom" . | nindent 12 }}
-          env:
-            - name: REDIS_HOST
-              value: {{ .Values.redis.host | quote }}
-            - name: REDIS_PORT
-              value: {{ .Values.redis.port | quote }}
           # The API exposes no health endpoint, so readiness can only say that
           # granian is accepting connections, not that the database answers.
           readinessProbe:
