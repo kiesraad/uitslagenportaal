@@ -142,7 +142,6 @@ class GithubEmlFileHandler(BaseFileHandler):
         """
         Import all given file-like objects.
         """
-        # TODO classifier kills order
         xml_files = self._classify_files(files)
         for parser_type, (binding, importer_cls) in self._DOCUMENT_TYPES.items():
             for file in xml_files[parser_type]:
