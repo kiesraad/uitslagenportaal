@@ -26,19 +26,17 @@ spec:
           command: ["celery", "-A", "mainsite", "worker", "--loglevel=INFO"]
           envFrom:
             {{- include "uitslagenportaal.envFrom" . | nindent 12 }}
-          env:
-            - name: REDIS_HOST
-              value: {{ .Values.redis.host | quote }}
-            - name: REDIS_PORT
-              value: {{ .Values.redis.port | quote }}
-          # A worker serves no traffic, so only liveness is meaningful. The
-          # thresholds are loose: a busy worker answers ping slowly.
+          # Use a shell to be able to use $(VAR) expansion.
           livenessProbe:
             exec:
-              command: ["celery", "-A", "mainsite", "inspect", "ping", "--destination", "celery@$(HOSTNAME)"]
-            initialDelaySeconds: 30
+              command:
+                - sh
+                - -c
+                - celery -A mainsite inspect ping --destination "celery@$(hostname)" --timeout 5
+            initialDelaySeconds: 10
+            # Restart after about 3 minutes of failures
             periodSeconds: 60
-            timeoutSeconds: 15
+            timeoutSeconds: 5
             failureThreshold: 3
           resources:
             {{- toYaml .Values.celery.worker.resources | nindent 12 }}
@@ -87,11 +85,6 @@ spec:
             - --schedule=/tmp/celerybeat-schedule
           envFrom:
             {{- include "uitslagenportaal.envFrom" . | nindent 12 }}
-          env:
-            - name: REDIS_HOST
-              value: {{ .Values.redis.host | quote }}
-            - name: REDIS_PORT
-              value: {{ .Values.redis.port | quote }}
           resources:
             {{- toYaml .Values.celery.beat.resources | nindent 12 }}
           securityContext:

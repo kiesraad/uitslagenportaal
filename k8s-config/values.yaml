@@ -1,25 +1,20 @@
 namespace: uitslagenportaal
 debug: false
+
 app:
   hostname: "uitslagenportaal.kiesraad.net"
   site_name: "Uitslagenportaal"
+
 db:
   name: "uitslagenportaal"
   # verify-full would fail: the RDB cert CN is an IP, not the private endpoint.
   sslmode: "verify-ca"
-  # Created outside the chart: DB_HOST, DB_PORT, DB_USER and DB_PASSWORD.
-  credentialsSecret: "db-credentials"
-  # Secret holding ca.pem for the managed database. Leave empty to skip the
-  # mount, which only works when DB_SSLMODE does not verify the CA.
-  caSecret: ""
-
-secrets:
-  # Created outside the chart: SECRET_KEY, S3_* and any GITHUB_* ingress token.
-  app: "uitslagenportaal-secrets"
+  # Created outside the chart: DB_HOST, DB_PORT, DB_USER, DB_PASSWORD and, for
+  # the verify-* sslmodes, the CA of the managed database under CA_PEM.
+  credSecret: "db-credentials"
 
 redis:
-  host: "redis"
-  port: 6379
+  credSecret: "redis-creds"
 
 gateway:
   enabled: true
@@ -39,6 +34,8 @@ backend:
   image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
   # Pull always because we publish new images to the same tag
   pullPolicy: "Always"
+  appSecret: "uitslagenportaal-secrets"
+  importerSecret: "importer-creds"
   port: 8000
   replicas: 2
   resources:

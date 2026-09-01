@@ -8,10 +8,9 @@ data:
   DB: "postgres"
   DB_NAME: "{{ .Values.db.name }}"
   DB_SSLMODE: "{{ .Values.db.sslmode }}"
-{{- if .Values.db.caSecret }}
-  # Django cannot set sslrootcert, so use libpq's env var.
+  # Django cannot set sslrootcert, so use the libpq env var. Pointing at a file
+  # that is not there is fine: only the verify-* sslmodes demand one.
   PGSSLROOTCERT: "/etc/ssl/rdb/ca.pem"
-{{- end }}
   DB_CONN_MAX_AGE: "60"
 
   # Both default to True upstream. Unsafe when internet-facing.

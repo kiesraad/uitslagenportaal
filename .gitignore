@@ -113,3 +113,4 @@ claude.md
 
 # k8s
 k8s-config/charts/*.tgz
+k8s-config/*.pem

@@ -6,31 +6,36 @@ config, the database credentials and the application secrets.
 - configMapRef:
     name: {{ .Release.Name }}-config
 - secretRef:
-    name: {{ .Values.db.credentialsSecret }}
+    name: {{ .Values.db.credSecret }}
 - secretRef:
-    name: {{ .Values.secrets.app }}
+    name: {{ .Values.redis.credSecret }}
+- secretRef:
+    name: {{ .Values.backend.appSecret }}
+- secretRef:
+    name: {{ .Values.backend.importerSecret }}
 {{- end }}
 
 {{/*
-DB_SSLMODE is verify-ca against the managed database, so libpq needs the CA at
-PGSSLROOTCERT. Both halves collapse to nothing when no CA secret is configured.
+libpq reads the CA from a file at PGSSLROOTCERT, but the same secret is also
+consumed with envFrom: hence the env-var-safe key CA_PEM, renamed on the way in.
+Without CA_PEM the mount stays empty, which only the verify-* sslmodes mind.
 */}}
 {{- define "uitslagenportaal.dbCaMount" -}}
-{{- if .Values.db.caSecret }}
 volumeMounts:
   - name: db-ca
     mountPath: /etc/ssl/rdb
     readOnly: true
 {{- end }}
-{{- end }}
 
 {{- define "uitslagenportaal.dbCaVolume" -}}
-{{- if .Values.db.caSecret }}
 volumes:
   - name: db-ca
     secret:
-      secretName: {{ .Values.db.caSecret }}
-{{- end }}
+      secretName: {{ .Values.db.credSecret }}
+      optional: true
+      items:
+        - key: CA_PEM
+          path: ca.pem
 {{- end }}
 
 {{/*
