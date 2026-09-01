@@ -84,7 +84,7 @@ jobs:
           cache-dependency-glob: "backend/pyproject.toml"
       - run: uv sync
         working-directory: backend
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           # uv.lock pins the playwright version, so it doubles as the cache key.
@@ -128,7 +128,7 @@ jobs:
         run: |
           mkdir -p backend/test-results
           cp "$RUNNER_TEMP/django.log" "$RUNNER_TEMP/vite-preview.log" backend/test-results/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-python-results
