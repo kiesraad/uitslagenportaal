@@ -20,8 +20,7 @@ from eml_import.utils.file_handler import BaseFileHandler
 from eml_import.utils.named_bytes_io import NamedBytesIO
 
 # Seconds before the per-election lock expires on its own, so a worker that dies
-# mid-import does not block that election forever. Re-acquired after each commit
-# while a run is still draining the branch.
+# mid-import does not block that election forever. Acquired afresh for each commit.
 LOCK_TIMEOUT = 20 * 60
 
 # The branches to import, in import order, mapped to the ElectionConfig field holding the branch name
@@ -55,44 +54,7 @@ class GithubEmlFileHandler(BaseFileHandler):
         self.gh = Github(auth=Auth.Token(settings.GITHUB_TOKEN), per_page=500)
         self.repo = self.gh.get_repo(settings.GITHUB_INGRESS_REPO)
 
-        # One import per election at a time, so two workers cannot import the same commits twice
-        self._lock = cache.lock(self.cache_lock_key, timeout=LOCK_TIMEOUT, blocking=False)
-        if not self._lock.acquire():
-            self.logger.warning(
-                "Could not acquire lock, GithubEmlFileHandler is already running for %s",
-                self.election_config.identifier,
-            )
-            return 0
-
-        try:
-            return self._run_import()
-        finally:
-            try:
-                self._lock.release()
-            except LockError:
-                # The lock timed out before the import finished, so another worker may hold it by now.
-                # The import itself still ran to completion, so let its result stand.
-                self.logger.warning("Lock for %s expired before the import finished", self.election_config.identifier)
-
-    def _renew_lock(self) -> bool:
-        try:
-            self._lock.release()
-        except LockError:
-            self.logger.warning(
-                "Lock for %s expired while importing commits",
-                self.election_config.identifier,
-            )
-            return False
-
-        self._lock = cache.lock(self.cache_lock_key, timeout=LOCK_TIMEOUT, blocking=False)
-        if not self._lock.acquire():
-            self.logger.warning(
-                "Could not re-acquire lock for %s after commit",
-                self.election_config.identifier,
-            )
-            return False
-
-        return True
+        return self._run_import()
 
     def _run_import(self) -> int:
         """
@@ -103,38 +65,54 @@ class GithubEmlFileHandler(BaseFileHandler):
 
         for branch_type, branch in self._iterate_branches():
             while True:
-                last_imported = (
-                    ImportedCommit.objects.filter(election_config=self.election_config, branch_type=branch_type)
-                    .order_by("-created_at")
-                    .first()
-                )
-
-                self.logger.info(
-                    "Fetching files for next batch of commits on branch %s at %s...",
-                    branch,
-                    last_imported.commit_sha if last_imported else "first commit",
-                )
-                batch_head_sha, files = self._get_files_for_next_commit(
-                    last_imported.commit_sha if last_imported else None, branch
-                )
-                if batch_head_sha is None:
-                    self.logger.info(
-                        "No commits remaining on %s branch (%s)",
-                        branch_type,
-                        branch,
+                # One import per election at a time, so two workers cannot import the same commits twice
+                lock = cache.lock(self.cache_lock_key, timeout=LOCK_TIMEOUT, blocking=False)
+                if not lock.acquire():
+                    self.logger.warning(
+                        "Could not acquire lock, GithubEmlFileHandler is already running for %s",
+                        self.election_config.identifier,
                     )
-                    break
-
-                xml_files = list(self._iterate_all_xml_files(files))
-                self.import_file_objects(xml_files)
-                ImportedCommit.objects.create(
-                    election_config=self.election_config,
-                    branch_type=branch_type,
-                    commit_sha=batch_head_sha,
-                )
-                imported_files += len(xml_files)
-                if not self._renew_lock():
                     return imported_files
+
+                try:
+                    last_imported = (
+                        ImportedCommit.objects.filter(election_config=self.election_config, branch_type=branch_type)
+                        .order_by("-created_at")
+                        .first()
+                    )
+
+                    self.logger.info(
+                        "Fetching files for next commit on branch %s at %s...",
+                        branch,
+                        last_imported.commit_sha if last_imported else "first commit",
+                    )
+                    batch_head_sha, files = self._get_files_for_next_commit(
+                        last_imported.commit_sha if last_imported else None, branch
+                    )
+                    if batch_head_sha is None:
+                        self.logger.info(
+                            "No commits remaining on %s branch (%s)",
+                            branch_type,
+                            branch,
+                        )
+                        break
+
+                    xml_files = list(self._iterate_all_xml_files(files))
+                    self.import_file_objects(xml_files)
+                    ImportedCommit.objects.create(
+                        election_config=self.election_config,
+                        branch_type=branch_type,
+                        commit_sha=batch_head_sha,
+                    )
+                    imported_files += len(xml_files)
+                finally:
+                    try:
+                        lock.release()
+                    except LockError:
+                        self.logger.warning(
+                            "Lock for %s expired while importing commits",
+                            self.election_config.identifier,
+                        )
 
         return imported_files
 
@@ -142,7 +120,6 @@ class GithubEmlFileHandler(BaseFileHandler):
         """
         Import all given file-like objects.
         """
-        # TODO classifier kills order
         xml_files = self._classify_files(files)
         for parser_type, (binding, importer_cls) in self._DOCUMENT_TYPES.items():
             for file in xml_files[parser_type]:

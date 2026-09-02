@@ -1,0 +1,87 @@
+name: Publish Docker Images
+on:
+  workflow_call:
+    inputs:
+      context:
+        required: true
+        type: string
+        description: Directory to build the image from
+      image-name:
+        required: true
+        type: string
+        description: Name of the image to build
+
+env:
+  REGISTRY: ghcr.io
+  # Image name with the registry/owner prefix.
+  FULL_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}
+
+jobs:
+  docker-build-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # Fetch all reachable commits while fetching trees and blobs on-demand.
+          # This gives us access to tags but doesn't download the whole history.
+          fetch-depth: 0
+          filter: tree:0
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # A build for refs/tags/v* will be tagged with the version and `prod`.
+      # A build for refs/heads/[dev|main] will be tagged with the branch name.
+      # `latest` tags are disabled. See also https://github.com/docker/metadata-action#semver
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.FULL_IMAGE_NAME }}
+          flavor: |
+            latest=false
+          tags: |
+            type=ref,event=branch
+            type=raw,value=prod,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
+
+      # Build and push the image
+      - name: Build and push
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.context }}/prod.dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          # Cache build artefacts in a dedicated tag
+          cache-from: type=registry,ref=${{ env.FULL_IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.FULL_IMAGE_NAME }}:buildcache,mode=max
+
+      # This step generates an artefact attestation for the image,
+      # which is an unforgeable statement about where and how it was built.
+      - name: Generate artifact attestation
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.FULL_IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+
+      - name: Remove old images
+        uses: actions/delete-package-versions@v5
+        with:
+          package-type: container
+          # Package name does not work with registry/owner prefix.
+          package-name: ${{ inputs.image-name }}
+          min-versions-to-keep: 5
+          delete-only-untagged-versions: true

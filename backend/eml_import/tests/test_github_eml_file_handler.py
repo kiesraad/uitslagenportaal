@@ -521,8 +521,6 @@ def test_run_keeps_its_result_when_the_lock_expires_mid_import(fake_repo, monkey
     # so its result and its bookkeeping stand rather than being reported as a skipped run
     assert file_count == 1
     assert list(ImportedCommit.objects.values_list("branch_type", "commit_sha")) == [(BranchType.EXCHANGE, "first")]
-    # Renew fails mid-run, then the outer release also reports expiry
     assert warnings_of(caplog) == [
         f"Lock for {stored_election_config.identifier} expired while importing commits",
-        f"Lock for {stored_election_config.identifier} expired before the import finished",
     ]

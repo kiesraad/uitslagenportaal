@@ -21,7 +21,7 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
         with transaction.atomic():
             if self._is_correction():
                 self._ensure_exchange_correction_allowed()
-                self._archive()
+                self._delete()
             self._parse_regions()
             self._parse_registered_parties()
         self.logger.info("Successfully imported data for Election")
@@ -36,7 +36,7 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
             return True
         return False
 
-    def _archive(self) -> None:
+    def _delete(self) -> None:
         Party.objects.filter(election=self.election).delete()
         Region.objects.filter(election=self.election).delete()
 

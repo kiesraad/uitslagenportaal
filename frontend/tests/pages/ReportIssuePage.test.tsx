@@ -1,18 +1,11 @@
+import { QueryClient } from "@tanstack/react-query";
 import { act, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ElectionConfig } from "@/api/types";
-import { useElectionConfig } from "@/hooks/queries";
+import { electionConfigQuery } from "@/hooks/queries";
 import { ReportIssuePage } from "@/pages/ReportIssuePage";
 import { renderWithProviders } from "../testUtils";
-
-vi.mock("@/hooks/queries", async (importOriginal) => {
-   const actual = await importOriginal<typeof import("@/hooks/queries")>();
-   return {
-      ...actual,
-      useElectionConfig: vi.fn(),
-   };
-});
 
 const electionConfig: ElectionConfig = {
    slug: "ws2023",
@@ -26,27 +19,30 @@ const electionConfig: ElectionConfig = {
    voting_url: "https://example.test/stemmen",
 };
 
-function mockUseElectionConfig(data: ElectionConfig) {
-   vi.mocked(useElectionConfig).mockReturnValue({
-      data,
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-   } as unknown as ReturnType<typeof useElectionConfig>);
-}
+/**
+ * Mounts the page the way its route does: the loader hands it the query, whose data is
+ * already in the cache. `staleTime` keeps the suspense query from refetching behind the
+ * assertions, so the page renders in one synchronous pass.
+ */
+function renderReportIssuePage(config: ElectionConfig = electionConfig, locale: "nl" | "en" = "nl") {
+   const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
+   });
+   const query = electionConfigQuery(config.slug);
+   queryClient.setQueryData(query.queryKey, config);
 
-function renderReportIssuePage(locale: "nl" | "en" = "nl") {
    return renderWithProviders(<ReportIssuePage />, {
       locale,
-      initialEntries: ["/ws2023/fout-melden"],
+      initialEntries: [`/${config.slug}/fout-melden`],
       path: "/:electionConfigSlug/fout-melden",
+      loaderData: { electionConfigQuery: query },
+      queryClient,
    });
 }
 
 beforeEach(() => {
    vi.useFakeTimers();
    vi.setSystemTime(new Date("2026-12-10T12:00:00+01:00"));
-   mockUseElectionConfig(electionConfig);
 });
 
 afterEach(() => {
@@ -71,12 +67,7 @@ describe("ReportIssuePage", () => {
    });
 
    it("disables the report button when the deadline passes", () => {
-      mockUseElectionConfig({
-         ...electionConfig,
-         issue_report_deadline: "2026-12-10T12:00:30+01:00",
-      });
-
-      renderReportIssuePage();
+      renderReportIssuePage({ ...electionConfig, issue_report_deadline: "2026-12-10T12:00:30+01:00" });
 
       expect(screen.getByText("Meld een fout")).not.toHaveAttribute("aria-disabled", "true");
 
@@ -89,7 +80,7 @@ describe("ReportIssuePage", () => {
    });
 
    it("renders the deadline heading in English when that locale is active", () => {
-      renderReportIssuePage("en");
+      renderReportIssuePage(electionConfig, "en");
 
       expect(screen.getByRole("heading", { name: "You have 45 more minutes to submit a report" })).toBeInTheDocument();
    });

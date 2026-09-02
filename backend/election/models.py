@@ -207,6 +207,10 @@ class ElectionDocument(BaseModel):
     Archivable ElectionDoc
     """
 
+    class FileType(models.TextChoices):
+        EML_510B = "510b", "Telling GSB"
+        EML_510D = "510d", "Totaaltelling CSB"
+
     region = models.ForeignKey(
         "region.Region",
         on_delete=models.CASCADE,
@@ -220,8 +224,8 @@ class ElectionDocument(BaseModel):
 
     file_type = models.CharField(
         max_length=32,
-        choices=EmlType.choices,
-        default=EmlType.EML_510b,
+        choices=FileType.choices,
+        default=FileType.EML_510B,
         help_text="Type of the election document",
     )
     is_current = models.BooleanField(default=True, db_index=True)

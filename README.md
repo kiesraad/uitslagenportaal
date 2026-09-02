@@ -33,8 +33,10 @@ the `object-storage` service (RustFS); in production it is Scaleway Object Stora
 
 - API: http://localhost:9000
 - Console: http://localhost:9001 (user `uitslagenportaal`, password `password`)
-- Bucket: `uitslagenportaal`, created on first `docker compose up` by the
-  `object-storage-bootstrap` service, which also makes its objects publicly readable
+- Bucket: `uitslagenportaal`, created on `docker compose up` by a `pre_start` init
+  container on the `backend` service, which also makes its objects publicly readable.
+  To (re)create it by hand:
+  `docker compose run --rm backend-scripts python manage.py ensure_bucket --public`
 
 The backend reaches the bucket at `object-storage:9000` over the compose network,
 but generates public URLs pointing at `localhost:9000`, since that is the host the
@@ -122,36 +124,36 @@ docker compose run --rm backend-scripts python manage.py delete_expired_election
 
 ## Playwright tests
 
-Browser tests live in `frontend/playwright/`. They run on a separate **throwaway stack** on http://localhost:8081.
-
-Playwright starts and stops this stack automatically via `frontend/playwright.config.ts` and `.docker/playwright/start.sh`. Each run migrates the database and imports EML fixtures from `backend/mainsite/tests/fixtures/eml/` (waterschap and provinciale staten).
-
-`cd frontend && npm install` installs `@playwright/test` and downloads Chromium (cached in `~/.cache/ms-playwright`). The frontend Docker image skips that download. CI (`.github/workflows/playwright.yml`) installs Chromium with `npx playwright install --with-deps chromium` so Linux system libraries are present, then runs `npm run test:playwright`.
-
-### Running tests
-
-Always run Playwright from the `frontend/` directory:
+Make sure to have the playwright Docker Compose running before running tests.
+You can bring it down afterwards, and keep it running while working on tests:
 
 ```bash
-cd frontend
-npm run test:playwright
+docker compose -f docker-compose.yml -f docker-compose.playwright.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.playwright.yml down -v
 ```
 
-Run a single spec file:
+Install Chromium once, then run the suite from `backend/`:
 
 ```bash
-npx playwright test ws-election
+cd backend
+uv run playwright install chromium
+uv run pytest playwright_tests -m playwright
 ```
 
-Filter by test title (substring match):
+The `-m playwright` marker is required: a bare `uv run pytest` deliberately deselects
+the browser tests, so `backend-ci` never tries to run them without a stack or a
+browser.
+
+Run a single module, or filter by test name:
 
 ```bash
-npx playwright test ps-election -g "Aa en Hunze"
+uv run pytest playwright_tests/test_ws_election.py -m playwright
+uv run pytest playwright_tests -m playwright -k "aa_en_hunze"
 ```
 
-Debug or watch the browser:
+Watch the browser, or slow it down:
 
 ```bash
-npx playwright test ws-election --debug
-npx playwright test ws-election --headed
+uv run pytest playwright_tests -m playwright --headed
+uv run pytest playwright_tests -m playwright --headed --slowmo 500
 ```

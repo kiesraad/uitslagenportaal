@@ -1,5 +1,6 @@
 import re
 from abc import ABC
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
@@ -31,9 +32,28 @@ from region.models import Region, build_region_slug
 
 
 class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
-    def __init__(self, eml: Eml510, eml_file: Path | NamedBytesIO):
+    file_type: ElectionDocument.FileType
+
+    def __init__(self, eml: Eml510, eml_file: Path | NamedBytesIO | None):
         super().__init__(eml, eml_file)
         self.election_documents = {doc.storage_key: doc for doc in ElectionDocument.objects.all()}
+
+    def _results_available_at(self) -> datetime | None:
+        """
+        Publication time of the results, from the EML's <kr:CreationDateTime>.
+        Optional and repeatable in the schema, and the Kiesraad writes it
+        without a UTC offset, so it is read as a naive datetime in the local timezone.
+        """
+        creation_date_time = self.eml.creation_date_time
+        if not creation_date_time:
+            return None
+        value = creation_date_time[0].value
+        if value is None:
+            return None
+        created = value.to_datetime()
+        if timezone.is_naive(created):
+            created = timezone.make_aware(created)
+        return created
 
     @staticmethod
     def _counting_method(count) -> str | None:
@@ -195,7 +215,7 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
             storage_key=stored_file_path,
             region=region,
             content_type="application/xml",
-            file_type=self.eml_type,
+            file_type=self.file_type,
             size=size,
         )
 
@@ -204,11 +224,12 @@ class EML510bImporter(EML510BaseImporter):
     """Telling"""
 
     eml_type = EmlType.EML_510b
+    file_type = ElectionDocument.FileType.EML_510B
 
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
 
-    def _archive(self, region: Region) -> None:
+    def _delete(self, region: Region) -> None:
         """
         Archive the previous telling under this municipality so the normal import path
         can recreate it. The municipality region itself stays current; its stembureaus
@@ -222,7 +243,7 @@ class EML510bImporter(EML510BaseImporter):
         counts_filter = Q(region=region) | Q(region__in=stations)
         VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
         VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
-        ElectionDocument.objects.filter(region=region, file_type=self.eml_type).archive()
+        ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
         stations.delete()
 
     @staticmethod
@@ -308,15 +329,17 @@ class EML510bImporter(EML510BaseImporter):
         # First imports rely on the caller's atomic (if any); no second import method.
         with transaction.atomic():
             if is_correction:
-                self._archive(region)
+                self._delete(region)
 
-            self._store_eml(region)
+            region.results_available_at = self._results_available_at()
 
-            region.results_available_at = timezone.now()
             counting_method = self._counting_method(self.eml.count)
             if counting_method is not None:
                 region.counting_method = counting_method
             region.save()
+
+            if self.eml_file is not None:
+                self._store_eml(region)
 
             # Preload party names dict
             party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
@@ -366,16 +389,17 @@ class EML510dImporter(EML510BaseImporter):
     """Totaaltelling."""
 
     eml_type = EmlType.EML_510d
+    file_type = ElectionDocument.FileType.EML_510D
 
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
 
-    def _archive(self, region: Region) -> None:
+    def _delete(self, region: Region) -> None:
         """Archive prior totaaltelling rows for this CSB and its descendants."""
         counts_filter = Q(region=region) | Q(region__csb=region)
         VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
         VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
-        ElectionDocument.objects.filter(region=region, file_type=self.eml_type).archive()
+        ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
 
     def _parse_data(self) -> None:
         election_domain = self._get_election_identifier_data().election_domain
@@ -403,12 +427,15 @@ class EML510dImporter(EML510BaseImporter):
 
         with transaction.atomic():
             if is_correction:
-                self._archive(region)
+                self._delete(region)
 
+            update_fields = ["results_available_at", "updated_at"]
+            region.results_available_at = self._results_available_at()
             counting_method = self._counting_method(self.eml.count)
             if counting_method is not None and region.counting_method != counting_method:
                 region.counting_method = counting_method
-                region.save(update_fields=["counting_method", "updated_at"])
+                update_fields.append("counting_method")
+            region.save(update_fields=update_fields)
 
             # Store the EML file
             self._store_eml(region)

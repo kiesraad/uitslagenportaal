@@ -19,6 +19,23 @@ and identifiers alike.
 reviewable, explainable changes over large generated blocks, and stay inside existing
 patterns.
 
+## Version control
+
+Never run `git commit`, `git push`, or anything else that rewrites history or publishes
+work — not even when a change looks finished. Leave everything in the working tree and say
+what changed; the developer reviews it and commits it themselves, because they carry
+responsibility for every line that lands. Ask first if you think a commit is needed.
+
+## Comments
+
+Keep comments short and to the point, and write them from the perspective of the
+application as a whole rather than the change that introduced them. Never restate what the
+code obviously does; a comment earns its place only by adding what cannot be derived from
+the code itself — an EML quirk, a domain rule, a non-obvious trade-off, a reason for doing
+it the awkward way. Do not narrate the session that produced it: no "changed to…", "used
+to be…", "as requested", or references to a review remark or an earlier implementation. If
+a comment would read as stale a month from now, leave it out.
+
 ## Layout
 
 ```
@@ -75,10 +92,30 @@ Outside Docker: backend uses **uv** (`uv sync`, `uv add <pkg>`, `uv run <cmd>`) 
 `backend/.env` with `DB_*`; frontend uses **npm** (`npm install`, `npm run dev`).
 
 Lint/format is **ruff** (line length 120, rules `E,F,I`, migrations excluded) for the
-backend and **eslint** for the frontend. Run them before finishing a change.
+backend and **biome** (`npm run lint`, `npm run format`) for the frontend. Run them before
+finishing a change.
 
 See [README.md](README.md) and [backend/README.md](backend/README.md) for management
 commands, object-storage variables, and the election visibility/deletion rules.
+
+## Translations
+
+See the Internationalisation section in [frontend/README.md](frontend/README.md) for the setup,
+marking text for translations and translation rules.
+
+Lingui publishes agent skills, context files and an MCP server for working with its API:
+<https://lingui.dev/ai-tools>.
+
+Process in short:
+
+```bash
+cd frontend
+npm run i18n:extract-clean    # or: docker compose run --rm frontend npm run i18n:extract-clean
+```
+
+Extraction adds new entries to both catalogues, drops ones no longer used, and reports how
+many English messages are still missing. Fill each empty `msgstr` in the `en` catalogue and
+re-run extraction until it reports `Missing 0`.
 
 ## Testing
 
@@ -115,8 +152,18 @@ Stub `fetch` with `vi.stubGlobal`; wrap components in `QueryClientProvider` and
 ## CI
 
 `.github/workflows/backend-ci.yml`: ruff check + format check, `pytest` against Postgres 16,
-`makemigrations --check --dry-run`, and a Docker build.
-`.github/workflows/frontend-ci.yml`: eslint, vitest, `npm run build` (`tsc -b` + vite), Docker build.
+and `makemigrations --check --dry-run`.
+`.github/workflows/frontend-ci.yml`: `biome ci`, vitest, `npm run i18n:check` and
+`npm run build` (`tsc -b` + vite).
+`.github/workflows/playwright.yml`: the browser tests, against a throwaway stack.
 
-Both run on PRs. So: after a model change, commit the generated migration — a missing one
-fails CI. PRs target `dev`.
+All three run on PRs — the backend and frontend suites filtered by path, Playwright on every
+PR — and the first two check that generated files are in step with the source, so regenerate
+them as part of the change: `makemigrations` after a model change,
+`npm run i18n:extract-clean` after a message change. A missing migration or a stale
+catalogue fails CI. PRs target `dev`.
+
+`.github/workflows/branch-ci-cd.yml` runs on pushes to `dev` and `main`. It calls all three
+workflows above in full — path filters apply to a workflow's own triggers, not to a call —
+and publishes the frontend and backend images to ghcr.io only once every one of them passes.
+`publish-docker-image.yml` is the reusable workflow that builds and pushes one image.

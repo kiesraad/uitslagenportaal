@@ -2,9 +2,11 @@ import { faArrowUpRightFromSquare, faChevronRight } from "@fortawesome/free-soli
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
-import { useParams } from "react-router";
-import { type Locale, loadCatalog, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
-import { useElectionConfig, useElectionConfigs } from "../hooks/queries.ts";
+import { useQuery } from "@tanstack/react-query";
+import { useParams, useRevalidator } from "react-router";
+import Button from "@/elements/Button.tsx";
+import { type Locale, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
+import { electionConfigQuery, useElectionConfigs } from "../hooks/queries.ts";
 
 // Fixed URLs for non-changing elements
 const KIESRAAD_URL = "https://www.kiesraad.nl/";
@@ -14,12 +16,14 @@ function LanguageSwitcher() {
    // Reading the locale through the hook (rather than the imported singleton)
    // is what subscribes this component to locale changes.
    const { i18n } = useLingui();
+   const revalidator = useRevalidator();
    const current: Locale = resolveLocale(i18n.locale);
    const other: Locale = current === "nl" ? "en" : "nl";
 
    async function switchTo(locale: Locale) {
       saveLocale(locale);
-      await loadCatalog(locale);
+      // Revalidate the React Router loaders so the new locale is loaded by the root route's loader.
+      await revalidator.revalidate();
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
    }
 
@@ -29,9 +33,9 @@ function LanguageSwitcher() {
             <p className="footer-lang-label">
                <Trans>Deze website in andere talen:</Trans>
             </p>
-            <button className="footer-lang-btn" type="button" lang={other} onClick={() => switchTo(other)}>
+            <Button lang={other} onClick={() => switchTo(other)}>
                {localeDisplayName(other)}
-            </button>
+            </Button>
          </div>
       </div>
    );
@@ -47,7 +51,11 @@ export function Footer() {
 
    // On election pages the config comes from the route; elsewhere (e.g. the home
    // page) fall back to the only election when there is exactly one.
-   const { data: routeElectionConfig } = useElectionConfig(electionConfigSlug);
+   const { data: routeElectionConfig } = useQuery({
+      ...electionConfigQuery(electionConfigSlug),
+      enabled: Boolean(electionConfigSlug),
+      throwOnError: false,
+   });
    const { data: electionConfigs } = useElectionConfigs();
    const electionConfig = routeElectionConfig ?? (electionConfigs?.length === 1 ? electionConfigs[0] : undefined);
 
