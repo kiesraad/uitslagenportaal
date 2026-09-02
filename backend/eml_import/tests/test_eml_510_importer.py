@@ -783,7 +783,7 @@ def test_510d_keeps_the_counting_method_while_setting_the_publication_date(
     eml = make_ws_510d_eml(contests=[])
     eml.count.counting_method = EmlCountingMethod(method_code=CountingMethodMethodCode.CENTRALE_STEMOPNEMING)
 
-    EML510dImporter(eml, None).parse()
+    EML510dImporter(eml, fake_eml_file()).parse()
 
     waterschap = ws_regions["waterschap"]
     waterschap.refresh_from_db()
@@ -794,7 +794,7 @@ def test_510d_keeps_the_counting_method_while_setting_the_publication_date(
 def test_510d_leaves_results_available_at_unset_without_a_creation_date(
     ws_regions, ws_contest, ws_parties, ws_candidates
 ):
-    EML510dImporter(make_ws_510d_eml(contests=[], creation_date_time=None), None).parse()
+    EML510dImporter(make_ws_510d_eml(contests=[], creation_date_time=None), fake_eml_file()).parse()
 
     waterschap = ws_regions["waterschap"]
     waterschap.refresh_from_db()
@@ -1014,7 +1014,7 @@ def test_510b_leaves_results_available_at_unset_without_a_creation_date(
     ws_regions, ws_contest, ws_parties, ws_candidates
 ):
     """<kr:CreationDateTime> is optional; without it there is no publication date to show."""
-    EML510bImporter(make_ws_telling(creation_date_time=None), None).parse()
+    EML510bImporter(make_ws_telling(creation_date_time=None), fake_eml_file()).parse()
 
     gemeente = ws_regions["gemeente"]
     gemeente.refresh_from_db()
