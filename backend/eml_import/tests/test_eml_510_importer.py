@@ -44,6 +44,7 @@ from election.tests.factories import (
     ElectionFactory,
 )
 from eml_import.exceptions import EMLImporterException
+from eml_import.tests.fakes import fake_eml_file
 from eml_import.utils.eml_510_importer import EML510bImporter, EML510dImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
@@ -303,13 +304,13 @@ def ws_candidates(ws_contest, ws_parties):
 @pytest.fixture
 def ws_importer(ws_election):
     """A Telling importer, for exercising the base class helpers directly."""
-    return EML510bImporter(make_ws_510b_eml(contests=[]), None)
+    return EML510bImporter(make_ws_510b_eml(contests=[]), fake_eml_file())
 
 
 @pytest.fixture
 def ws_csb_importer(ws_election):
     """A Totaaltelling importer, for exercising the base class helpers directly."""
-    return EML510dImporter(make_ws_510d_eml(contests=[]), None)
+    return EML510dImporter(make_ws_510d_eml(contests=[]), fake_eml_file())
 
 
 @pytest.mark.parametrize(
@@ -493,7 +494,7 @@ def make_polling_station_document(*names_by_id):
 
 def test_ensure_polling_stations_creates_missing_stations(ws_regions):
     eml = make_polling_station_document(("0654::SB1", "Stembureau A"), ("0654::SB2", "Stembureau B"))
-    importer = EML510bImporter(eml, None)
+    importer = EML510bImporter(eml, fake_eml_file())
 
     stations = importer._ensure_polling_stations(ws_regions["gemeente"])
 
@@ -513,7 +514,7 @@ def test_ensure_polling_stations_reuses_existing_stations(ws_regions):
         region_name="A",
     )
     eml = make_polling_station_document(("0654::SB1", "Stembureau A"), ("0654::SB2", "Stembureau B"))
-    importer = EML510bImporter(eml, None)
+    importer = EML510bImporter(eml, fake_eml_file())
 
     stations = importer._ensure_polling_stations(ws_regions["gemeente"])
 
@@ -649,7 +650,7 @@ def make_ws_telling(
 
 
 def test_510b_imports_votes_for_gsb_and_polling_stations(ws_regions, ws_contest, ws_parties, ws_candidates):
-    EML510bImporter(make_ws_telling(), None).parse()
+    EML510bImporter(make_ws_telling(), fake_eml_file()).parse()
 
     station = Region.objects.get(region_category=RegionCategory.STEMBUREAU)
     assert (station.parent, station.csb, station.region_name) == (
@@ -674,7 +675,7 @@ def test_510b_imports_votes_for_gsb_and_polling_stations(ws_regions, ws_contest,
 
 def test_510b_correction_replaces_municipality_tree(ws_regions, ws_contest, ws_parties, ws_candidates):
     """A second telling for the same gemeente tosses stembureaus and 510b counts, then reimports."""
-    EML510bImporter(make_ws_telling(), None).parse()
+    EML510bImporter(make_ws_telling(), fake_eml_file()).parse()
     original_station_id = Region.objects.get(region_category=RegionCategory.STEMBUREAU).pk
 
     totals = make_total_votes(
@@ -693,7 +694,7 @@ def test_510b_correction_replaces_municipality_tree(ws_regions, ws_contest, ws_p
     )
     correction = make_ws_510b_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])])
 
-    EML510bImporter(correction, None).parse()
+    EML510bImporter(correction, fake_eml_file()).parse()
 
     gemeente = ws_regions["gemeente"]
     assert Region.objects.filter(pk=gemeente.pk).exists()
@@ -762,7 +763,9 @@ def ws_totaaltelling(ws_regions, ws_contest, ws_parties, ws_candidates):
             candidate_selection(ReportingUnitVotes.Selection, 1107, number=1),
         ],
     )
-    EML510dImporter(make_ws_510d_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])]), None).parse()
+    EML510dImporter(
+        make_ws_510d_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])]), fake_eml_file()
+    ).parse()
 
 
 def test_510d_publishes_the_csb_region_at_the_emls_creation_date(ws_totaaltelling, ws_regions):
@@ -780,7 +783,7 @@ def test_510d_keeps_the_counting_method_while_setting_the_publication_date(
     eml = make_ws_510d_eml(contests=[])
     eml.count.counting_method = EmlCountingMethod(method_code=CountingMethodMethodCode.CENTRALE_STEMOPNEMING)
 
-    EML510dImporter(eml, None).parse()
+    EML510dImporter(eml, fake_eml_file()).parse()
 
     waterschap = ws_regions["waterschap"]
     waterschap.refresh_from_db()
@@ -791,7 +794,7 @@ def test_510d_keeps_the_counting_method_while_setting_the_publication_date(
 def test_510d_leaves_results_available_at_unset_without_a_creation_date(
     ws_regions, ws_contest, ws_parties, ws_candidates
 ):
-    EML510dImporter(make_ws_510d_eml(contests=[], creation_date_time=None), None).parse()
+    EML510dImporter(make_ws_510d_eml(contests=[], creation_date_time=None), fake_eml_file()).parse()
 
     waterschap = ws_regions["waterschap"]
     waterschap.refresh_from_db()
@@ -965,7 +968,9 @@ def ps_totaaltelling(ps_regions, ps_contests, ps_candidates):
             candidate_selection(TotalVotes.Selection, 8262, short_code="BrugmanJEM"),
         ]
     )
-    EML510dImporter(make_ps_510d_eml(contests=[make_contest("alle", total_votes=totals, units=units)]), None).parse()
+    EML510dImporter(
+        make_ps_510d_eml(contests=[make_contest("alle", total_votes=totals, units=units)]), fake_eml_file()
+    ).parse()
 
 
 def test_510d_breaks_down_per_kieskring_when_csb_has_multiple_children(ps_totaaltelling, ps_regions):
@@ -1009,7 +1014,7 @@ def test_510b_leaves_results_available_at_unset_without_a_creation_date(
     ws_regions, ws_contest, ws_parties, ws_candidates
 ):
     """<kr:CreationDateTime> is optional; without it there is no publication date to show."""
-    EML510bImporter(make_ws_telling(creation_date_time=None), None).parse()
+    EML510bImporter(make_ws_telling(creation_date_time=None), fake_eml_file()).parse()
 
     gemeente = ws_regions["gemeente"]
     gemeente.refresh_from_db()

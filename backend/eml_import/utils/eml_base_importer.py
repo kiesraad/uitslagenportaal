@@ -25,7 +25,7 @@ class EMLBaseImporter[T](ABC):
 
     eml_type: EmlType
 
-    def __init__(self, eml: T, eml_file: Path | NamedBytesIO | None):
+    def __init__(self, eml: T, eml_file: Path | NamedBytesIO):
         self.eml = eml
         self.eml_file = eml_file
 
@@ -56,7 +56,7 @@ class EMLBaseImporter[T](ABC):
         self.election = election
 
     def parse(self):
-        if self.eml_file is not None and ImportedEmlHash.already_imported(self.eml_file):
+        if ImportedEmlHash.already_imported(self.eml_file):
             self.logger.info(
                 "\033[32mSkipping duplicate %s file %s\033[0m",
                 self.eml_type.value,
@@ -68,8 +68,7 @@ class EMLBaseImporter[T](ABC):
         except ElectionConfig.DoesNotExist:
             self.logger.warning("Election is not configured, skipping %s data import", self.eml_type.value)
         else:
-            if self.eml_file is not None:
-                ImportedEmlHash.record(self.eml_file)
+            ImportedEmlHash.record(self.eml_file)
 
     def _ensure_exchange_correction_allowed(self) -> None:
         """Reject 110a/230b corrections once any current telling exists for this election."""

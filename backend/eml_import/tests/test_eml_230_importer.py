@@ -34,6 +34,7 @@ from xsdata.models.datatype import XmlDate
 
 from election.models import Contest
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
+from eml_import.tests.fakes import fake_eml_file
 from eml_import.utils.eml_230_importer import EML230bImporter
 from party.models import Candidate, Party
 from party.tests.factories import PartyFactory
@@ -142,7 +143,7 @@ def party(election):
 @pytest.fixture
 def contest(party):
     """Import the default document; return the Contest it created."""
-    EML230bImporter(make_eml(), None).parse()
+    EML230bImporter(make_eml(), fake_eml_file()).parse()
     return Contest.objects.get(election=party.election)
 
 
@@ -175,7 +176,7 @@ def test_assigns_list_number_to_registered_party(contest, party, election):
 def test_creates_blanco_party_for_affiliation_without_registered_name(election):
     blanco = make_affiliation(12, None, [make_candidate(1, "T.E.", "Theo", "Richel")])
 
-    EML230bImporter(make_eml(affiliations=[blanco]), None).parse()
+    EML230bImporter(make_eml(affiliations=[blanco]), fake_eml_file()).parse()
 
     party = Party.objects.get(election=election)
     assert (party.registered_name, party.list_number) == ("Blanco Lijst 12", 12)
@@ -183,7 +184,7 @@ def test_creates_blanco_party_for_affiliation_without_registered_name(election):
 
 
 def test_correction_deletes_prior_contest_and_candidates(contest, party):
-    EML230bImporter(make_eml(), None).parse()
+    EML230bImporter(make_eml(), fake_eml_file()).parse()
 
     assert Contest.objects.filter(election=party.election).count() == 1
     # Correction deletes the old contest; candidates hang off the recreated one

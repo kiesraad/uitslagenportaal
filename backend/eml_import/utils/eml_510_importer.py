@@ -332,6 +332,7 @@ class EML510bImporter(EML510BaseImporter):
                 self._delete(region)
 
             region.results_available_at = self._results_available_at()
+
             counting_method = self._counting_method(self.eml.count)
             if counting_method is not None:
                 region.counting_method = counting_method
@@ -437,8 +438,7 @@ class EML510dImporter(EML510BaseImporter):
             region.save(update_fields=update_fields)
 
             # Store the EML file
-            if self.eml_file is not None:
-                self._store_eml(region)
+            self._store_eml(region)
 
             self._parse_csb_counts(region)
 
@@ -465,7 +465,9 @@ class EML510dImporter(EML510BaseImporter):
                 child_region_name = child_region_category_re.sub("", unit.reporting_unit_identifier.value).strip()
                 child_region = child_region_by_name.get(child_region_name)
                 if child_region is None:
-                    continue
+                    raise EMLImporterException(
+                        f"Cannot find child_region_name {child_region_name} in child_region_by_name"
+                    )
 
                 contest_filter = {"election": self.election}
                 # Get the contest from the DB by name, if the contest in the EML file is set to 'alle'. This means that
