@@ -1,8 +1,16 @@
+**Let op: dit project bevindt zich momenteel in een opstartfase. Documentatie en code zullen onvolledig en soms incorrect zijn.**
+
+
 # Uitslagenportaal
 
-Webapplicatie voor weergeven van verkiezingsuitslagen.
 
-## Development setup
+Het Uitslagenportaal is een webapplicatie die gebruikers in staat stelt meer inzicht in het
+verkiezingsproces te krijgen. Allereerst ontsluit het portaal EMLs — digitale telbestanden —
+tijdens en na een verkiezingsperiode op een overzichtelijke en leesbare manier. Daarnaast geeft
+het portaal ook context over wat er in de verkiezingsperiode gebeurt en waar men in het verkiezingsproces
+zit.
+
+## Development setup (Docker)
 
 Start the full stack (database, backend, frontend and reverse proxy) with Docker Compose:
 
@@ -10,7 +18,13 @@ Start the full stack (database, backend, frontend and reverse proxy) with Docker
 docker compose up -d --build
 ```
 
+The portal is then available at http://localhost:8080.
+
 Install plugins for `ruff` and `biome` in your IDE to use the required formatting/linting.
+
+De backend (`backend/`) is gemaakt met Django 6 + DRF in Python 3.13, managed met uv; the frontend
+(`frontend/`) is React 19 + TypeScript + Vite + Tailwind 4. See [AGENTS.md](AGENTS.md) for the
+repository layout and conventions, and [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
 
 ### Environment variables
 
@@ -24,7 +38,7 @@ Put EML XML fixture files on your machine in:
 backend/.data/
 ```
 
-This folder is mounted into the backend container at `/app/.data`.
+This can be recent data, or historical election EML XML data from [data.overheid.nl](https://data.overheid.nl).This folder is mounted into the backend container at `/app/.data`.
 
 ### Object storage
 
@@ -121,6 +135,154 @@ from the source EML files is the only way back.
 ```bash
 docker compose run --rm backend-scripts python manage.py delete_expired_elections --confirm
 ```
+
+## Running without Docker
+
+_Section might be removed._
+
+Running without Docker is not adviced, since this requires a lot more manual setup. In the case of setting up object-storage, we suggest setting it up yourself or using an existing object-storage provider.
+
+### Backend
+
+1. Install prerequisites:
+
+- [Python](https://www.python.org/downloads/) 3.13+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
+- [PostgreSQL](https://www.postgresql.org/download/)
+
+2. Build and download development tools, from `backend/`:
+
+```bash
+uv sync
+```
+
+3. Make sure all the required files are there for debugging:
+
+- Make a `backend/.env` file with `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_HOST`.
+- Have a `backend/.data` folder for debug data and fill it with EML files from an election.
+- For the GitHub EML ingress, optionally set `GITHUB_TOKEN` and `GITHUB_INGRESS_REPO`.
+  Use a Personal Access Token (classic) with `repo` scope as `GITHUB_TOKEN`.
+  If these are set, and branches are configured in the election config,
+  then the Celery task will automatically start importing data from GitHub every 10 min.
+
+4. Add new packages with `uv add <package>`.
+
+Run the server:
+
+```bash
+uv run manage.py runserver
+```
+
+Migrate after a model change:
+
+```bash
+uv run manage.py makemigrations backend
+uv run manage.py migrate backend
+```
+
+### Frontend
+
+1. Install prerequisites:
+
+- [Node & npm](https://nodejs.org/en/download)
+
+2. Install dependencies and start the development server, from `frontend/`:
+
+```bash
+npm install
+npm run dev
+```
+
+## Management commands
+
+Run these from `backend/` with `uv run manage.py <command>`, or against the running stack with
+`docker compose run --rm backend-scripts python manage.py <command>`.
+
+| Command | Description |
+| --- | --- |
+| `wipe_db` | Wipes all election data, keeps the super user |
+| `seed` | Seeds the `ElectionConfig` |
+| `import_election` | Imports all EML files in the `.data` folder |
+| `reset_and_import` | Wipe, seed & import in one |
+| `import_next_github_commits [election identifier]` | Runs the GitHub importer for the next batch of commits |
+| `ensure_bucket --public` | (Re)creates the object storage bucket |
+| `delete_expired_elections [--confirm]` | Removes elections past their retention window |
+
+## Object storage configuration
+
+Files are stored in an S3-compatible bucket through Django's `default_storage`
+(`django-storages`). All settings default to the local RustFS container from
+`docker-compose.yml`, so no configuration is needed when you run the stack with
+Docker. Outside Docker, set these in `backend/.env`:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `S3_BUCKET_NAME` | `uitslagenportaal` | Bucket name |
+| `S3_ENDPOINT_URL` | `http://localhost:9000` | Endpoint the backend uploads through |
+| `S3_PUBLIC_DOMAIN` | `localhost:9000/uitslagenportaal` | Host used in the URLs handed to the browser |
+| `S3_URL_PROTOCOL` | `http:` | Protocol for those URLs (note the trailing colon) |
+| `S3_ACCESS_KEY` | `uitslagenportaal` | Access key |
+| `S3_SECRET_KEY` | `password` | Secret key |
+| `S3_REGION` | `nl-ams` | Region (Scaleway Amsterdam; ignored by RustFS) |
+| `S3_ADDRESSING_STYLE` | `path` | `path` for RustFS, `auto` for real S3 providers |
+
+Objects are public-read, so generated URLs are unsigned and do not expire. In
+production the bucket must therefore be configured to allow anonymous
+`s3:GetObject`. For Scaleway that means:
+
+```
+S3_ENDPOINT_URL=https://s3.nl-ams.scw.cloud
+S3_PUBLIC_DOMAIN=<bucket>.s3.nl-ams.scw.cloud
+S3_URL_PROTOCOL=https:
+S3_ADDRESSING_STYLE=auto
+```
+
+## Internationalisation
+
+The interface is available in Dutch and English, using [Lingui](https://lingui.dev). Dutch is
+the **source locale**: messages are written in Dutch directly in the components, and the `nl`
+catalogue is generated from that source rather than translated by hand.
+
+```bash
+npm run i18n:extract         # pull new/changed messages into the catalogues
+npm run i18n:extract-clean   # pull new/changed messages into the catalogues and remove unused ones
+npm run i18n:check           # fails when catalogues are out of step with the source (runs in CI)
+```
+
+Catalogues live in `frontend/src/locales/{locale}/messages.po` and are compiled on import by
+`@lingui/vite-plugin`, so there is no separate compile step and nothing compiled to commit.
+Each locale becomes its own lazily loaded chunk; a visitor downloads only their own language.
+
+Marking text for translation:
+
+| Case                                                         | Use                                                                             |
+|--------------------------------------------------------------|---------------------------------------------------------------------------------|
+| Text in JSX                                                  | `<Trans>` from `@lingui/react/macro`                                            |
+| A count-dependent message                                    | `<Plural>` / `plural` — never a ternary between two strings                     |
+| A string inside a component (`aria-label`, `title`, a prop)  | `` t`…` `` from `useLingui()`                                                   |
+| A constant outside a component (lookup maps, config objects) | `msg` from `@lingui/core/macro`, resolved at the call site with `t(descriptor)` |
+
+Translation rules:
+
+- For common election-related English translations, see https://github.com/kiesraad/abacus-documentatie/blob/main/referentie/woordenlijst-NL-EN.md.
+- Translate 'De Kiesraad' with 'De Kiesraad', as it's the organizational name, not a noun.
+- Leave non-UI strings alone: `reason_code` values are keys matched against the API, and route
+  paths, slugs, class names and `console.*` arguments are not user-facing copy.
+
+Numbers and dates go through `useFormatters()` in `frontend/src/utils/format.ts`, which follows the
+active locale. Dates keep the `Europe/Amsterdam` zone whatever the interface language, because
+election times are always Dutch local time.
+
+The language switcher lives in the footer; the choice is stored in `localStorage` and is
+deliberately not part of the URL. Activating a catalogue is the root route's loader
+(`localeLoader`), and the switcher only saves the choice and revalidates: that way a language
+change is router work like any other, and the navigation progress bar covers the download.
+
+> **When changing the build config:** the Lingui macros need a Babel pass, added in
+> `vite.config.ts` via `@rolldown/plugin-babel`. `@vitejs/plugin-react` v6 removed the `babel`
+> option that most Lingui guides use — wiring it that way fails silently: the build succeeds and
+> the app ships untranslated. After touching the plugin setup, verify against a production build
+> (`npm run build && npm run preview`), not the dev server.
 
 ## Playwright tests
 
