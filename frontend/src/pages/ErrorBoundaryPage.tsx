@@ -31,8 +31,13 @@ export default function ErrorBoundaryPage() {
 
    // A loader that 404s means the election, region or stembureau in the URL does not
    // exist, which is a not-found rather than a failure.
+   // The ErrorBoundary replaces RootLayout, so the header and footer have to be added here.
    if (isNotFoundError(error)) {
-      return <NotFoundPage />;
+      return (
+         <BaseLayout>
+            <NotFoundPage />
+         </BaseLayout>
+      );
    }
 
    const { heading, detail } = describeError(error);
