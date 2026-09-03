@@ -95,12 +95,12 @@ Lint/format is **ruff** (line length 120, rules `E,F,I`, migrations excluded) fo
 backend and **biome** (`npm run lint`, `npm run format`) for the frontend. Run them before
 finishing a change.
 
-See [README.md](README.md) and [backend/README.md](backend/README.md) for management
-commands, object-storage variables, and the election visibility/deletion rules.
+See [README.md](README.md) for management commands, object-storage variables, and the
+election visibility/deletion rules.
 
 ## Translations
 
-See the Internationalisation section in [frontend/README.md](frontend/README.md) for the setup,
+See the Internationalisation section in [README.md](README.md) for the setup,
 marking text for translations and translation rules.
 
 Lingui publishes agent skills, context files and an MCP server for working with its API:
