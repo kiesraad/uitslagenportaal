@@ -7,6 +7,7 @@ from typing import Iterator
 
 from django.conf import settings
 from django.core.cache import cache
+from django.db import transaction
 from github import Auth, Github
 from github.File import File
 from github.Repository import Repository
@@ -15,14 +16,12 @@ from redis.exceptions import LockError
 from election.models import ElectionConfig
 from eml_import.exceptions import GithubImportException
 from eml_import.models import BranchType, ImportedCommit
-from eml_import.utils.election_importer import ElectionImporter
+from eml_import.utils.file_handler import BaseFileHandler
 from eml_import.utils.named_bytes_io import NamedBytesIO
 
-COMMIT_BATCH_SIZE = 25
-
 # Seconds before the per-election lock expires on its own, so a worker that dies
-# mid-import does not block that election forever.
-LOCK_TIMEOUT = 5 * 60
+# mid-import does not block that election forever. Acquired afresh for each commit.
+LOCK_TIMEOUT = 20 * 60
 
 # The branches to import, in import order, mapped to the ElectionConfig field holding the branch name
 BRANCH_FIELDS: dict[BranchType, str] = {
@@ -31,8 +30,9 @@ BRANCH_FIELDS: dict[BranchType, str] = {
 }
 
 
-class GithubEmlImporter:
+class GithubEmlFileHandler(BaseFileHandler):
     def __init__(self, election_config: ElectionConfig) -> None:
+        super().__init__()
         self.election_config = election_config
         self.gh: Github | None = None
         self.repo: Repository | None = None
@@ -54,64 +54,85 @@ class GithubEmlImporter:
         self.gh = Github(auth=Auth.Token(settings.GITHUB_TOKEN), per_page=500)
         self.repo = self.gh.get_repo(settings.GITHUB_INGRESS_REPO)
 
-        # One import per election at a time, so two workers cannot import the same commits twice
-        lock = cache.lock(self.cache_lock_key, timeout=LOCK_TIMEOUT, blocking=False)
-        if not lock.acquire():
-            self.logger.warning(
-                "Could not acquire lock, GithubEmlImporter is already running for %s", self.election_config.identifier
-            )
-            return 0
-
-        try:
-            return self._run_import()
-        finally:
-            try:
-                lock.release()
-            except LockError:
-                # The lock timed out before the import finished, so another worker may hold it by now.
-                # The import itself still ran to completion, so let its result stand.
-                self.logger.warning("Lock for %s expired before the import finished", self.election_config.identifier)
+        return self._run_import()
 
     def _run_import(self) -> int:
         """
-        Import the next batch of commits from the first branch that still has commits left.
+        Import all remaining commits, one at a time, from each configured branch.
         :return: the number of imported files
         """
+        imported_files = 0
+
         for branch_type, branch in self._iterate_branches():
-            last_imported = (
-                ImportedCommit.objects.filter(election_config=self.election_config, branch_type=branch_type)
-                .order_by("-created_at")
-                .first()
-            )
+            while True:
+                # One import per election at a time, so two workers cannot import the same commits twice
+                lock = cache.lock(self.cache_lock_key, timeout=LOCK_TIMEOUT, blocking=False)
+                if not lock.acquire():
+                    self.logger.warning(
+                        "Could not acquire lock, GithubEmlFileHandler is already running for %s",
+                        self.election_config.identifier,
+                    )
+                    return imported_files
 
-            self.logger.info(
-                "Fetching files for next batch of commits on branch %s at %s...",
-                branch,
-                last_imported.commit_sha if last_imported else "first commit",
-            )
-            batch_head_sha, files = self._get_next_batch_of_files(
-                last_imported.commit_sha if last_imported else None, branch
-            )
-            # This branch is fully imported, so continue with the next one
-            if batch_head_sha is None:
-                self.logger.info(
-                    "No commits remaining on %s branch (%s)",
-                    branch_type,
-                    branch,
-                )
-                continue
+                try:
+                    last_imported = (
+                        ImportedCommit.objects.filter(election_config=self.election_config, branch_type=branch_type)
+                        .order_by("-created_at")
+                        .first()
+                    )
 
-            xml_files = list(self._iterate_all_xml_files(files))
-            ElectionImporter().import_file_objects(xml_files)
-            ImportedCommit.objects.create(
-                election_config=self.election_config,
-                branch_type=branch_type,
-                commit_sha=batch_head_sha,
-            )
+                    self.logger.info(
+                        "Fetching files for next commit on branch %s at %s...",
+                        branch,
+                        last_imported.commit_sha if last_imported else "first commit",
+                    )
+                    batch_head_sha, files = self._get_files_for_next_commit(
+                        last_imported.commit_sha if last_imported else None, branch
+                    )
+                    if batch_head_sha is None:
+                        self.logger.info(
+                            "No commits remaining on %s branch (%s)",
+                            branch_type,
+                            branch,
+                        )
+                        break
 
-            return len(xml_files)
+                    xml_files = list(self._iterate_all_xml_files(files))
+                    self.import_file_objects(xml_files)
+                    ImportedCommit.objects.create(
+                        election_config=self.election_config,
+                        branch_type=branch_type,
+                        commit_sha=batch_head_sha,
+                    )
+                    imported_files += len(xml_files)
+                finally:
+                    try:
+                        lock.release()
+                    except LockError:
+                        self.logger.warning(
+                            "Lock for %s expired while importing commits",
+                            self.election_config.identifier,
+                        )
 
-        return 0
+        return imported_files
+
+    def import_file_objects(self, files: list[NamedBytesIO]) -> None:
+        """
+        Import all given file-like objects.
+        """
+        xml_files = self._classify_files(files)
+        for parser_type, (binding, importer_cls) in self._DOCUMENT_TYPES.items():
+            for file in xml_files[parser_type]:
+                self.logger.info(f"Importing {parser_type} file {file.filename}")
+                eml = self._parser.from_bytes(file.getvalue(), binding)
+                try:
+                    with transaction.atomic():
+                        importer_cls(eml, file).parse()
+                except Exception as e:
+                    self.logger.error(
+                        f"\033[31mFailed importing {parser_type} file {file.filename} "
+                        f"with exception: {type(e).__name__} {e}\033[0m"
+                    )
 
     def _iterate_branches(self) -> Iterator[tuple[BranchType, str]]:
         """
@@ -126,48 +147,22 @@ class GithubEmlImporter:
             else:
                 self.logger.info("No %s branch configured for %s", branch_type, self.election_config.identifier)
 
-    def _get_next_batch_of_files(self, base_sha: str | None, branch: str) -> tuple[str | None, list[File]]:
+    def _get_files_for_next_commit(self, base_sha: str | None, branch: str) -> tuple[str | None, list[File]]:
         if base_sha is not None:
             # Get the commits ahead of the base_sha ref, so commits[0] is the first commit after base_Sha
             ahead = self.repo.compare(base_sha, branch)
-            # compare() only pages out the first 250 commits, but total_commits counts them all
-            remaining = ahead.total_commits
-            commits = list(itertools.islice(ahead.commits, COMMIT_BATCH_SIZE))
+            commits = list(itertools.islice(ahead.commits, 1))
         else:
             # Get the first commits of the branch, so commits[0] is the first ever commit
-            branch_commits = self.repo.get_commits(sha=branch)
-            remaining = branch_commits.totalCount
-            commits = list(itertools.islice(branch_commits.reversed, COMMIT_BATCH_SIZE))
+            commits = list(itertools.islice(self.repo.get_commits(sha=branch).reversed, 1))
 
         if not commits:
             return None, []
+        else:
+            commit = commits[0]
 
-        self.logger.info(
-            "Importing %s of %s remaining commits on branch %s, %s left after this batch",
-            len(commits),
-            remaining,
-            branch,
-            remaining - len(commits),
-        )
-
-        batch_head_sha = commits[-1].sha
-
-        # Compare does not return the files in the commit of the given sha,
-        # so get the files of the first commit separately
-        files = list(self.repo.get_commit(commits[0].sha).files)
-        if len(commits) == 1:
-            return batch_head_sha, files
-
-        # Try to get the files using a diff, which works up to 300 files and is enough most of the time
-        diff_files = self.repo.compare(commits[0].sha, batch_head_sha).files
-        if len(diff_files) < 300:
-            return batch_head_sha, files + diff_files
-
-        # Get files per commit instead, because we have 300 or more changed files.
-        # This costs at least one extra request per commit
-        self.logger.info("Fetch files for each commit, >= 300 files found...")
-        for commit in commits[1:]:
-            files += list(self.repo.get_commit(commit.sha).files)
+        batch_head_sha = commit.sha
+        files = list(self.repo.get_commit(commit.sha).files)
 
         return batch_head_sha, files
 

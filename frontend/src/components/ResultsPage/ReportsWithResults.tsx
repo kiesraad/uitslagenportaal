@@ -24,7 +24,7 @@ const FILE_TYPE_MAPPINGS: Record<
    string,
    { name: MessageDescriptor; fileType: string; description: MessageDescriptor; icon: IconDefinition }
 > = (() => ({
-   EML510b: {
+   "510b": {
       name: msg`EML_NL tellingbestand 510b`,
       fileType: "xml",
       icon: faFolder,

@@ -5,7 +5,7 @@ from django.conf import settings
 
 from election.models import Election, ElectionCategory, VoteCount
 from election.tests.factories import ElectionConfigFactory
-from eml_import.utils.election_importer import ElectionImporter
+from eml_import.utils.folder_eml_file_handler import FolderEMLFileHandler
 from mainsite.models import RegionCategory
 from region.models import Region
 
@@ -33,7 +33,7 @@ def ab2023_config(db):
 
 @pytest.mark.django_db
 def test_import_ws_fixtures(ab2023_config, ws_import_folder):
-    ElectionImporter().import_folder(ws_import_folder)
+    FolderEMLFileHandler().import_folder(ws_import_folder)
 
     election = Election.objects.get(election_config=ab2023_config)
     borsele = Region.objects.get(election=election, region_name="Borsele")

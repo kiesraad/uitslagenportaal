@@ -4,7 +4,8 @@ from typing import Self
 from zoneinfo import ZoneInfo
 
 from django.db import models
-from django.db.models.enums import Choices, TextChoices
+from django.db.models import Q
+from django.db.models.enums import Choices
 
 from election.utils import visibility_cutoff
 from mainsite.models import BaseModel, RegionCategory
@@ -190,17 +191,26 @@ class VoteCount(EMLTypeMixin, BaseModel):
         default=RESULT_LEVEL_CANDIDATE,
     )
 
-    # TODO: create unique contstraint
-    # class Meta:
-    #     constraints = [
-    #         models.UniqueConstraint(
-    #             fields=["contest", "region", "party", "candidate"],
-    #             name="unique_vote_count_per_contest_region_party_candidate",
-    #         )
-    #     ]
+
+class CurrentQuerySet(models.QuerySet):
+    def archive(self):
+        return self.update(is_current=False)
+
+
+class CurrentManager(models.Manager.from_queryset(CurrentQuerySet)):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_current=True)
 
 
 class ElectionDocument(BaseModel):
+    """
+    Archivable ElectionDoc
+    """
+
+    class FileType(models.TextChoices):
+        EML_510B = "510b", "Telling GSB"
+        EML_510D = "510d", "Totaaltelling CSB"
+
     region = models.ForeignKey(
         "region.Region",
         on_delete=models.CASCADE,
@@ -212,15 +222,26 @@ class ElectionDocument(BaseModel):
     content_type = models.CharField(max_length=128, default="application/xml")
     size = models.PositiveIntegerField()
 
-    class FileType(TextChoices):
-        EML510B = "EML510b"
-
     file_type = models.CharField(
         max_length=32,
         choices=FileType.choices,
-        default=FileType.EML510B,
+        default=FileType.EML_510B,
         help_text="Type of the election document",
     )
+    is_current = models.BooleanField(default=True, db_index=True)
+
+    objects = CurrentManager()
+    all_objects = models.Manager()
+
+    class Meta:
+        base_manager_name = "all_objects"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["region", "file_type"],
+                condition=Q(is_current=True),
+                name="unique_current_document_per_region_and_file_type",
+            )
+        ]
 
 
 class VoterTurnoutCount(EMLTypeMixin, BaseModel):
