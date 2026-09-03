@@ -105,7 +105,26 @@
             "justMyCode": true
         },
         {
-            "name": "Django: wipe, seed & import",
+            "name": "Django: wipe, seed & import single worker",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "reset_and_import",
+                "${workspaceFolder}/backend/.data",
+                "--workers",
+                "1"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Django: wipe, seed & import max workers",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/backend/manage.py",
