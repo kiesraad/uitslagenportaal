@@ -31,9 +31,7 @@ def test_timeline_entry_serializer_status(offset_days, expected_status):
 
 @pytest.mark.django_db
 def test_timeline_entry_serializer_nests_title_and_body_by_locale():
-    entry = TimelineEntryFactory(
-        title_nl="Titel", title_en="Title", body_nl="Tekst", body_en="Body"
-    )
+    entry = TimelineEntryFactory(title_nl="Titel", title_en="Title", body_nl="Tekst", body_en="Body")
 
     data = TimelineEntrySerializer(entry).data
 
