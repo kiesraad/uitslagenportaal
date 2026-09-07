@@ -43,7 +43,7 @@ from election.tests.factories import (
     ElectionFactory,
 )
 from eml_import.exceptions import EMLImporterException
-from eml_import.utils.eml_510_importer import EML510bImporter, EML510dImporter
+from eml_import.utils.eml_510_importer import EML510bImporter, EML510cImporter, EML510dImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
 from mainsite.utils.eml_type import EmlType
@@ -221,6 +221,24 @@ def make_ps_510d_eml(*, contests):
         category=ElectionCategoryType.PS,
         subcategory=ElectionSubcategoryType.PS2,
         domain=ElectionDomain(value="Limburg"),
+    )
+
+
+def make_ps_510c_eml(*, contests, authority_name="Maastricht"):
+    """A Totaaltelling HSB published by a kieskring's hoofdstembureau.
+
+    Like the CSB's Totaaltelling, its election domain carries no region number in PS.
+    """
+    return make_eml(
+        eml_id="510c",
+        authority_id="HSB1",
+        authority_name=authority_name,
+        contests=contests,
+        election_id=PS_ELECTION_ID,
+        election_name=PS_ELECTION_NAME,
+        category=ElectionCategoryType.PS,
+        subcategory=ElectionSubcategoryType.PS2,
+        domain=ElectionDomain(value=authority_name),
     )
 
 
@@ -892,3 +910,104 @@ def test_510b_leaves_results_available_at_unset_without_a_creation_date(
     gemeente = ws_regions["gemeente"]
     gemeente.refresh_from_db()
     assert gemeente.results_available_at is None
+
+
+@pytest.fixture
+def ps_maastricht_gemeenten(ps_regions):
+    """Kieskring Maastricht -> two gemeenten, so its Totaaltelling HSB breaks down per gemeente."""
+    kieskring = ps_regions["Maastricht"]
+    return {
+        name: RegionFactory(
+            election=kieskring.election,
+            parent=kieskring,
+            csb=kieskring.csb,
+            region_category=RegionCategory.GEMEENTE,
+            region_number=str(number),
+            region_name=name,
+        )
+        for number, name in enumerate(("Maastricht", "Valkenburg aan de Geul"), start=100)
+    }
+
+
+@pytest.fixture
+def ps_hsb_totaaltelling(ps_maastricht_gemeenten, ps_contests, ps_candidates):
+    """Import the Maastricht kieskring's Totaaltelling HSB: totals plus a breakdown per gemeente.
+
+    Unlike the CSB's Totaaltelling, an HSB's own contest is not "alle": the 230b already links
+    its candidates to one contest per kieskring, so the HSB file addresses that contest directly.
+    """
+    units = [
+        make_reporting_unit(
+            "100",
+            "Gemeente Maastricht",
+            [
+                party_selection(ReportingUnitVotes.Selection, 1, "CDA", 15000),
+                candidate_selection(ReportingUnitVotes.Selection, 4200, number=1),
+            ],
+        ),
+        make_reporting_unit(
+            "101",
+            "Gemeente Valkenburg aan de Geul",
+            [
+                party_selection(ReportingUnitVotes.Selection, 1, "CDA", 6252),
+                candidate_selection(ReportingUnitVotes.Selection, 1792, number=1),
+            ],
+        ),
+    ]
+    totals = make_total_votes(
+        [
+            party_selection(TotalVotes.Selection, 1, "CDA", 21252),
+            candidate_selection(TotalVotes.Selection, 5992, number=1),
+        ]
+    )
+    contest = make_contest("I", total_votes=totals, units=units)
+    EML510cImporter(make_ps_510c_eml(contests=[contest]), None).parse()
+
+
+def test_510c_resolves_kieskring_region_from_election_domain(ps_hsb_totaaltelling, ps_regions):
+    """The HSB's own totals are stored on the kieskring, not the provincie."""
+    totals = VoteCount.objects.get(result_level=VoteCount.RESULT_LEVEL_PARTY, valid_votes=21252)
+
+    assert totals.region == ps_regions["Maastricht"]
+    assert totals.eml_type == EmlType.EML_510c
+
+
+def test_510c_breaks_down_per_gemeente(ps_hsb_totaaltelling, ps_regions, ps_maastricht_gemeenten):
+    rows = VoteCount.objects.filter(result_level=VoteCount.RESULT_LEVEL_PARTY).order_by("valid_votes")
+
+    assert [(row.region, row.valid_votes, row.eml_type) for row in rows] == [
+        (ps_maastricht_gemeenten["Valkenburg aan de Geul"], 6252, EmlType.EML_510c),
+        (ps_maastricht_gemeenten["Maastricht"], 15000, EmlType.EML_510c),
+        (ps_regions["Maastricht"], 21252, EmlType.EML_510c),
+    ]
+
+
+def test_510c_uses_the_kieskrings_own_contest_directly(ps_hsb_totaaltelling, ps_regions, ps_maastricht_gemeenten):
+    """Unlike the CSB Totaaltelling, an HSB file's contest id is not "alle"."""
+
+    def contest_identifiers(region):
+        return set(VoteCount.objects.filter(region=region).values_list("contest__identifier", flat=True))
+
+    assert contest_identifiers(ps_regions["Maastricht"]) == {"I"}
+    assert contest_identifiers(ps_maastricht_gemeenten["Maastricht"]) == {"I"}
+    assert contest_identifiers(ps_maastricht_gemeenten["Valkenburg aan de Geul"]) == {"I"}
+
+
+def test_510c_publishes_the_kieskring_at_the_emls_creation_date(ps_hsb_totaaltelling, ps_regions):
+    kieskring = ps_regions["Maastricht"]
+    kieskring.refresh_from_db()
+
+    assert kieskring.results_available_at == timezone.make_aware(CREATION_DATE_TIME)
+
+
+def test_510c_does_not_write_results_for_the_other_kieskring(ps_hsb_totaaltelling, ps_regions):
+    """Only Maastricht published an HSB file; Venlo's results are untouched."""
+    assert not VoteCount.objects.filter(region=ps_regions["Venlo"]).exists()
+    assert not VoterTurnoutCount.objects.filter(region=ps_regions["Venlo"]).exists()
+
+
+def test_510c_stores_document_on_the_kieskring(ps_maastricht_gemeenten, ps_regions):
+    EML510cImporter(make_ps_510c_eml(contests=[]), NamedBytesIO(b"<eml/>", "x.xml")).parse()
+
+    doc = ElectionDocument.objects.get()
+    assert doc.region == ps_regions["Maastricht"]

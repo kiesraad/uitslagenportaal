@@ -19,7 +19,7 @@ from xsdata.formats.dataclass.parsers.handlers import XmlEventHandler
 
 from eml_import.utils.eml_110_importer import EML110aImporter
 from eml_import.utils.eml_230_importer import EML230bImporter
-from eml_import.utils.eml_510_importer import EML510bImporter, EML510dImporter
+from eml_import.utils.eml_510_importer import EML510bImporter, EML510cImporter, EML510dImporter
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.utils.eml_type import EmlType
@@ -51,6 +51,7 @@ class ElectionImporter:
         EmlType.EML_110a: (Eml110a, EML110aImporter),  # Verkiezingsdefinitie
         EmlType.EML_230b: (Eml230, EML230bImporter),  # Kandidatenlijst
         EmlType.EML_510b: (Eml510, EML510bImporter),  # Telling
+        EmlType.EML_510c: (Eml510, EML510cImporter),  # Telling HSB
         EmlType.EML_510d: (Eml510, EML510dImporter),  # Totaaltelling
     }
 
