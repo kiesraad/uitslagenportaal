@@ -106,7 +106,8 @@ export type PartyVoteMatrixTotals = {
 
 export type PartyVoteMatrix = {
    party: Party;
-   csb: Pick<Region, "region_name" | "slug">;
+   csb?: Pick<Region, "region_name" | "slug">;
+   hsb?: Pick<Region, "region_name" | "slug">;
    columns: PartyVoteMatrixColumn[];
    rows: PartyVoteMatrixRow[];
    totals: PartyVoteMatrixTotals;

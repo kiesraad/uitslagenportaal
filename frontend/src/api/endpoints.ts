@@ -79,3 +79,15 @@ export function getPartyVoteMatrix(electionSlug?: string, partySlug?: string, cs
    url.searchParams.append("csb", csbSlug);
    return apiGet<PartyVoteMatrix>(`${url.pathname}${url.search}`);
 }
+
+export function getHSBPartyVoteMatrix(electionSlug?: string, partySlug?: string, hsbSlug?: string) {
+   if (!electionSlug || !partySlug || !hsbSlug) {
+      throw new Error("getHSBPartyVoteMatrix: electionSlug, partySlug and hsbSlug are required.");
+   }
+
+   const url = new URL("/api/hsb-party-result-matrix/", window.location.origin);
+   url.searchParams.append("election", electionSlug);
+   url.searchParams.append("party", partySlug);
+   url.searchParams.append("hsb", hsbSlug);
+   return apiGet<PartyVoteMatrix>(`${url.pathname}${url.search}`);
+}

@@ -3,6 +3,7 @@ import type { Params } from "react-router";
 import {
    getElectionConfigBySlug,
    getElectionConfigs,
+   getHSBPartyVoteMatrix,
    getPartyVoteMatrix,
    getRegion,
    getRegions,
@@ -47,6 +48,13 @@ export function partyVoteMatrixQuery(electionSlug?: string, csbSlug?: string, pa
    return queryOptions({
       queryKey: ["party-vote-matrix", electionSlug, csbSlug, partySlug],
       queryFn: () => getPartyVoteMatrix(electionSlug, partySlug, csbSlug),
+   });
+}
+
+export function hsbPartyVoteMatrixQuery(electionSlug?: string, hsbSlug?: string, partySlug?: string) {
+   return queryOptions({
+      queryKey: ["hsb-party-vote-matrix", electionSlug, hsbSlug, partySlug],
+      queryFn: () => getHSBPartyVoteMatrix(electionSlug, partySlug, hsbSlug),
    });
 }
 

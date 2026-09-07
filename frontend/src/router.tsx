@@ -21,6 +21,7 @@ import {
 } from "./pages/ElectionConfigPage/ElectionConfigMunicipalityListPage";
 import { HomePage } from "./pages/HomePage";
 import { HSBMunicipalityListPage, hsbMunicipalityListLoader } from "./pages/HSBPage/HSBMunicipalityListPage.tsx";
+import { HSBPartyResultsPage, hsbPartyResultsLoader } from "./pages/HSBPage/HSBPartyResultsPage.tsx";
 import { HSBResultsPage, hsbResultsLoader } from "./pages/HSBPage/HSBResultsPage.tsx";
 import { MunicipalityPartyResultsPage } from "./pages/MunicipalityPage/MunicipalityPartyResultsPage";
 import {
@@ -96,6 +97,11 @@ export const routes: RouteObject[] = [
                         Component: HSBMunicipalityListPage,
                      },
                      { path: "resultaten", loader: hsbResultsLoader(queryClient), Component: HSBResultsPage },
+                     {
+                        path: "resultaten/:partySlug",
+                        loader: hsbPartyResultsLoader(queryClient),
+                        Component: HSBPartyResultsPage,
+                     },
                   ],
                },
                {
