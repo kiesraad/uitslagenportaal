@@ -1,14 +1,17 @@
 import { faCheck, faFile } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useLingui } from "@lingui/react";
 import ReactMarkdown from "react-markdown";
+import type { LocalizedText } from "../api/types";
+import { resolveLocale } from "../i18n";
 import { useFormatters } from "../utils/format";
 
 export type TimelineEntryStatus = "pending" | "in-progress" | "done";
 export interface TimelineEntry {
    status: TimelineEntryStatus;
-   title: string;
+   title: LocalizedText;
    date: string;
-   body: string;
+   body: LocalizedText;
    link?: string;
    files?: {
       name: string;
@@ -23,11 +26,13 @@ type Props = {
 };
 export default function Timeline({ entries }: Props) {
    const { formatTimelineDate } = useFormatters();
+   const { i18n } = useLingui();
+   const locale = resolveLocale(i18n.locale);
 
    return (
       <div className="timeline">
          {entries.map((entry, i) => (
-            <div key={entry.title} className={`timeline-item`}>
+            <div key={entry.title[locale]} className={`timeline-item`}>
                <div
                   className={`timeline-line ${entry.status} ${entry.status === "done" ? "border-solid" : "border-dashed"} ${entries.length === i + 1 ? "last" : ""}`}
                ></div>
@@ -38,10 +43,10 @@ export default function Timeline({ entries }: Props) {
                   </div>
                </div>
                <div className="tl-body">
-                  <div className="tl-title">{entry.title}</div>
+                  <div className="tl-title">{entry.title[locale]}</div>
                   <div className="tl-date">{formatTimelineDate(entry.date)}</div>
                   <div className="tl-desc">
-                     <ReactMarkdown>{entry.body}</ReactMarkdown>
+                     <ReactMarkdown>{entry.body[locale]}</ReactMarkdown>
                   </div>
                   {entry.link && (
                      <div className="tl-link">

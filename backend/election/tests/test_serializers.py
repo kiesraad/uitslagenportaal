@@ -30,6 +30,28 @@ def test_timeline_entry_serializer_status(offset_days, expected_status):
 
 
 @pytest.mark.django_db
+def test_timeline_entry_serializer_nests_title_and_body_by_locale():
+    entry = TimelineEntryFactory(
+        title_nl="Titel", title_en="Title", body_nl="Tekst", body_en="Body"
+    )
+
+    data = TimelineEntrySerializer(entry).data
+
+    assert data["title"] == {"nl": "Titel", "en": "Title"}
+    assert data["body"] == {"nl": "Tekst", "en": "Body"}
+
+
+@pytest.mark.django_db
+def test_timeline_entry_serializer_falls_back_to_dutch_when_english_is_blank():
+    entry = TimelineEntryFactory(title_nl="Titel", title_en="", body_nl="Tekst", body_en="")
+
+    data = TimelineEntrySerializer(entry).data
+
+    assert data["title"] == {"nl": "Titel", "en": "Titel"}
+    assert data["body"] == {"nl": "Tekst", "en": "Tekst"}
+
+
+@pytest.mark.django_db
 def test_election_config_serializer_only_returns_default_variant_timeline_entries():
     config = ElectionConfigFactory()
     TimelineEntryFactory(election_config=config, variant=TimelineVariant.CSO)
@@ -38,8 +60,8 @@ def test_election_config_serializer_only_returns_default_variant_timeline_entrie
 
     data = ElectionConfigSerializer(config).data
 
-    titles = [entry["title"] for entry in data["timeline_entries"]]
-    assert titles == [default_entry.title]
+    titles = [entry["title"]["nl"] for entry in data["timeline_entries"]]
+    assert titles == [default_entry.title_nl]
 
 
 @pytest.mark.django_db

@@ -40,6 +40,8 @@ class ElectionDocumentSerializer(serializers.ModelSerializer):
 
 class TimelineEntrySerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+    body = serializers.SerializerMethodField()
 
     class Meta:
         model = TimelineEntry
@@ -60,6 +62,12 @@ class TimelineEntrySerializer(serializers.ModelSerializer):
             return TimelineEntryStatus.DONE
         else:
             return TimelineEntryStatus.PENDING
+
+    def get_title(self, obj):
+        return {"nl": obj.title_nl, "en": obj.title_en or obj.title_nl}
+
+    def get_body(self, obj):
+        return {"nl": obj.body_nl, "en": obj.body_en or obj.body_nl}
 
 
 class ElectionConfigSerializer(serializers.ModelSerializer):
