@@ -4,9 +4,12 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 
-from election.tests.factories import ElectionFactory
+from election.models import VoteCount
+from election.tests.factories import ContestFactory, ElectionFactory
 from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
+from mainsite.utils.eml_type import EmlType
+from party.tests.factories import PartyFactory
 from region.tests.factories import RegionFactory
 from region.views import RegionDetailView, RegionListView
 
@@ -271,3 +274,61 @@ def test_region_list_is_empty_for_an_expired_election():
 
     assert response.status_code == 200
     assert list(response.data) == []
+
+
+@pytest.mark.django_db
+def test_region_list_has_own_results_excludes_kieskring_without_its_own_totaaltelling():
+    """A waterschap's kieskring is a structural stand-in for the CSB, with only 510d rows."""
+    election = ElectionFactory()
+    with_hsb = RegionFactory(election=election, region_category=RegionCategory.KIESKRING, region_name="Amsterdam")
+    without_hsb = RegionFactory(
+        election=election, region_category=RegionCategory.KIESKRING, region_name="Scheldestromen"
+    )
+    contest = ContestFactory(election=election)
+    party = PartyFactory(election=election)
+    VoteCount.objects.create(
+        contest=contest,
+        region=with_hsb,
+        party=party,
+        valid_votes=100,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type=EmlType.EML_510c,
+    )
+    VoteCount.objects.create(
+        contest=contest,
+        region=without_hsb,
+        party=party,
+        valid_votes=100,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type=EmlType.EML_510d,
+    )
+
+    request = factory.get(
+        "/api/regions/",
+        {
+            "election_config": election.election_config.slug,
+            "region_category": RegionCategory.KIESKRING,
+            "has_own_results": "true",
+        },
+    )
+    response = RegionListView.as_view()(request)
+
+    assert response.status_code == 200
+    assert [region["region_name"] for region in response.data] == ["Amsterdam"]
+
+
+@pytest.mark.django_db
+def test_region_list_has_own_results_requires_a_supported_region_category():
+    election = ElectionFactory()
+
+    request = factory.get(
+        "/api/regions/",
+        {
+            "election_config": election.election_config.slug,
+            "region_category": RegionCategory.STEMBUREAU,
+            "has_own_results": "true",
+        },
+    )
+    response = RegionListView.as_view()(request)
+
+    assert response.status_code == 400

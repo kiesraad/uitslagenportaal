@@ -47,6 +47,12 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
          submitBehavior: "exact-match" as const,
          inputId: "waterschap-search",
       },
+      KIESKRING: {
+         label: t`Zoek kieskring`,
+         placeholder: t`Bijv. Leiden`,
+         submitBehavior: "exact-match" as const,
+         inputId: "kieskring-search",
+      },
    } as const;
 
    const labels = getRegionLabels(regionCategory);

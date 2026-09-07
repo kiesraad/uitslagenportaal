@@ -10,13 +10,15 @@ import { useFormatters } from "@/utils/format.ts";
 import { getRegionLabels } from "@/utils/region.ts";
 import { appRoutes } from "@/utils/routes.ts";
 
-export function electionConfigCSBListLoader(queryClient: QueryClient) {
+export function electionConfigHSBListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const electionConfig = await queryClient.ensureQueryData(electionConfigQueryOptions);
+      const regionsQueryOptions = regionsQuery(params, "KIESKRING", true);
 
-      const regionsQueryOptions = regionsQuery(params, electionConfig?.csb_type);
-      await queryClient.ensureQueryData(regionsQueryOptions);
+      await Promise.all([
+         queryClient.ensureQueryData(electionConfigQueryOptions),
+         queryClient.ensureQueryData(regionsQueryOptions),
+      ]);
 
       return {
          electionConfigQuery: electionConfigQueryOptions,
@@ -25,9 +27,9 @@ export function electionConfigCSBListLoader(queryClient: QueryClient) {
    };
 }
 
-type LoaderData = Awaited<ReturnType<ReturnType<typeof electionConfigCSBListLoader>>>;
+type LoaderData = Awaited<ReturnType<ReturnType<typeof electionConfigHSBListLoader>>>;
 
-export function ElectionConfigCSBListPage() {
+export function ElectionConfigHSBListPage() {
    const { electionConfigQuery, regionsQuery } = useLoaderData<LoaderData>();
    const { t } = useLingui();
    const { formatElectionDate } = useFormatters();
@@ -41,7 +43,7 @@ export function ElectionConfigCSBListPage() {
    return (
       <LayoutMain
          title={t`Telresultaten ${electionLabel}`}
-         description={t`Bekijk de telresultaten per gemeente van de ${electionLabel}.`}
+         description={t`Bekijk de telresultaten per kieskring van de ${electionLabel}.`}
       >
          <PageTop
             title={t`Telresultaten ${electionLabel}`}
@@ -75,7 +77,7 @@ export function ElectionConfigCSBListPage() {
                />
             }
          />
-         <RegionList electionConfig={electionConfig} regions={regions} regionCategory={electionConfig.csb_type} />
+         <RegionList electionConfig={electionConfig} regions={regions} regionCategory="KIESKRING" />
       </LayoutMain>
    );
 }

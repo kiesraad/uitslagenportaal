@@ -1,8 +1,11 @@
 import pytest
 
-from election.models import ElectionCategory, ElectionConfig
-from election.tests.factories import ElectionConfigFactory, TimelineEntryFactory
+from election.models import ElectionCategory, ElectionConfig, VoteCount
+from election.tests.factories import ContestFactory, ElectionConfigFactory, ElectionFactory, TimelineEntryFactory
 from mainsite.models import RegionCategory
+from mainsite.utils.eml_type import EmlType
+from party.tests.factories import PartyFactory
+from region.tests.factories import RegionFactory
 
 
 @pytest.mark.parametrize(
@@ -47,3 +50,49 @@ def test_timeline_entries_are_ordered_chronologically():
     earlier = TimelineEntryFactory(election_config=config, date="2023-03-10T00:00:00Z")
 
     assert list(config.timeline_entries.all()) == [earlier, later]
+
+
+@pytest.mark.django_db
+def test_has_hsb_false_without_any_kieskring():
+    config = ElectionConfigFactory()
+
+    assert ElectionConfig.objects.get(pk=config.pk).has_hsb is False
+
+
+@pytest.mark.django_db
+def test_has_hsb_false_for_kieskring_without_its_own_totaaltelling():
+    """A waterschap's kieskring is a structural stand-in for the CSB, with only 510d rows."""
+    config = ElectionConfigFactory()
+    election = ElectionFactory(election_config=config)
+    kieskring = RegionFactory(election=election, region_category=RegionCategory.KIESKRING)
+    contest = ContestFactory(election=election)
+    party = PartyFactory(election=election)
+    VoteCount.objects.create(
+        contest=contest,
+        region=kieskring,
+        party=party,
+        valid_votes=100,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type=EmlType.EML_510d,
+    )
+
+    assert ElectionConfig.objects.get(pk=config.pk).has_hsb is False
+
+
+@pytest.mark.django_db
+def test_has_hsb_true_for_kieskring_with_its_own_totaaltelling():
+    config = ElectionConfigFactory()
+    election = ElectionFactory(election_config=config)
+    kieskring = RegionFactory(election=election, region_category=RegionCategory.KIESKRING)
+    contest = ContestFactory(election=election)
+    party = PartyFactory(election=election)
+    VoteCount.objects.create(
+        contest=contest,
+        region=kieskring,
+        party=party,
+        valid_votes=100,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type=EmlType.EML_510c,
+    )
+
+    assert ElectionConfig.objects.get(pk=config.pk).has_hsb is True

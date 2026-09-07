@@ -21,6 +21,7 @@ export function getRegions(
    parentRegionSlug?: string,
    regionCategory?: RegionCategory,
    csbSlug?: string,
+   hasOwnResults?: boolean,
 ) {
    if (!electionConfigSlug || (!parentRegionSlug && !regionCategory && !csbSlug)) {
       throw new Error(
@@ -38,6 +39,9 @@ export function getRegions(
    }
    if (csbSlug) {
       url.searchParams.append("csb", csbSlug);
+   }
+   if (hasOwnResults) {
+      url.searchParams.append("has_own_results", "true");
    }
    return apiGet<RegionResponse>(`${url.pathname}${url.search}`);
 }

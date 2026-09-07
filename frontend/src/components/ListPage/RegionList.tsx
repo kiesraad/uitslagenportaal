@@ -47,27 +47,30 @@ export function RegionList({
       navigate(appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id, parentCsbSlug));
    }
 
-   function navigateToCSB(option: SearchListOption) {
-      navigate(appRoutes.csbResults(electionConfig.slug ?? "", option.id));
+   const REGION_DETAIL_ROUTE_BUILDERS: Partial<Record<RegionCategory, typeof appRoutes.csbResults>> = {
+      WATERSCHAP: appRoutes.csbResults,
+      PROVINCIE: appRoutes.csbResults,
+      KIESKRING: appRoutes.hsbResults,
+   };
+
+   function getRegionRoute(option: SearchListOption) {
+      if (regionCategory === "STEMBUREAU" && parentRegionSlug) {
+         return appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id, parentCsbSlug);
+      }
+      const detailRoute = REGION_DETAIL_ROUTE_BUILDERS[regionCategory];
+      if (detailRoute) {
+         return detailRoute(electionConfig.slug, option.id);
+      }
+      return appRoutes.municipalityPollingstationList(electionConfig.slug, option.id, option.csbSlug);
    }
 
    let navigateToRegion: (option: SearchListOption) => void;
    if (regionCategory === "STEMBUREAU") {
       navigateToRegion = navigateToPollingStation;
-   } else if (["WATERSCHAP", "PROVINCIE"].includes(regionCategory)) {
-      navigateToRegion = navigateToCSB;
+   } else if (regionCategory in REGION_DETAIL_ROUTE_BUILDERS) {
+      navigateToRegion = (option) => navigate(getRegionRoute(option));
    } else {
       navigateToRegion = navigateToGemeente;
-   }
-
-   function getRegionRoute(option: SearchListOption) {
-      if (regionCategory === "STEMBUREAU" && parentRegionSlug) {
-         return appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id, parentCsbSlug);
-      } else if (["WATERSCHAP", "PROVINCIE"].includes(regionCategory)) {
-         return appRoutes.csbResults(electionConfig.slug, option.id);
-      } else {
-         return appRoutes.municipalityPollingstationList(electionConfig.slug, option.id, option.csbSlug);
-      }
    }
 
    const isPollingStationList = regionCategory === "STEMBUREAU";
