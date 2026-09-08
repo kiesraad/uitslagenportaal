@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { ApiError } from "@/api/client.ts";
 import { LayoutMain } from "@/components/LayoutMain.tsx";
 import { RegionList } from "@/components/ListPage/RegionList.tsx";
 import PageTop from "@/components/PageTop.tsx";
@@ -15,10 +16,14 @@ export function electionConfigHSBListLoader(queryClient: QueryClient) {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
       const regionsQueryOptions = regionsQuery(params, "KIESKRING", true);
 
-      await Promise.all([
+      const [electionConfig] = await Promise.all([
          queryClient.ensureQueryData(electionConfigQueryOptions),
          queryClient.ensureQueryData(regionsQueryOptions),
       ]);
+
+      if (!electionConfig.has_hsb) {
+         throw new ApiError("Election has no HSBs", 404);
+      }
 
       return {
          electionConfigQuery: electionConfigQueryOptions,
