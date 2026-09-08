@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -16,11 +17,15 @@ export function hsbMunicipalityListLoader(queryClient: QueryClient) {
       const regionQueryOptions = regionQuery(params);
       const regionsQueryOptions = regionsQuery(params, "GEMEENTE");
 
-      await Promise.all([
+      const [electionConfig] = await Promise.all([
          queryClient.ensureQueryData(electionConfigQueryOptions),
          queryClient.ensureQueryData(regionQueryOptions),
          queryClient.ensureQueryData(regionsQueryOptions),
       ]);
+
+      if (!electionConfig.has_hsb) {
+         throw new ApiError("Election has no HSBs", 404);
+      }
 
       return {
          electionConfigQuery: electionConfigQueryOptions,
