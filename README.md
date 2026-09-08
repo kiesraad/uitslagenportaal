@@ -32,4 +32,6 @@ Meer informatie over de Kiesraad en de verkiezingen is te vinden op onze [GitHub
 
 ## Auteursrecht en licenties
 
-Auteursrecht © 2026 Kiesraad.
+Auteursrecht © 2026 Kiesraad. Gelicentieerd onder EUPL-1.2 of hoger, tenzij anders aangegeven.
+
+Versies van EUPL-1.2 in alle officiële EU-talen zijn beschikbaar op https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12. De Engelse versie is te vinden onder LICENSE.
