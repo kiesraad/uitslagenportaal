@@ -25,7 +25,7 @@ spec:
           imagePullPolicy: {{ .Values.celery.pullPolicy }}
           command: ["celery", "-A", "mainsite", "worker", "--loglevel=INFO"]
           envFrom:
-            {{- include "uitslagenportaal.envFrom" . | nindent 12 }}
+            {{- include "uitslagenportaal.backendEnvFrom" . | nindent 12 }}
           # Use a shell to be able to use $(VAR) expansion.
           livenessProbe:
             exec:
@@ -84,7 +84,7 @@ spec:
             - --loglevel=INFO
             - --schedule=/tmp/celerybeat-schedule
           envFrom:
-            {{- include "uitslagenportaal.envFrom" . | nindent 12 }}
+            {{- include "uitslagenportaal.backendEnvFrom" . | nindent 12 }}
           resources:
             {{- toYaml .Values.celery.beat.resources | nindent 12 }}
           securityContext:

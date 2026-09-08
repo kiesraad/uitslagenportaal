@@ -4,9 +4,7 @@ metadata:
   name: {{ .Release.Name }}-config
   namespace: {{ .Values.namespace }}
 data:
-  # Database. Host/port/user/password come from the db-credentials secret.
-  DB: "postgres"
-  DB_NAME: "{{ .Values.db.name }}"
+  # DB Host/port/user/password/name come from the db-creds secret.
   DB_SSLMODE: "{{ .Values.db.sslmode }}"
   # Django cannot set sslrootcert, so use the libpq env var. Pointing at a file
   # that is not there is fine: only the verify-* sslmodes demand one.

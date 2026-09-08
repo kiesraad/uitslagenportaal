@@ -24,6 +24,7 @@ db:
 # In-cluster stand-ins for the managed database, cache and object storage.
 services:
   enabled: true
+  name: "uitslagenportaal"
   username: "uitslagenportaal_user"
   password: "password"
   secretKey: "super-secret"

@@ -6,15 +6,17 @@ app:
   site_name: "Uitslagenportaal"
 
 db:
-  name: "uitslagenportaal"
   # verify-full would fail: the RDB cert CN is an IP, not the private endpoint.
   sslmode: "verify-ca"
   # Created outside the chart: DB_HOST, DB_PORT, DB_USER, DB_PASSWORD and, for
-  # the verify-* sslmodes, the CA of the managed database under CA_PEM.
-  credSecret: "db-credentials"
+  # the verify-* sslmodes, the CA of the managed database under DB_CA_CERT.
+  credSecret: "db-creds"
 
 redis:
   credSecret: "redis-creds"
+
+objectStorage:
+  credSecret: "s3-creds"
 
 gateway:
   enabled: true

@@ -35,6 +35,11 @@ Several secrets are needed to configure the services in the Chart.
 Some secrets are automatically configured when deploying locally because they are based on the locally deployed services.
 In production, however, it's required to set these to the values to the managed services credentials.
 
+If no `uitlsagenportaal` namespace exists, create it: `kubectl create namespace uitslagenportaal`.
+
+> [!NOTE]
+> Replace `\` with `` ` `` when running commands in Powershell
+
 **DB**
 
 ```bash
@@ -42,8 +47,9 @@ kubectl -n uitslagenportaal create secret generic db-creds \
   --from-literal=DB_HOST=172.16.0.7 \
   --from-literal=DB_PORT=5432 \
   --from-literal=DB_USER=uitslagenportaal \
+  --from-literal=DB_NAME='rdb' \
   --from-literal=DB_PASSWORD='<db-password>' \
-  --from-file=CA_PEM=rdb-rdb-uitslagenportaal.pem
+  --from-file=DB_CA_CERT=rdb-rdb-uitslagenportaal.pem
 ```
 
 **Redis**
@@ -53,7 +59,8 @@ kubectl -n uitslagenportaal create secret generic redis-creds \
   --from-literal=REDIS_HOST=''  \
   --from-literal=REDIS_PORT=6379  \
   --from-literal=REDIS_USER=''  \
-  --from-literal=REDIS_PASSWORD=''
+  --from-literal=REDIS_PASSWORD='' \
+  --from-file=REDIS_CA_CERT=redis-redis-uitslagenportaal.pem
 ```
 
 
@@ -61,13 +68,13 @@ kubectl -n uitslagenportaal create secret generic redis-creds \
 
 ```bash
 kubectl -n uitslagenportaal create secret generic s3-creds \
-  --from-literal=S3_BUCKET_NAME=''  \
+  --from-literal=S3_BUCKET_NAME='uitslagenportaal'  \
   --from-literal=S3_ACCESS_KEY=''  \
   --from-literal=S3_SECRET_KEY=''  \
-  --from-literal=S3_ADDRESSING_STYLE='path'  \
-  --from-literal=S3_ENDPOINT_URL=''  \
-  --from-literal=S3_PUBLIC_DOMAIN=''  \
-  --from-literal=S3_URL_PROTOCOL='https'
+  --from-literal=S3_ADDRESSING_STYLE='virtual'  \
+  --from-literal=S3_ENDPOINT_URL='https://s3.nl-ams.scw.cloud'  \
+  --from-literal=S3_PUBLIC_DOMAIN='uitslagenportaal.s3.nl-ams.scw.cloud'  \
+  --from-literal=S3_URL_PROTOCOL='https:'
 ```
 
 **Application secrets**
@@ -83,14 +90,26 @@ kubectl -n uitslagenportaal create secret generic uitslagenportaal-secrets \
 **Importer secrets**
 
 ```bash
-kubectl -n uitslagenportaal create secret generic importer-creds \
-  --from-literal=GITHUB_TOKEN="" \
+kubectl -n uitslagenportaal create secret generic importer-creds `
+  --from-literal=GITHUB_TOKEN="" `
   --from-literal=GITHUB_INGRESS_REPO=""
 ```
 
 ### Deploy the Helm chart
 
 The Helm chart contains the application-specific configuration.
+
+#### Cluster depoly
+
+On a managed Kubernetes cluster at a hosting provider.
+
+1. Run the commands for the one-time infa setup, see above, if not done before.
+2. Make sure the secrets are set, see the Secrets section above.
+3. Install the helm chart:
+   ```bash
+   helm upgrade --install uitslagenportaal . -n uitslagenportaal -f values.yaml
+   ```
+   
 
 #### Local deploy
 
@@ -99,7 +118,8 @@ E.g. on a Kubernetes cluster from Docker Desktop or kind
 1. Run the commands for the one-time infa setup, see above, if not done before.
 2. Add a hosts value in `C:\Windows\System32\drivers\etc\hosts` or `/etc/hosts`:
    `127.0.0.1  uitslagenportaal.localdev`
-3. Install the helm chart:
+3. Set the importer secrets (services secrets are created by `06-services.yaml`).
+4. Install the helm chart:
    ```bash
    helm upgrade --install uitslagenportaal . -n uitslagenportaal --create-namespace -f values.yaml -f values-local.yaml
    ```
