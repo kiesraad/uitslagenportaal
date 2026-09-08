@@ -1,4 +1,4 @@
-FROM python:3.14-alpine
+FROM python:3.14-slim
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -15,8 +15,8 @@ ENV UV_LINK_MODE=copy
 ENV DEBUG=false
 
 # Add a user and let it own /app
-RUN addgroup -S backend \
-    && adduser -S backend -G backend \
+RUN groupadd --system backend \
+    && useradd --system --gid backend --home-dir /app --no-create-home backend \
     && mkdir /app \
     && chown -R backend /app
 
