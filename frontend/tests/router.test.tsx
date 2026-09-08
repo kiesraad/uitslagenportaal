@@ -6,10 +6,11 @@ function match(pathname: string) {
    const matches = matchRoutes(routes, pathname) ?? [];
 
    return {
-      chain: matches.map((m) => (m.route as { Component?: { name: string } }).Component?.name),
+      chain: matches.map((m) => m.route.id),
       params: matches.at(-1)?.params ?? {},
       // The root route is skipped: its loader carries the language catalogue, not page data.
-      loaders: matches.slice(1).filter((m) => m.route.loader).length,
+      // Page loaders live inside `lazy`, so a single lazy leaf means data is fetched once.
+      loaders: matches.slice(1).filter((m) => m.route.lazy).length,
    };
 }
 
@@ -20,7 +21,7 @@ describe("router", () => {
       // A static segment outranks the stembureau parameter it sits beside.
       ["/ab2023/gsb/utrecht/csb/csb-1/resultaten", "MunicipalityResultsPage"],
       ["/ab2023/gsb/utrecht/csb/csb-1/sb-3", "PollingStationResultsPage"],
-      ["/ab2023/onzin", "NotFoundPage"],
+      ["/ab2023/onzin", "NotFoundPageNested"],
    ])("%s renders %s", (pathname, expected) => {
       expect(match(pathname).chain.at(-1)).toBe(expected);
    });
