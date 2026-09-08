@@ -1,4 +1,5 @@
 import os
+import ssl
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -75,19 +76,37 @@ DATABASES = {
 }
 
 # Redis config
-REDIS_CA_CERT = os.environ.get("REDIS_CA_CERT")
-REDIS_PROTOCOL = os.environ.get("REDIS_PROTOCOL", "rediss" if REDIS_CA_CERT else "redis")
+# REDIS_CA_CERT_FILE points at its CA on disk, and its
+# presence is what moves every connection over to rediss://.
+REDIS_CA_CERT_FILE = os.environ.get("REDIS_CA_CERT_FILE")
+REDIS_PROTOCOL = os.environ.get("REDIS_PROTOCOL", "rediss" if REDIS_CA_CERT_FILE else "redis")
 REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
 REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
 REDIS_USER = os.environ.get("REDIS_USER", "")
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "")
 REDIS_URL = f"{REDIS_PROTOCOL}://{REDIS_USER}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
 
+# redis-py needs the CA per connection, and neither Celery nor the cache reads the other's
+# configuration: broker, result backend and cache each take their own copy.
+REDIS_SSL_OPTIONS = (
+    {
+        "ssl_cert_reqs": ssl.CERT_REQUIRED,
+        "ssl_ca_certs": REDIS_CA_CERT_FILE,
+        # IP-based connection, so don't verify hostnames (as with the database's verify-ca).
+        "ssl_check_hostname": False,
+    }
+    if REDIS_CA_CERT_FILE
+    else {}
+)
+
 # Celery config - use a different broker and result backend Redis DB
 CELERY_BROKER_URL = REDIS_URL + "/1"
 CELERY_RESULT_BACKEND = REDIS_URL + "/2"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 0.5h
+if REDIS_SSL_OPTIONS:
+    CELERY_BROKER_USE_SSL = REDIS_SSL_OPTIONS
+    CELERY_REDIS_BACKEND_USE_SSL = REDIS_SSL_OPTIONS
 
 # Prefork sizes its pool from the host's CPU count, which bears no relation to what the
 # worker is allowed to use, and a child never hands an EML batch's peak memory back to the
@@ -104,17 +123,9 @@ CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": REDIS_URL + "/0",
-        "OPTIONS": {},
+        "OPTIONS": {"CONNECTION_POOL_KWARGS": REDIS_SSL_OPTIONS},
     }
 }
-
-# Enable SSL if CA cert is set
-if REDIS_CA_CERT:
-    CACHES["default"]["OPTIONS"] = {
-        "CONNECTION_POOL_KWARGS": {
-            "ssl_ca_certs": REDIS_CA_CERT,
-        }
-    }
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

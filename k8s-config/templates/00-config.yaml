@@ -13,7 +13,10 @@ data:
   DB_CONN_MAX_AGE: "60"
 
   # Redis
-  REDIS_CA_CERT: "{{ .Values.redis.caCert.dir }}/{{ .Values.redis.caCert.file }}"
+  {{- if .Values.redis.tls }}
+  # Set the REDIS_CA_CERT_FILE var when TLS is enabled, the file is mounted from the redis-creds secret.
+  REDIS_CA_CERT_FILE: "/etc/ssl/redis/ca.pem"
+  {{- end }}
 
   # Set Celery concurrency and trigger a worker recycle after MAX_TASKS_PER_CHILD
   # to prevent memory leaks from persisting between tasks.

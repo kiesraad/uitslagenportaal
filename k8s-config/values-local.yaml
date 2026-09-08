@@ -22,7 +22,8 @@ db:
   sslmode: "disable"
 
 redis:
-  caCert: ""
+  # The in-cluster Redis speaks plain TCP, unlike the managed cache.
+  tls: false
 
 # In-cluster stand-ins for the managed database, cache and object storage.
 services:

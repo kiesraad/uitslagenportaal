@@ -13,10 +13,11 @@ db:
   credSecret: "db-creds"
 
 redis:
+  # Created outside the chart: REDIS_HOST, REDIS_PORT, REDIS_USER, REDIS_PASSWORD and,
+  # with tls on, the CA of the managed cache under REDIS_CA_CERT.
   credSecret: "redis-creds"
-  caCert:
-    dir: "/etc/ssl/redis"
-    file: "ca.pem"
+  # The managed cache only accepts TLS, unlike the in-cluster stand-in.
+  tls: true
 
 objectStorage:
   credSecret: "s3-creds"
@@ -36,7 +37,7 @@ issuer:
   server: "staging" # or "production"
 
 backend:
-  image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:239-helm-chart-for-k8s-deploys"
   # Pull always because we publish new images to the same tag
   pullPolicy: "Always"
   appSecret: "uitslagenportaal-secrets"
@@ -64,7 +65,7 @@ frontend:
       memory: 64Mi
 
 celery:
-  image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:239-helm-chart-for-k8s-deploys"
   pullPolicy: "Always"
   worker:
     replicas: 1

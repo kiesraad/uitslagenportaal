@@ -13,18 +13,22 @@
 {{- end }}
 
 {{/*
-libpq reads the CA from a file at PGSSLROOTCERT, but the same secret is also
-consumed with envFrom: hence the env-var-safe key DB_CA_CERT, renamed on the way in.
-Without DB_CA_CERT the mount stays empty, which only the verify-* sslmodes mind.
+Both CAs are read from a file: libpq takes the database one from PGSSLROOTCERT, redis-py
+the cache one from REDIS_CA_CERT_FILE. Their secrets are also consumed with envFrom, hence
+the env-var-safe keys DB_CA_CERT and REDIS_CA_CERT, renamed on the way in. Without those
+keys the mounts stay empty, which only the verify-* sslmodes and redis.tls mind.
 */}}
-{{- define "uitslagenportaal.dbCaMount" -}}
+{{- define "uitslagenportaal.caVolumeMounts" -}}
 volumeMounts:
   - name: db-ca
     mountPath: /etc/ssl/rdb
     readOnly: true
+  - name: redis-ca
+    mountPath: /etc/ssl/redis
+    readOnly: true
 {{- end }}
 
-{{- define "uitslagenportaal.dbCaVolume" -}}
+{{- define "uitslagenportaal.caVolumes" -}}
 volumes:
   - name: db-ca
     secret:
@@ -33,24 +37,13 @@ volumes:
       items:
         - key: DB_CA_CERT
           path: ca.pem
-{{- end }}
-
-{{- define "uitslagenportaal.redisCaMount" -}}
-volumeMounts:
-  - name: redis-ca
-    mountPath: {{ .Values.redis.caCert.dir }}
-    readOnly: true
-{{- end }}
-
-{{- define "uitslagenportaal.redisCaVolume" -}}
-volumes:
   - name: redis-ca
     secret:
       secretName: {{ .Values.redis.credSecret }}
       optional: true
       items:
         - key: REDIS_CA_CERT
-          path: {{ .Values.redis.caCert.file }}
+          path: ca.pem
 {{- end }}
 
 {{/*
@@ -72,6 +65,5 @@ fails while the database is still unreachable or not fully migrated.
       echo "Migrations applied"
   envFrom:
     {{- include "uitslagenportaal.backendEnvFrom" . | nindent 4 }}
-  {{- include "uitslagenportaal.dbCaMount" . | nindent 2 }}
-  {{- include "uitslagenportaal.redisCaMount" . | nindent 2 }}
+  {{- include "uitslagenportaal.caVolumeMounts" . | nindent 2 }}
 {{- end }}
