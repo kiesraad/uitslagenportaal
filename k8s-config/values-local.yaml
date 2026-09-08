@@ -12,6 +12,10 @@ debug: true
 app:
   hostname: "uitslagenportaal.localdev"
 
+# Nothing to shield locally, and the credentials secret is not created here.
+basicAuth:
+  enabled: false
+
 issuer:
   # Let's Encrypt validates by connecting inbound to the hostname, which no
   # local cluster can satisfy; staging relaxes the rate limits, not that.

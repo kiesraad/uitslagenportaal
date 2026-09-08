@@ -27,6 +27,13 @@ gateway:
   # Created by the Traefik release; see infra setup in README.md.
   className: "traefik"
 
+basicAuth:
+  enabled: true
+  # Created outside the chart: a `users` key holding htpasswd lines.
+  # See the Secrets section in README.md.
+  credSecret: "basic-auth-creds"
+  realm: "Uitslagenportaal"
+
 issuer:
   enabled: true
   # "acme" requires the hostname to be reachable from the internet;
@@ -34,7 +41,7 @@ issuer:
   type: "acme"
   # ACME account address, used for expiry warnings. Must be set.
   email: "kiesraad@kiesraad.nl"
-  server: "staging" # or "production"
+  server: "production" # "staging" or "production"
 
 backend:
   image: "ghcr.io/kiesraad/uitslagenportaal-backend:239-helm-chart-for-k8s-deploys"

@@ -90,10 +90,28 @@ kubectl -n uitslagenportaal create secret generic uitslagenportaal-secrets \
 **Importer secrets**
 
 ```bash
-kubectl -n uitslagenportaal create secret generic importer-creds `
-  --from-literal=GITHUB_TOKEN="" `
+kubectl -n uitslagenportaal create secret generic importer-creds \
+  --from-literal=GITHUB_TOKEN="" \
   --from-literal=GITHUB_INGRESS_REPO=""
 ```
+
+**Basic authentication**
+
+The whole site sits behind HTTP basic auth, with the credentials in a secret holding
+htpasswd lines. Create it before installing the chart: `basicAuth.enabled` is true by
+default, and while the secret is missing Traefik fails the route with a 5xx instead of
+asking for a password.
+
+```bash
+kubectl -n uitslagenportaal create secret generic basic-auth-creds \
+  --from-literal=users="$(htpasswd -nbB <user> '<password>')"
+```
+
+> [!NOTE]
+> Windows has no `htpasswd`; `docker run --rm httpd:2 htpasswd -nbB <user> '<password>'` prints the same line.
+
+Certificate issuance is unaffected: cert-manager attaches its own HTTP-01 route to the
+Gateway, and that route carries no auth filter.
 
 ### Deploy the Helm chart
 

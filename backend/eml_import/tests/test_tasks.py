@@ -4,6 +4,7 @@ from unittest.mock import ANY, call, create_autospec, patch
 import pytest
 from celery import Celery
 from celery.schedules import crontab
+from redis.exceptions import ConnectionError as RedisConnectionError
 from requests import RequestException
 
 from election.tests.factories import ElectionConfigFactory
@@ -38,13 +39,20 @@ def test_import_task_imports_the_election_config_it_was_queued_for(github_eml_fi
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    "error",
+    [
+        RequestException("GitHub is unreachable"),
+        RedisConnectionError("Redis is unreachable"),
+    ],
+)
 @patch.object(tasks, "GithubEmlFileHandler", autospec=True)
-def test_import_task_lets_file_handler_failures_escape_so_celery_can_retry(github_eml_file_handler):
+def test_import_task_lets_file_handler_failures_escape_so_celery_can_retry(github_eml_file_handler, error):
     election_config = ElectionConfigFactory()
-    github_eml_file_handler.return_value.run.side_effect = RequestException("GitHub is unreachable")
+    github_eml_file_handler.return_value.run.side_effect = error
 
     # Swallowing this would leave the election silently stuck until the next beat tick
-    with pytest.raises(RequestException):
+    with pytest.raises(type(error)):
         import_election_eml_commits(election_config.id)
 
 

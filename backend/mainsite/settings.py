@@ -1,6 +1,7 @@
 import os
 import ssl
 from pathlib import Path
+from urllib.parse import quote
 
 from dotenv import load_dotenv
 
@@ -76,15 +77,19 @@ DATABASES = {
 }
 
 # Redis config
-# REDIS_CA_CERT_FILE points at its CA on disk, and its
-# presence is what moves every connection over to rediss://.
+# REDIS_CA_CERT_FILE points at the Redis server's CA on disk, and its presence is what
+# moves every connection over to rediss://.
 REDIS_CA_CERT_FILE = os.environ.get("REDIS_CA_CERT_FILE")
 REDIS_PROTOCOL = os.environ.get("REDIS_PROTOCOL", "rediss" if REDIS_CA_CERT_FILE else "redis")
 REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
 REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
 REDIS_USER = os.environ.get("REDIS_USER", "")
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "")
-REDIS_URL = f"{REDIS_PROTOCOL}://{REDIS_USER}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
+# Quote the Redis user and password to prevent issues with special characters. redis-py and kombu both
+# unquote what they parse, so escaping here is what they expect.
+REDIS_URL = (
+    f"{REDIS_PROTOCOL}://{quote(REDIS_USER, safe='')}:{quote(REDIS_PASSWORD, safe='')}@{REDIS_HOST}:{REDIS_PORT}"
+)
 
 # redis-py needs the CA per connection, and neither Celery nor the cache reads the other's
 # configuration: broker, result backend and cache each take their own copy.
@@ -123,7 +128,9 @@ CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": REDIS_URL + "/0",
-        "OPTIONS": {"CONNECTION_POOL_KWARGS": REDIS_SSL_OPTIONS},
+        "OPTIONS": {
+            "CONNECTION_POOL_KWARGS": REDIS_SSL_OPTIONS,
+        },
     }
 }
 

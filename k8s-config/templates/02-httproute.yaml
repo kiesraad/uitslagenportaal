@@ -19,6 +19,16 @@ spec:
         - path:
             type: PathPrefix
             value: /api
+      {{- if .Values.basicAuth.enabled }}
+      # The Gateway API has no auth filter of its own; ExtensionRef hands the
+      # request to a Traefik middleware instead.
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: {{ .Release.Name }}-basic-auth
+      {{- end }}
       backendRefs:
         - name: {{ .Release.Name }}-backend
           port: {{ .Values.backend.port }}
@@ -26,6 +36,14 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      {{- if .Values.basicAuth.enabled }}
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: {{ .Release.Name }}-basic-auth
+      {{- end }}
       backendRefs:
         - name: {{ .Release.Name }}-frontend
           port: {{ .Values.frontend.port }}
@@ -44,9 +62,25 @@ spec:
   hostnames:
     - {{ .Values.app.hostname | quote }}
   rules:
+    # No auth here: asking for credentials before the redirect would carry them
+    # over plain HTTP.
     - filters:
         - type: RequestRedirect
           requestRedirect:
             scheme: https
             statusCode: 301
+{{- if .Values.basicAuth.enabled }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ .Release.Name }}-basic-auth
+  namespace: {{ .Values.namespace }}
+spec:
+  basicAuth:
+    secret: {{ .Values.basicAuth.credSecret }}
+    realm: {{ .Values.basicAuth.realm | quote }}
+    # Django has no use for the credentials, so they stop at the proxy.
+    removeHeader: true
+{{- end }}
 {{- end }}
