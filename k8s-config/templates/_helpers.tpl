@@ -35,6 +35,24 @@ volumes:
           path: ca.pem
 {{- end }}
 
+{{- define "uitslagenportaal.redisCaMount" -}}
+volumeMounts:
+  - name: redis-ca
+    mountPath: {{ .Values.redis.caCert.dir }}
+    readOnly: true
+{{- end }}
+
+{{- define "uitslagenportaal.redisCaVolume" -}}
+volumes:
+  - name: redis-ca
+    secret:
+      secretName: {{ .Values.redis.credSecret }}
+      optional: true
+      items:
+        - key: REDIS_CA_CERT
+          path: {{ .Values.redis.caCert.file }}
+{{- end }}
+
 {{/*
 Holds a pod until the migration job has finished. --check applies nothing, and
 fails while the database is still unreachable or not fully migrated.
@@ -55,4 +73,5 @@ fails while the database is still unreachable or not fully migrated.
   envFrom:
     {{- include "uitslagenportaal.backendEnvFrom" . | nindent 4 }}
   {{- include "uitslagenportaal.dbCaMount" . | nindent 2 }}
+  {{- include "uitslagenportaal.redisCaMount" . | nindent 2 }}
 {{- end }}

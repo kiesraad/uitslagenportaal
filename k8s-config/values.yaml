@@ -14,6 +14,9 @@ db:
 
 redis:
   credSecret: "redis-creds"
+  caCert:
+    dir: "/etc/ssl/redis"
+    file: "ca.pem"
 
 objectStorage:
   credSecret: "s3-creds"

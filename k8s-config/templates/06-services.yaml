@@ -13,6 +13,7 @@ stringData:
   DB_PORT: "5432"
   DB_USER: {{ .Values.services.username | quote }}
   DB_PASSWORD: {{ .Values.services.password | quote }}
+  DB_NAME: {{ .Values.services.name | quote }}
 ---
 apiVersion: v1
 kind: Secret

@@ -21,6 +21,9 @@ db:
   # The in-cluster Postgres speaks plain TCP, unlike the managed database.
   sslmode: "disable"
 
+redis:
+  caCert: ""
+
 # In-cluster stand-ins for the managed database, cache and object storage.
 services:
   enabled: true

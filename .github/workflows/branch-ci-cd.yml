@@ -5,6 +5,7 @@ on:
     branches:
       - dev
       - main
+      - 239-helm-chart-for-k8s-deploys
     tags:
       - "*"
 

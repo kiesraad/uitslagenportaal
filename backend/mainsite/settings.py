@@ -75,11 +75,13 @@ DATABASES = {
 }
 
 # Redis config
+REDIS_CA_CERT = os.environ.get("REDIS_CA_CERT")
+REDIS_PROTOCOL = os.environ.get("REDIS_PROTOCOL", "rediss" if REDIS_CA_CERT else "redis")
 REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
 REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
 REDIS_USER = os.environ.get("REDIS_USER", "")
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "")
-REDIS_URL = f"redis://{REDIS_USER}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
+REDIS_URL = f"{REDIS_PROTOCOL}://{REDIS_USER}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
 
 # Celery config - use a different broker and result backend Redis DB
 CELERY_BROKER_URL = REDIS_URL + "/1"
@@ -102,8 +104,17 @@ CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": REDIS_URL + "/0",
+        "OPTIONS": {},
     }
 }
+
+# Enable SSL if CA cert is set
+if REDIS_CA_CERT:
+    CACHES["default"]["OPTIONS"] = {
+        "CONNECTION_POOL_KWARGS": {
+            "ssl_ca_certs": REDIS_CA_CERT,
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

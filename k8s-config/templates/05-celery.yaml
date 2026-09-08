@@ -45,7 +45,9 @@ spec:
             capabilities:
               drop: [ALL]
           {{- include "uitslagenportaal.dbCaMount" . | nindent 10 }}
+          {{- include "uitslagenportaal.redisCaMount" . | nindent 10 }}
       {{- include "uitslagenportaal.dbCaVolume" . | nindent 6 }}
+      {{- include "uitslagenportaal.redisCaVolume" . | nindent 6 }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -92,4 +94,6 @@ spec:
             capabilities:
               drop: [ALL]
           {{- include "uitslagenportaal.dbCaMount" . | nindent 10 }}
+          {{- include "uitslagenportaal.redisCaMount" . | nindent 10 }}
       {{- include "uitslagenportaal.dbCaVolume" . | nindent 6 }}
+      {{- include "uitslagenportaal.redisCaVolume" . | nindent 6 }}
