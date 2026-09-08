@@ -27,6 +27,46 @@ export default defineConfig({
          "@": fileURLToPath(new URL("./src", import.meta.url)),
       },
    },
+   build: {
+      rolldownOptions: {
+         output: {
+            codeSplitting: {
+               groups: [
+                  {
+                     name: "react",
+                     test: /node_modules[/\\](react|react-dom|scheduler)[/\\]/,
+                     priority: 40,
+                  },
+                  {
+                     name: "react-router",
+                     test: /node_modules[/\\]react-router[/\\]/,
+                     priority: 30,
+                  },
+                  {
+                     name: "react-query",
+                     test: /node_modules[/\\]@tanstack[/\\]/,
+                     priority: 30,
+                  },
+                  {
+                     name: "markdown",
+                     test: /node_modules[/\\]react-markdown[/\\]/,
+                     priority: 20,
+                  },
+                  {
+                     name: "fontawesome",
+                     test: /node_modules[/\\]@fortawesome[/\\]/,
+                     priority: 20,
+                  },
+                  {
+                     name: "vendor",
+                     test: /node_modules[/\\]/,
+                     priority: 10,
+                  },
+               ],
+            },
+         },
+      },
+   },
    server: {
       host: true,
       hmr: hmrClientPort ? { clientPort: hmrClientPort } : undefined,
