@@ -1,3 +1,4 @@
+import re
 from datetime import date, datetime
 
 import pytest
@@ -43,6 +44,7 @@ from election.tests.factories import (
     ElectionFactory,
 )
 from eml_import.exceptions import EMLImporterException
+from eml_import.tests.fakes import fake_eml_file
 from eml_import.utils.eml_510_importer import EML510bImporter, EML510dImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
@@ -302,13 +304,13 @@ def ws_candidates(ws_contest, ws_parties):
 @pytest.fixture
 def ws_importer(ws_election):
     """A Telling importer, for exercising the base class helpers directly."""
-    return EML510bImporter(make_ws_510b_eml(contests=[]), None)
+    return EML510bImporter(make_ws_510b_eml(contests=[]), fake_eml_file())
 
 
 @pytest.fixture
 def ws_csb_importer(ws_election):
     """A Totaaltelling importer, for exercising the base class helpers directly."""
-    return EML510dImporter(make_ws_510d_eml(contests=[]), None)
+    return EML510dImporter(make_ws_510d_eml(contests=[]), fake_eml_file())
 
 
 @pytest.mark.parametrize(
@@ -367,9 +369,7 @@ def test_parse_party_candidate_votecounts_builds_party_and_candidate_rows(
     assert candidate_row.valid_votes == 60
 
 
-def test_parse_party_candidate_votecounts_logs_and_skips_unknown_candidate(
-    ws_importer, ws_regions, ws_contest, ws_parties, caplog
-):
+def test_parse_party_candidate_votecounts_raises_for_unknown_candidate(ws_importer, ws_regions, ws_contest, ws_parties):
     party = ws_parties[1]
     items = [
         party_selection(TotalVotes.Selection, 1, "Partij voor Zeeland", 100),
@@ -436,8 +436,8 @@ def test_parse_party_candidate_votecounts_resolves_candidate_by_short_code(
     assert [row.candidate for row in vote_counts] == [None, candidate]
 
 
-def test_parse_party_candidate_votecounts_logs_and_skips_unknown_short_code(
-    ws_importer, ws_regions, ws_contest, ws_parties, caplog
+def test_parse_party_candidate_votecounts_raises_for_unknown_short_code(
+    ws_importer, ws_regions, ws_contest, ws_parties
 ):
     party = ws_parties[1]
     items = [
@@ -494,7 +494,7 @@ def make_polling_station_document(*names_by_id):
 
 def test_ensure_polling_stations_creates_missing_stations(ws_regions):
     eml = make_polling_station_document(("0654::SB1", "Stembureau A"), ("0654::SB2", "Stembureau B"))
-    importer = EML510bImporter(eml, None)
+    importer = EML510bImporter(eml, fake_eml_file())
 
     stations = importer._ensure_polling_stations(ws_regions["gemeente"])
 
@@ -514,7 +514,7 @@ def test_ensure_polling_stations_reuses_existing_stations(ws_regions):
         region_name="A",
     )
     eml = make_polling_station_document(("0654::SB1", "Stembureau A"), ("0654::SB2", "Stembureau B"))
-    importer = EML510bImporter(eml, None)
+    importer = EML510bImporter(eml, fake_eml_file())
 
     stations = importer._ensure_polling_stations(ws_regions["gemeente"])
 
@@ -522,10 +522,18 @@ def test_ensure_polling_stations_reuses_existing_stations(ws_regions):
     assert Region.objects.filter(parent=ws_regions["gemeente"], region_category=RegionCategory.STEMBUREAU).count() == 2
 
 
+STORAGE_KEY_TIMESTAMP = r"\d{8}T\d{12}"
+
+
 def make_ws_importer(importer_cls, eml_file):
     """A real importer for the waterschap election, whichever 510 flavour is under test."""
     eml = make_ws_510b_eml(contests=[]) if importer_cls is EML510bImporter else make_ws_510d_eml(contests=[])
     return importer_cls(eml, eml_file)
+
+
+def assert_storage_key(storage_key: str, expected_stem: str) -> None:
+    """storage_key is {election}/{stem}_{timestamp}.eml.xml after corrections."""
+    assert re.fullmatch(rf"{re.escape(expected_stem)}_{STORAGE_KEY_TIMESTAMP}\.eml\.xml", storage_key)
 
 
 @pytest.mark.parametrize("importer_cls", [EML510bImporter, EML510dImporter])
@@ -541,7 +549,7 @@ def test_store_eml_saves_path_input_and_creates_document(importer_cls, ws_region
     assert default_storage.open(doc.storage_key).read() == content
     assert doc.region == ws_regions["gemeente"]
     assert doc.content_type == "application/xml"
-    assert doc.file_type == ElectionDocument.FileType.EML510B
+    assert doc.file_type == importer.file_type
     assert doc.size == len(content)
 
 
@@ -567,7 +575,7 @@ def test_store_eml_filename_without_parent(importer_cls, expected_label, ws_regi
     importer._store_eml(ws_regions["waterschap"])
 
     doc = ElectionDocument.objects.get()
-    assert doc.storage_key == f"AB2023/AB2023_{expected_label}_17_Scheldestromen.eml.xml"
+    assert_storage_key(doc.storage_key, f"AB2023/AB2023_{expected_label}_17_Scheldestromen")
 
 
 def test_store_eml_filename_with_parent_sanitizes_special_characters(ws_election):
@@ -583,27 +591,35 @@ def test_store_eml_filename_with_parent_sanitizes_special_characters(ws_election
     importer._store_eml(region)
 
     doc = ElectionDocument.objects.get()
-    assert doc.storage_key == "AB2023/AB2023_Telling_GSB_1_Scheldestromen_Test_654_s-GravenhageVoorburg.eml.xml"
+    assert_storage_key(
+        doc.storage_key,
+        "AB2023/AB2023_Telling_GSB_1_Scheldestromen_Test_654_s-GravenhageVoorburg",
+    )
 
 
-def test_store_eml_updates_size_of_existing_document_on_reimport(ws_regions):
-    expected_storage_key = "AB2023/AB2023_Telling_GSB_17_Scheldestromen.eml.xml"
+def test_store_eml_archives_existing_document_on_reimport(ws_regions):
+    """Corrections archive the previous current document, then store a new one."""
     existing = ElectionDocumentFactory(
-        storage_key=expected_storage_key,
+        storage_key="AB2023/AB2023_Telling_GSB_17_Scheldestromen.eml.xml",
         region=ws_regions["waterschap"],
         content_type="application/xml",
-        file_type=ElectionDocument.FileType.EML510B,
+        file_type=ElectionDocument.FileType.EML_510B,
         size=1,
     )
     content = b"<eml>corrected counts, longer than before</eml>"
     importer = make_ws_importer(EML510bImporter, NamedBytesIO(content, "x.xml"))
 
+    importer._delete(ws_regions["waterschap"])
     importer._store_eml(ws_regions["waterschap"])
 
-    assert ElectionDocument.objects.filter(storage_key=expected_storage_key).count() == 1
     existing.refresh_from_db()
-    assert existing.size == len(content)
-    assert default_storage.open(existing.storage_key).read() == content
+    assert existing.is_current is False
+    assert ElectionDocument.objects.filter(region=ws_regions["waterschap"]).count() == 1
+    doc = ElectionDocument.objects.get(region=ws_regions["waterschap"])
+    assert doc.pk != existing.pk
+    assert doc.size == len(content)
+    assert default_storage.open(doc.storage_key).read() == content
+    assert_storage_key(doc.storage_key, "AB2023/AB2023_Telling_GSB_17_Scheldestromen")
 
 
 def make_ws_telling(
@@ -634,7 +650,7 @@ def make_ws_telling(
 
 
 def test_510b_imports_votes_for_gsb_and_polling_stations(ws_regions, ws_contest, ws_parties, ws_candidates):
-    EML510bImporter(make_ws_telling(), None).parse()
+    EML510bImporter(make_ws_telling(), fake_eml_file()).parse()
 
     station = Region.objects.get(region_category=RegionCategory.STEMBUREAU)
     assert (station.parent, station.csb, station.region_name) == (
@@ -657,6 +673,49 @@ def test_510b_imports_votes_for_gsb_and_polling_stations(ws_regions, ws_contest,
     assert VoterTurnoutCount.objects.filter(region=station).count() == 3
 
 
+def test_510b_correction_replaces_municipality_tree(ws_regions, ws_contest, ws_parties, ws_candidates):
+    """A second telling for the same gemeente tosses stembureaus and 510b counts, then reimports."""
+    EML510bImporter(make_ws_telling(), fake_eml_file()).parse()
+    original_station_id = Region.objects.get(region_category=RegionCategory.STEMBUREAU).pk
+
+    totals = make_total_votes(
+        [
+            party_selection(TotalVotes.Selection, 1, "Partij voor Zeeland", 1800),
+            candidate_selection(TotalVotes.Selection, 1200, number=1),
+        ]
+    )
+    unit = make_reporting_unit(
+        "0654::SB2",
+        "Stembureau Ander Bureau (postcode: 4451 AA)",
+        [
+            party_selection(ReportingUnitVotes.Selection, 1, "Partij voor Zeeland", 50),
+            candidate_selection(ReportingUnitVotes.Selection, 40, number=1),
+        ],
+    )
+    correction = make_ws_510b_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])])
+
+    EML510bImporter(correction, fake_eml_file()).parse()
+
+    gemeente = ws_regions["gemeente"]
+    assert Region.objects.filter(pk=gemeente.pk).exists()
+    assert not Region.objects.filter(pk=original_station_id).exists()
+
+    stations = list(Region.objects.filter(parent=gemeente, region_category=RegionCategory.STEMBUREAU))
+    assert len(stations) == 1
+    assert stations[0].region_name == "Ander Bureau"
+
+    party, candidate = ws_parties[1], ws_candidates[(1, 1)]
+    assert [
+        (row.region, row.result_level, row.party, row.candidate, row.valid_votes)
+        for row in VoteCount.objects.filter(eml_type=EmlType.EML_510b).order_by("valid_votes")
+    ] == [
+        (stations[0], VoteCount.RESULT_LEVEL_CANDIDATE, party, candidate, 40),
+        (stations[0], VoteCount.RESULT_LEVEL_PARTY, party, None, 50),
+        (gemeente, VoteCount.RESULT_LEVEL_CANDIDATE, party, candidate, 1200),
+        (gemeente, VoteCount.RESULT_LEVEL_PARTY, party, None, 1800),
+    ]
+
+
 def test_510b_marks_region_as_counted_and_stores_document(ws_regions, ws_contest, ws_parties, ws_candidates):
     eml = make_ws_telling(counting_method=CountingMethodMethodCode.DECENTRALE_STEMOPNEMING)
 
@@ -668,11 +727,11 @@ def test_510b_marks_region_as_counted_and_stores_document(ws_regions, ws_contest
     assert gemeente.counting_method == CountingMethod.DSO
     doc = ElectionDocument.objects.get()
     assert doc.region == gemeente
-    assert doc.storage_key == "AB2023/AB2023_Telling_GSB_17_Scheldestromen_654_Borsele.eml.xml"
+    assert_storage_key(doc.storage_key, "AB2023/AB2023_Telling_GSB_17_Scheldestromen_654_Borsele")
 
 
-def test_510b_skips_file_of_region_outside_the_election(ws_regions, ws_contest, ws_parties, ws_candidates):
-    """A gemeente that the election definition does not mention has no results to import."""
+def test_510b_rejects_region_outside_the_election(ws_regions, ws_contest, ws_parties, ws_candidates):
+    """A gemeente that the election definition does not mention cannot be imported."""
     eml = make_ws_telling(authority_id="0999", authority_name="Onbekend")
 
     with pytest.raises(
@@ -704,7 +763,9 @@ def ws_totaaltelling(ws_regions, ws_contest, ws_parties, ws_candidates):
             candidate_selection(ReportingUnitVotes.Selection, 1107, number=1),
         ],
     )
-    EML510dImporter(make_ws_510d_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])]), None).parse()
+    EML510dImporter(
+        make_ws_510d_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])]), fake_eml_file()
+    ).parse()
 
 
 def test_510d_publishes_the_csb_region_at_the_emls_creation_date(ws_totaaltelling, ws_regions):
@@ -722,7 +783,7 @@ def test_510d_keeps_the_counting_method_while_setting_the_publication_date(
     eml = make_ws_510d_eml(contests=[])
     eml.count.counting_method = EmlCountingMethod(method_code=CountingMethodMethodCode.CENTRALE_STEMOPNEMING)
 
-    EML510dImporter(eml, None).parse()
+    EML510dImporter(eml, fake_eml_file()).parse()
 
     waterschap = ws_regions["waterschap"]
     waterschap.refresh_from_db()
@@ -733,7 +794,7 @@ def test_510d_keeps_the_counting_method_while_setting_the_publication_date(
 def test_510d_leaves_results_available_at_unset_without_a_creation_date(
     ws_regions, ws_contest, ws_parties, ws_candidates
 ):
-    EML510dImporter(make_ws_510d_eml(contests=[], creation_date_time=None), None).parse()
+    EML510dImporter(make_ws_510d_eml(contests=[], creation_date_time=None), fake_eml_file()).parse()
 
     waterschap = ws_regions["waterschap"]
     waterschap.refresh_from_db()
@@ -755,6 +816,70 @@ def test_510d_breaks_down_per_gemeente_when_csb_has_one_child(ws_totaaltelling, 
         (VoteCount.RESULT_LEVEL_CANDIDATE, ws_parties[1], ws_candidates[(1, 1)], 1107),
         (VoteCount.RESULT_LEVEL_PARTY, ws_parties[1], None, 1779),
     ]
+
+
+def test_510d_correction_deletes_csb_and_descendant_counts(ws_regions, ws_contest, ws_parties, ws_candidates):
+    """A second Totaaltelling for the same CSB deletes prior counts and archives the EML document."""
+    totals = make_total_votes(
+        [
+            party_selection(TotalVotes.Selection, 1, "Partij voor Zeeland", 24949),
+            candidate_selection(TotalVotes.Selection, 10890, number=1),
+        ]
+    )
+    unit = make_reporting_unit(
+        "0654",
+        "Borsele",
+        [
+            party_selection(ReportingUnitVotes.Selection, 1, "Partij voor Zeeland", 1779),
+            candidate_selection(ReportingUnitVotes.Selection, 1107, number=1),
+        ],
+    )
+    first = make_ws_510d_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])])
+    EML510dImporter(first, NamedBytesIO(b"<eml>first</eml>", "totaal.eml.xml")).parse()
+
+    original_count_ids = set(VoteCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True))
+    original_turnout_ids = set(VoterTurnoutCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True))
+    original_doc = ElectionDocument.objects.get(region=ws_regions["waterschap"])
+
+    corrected_totals = make_total_votes(
+        [
+            party_selection(TotalVotes.Selection, 1, "Partij voor Zeeland", 25000),
+            candidate_selection(TotalVotes.Selection, 11000, number=1),
+        ]
+    )
+    corrected_unit = make_reporting_unit(
+        "0654",
+        "Borsele",
+        [
+            party_selection(ReportingUnitVotes.Selection, 1, "Partij voor Zeeland", 1800),
+            candidate_selection(ReportingUnitVotes.Selection, 1200, number=1),
+        ],
+    )
+    correction = make_ws_510d_eml(contests=[make_contest("geen", total_votes=corrected_totals, units=[corrected_unit])])
+    EML510dImporter(correction, NamedBytesIO(b"<eml>corrected</eml>", "totaal.eml.xml")).parse()
+
+    waterschap = ws_regions["waterschap"]
+    gemeente = ws_regions["gemeente"]
+    party, candidate = ws_parties[1], ws_candidates[(1, 1)]
+
+    assert not VoteCount.objects.filter(pk__in=original_count_ids).exists()
+    assert not VoterTurnoutCount.objects.filter(pk__in=original_turnout_ids).exists()
+
+    assert [
+        (row.region, row.result_level, row.party, row.candidate, row.valid_votes)
+        for row in VoteCount.objects.filter(eml_type=EmlType.EML_510d).order_by("valid_votes")
+    ] == [
+        (gemeente, VoteCount.RESULT_LEVEL_CANDIDATE, party, candidate, 1200),
+        (gemeente, VoteCount.RESULT_LEVEL_PARTY, party, None, 1800),
+        (waterschap, VoteCount.RESULT_LEVEL_CANDIDATE, party, candidate, 11000),
+        (waterschap, VoteCount.RESULT_LEVEL_PARTY, party, None, 25000),
+    ]
+
+    original_doc.refresh_from_db()
+    assert original_doc.is_current is False
+    doc = ElectionDocument.objects.get(region=waterschap)
+    assert doc.pk != original_doc.pk
+    assert default_storage.open(doc.storage_key).read() == b"<eml>corrected</eml>"
 
 
 @pytest.fixture
@@ -843,7 +968,9 @@ def ps_totaaltelling(ps_regions, ps_contests, ps_candidates):
             candidate_selection(TotalVotes.Selection, 8262, short_code="BrugmanJEM"),
         ]
     )
-    EML510dImporter(make_ps_510d_eml(contests=[make_contest("alle", total_votes=totals, units=units)]), None).parse()
+    EML510dImporter(
+        make_ps_510d_eml(contests=[make_contest("alle", total_votes=totals, units=units)]), fake_eml_file()
+    ).parse()
 
 
 def test_510d_breaks_down_per_kieskring_when_csb_has_multiple_children(ps_totaaltelling, ps_regions):
@@ -887,7 +1014,7 @@ def test_510b_leaves_results_available_at_unset_without_a_creation_date(
     ws_regions, ws_contest, ws_parties, ws_candidates
 ):
     """<kr:CreationDateTime> is optional; without it there is no publication date to show."""
-    EML510bImporter(make_ws_telling(creation_date_time=None), None).parse()
+    EML510bImporter(make_ws_telling(creation_date_time=None), fake_eml_file()).parse()
 
     gemeente = ws_regions["gemeente"]
     gemeente.refresh_from_db()

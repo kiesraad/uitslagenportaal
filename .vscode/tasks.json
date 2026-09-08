@@ -1,0 +1,32 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "docker: run import_next_github_commits with debugpy",
+            "type": "shell",
+            "command": "${workspaceFolder}/backend/debug_helpers/eml-github-debugpy-import.sh",
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": { "regexp": "^$" },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "Creating",
+                    "endsPattern": "waiting for client to connect"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "docker: stop import_next_github_commits",
+            "type": "shell",
+            "command": "docker ps -q --filter publish=5679 | xargs -r docker stop",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "dedicated"
+            }
+        }
+    ]
+}

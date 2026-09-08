@@ -1,6 +1,8 @@
+from django.db.models import Prefetch
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
+from election.models import ElectionDocument
 from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from region.models import Region
@@ -72,8 +74,10 @@ class RegionDetailView(RetrieveAPIView):
                 "vote_counts__party",
                 "vote_counts__candidate",
                 "voter_turnout_counts",
+                # ElectionDocument uses CurrentManager; explicit Prefetch ensures prefetched
+                # rows match obj.documents.all(), not all_objects.
+                Prefetch("documents", queryset=ElectionDocument.objects.all()),
                 "election__election_config__timeline_entries",
-                "documents",
             )
             .filter(
                 election__election_config__slug=election_config_slug,

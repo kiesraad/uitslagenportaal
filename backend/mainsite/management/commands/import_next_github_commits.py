@@ -1,11 +1,11 @@
 from django.core.management.base import BaseCommand, CommandError
 
 from election.models import ElectionConfig
-from eml_import.utils.github_eml_importer import GithubEmlImporter
+from eml_import.utils.github_eml_file_handler import GithubEmlFileHandler
 
 
 class Command(BaseCommand):
-    help = "Import the next batch of commits from GitHub."
+    help = "Import all remaining commits from GitHub."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -17,9 +17,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         identifier = options["election_config"]
         try:
-            election_config = ElectionConfig.objects.get(identifier=identifier)
+            election_config = ElectionConfig.with_expired.get(identifier=identifier)
         except ElectionConfig.DoesNotExist:
             raise CommandError(f"Election config does not exist: {identifier}")
 
-        file_cnt = GithubEmlImporter(election_config).run()
+        file_cnt = GithubEmlFileHandler(election_config).run()
         self.stdout.write(self.style.SUCCESS(f"Processed {file_cnt} file(s)."))

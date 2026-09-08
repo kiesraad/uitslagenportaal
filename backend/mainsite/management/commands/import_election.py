@@ -4,7 +4,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-from eml_import.utils.election_importer import ElectionImporter
+from eml_import.utils.folder_eml_file_handler import FolderEMLFileHandler
 
 
 def default_workers() -> int:
@@ -37,5 +37,5 @@ class Command(BaseCommand):
             raise CommandError(f"--workers must be at least 1, got {workers}")
 
         start = time.time()
-        ElectionImporter().import_folder(folder, workers=workers)
+        FolderEMLFileHandler().import_folder(folder, workers=workers)
         self.stdout.write(self.style.SUCCESS(f"Processed {folder} in {time.time() - start:.1f} seconds"))

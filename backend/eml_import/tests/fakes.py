@@ -1,10 +1,13 @@
-"""In-memory stand-ins for the slice of the PyGithub API that GithubEmlImporter uses.
+"""In-memory stand-ins for the slice of the PyGithub API that GithubEmlFileHandler uses.
 
 Hand-written rather than mocks so the contract with PyGithub is written down in one
 place, and so the importer asking for something that does not exist fails loudly.
 """
 
 import base64
+from itertools import count
+
+from eml_import.utils.named_bytes_io import NamedBytesIO
 
 
 class FakeFile:
@@ -74,8 +77,8 @@ class FakeRepo:
 
     def get_commits(self, sha: str) -> FakePaginatedList:
         self.calls.append(("get_commits", sha))
-        # The real API returns the newest commit first; the importer flips it with .reversed
-        return FakePaginatedList(reversed(self.branches[sha]))
+        # The real API returns the newest commit first; the importer flips it with .reversed.
+        return FakePaginatedList(reversed(self.branches.get(sha, [])))
 
     def get_commit(self, sha: str) -> FakeCommit:
         self.calls.append(("get_commit", sha))
@@ -103,8 +106,16 @@ class FakeRepo:
         Mirrors the real API in two ways the importer depends on: the base commit itself
         is excluded, and head may be a branch name rather than a sha.
         """
-        commits = self.branches[head] if head in self.branches else self._branch_of(head)
+        if head in self.branches:
+            commits = self.branches[head]
+        else:
+            try:
+                commits = self._branch_of(head)
+            except StopIteration:
+                return []
         shas = [commit.sha for commit in commits]
+        if base not in shas:
+            return []
         end = shas.index(head) + 1 if head in shas else len(shas)
         return commits[shas.index(base) + 1 : end]
 
@@ -119,3 +130,15 @@ class FakeGithub:
     def get_repo(self, full_name: str) -> FakeRepo:
         self.requested_repos.append(full_name)
         return self._repo
+
+
+_fake_eml_seq = count()
+
+
+def fake_eml_file(filename: str = "test.eml.xml") -> NamedBytesIO:
+    """Stand-in file for importer unit tests that build EML in memory.
+
+    Each call gets distinct bytes so ImportedEmlHash does not treat a later
+    correction import as a duplicate of an earlier one in the same test.
+    """
+    return NamedBytesIO(f'<eml n="{next(_fake_eml_seq)}"/>'.encode(), filename)

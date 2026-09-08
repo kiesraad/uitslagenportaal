@@ -23,7 +23,7 @@ import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
-from eml_import.utils.election_importer import ElectionImporter
+from eml_import.utils.file_handler import BaseFileHandler
 from mainsite.management.commands import build_ingress_repo
 from mainsite.management.commands._corrigenda import corrigenda_for, draw_corrigenda
 from mainsite.management.commands.build_ingress_repo import (
@@ -218,7 +218,7 @@ def test_slugs_fold_punctuation_into_the_separator(name, expected_folder, expect
 
 def test_every_document_type_the_importer_reads_is_placed_on_a_branch():
     """Anything ElectionImporter would import must end up in the replica, whatever the election."""
-    assert set(ElectionImporter._DOCUMENT_TYPES) <= set(EXCHANGE_LEVELS) | set(COUNTING_LEVELS)
+    assert set(BaseFileHandler._DOCUMENT_TYPES) <= set(EXCHANGE_LEVELS) | set(COUNTING_LEVELS)
 
 
 def test_exchange_documents_are_zipped_under_their_own_name(replica):

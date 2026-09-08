@@ -1,8 +1,8 @@
+from django.db import transaction
 from pyeml_bindings import (
     Eml110a,
 )
 
-from election.models import Contest
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from mainsite.utils.eml_type import EmlType
 from party.models import Party
@@ -18,19 +18,27 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
         return self.eml.election_event.election.election_identifier
 
     def _parse_data(self):
-        self._parse_contest()
-        self._parse_regions()
-        self._parse_registered_parties()
+        with transaction.atomic():
+            if self._is_correction():
+                self._ensure_exchange_correction_allowed()
+                self._delete()
+            self._parse_regions()
+            self._parse_registered_parties()
         self.logger.info("Successfully imported data for Election")
 
-    def _parse_contest(self) -> None:
-        """
-        Create a Contest object for the identifier in the Election
-        """
-        Contest.objects.get_or_create(
-            election=self.election,
-            identifier=self.eml.election_event.election.contest.contest_identifier.id,
-        )
+    def _is_correction(self) -> bool:
+        if Region.objects.filter(election=self.election).exists():
+            self.logger.info(
+                "\033[32mCorrection detected for election %s eml_type=%s\033[0m",
+                self.election.name,
+                self.eml_type,
+            )
+            return True
+        return False
+
+    def _delete(self) -> None:
+        Party.objects.filter(election=self.election).delete()
+        Region.objects.filter(election=self.election).delete()
 
     def _parse_regions(self) -> None:
         region_nodes = self.eml.election_event.election.election_tree.region
