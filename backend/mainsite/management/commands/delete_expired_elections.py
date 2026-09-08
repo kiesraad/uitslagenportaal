@@ -34,7 +34,7 @@ class Command(BaseCommand):
         # Collect the storage keys before deleting: the rows carry the only
         # reference to the stored objects, so afterwards they are unreachable.
         storage_keys = list(
-            ElectionDocument.objects.filter(
+            ElectionDocument.all_objects.filter(
                 region__election__election_config__in=expired,
             ).values_list("storage_key", flat=True)
         )

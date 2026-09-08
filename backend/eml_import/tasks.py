@@ -5,7 +5,7 @@ from django.db import DatabaseError
 from requests import RequestException
 
 from election.models import ElectionConfig
-from eml_import.utils.github_eml_importer import GithubEmlImporter
+from eml_import.utils.github_eml_file_handler import GithubEmlFileHandler
 from mainsite.celery import app
 
 
@@ -47,4 +47,4 @@ def import_election_eml_commits(election_config_id: int) -> None:
     :param election_config_id:
     """
     election_config = ElectionConfig.objects.get(pk=election_config_id)
-    GithubEmlImporter(election_config).run()
+    GithubEmlFileHandler(election_config).run()

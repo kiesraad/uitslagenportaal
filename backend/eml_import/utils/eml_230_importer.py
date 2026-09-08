@@ -1,3 +1,4 @@
+from django.db import transaction
 from pyeml_bindings import (
     Eml230,
 )
@@ -21,62 +22,87 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
     def _parse_data(self):
         assert len(self.eml.candidate_list.election.contest) == 1, "More than one contest, cannot parse"
         contest_data = self.eml.candidate_list.election.contest[0]
-        contest, _ = Contest.objects.get_or_create(
+
+        with transaction.atomic():
+            if self._is_correction(contest_data):
+                self._ensure_exchange_correction_allowed()
+                self._delete(contest_data)
+
+            contest = Contest.objects.create(
+                identifier=contest_data.contest_identifier.id,
+                election=self.election,
+                name=contest_data.contest_identifier.contest_name,
+            )
+
+            candidates: list[Candidate] = []
+            for affiliation in contest_data.affiliation:
+                assert affiliation.affiliation_identifier.id, (
+                    f"AffiliationIdentifier/@Id missing for party "
+                    f"{affiliation.affiliation_identifier.registered_name or self.BLANCO_PARTY_REGISTERED_NAME}"
+                )
+                list_number = int(affiliation.affiliation_identifier.id)
+                try:
+                    party = Party.objects.get(
+                        election=self.election,
+                        registered_name=affiliation.affiliation_identifier.registered_name,
+                    )
+                    party.list_number = list_number
+                    party.save(update_fields=["list_number", "updated_at"])
+                except Party.DoesNotExist:
+                    # Some candidates are not affiliated to any party
+                    party, _ = Party.objects.get_or_create(
+                        election=self.election,
+                        registered_name=f"{self.BLANCO_PARTY_REGISTERED_NAME} {list_number}",
+                        list_number=list_number,
+                    )
+
+                for candidate in affiliation.candidate:
+                    identifier = int(candidate.candidate_identifier.id)
+
+                    first_name = None
+                    if candidate.candidate_full_name.person_name.first_name:
+                        first_name = candidate.candidate_full_name.person_name.first_name.content[0]
+                    name_prefix = None
+                    if candidate.candidate_full_name.person_name.name_prefix:
+                        name_prefix = candidate.candidate_full_name.person_name.name_prefix.content[0]
+                    candidates.append(
+                        Candidate(
+                            party=party,
+                            contest=contest,
+                            identifier=identifier,
+                            position=identifier,
+                            initials=candidate.candidate_full_name.person_name.name_line.content[0],
+                            first_name=first_name,
+                            name_prefix=name_prefix,
+                            last_name=candidate.candidate_full_name.person_name.last_name.content[0],
+                        )
+                    )
+
+            if candidates:
+                Candidate.objects.bulk_create(candidates, batch_size=self.BULK_BATCH_SIZE)
+
+    def _is_correction(self, contest_data) -> bool:
+        try:
+            contest = Contest.objects.get(
+                identifier=contest_data.contest_identifier.id,
+                election=self.election,
+                name=contest_data.contest_identifier.contest_name,
+            )
+            self.logger.info(
+                "\033[32mCorrection detected for contest %s eml_type=%s\033[0m",
+                contest.identifier,
+                self.eml_type,
+            )
+            return True
+        except Contest.DoesNotExist:
+            return False
+
+    def _delete(self, contest_data) -> None:
+        """Archive prior candidates for this contest so a corrected 230b can recreate them."""
+        contest = Contest.objects.get(
             identifier=contest_data.contest_identifier.id,
             election=self.election,
             name=contest_data.contest_identifier.contest_name,
         )
-        # A candidate list can be imported more than once (e.g. a corrected file),
-        # so only create the candidates that are not in the database yet.
-        existing_keys = set(Candidate.objects.filter(contest=contest).values_list("party_id", "identifier"))
-
-        candidates: list[Candidate] = []
-        for affiliation in contest_data.affiliation:
-            assert affiliation.affiliation_identifier.id, (
-                f"AffiliationIdentifier/@Id missing for party "
-                f"{affiliation.affiliation_identifier.registered_name or self.BLANCO_PARTY_REGISTERED_NAME}"
-            )
-            list_number = int(affiliation.affiliation_identifier.id)
-            try:
-                party = Party.objects.get(
-                    election=self.election,
-                    registered_name=affiliation.affiliation_identifier.registered_name,
-                )
-                party.list_number = list_number
-                party.save(update_fields=["list_number", "updated_at"])
-            except Party.DoesNotExist:
-                # Some candidates are not affiliated to any party
-                party, _ = Party.objects.get_or_create(
-                    election=self.election,
-                    registered_name=f"{self.BLANCO_PARTY_REGISTERED_NAME} {list_number}",
-                    list_number=list_number,
-                )
-
-            for candidate in affiliation.candidate:
-                identifier = int(candidate.candidate_identifier.id)
-                key = (party.pk, identifier)
-                if key in existing_keys:
-                    continue
-                existing_keys.add(key)
-
-                first_name = None
-                if candidate.candidate_full_name.person_name.first_name:
-                    first_name = candidate.candidate_full_name.person_name.first_name.content[0]
-                name_prefix = None
-                if candidate.candidate_full_name.person_name.name_prefix:
-                    name_prefix = candidate.candidate_full_name.person_name.name_prefix.content[0]
-                candidates.append(
-                    Candidate(
-                        party=party,
-                        contest=contest,
-                        identifier=identifier,
-                        position=identifier,
-                        initials=candidate.candidate_full_name.person_name.name_line.content[0],
-                        first_name=first_name,
-                        name_prefix=name_prefix,
-                        last_name=candidate.candidate_full_name.person_name.last_name.content[0],
-                    )
-                )
-
-        if candidates:
-            Candidate.objects.bulk_create(candidates, batch_size=self.BULK_BATCH_SIZE)
+        Candidate.objects.filter(contest=contest).delete()
+        Contest.objects.filter(pk=contest.pk).delete()

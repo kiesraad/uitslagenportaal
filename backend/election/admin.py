@@ -10,4 +10,4 @@ class ElectionAdmin(admin.ModelAdmin):
 
 @admin.register(TimelineEntry)
 class TimelineEntryAdmin(admin.ModelAdmin):
-    list_display = ("election_config", "status", "title", "date")
+    list_display = ("election_config", "status", "title_nl", "date")

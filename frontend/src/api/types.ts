@@ -18,11 +18,16 @@ export type TimelineEntryStatus = "pending" | "in-progress" | "done";
 
 export type TimelineVariant = "CSO" | "DSO" | "DEFAULT";
 
+export type LocalizedText = {
+   nl: string;
+   en: string;
+};
+
 export type TimelineEntry = {
    status: TimelineEntryStatus;
-   title: string;
+   title: LocalizedText;
    date: string;
-   body: string;
+   body: LocalizedText;
 };
 
 export type ElectionDocument = {

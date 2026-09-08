@@ -18,7 +18,7 @@ def imported_configs(monkeypatch):
         def run(self):
             return 3
 
-    monkeypatch.setattr(import_next_github_commits, "GithubEmlImporter", RecordingImporter)
+    monkeypatch.setattr(import_next_github_commits, "GithubEmlFileHandler", RecordingImporter)
     return configs
 
 

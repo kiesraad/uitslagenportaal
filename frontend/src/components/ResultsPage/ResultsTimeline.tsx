@@ -44,15 +44,15 @@ export default function ResultsTimeline({ description, variant, entries }: Props
             <Trans>Hoe zijn de resultaten tot stand gekomen?</Trans>
          </h2>
          {resolvedDescription ? <p className={"mb-4"}>{resolvedDescription}</p> : null}
-         <p className="result-order-hint">
+         <button type="button" onClick={toggleDirection} className="result-order-hint">
             <span>
                <FontAwesomeIcon icon={faArrowUp} color={direction === "desc" ? "Black" : "Grey"} />
                <FontAwesomeIcon icon={faArrowDown} color={direction === "asc" ? "Black" : "Grey"} />
             </span>
-            <button type="button" onClick={toggleDirection} className="text-blue-500">
+            <span className="text-blue-500">
                {direction === "desc" ? t`Laatste stap bovenaan` : t`Eerste stap bovenaan`}
-            </button>
-         </p>
+            </span>
+         </button>
 
          {/* Timeline */}
          <Timeline entries={sortedEntries} />

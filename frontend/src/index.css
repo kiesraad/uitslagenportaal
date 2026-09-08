@@ -504,10 +504,16 @@ h4,
    gap: 12px;
    width: fit-content;
    padding: 4px 8px;
+   border: none;
+   cursor: pointer;
 }
 
 .result-order-hint span {
    font-size: 1.1rem;
+}
+
+.result-order-hint:hover span:last-child {
+   text-decoration: underline;
 }
 
 .home-info-box {
