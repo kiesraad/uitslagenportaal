@@ -11,6 +11,7 @@ from election.utils import visibility_cutoff
 from mainsite.models import BaseModel, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from mainsite.utils.utils import name_to_slug
+from region.models import Region
 
 
 @dataclass
@@ -66,6 +67,22 @@ class ElectionConfig(BaseModel):
     @property
     def csb_type(self):
         return self.elections.first().regions.first().region_category
+
+    @property
+    def has_hsb(self) -> bool:
+        """
+        Whether this election has kieskringen with their own HSB Totaaltelling (EML_510c).
+
+        Some election categories (e.g. waterschap) define a kieskring per CSB that is a 1:1
+        structural stand-in for it, never a real subdivision with its own results -- so a
+        KIESKRING region existing is not enough; only its own EML_510c data means there is
+        something to show.
+        """
+        return Region.objects.filter(
+            election__election_config=self,
+            region_category=RegionCategory.KIESKRING,
+            vote_counts__eml_type=EmlType.EML_510c,
+        ).exists()
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -211,6 +228,7 @@ class ElectionDocument(BaseModel):
 
     class FileType(models.TextChoices):
         EML_510B = "510b", "Telling GSB"
+        EML_510C = "510c", "Totaaltelling HSB"
         EML_510D = "510d", "Totaaltelling CSB"
 
     region = models.ForeignKey(

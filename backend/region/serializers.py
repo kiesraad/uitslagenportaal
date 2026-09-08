@@ -37,16 +37,24 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
     election_slug = serializers.CharField(source="election.slug", read_only=True)
 
+    _PREFERRED_EML_TYPE = {
+        RegionCategory.GEMEENTE: EmlType.EML_510b,
+        RegionCategory.KIESKRING: EmlType.EML_510c,
+    }
+
+    def _filter_to_preferred_source(self, region, counts):
+        preferred = self._PREFERRED_EML_TYPE.get(region.region_category)
+        if preferred is None:
+            return counts
+        preferred_counts = [count for count in counts if count.eml_type == preferred]
+        return preferred_counts or counts
+
     def get_vote_counts(self, obj):
-        vote_counts = list(obj.vote_counts.all())
-        if obj.region_category == RegionCategory.GEMEENTE:
-            vote_counts = [vc for vc in vote_counts if vc.eml_type == EmlType.EML_510b]
+        vote_counts = self._filter_to_preferred_source(obj, list(obj.vote_counts.all()))
         return VoteCountSummarySerializer(vote_counts, many=True).data
 
     def get_voter_turnout_counts(self, obj):
-        turnout_counts = list(obj.voter_turnout_counts.all())
-        if obj.region_category == RegionCategory.GEMEENTE:
-            turnout_counts = [tc for tc in turnout_counts if tc.eml_type == EmlType.EML_510b]
+        turnout_counts = self._filter_to_preferred_source(obj, list(obj.voter_turnout_counts.all()))
         return VoterTurnoutCountSummarySerializer(turnout_counts, many=True).data
 
     class Meta:

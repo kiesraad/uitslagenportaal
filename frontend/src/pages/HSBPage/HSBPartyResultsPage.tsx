@@ -8,13 +8,13 @@ import PartyVoteMatrixTable from "../../components/ResultsPage/PartyVoteMatrixTa
 import ResultsNotPublished from "../../components/ResultsPage/ResultsNotPublished.tsx";
 import ResultsPageIndex from "../../components/ResultsPage/ResultsPageIndex";
 import ResultsTimeline from "../../components/ResultsPage/ResultsTimeline.tsx";
-import { csbPartyVoteMatrixQuery, electionConfigQuery, regionQuery } from "../../hooks/queries.ts";
+import { electionConfigQuery, hsbPartyVoteMatrixQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 import { getPartyVoteCount } from "../../utils/voteCounts.ts";
 
-export function csbPartyResultsLoader(queryClient: QueryClient) {
+export function hsbPartyResultsLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
       const regionQueryOptions = regionQuery(params);
@@ -24,8 +24,7 @@ export function csbPartyResultsLoader(queryClient: QueryClient) {
          queryClient.ensureQueryData(regionQueryOptions),
       ]);
 
-      // Only the region response names the election the matrix is asked for.
-      const partyVoteMatrixQueryOptions = csbPartyVoteMatrixQuery(
+      const partyVoteMatrixQueryOptions = hsbPartyVoteMatrixQuery(
          region.election_slug,
          params.regionSlug,
          params.partySlug,
@@ -40,18 +39,17 @@ export function csbPartyResultsLoader(queryClient: QueryClient) {
    };
 }
 
-type LoaderData = Awaited<ReturnType<ReturnType<typeof csbPartyResultsLoader>>>;
+type LoaderData = Awaited<ReturnType<ReturnType<typeof hsbPartyResultsLoader>>>;
 
-export function CSBPartyResultsPage() {
+export function HSBPartyResultsPage() {
    const { electionConfigQuery, regionQuery, partyVoteMatrixQuery } = useLoaderData<LoaderData>();
    const { t } = useLingui();
    const { formatDate } = useFormatters();
-   // The loader has already resolved every query, so the data is never pending here.
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
    const { data: region } = useSuspenseQuery(regionQuery);
    const { data: partyVoteMatrix } = useSuspenseQuery(partyVoteMatrixQuery);
 
-   const regionLabels = getRegionLabels(electionConfig.csb_type);
+   const regionLabels = getRegionLabels("KIESKRING");
    const partySlug = partyVoteMatrix.party.slug;
    const partyName = partyVoteMatrix.party.registered_name;
    const hasResults = partyVoteMatrix.rows.length > 0;
@@ -59,7 +57,6 @@ export function CSBPartyResultsPage() {
    const listNumber = getPartyVoteCount(region.vote_counts, partySlug)?.party.list_number ?? "-";
    const regionType = t(regionLabels.singular);
    const regionName = region.region_name;
-   // No publication date until the region's results have been imported; the line is then omitted.
    const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
 
    const resultsPageContent = (
@@ -73,9 +70,9 @@ export function CSBPartyResultsPage() {
 
             <p className="mb-4 max-w-160">
                <Trans>
-                  Het centraal stembureau heeft de telresultaten van alle gemeenten en kieskringen gecontroleerd,
+                  Het hoofdstembureau heeft de telresultaten van alle gemeenten in de kieskring gecontroleerd,
                   overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het
-                  proces-verbaal van het centraal stembureau.
+                  proces-verbaal van het hoofdstembureau.
                </Trans>
             </p>
             <PartyVoteMatrixTable matrix={partyVoteMatrix} />
@@ -94,8 +91,8 @@ export function CSBPartyResultsPage() {
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               { href: appRoutes.csbResults(electionConfig.slug, region.slug), label: region.region_name },
-               { href: appRoutes.csbPartyResults(electionConfig.slug, region.slug, partySlug), label: partyName },
+               { href: appRoutes.hsbResults(electionConfig.slug, region.slug), label: region.region_name },
+               { href: appRoutes.hsbPartyResults(electionConfig.slug, region.slug, partySlug), label: partyName },
             ]}
          />
          <div className="page-main">

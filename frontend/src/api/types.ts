@@ -5,6 +5,7 @@ export type ElectionConfig = {
    issue_report_opens_at: string;
    issue_report_deadline: string;
    csb_type: RegionCategory;
+   has_hsb: boolean;
    timeline_entries?: TimelineEntry[];
    report_error_url: string;
    counting_info_url: string;
@@ -110,7 +111,8 @@ export type PartyVoteMatrixTotals = {
 
 export type PartyVoteMatrix = {
    party: Party;
-   csb: Pick<Region, "region_name" | "slug">;
+   csb?: Pick<Region, "region_name" | "slug">;
+   hsb?: Pick<Region, "region_name" | "slug">;
    columns: PartyVoteMatrixColumn[];
    rows: PartyVoteMatrixRow[];
    totals: PartyVoteMatrixTotals;

@@ -1,44 +1,55 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
-import { electionConfigQuery, regionsQuery } from "@/hooks/queries.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import SharedTabs from "../../components/SharedTabs.tsx";
+import { electionConfigQuery, regionQuery, regionsQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 
-export function electionConfigMunicipalityListLoader(queryClient: QueryClient) {
+export function hsbMunicipalityListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
+      const regionQueryOptions = regionQuery(params);
       const regionsQueryOptions = regionsQuery(params, "GEMEENTE");
 
       await Promise.all([
          queryClient.ensureQueryData(electionConfigQueryOptions),
+         queryClient.ensureQueryData(regionQueryOptions),
          queryClient.ensureQueryData(regionsQueryOptions),
       ]);
 
       return {
          electionConfigQuery: electionConfigQueryOptions,
+         regionQuery: regionQueryOptions,
          regionsQuery: regionsQueryOptions,
       };
    };
 }
 
-type LoaderData = Awaited<ReturnType<ReturnType<typeof electionConfigMunicipalityListLoader>>>;
+type LoaderData = Awaited<ReturnType<ReturnType<typeof hsbMunicipalityListLoader>>>;
 
-export function ElectionConfigMunicipalityListPage() {
-   const { electionConfigQuery, regionsQuery } = useLoaderData<LoaderData>();
+export function HSBMunicipalityListPage() {
+   const { electionConfigQuery, regionQuery, regionsQuery } = useLoaderData<LoaderData>();
    const { t } = useLingui();
-   const { formatElectionDate } = useFormatters();
-   // The loader has already resolved both queries, so the data is never pending here.
+   const { formatDate } = useFormatters();
+   // The loader has already resolved every query, so the data is never pending here.
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+   const { data: region } = useSuspenseQuery(regionQuery);
    const { data: regions } = useSuspenseQuery(regionsQuery);
 
+   const regionLabels = getRegionLabels("KIESKRING");
+   const hsbResultsRoute = appRoutes.hsbResults(electionConfig.slug, region.slug);
+   const hsbMunicipalityListRoute = appRoutes.hsbMunicipalityList(electionConfig.slug, region.slug);
+
+   const regionType = t(regionLabels.singular);
+   const regionName = region.region_name;
+   // No publication date until the region's results have been imported; the line is then omitted.
+   const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
    const electionLabel = electionConfig.label;
-   const electionDay = electionConfig.date ? formatElectionDate(electionConfig.date) : "";
 
    return (
       <LayoutMain
@@ -46,34 +57,30 @@ export function ElectionConfigMunicipalityListPage() {
          description={t`Bekijk de telresultaten per gemeente van de ${electionLabel}.`}
       >
          <PageTop
-            title={t`Telresultaten ${electionLabel}`}
-            subtitle={t`Verkiezingsdag: ${electionDay}`}
+            title={t`${regionType} - ${regionName}`}
+            subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
             breadcrumb={[
-               { href: "/", label: t`Home` },
+               { href: appRoutes.home(), label: t`Home` },
                {
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
+               { href: hsbResultsRoute, label: region.region_name },
             ]}
             tabs={
                <SharedTabs
                   tabs={[
                      {
-                        label: t`Gemeente`,
-                        value: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
-                        activePatterns: ["/:electionConfigSlug/gsb"],
-                     },
-                     electionConfig.has_hsb && {
-                        label: t(getRegionLabels("KIESKRING").plural),
-                        value: appRoutes.electionConfigHSBList(electionConfig.slug),
-                        activePatterns: ["/:electionConfigSlug/hsb"],
+                        label: t(regionLabels.whole),
+                        value: hsbResultsRoute,
+                        activePatterns: [hsbResultsRoute],
                      },
                      {
-                        label: t(getRegionLabels(electionConfig.csb_type).plural),
-                        value: appRoutes.electionConfigCSBList(electionConfig.slug),
-                        activePatterns: ["/:electionConfigSlug/csb"],
+                        label: t`Per gemeente`,
+                        value: hsbMunicipalityListRoute,
+                        activePatterns: [hsbMunicipalityListRoute],
                      },
-                  ].filter((tab) => tab !== false)}
+                  ]}
                />
             }
          />

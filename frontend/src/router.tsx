@@ -12,10 +12,17 @@ import {
    electionConfigCSBListLoader,
 } from "./pages/ElectionConfigPage/ElectionConfigCSBListPage";
 import {
+   ElectionConfigHSBListPage,
+   electionConfigHSBListLoader,
+} from "./pages/ElectionConfigPage/ElectionConfigHSBListPage";
+import {
    ElectionConfigMunicipalityListPage,
    electionConfigMunicipalityListLoader,
 } from "./pages/ElectionConfigPage/ElectionConfigMunicipalityListPage";
 import { HomePage } from "./pages/HomePage";
+import { HSBMunicipalityListPage, hsbMunicipalityListLoader } from "./pages/HSBPage/HSBMunicipalityListPage.tsx";
+import { HSBPartyResultsPage, hsbPartyResultsLoader } from "./pages/HSBPage/HSBPartyResultsPage.tsx";
+import { HSBResultsPage, hsbResultsLoader } from "./pages/HSBPage/HSBResultsPage.tsx";
 import { MunicipalityPartyResultsPage } from "./pages/MunicipalityPage/MunicipalityPartyResultsPage";
 import {
    MunicipalityPollingstationListPage,
@@ -77,6 +84,23 @@ export const routes: RouteObject[] = [
                         path: "resultaten/:partySlug",
                         loader: csbPartyResultsLoader(queryClient),
                         Component: CSBPartyResultsPage,
+                     },
+                  ],
+               },
+               { path: "hsb", loader: electionConfigHSBListLoader(queryClient), Component: ElectionConfigHSBListPage },
+               {
+                  path: "hsb/:regionSlug",
+                  children: [
+                     {
+                        index: true,
+                        loader: hsbMunicipalityListLoader(queryClient),
+                        Component: HSBMunicipalityListPage,
+                     },
+                     { path: "resultaten", loader: hsbResultsLoader(queryClient), Component: HSBResultsPage },
+                     {
+                        path: "resultaten/:partySlug",
+                        loader: hsbPartyResultsLoader(queryClient),
+                        Component: HSBPartyResultsPage,
                      },
                   ],
                },

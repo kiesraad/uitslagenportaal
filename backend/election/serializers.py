@@ -83,6 +83,7 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
             "issue_report_deadline",
             "timeline_entries",
             "csb_type",
+            "has_hsb",
             "report_error_url",
             "counting_info_url",
             "voting_url",

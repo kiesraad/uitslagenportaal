@@ -2,6 +2,13 @@ export const appRoutes = {
    home: () => "/",
    reportIssue: (electionConfigSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/fout-melden`,
    electionConfigMunicipalityList: (electionConfigSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/gsb`,
+   electionConfigHSBList: (electionConfigSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/hsb`,
+   hsbMunicipalityList: (electionConfigSlug: string, regionSlug: string) =>
+      `/${encodeURIComponent(electionConfigSlug)}/hsb/${encodeURIComponent(regionSlug)}`,
+   hsbResults: (electionConfigSlug: string, regionSlug: string) =>
+      `/${encodeURIComponent(electionConfigSlug)}/hsb/${encodeURIComponent(regionSlug)}/resultaten`,
+   hsbPartyResults: (electionConfigSlug: string, regionSlug: string, partySlug: string) =>
+      `${appRoutes.hsbResults(electionConfigSlug, regionSlug)}/${encodeURIComponent(partySlug)}`,
    electionConfigCSBList: (electionConfigSlug: string) => `/${encodeURIComponent(electionConfigSlug)}/csb`,
    csbMunicipalityList: (electionConfigSlug: string, regionSlug: string) =>
       `/${encodeURIComponent(electionConfigSlug)}/csb/${encodeURIComponent(regionSlug)}`,

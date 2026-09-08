@@ -35,6 +35,8 @@ msgstr "{0, plural, one {You have # more hour to submit a report} other {You hav
 
 #: src/pages/CSBPage/CSBMunicipalityListPage.tsx
 #: src/pages/CSBPage/CSBResultsPage.tsx
+#: src/pages/HSBPage/HSBMunicipalityListPage.tsx
+#: src/pages/HSBPage/HSBResultsPage.tsx
 msgid "{regionType} - {regionName}"
 msgstr "{regionType} - {regionName}"
 
@@ -61,8 +63,13 @@ msgstr "View the counting results"
 #: src/pages/CSBPage/CSBMunicipalityListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/pages/HSBPage/HSBMunicipalityListPage.tsx
 msgid "Bekijk de telresultaten per gemeente van de {electionLabel}."
 msgstr "View the counting results by municipality for the {electionLabel}."
+
+#: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
+msgid "Bekijk de telresultaten per kieskring van de {electionLabel}."
+msgstr "View the counting results by electoral district for the {electionLabel}."
 
 #: src/pages/HomePage.tsx
 msgid "Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?"
@@ -79,6 +86,10 @@ msgstr "E.g. De Stichtse Rijnlanden"
 #: src/components/SearchBar.tsx
 msgid "Bijv. Gymzaal de Boom"
 msgstr "E.g. Gymzaal de Boom"
+
+#: src/components/SearchBar.tsx
+msgid "Bijv. Leiden"
+msgstr "E.g. Leiden"
 
 #: src/components/SearchBar.tsx
 msgid "Bijv. Zoetermeer"
@@ -205,6 +216,7 @@ msgid "Ga dan naar"
 msgstr "Then go to"
 
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
 #: src/utils/region.ts
 msgid "Gemeente"
@@ -224,6 +236,9 @@ msgstr "Municipalities"
 #: src/pages/CSBPage/CSBMunicipalityListPage.tsx
 #: src/pages/CSBPage/CSBPartyResultsPage.tsx
 #: src/pages/CSBPage/CSBResultsPage.tsx
+#: src/pages/HSBPage/HSBMunicipalityListPage.tsx
+#: src/pages/HSBPage/HSBPartyResultsPage.tsx
+#: src/pages/HSBPage/HSBResultsPage.tsx
 #: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
 #: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
 #: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
@@ -268,7 +283,12 @@ msgstr "The central electoral committee has checked, transcribed and added up th
 msgid "Het gemeentelijk stembureau heeft de telresultaten van alle stembureaus in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van de gemeente."
 msgstr "The municipal electoral committee has checked, transcribed and added up the counting results of every polling station in {regionName}. Below you can see the counting results as recorded in the certified election results of the municipality."
 
+#: src/pages/HSBPage/HSBPartyResultsPage.tsx
+msgid "Het hoofdstembureau heeft de telresultaten van alle gemeenten in de kieskring gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
+msgstr "The district electoral committee has checked, transcribed and added up the counting results of every municipality in the electoral district. Below you can see the counting results as recorded in the certified election results of the district electoral committee."
+
 #: src/pages/CSBPage/CSBResultsPage.tsx
+#: src/pages/HSBPage/HSBResultsPage.tsx
 msgid "Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
 msgstr "The district electoral committee has checked, transcribed and added up the counting results of every municipality in {regionName}. Below you can see the counting results as recorded in the certified election results of the district electoral committee."
 
@@ -308,8 +328,12 @@ msgstr "How were these results produced?"
 #: src/pages/CSBPage/CSBPartyResultsPage.tsx
 #: src/pages/CSBPage/CSBResultsPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
 #: src/pages/HomePage.tsx
+#: src/pages/HSBPage/HSBMunicipalityListPage.tsx
+#: src/pages/HSBPage/HSBPartyResultsPage.tsx
+#: src/pages/HSBPage/HSBResultsPage.tsx
 #: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
 #: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
 #: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
@@ -387,6 +411,7 @@ msgid "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is
 msgstr "After we receive your report, we investigate what is going on. If necessary, we contact the municipality or the polling station. In some cases a recount may take place. If it turns out that a mistake was indeed made, for example when counting the votes, that mistake is corrected. The correction is recorded in a corrigendum and made public by publishing it. You will not receive a personal message about what was done with your report."
 
 #: src/pages/CSBPage/CSBResultsPage.tsx
+#: src/pages/HSBPage/HSBResultsPage.tsx
 msgid "Onderstaande documenten bevatten de laatste telresultaten van {regionWithArticle}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
 msgstr "The documents below contain the latest counting results for {regionWithArticle}, as they are included in the result. The figures in the overview above come from the EML_NL count file."
 
@@ -424,6 +449,8 @@ msgstr "Page not found"
 
 #: src/pages/CSBPage/CSBMunicipalityListPage.tsx
 #: src/pages/CSBPage/CSBResultsPage.tsx
+#: src/pages/HSBPage/HSBMunicipalityListPage.tsx
+#: src/pages/HSBPage/HSBResultsPage.tsx
 msgid "Per gemeente"
 msgstr "By municipality"
 
@@ -453,6 +480,8 @@ msgstr "Regions"
 
 #: src/pages/CSBPage/CSBPartyResultsPage.tsx
 #: src/pages/CSBPage/CSBResultsPage.tsx
+#: src/pages/HSBPage/HSBPartyResultsPage.tsx
+#: src/pages/HSBPage/HSBResultsPage.tsx
 msgid "Resultaten"
 msgstr "Results"
 
@@ -502,11 +531,14 @@ msgstr "Counting results"
 
 #: src/pages/CSBPage/CSBMunicipalityListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/pages/HSBPage/HSBMunicipalityListPage.tsx
 msgid "Telresultaten {electionLabel}"
 msgstr "Counting results {electionLabel}"
 
 #: src/pages/CSBPage/CSBPartyResultsPage.tsx
+#: src/pages/HSBPage/HSBPartyResultsPage.tsx
 msgid "Telresultaten {regionType} {regionName}"
 msgstr "Counting results {regionType} {regionName}"
 
@@ -520,6 +552,7 @@ msgstr "Municipality counting results – {regionName}"
 
 #: src/components/ResultsPage/PartyCandidatesResultsContent.tsx
 #: src/pages/CSBPage/CSBPartyResultsPage.tsx
+#: src/pages/HSBPage/HSBPartyResultsPage.tsx
 msgid "Telresultaten lijst {listNumber}"
 msgstr "Counting results list {listNumber}"
 
@@ -586,6 +619,7 @@ msgid "Verkiezingen waar de samenleving op kan vertrouwen"
 msgstr "Elections society can rely on"
 
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
 msgid "Verkiezingsdag: {electionDay}"
 msgstr "Polling day: {electionDay}"
@@ -629,6 +663,10 @@ msgstr "Search {regionInline}"
 #: src/components/SearchBar.tsx
 msgid "Zoek gemeente"
 msgstr "Search municipality"
+
+#: src/components/SearchBar.tsx
+msgid "Zoek kieskring"
+msgstr "Search electoral district"
 
 #: src/components/SearchBar.tsx
 msgid "Zoek op naam, adres of stembureau-nummer"

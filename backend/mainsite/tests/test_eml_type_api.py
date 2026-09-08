@@ -21,7 +21,7 @@ from eml_import.utils.folder_eml_file_handler import FolderEMLFileHandler
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
 from party.models import Party
-from party.views import PartyResultMatrixView
+from party.views import CSBPartyResultMatrixView
 from region.models import Region
 from region.views import RegionDetailView
 
@@ -143,7 +143,7 @@ def test_party_result_matrix_returns_510d_totaaltelling_cell(ws_election):
             "csb": csb.slug,
         },
     )
-    response = PartyResultMatrixView.as_view()(request)
+    response = CSBPartyResultMatrixView.as_view()(request)
 
     assert response.status_code == 200
     data = response.data

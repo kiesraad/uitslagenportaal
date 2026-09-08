@@ -1,6 +1,6 @@
 import pytest
 
-from election.models import VoteCount
+from election.models import VoteCount, VoterTurnoutCount
 from election.tests.factories import ContestFactory
 from mainsite.models import CountingMethod, RegionCategory
 from mainsite.utils.eml_type import EmlType
@@ -61,3 +61,86 @@ def test_region_detail_serializer_filters_510d_vote_counts_for_gemeente():
 
     assert len(data["vote_counts"]) == 1
     assert data["vote_counts"][0]["eml_type"] == EmlType.EML_510b
+
+
+@pytest.mark.django_db
+def test_region_detail_serializer_prefers_510c_vote_counts_for_kieskring():
+    """
+    A kieskring with its own HSB stores both 510c (its own totaaltelling) and 510d (the CSB's
+    breakdown for it); region detail prefers the 510c totaaltelling.
+    """
+    contest = ContestFactory()
+    party = PartyFactory(election=contest.election)
+    region = RegionFactory(election=contest.election, region_category=RegionCategory.KIESKRING)
+    VoteCount.objects.create(
+        contest=contest,
+        region=region,
+        party=party,
+        valid_votes=100,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type=EmlType.EML_510c,
+    )
+    VoteCount.objects.create(
+        contest=contest,
+        region=region,
+        party=party,
+        valid_votes=100,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type=EmlType.EML_510d,
+    )
+
+    data = RegionDetailSerializer(region).data
+
+    assert len(data["vote_counts"]) == 1
+    assert data["vote_counts"][0]["eml_type"] == EmlType.EML_510c
+
+
+@pytest.mark.django_db
+def test_region_detail_serializer_falls_back_to_510d_vote_counts_for_kieskring_without_hsb():
+    """
+    A kieskring that submitted centrally to the CSB (no HSB of its own) has only 510d rows;
+    region detail falls back to those instead of returning nothing.
+    """
+    contest = ContestFactory()
+    party = PartyFactory(election=contest.election)
+    region = RegionFactory(election=contest.election, region_category=RegionCategory.KIESKRING)
+    VoteCount.objects.create(
+        contest=contest,
+        region=region,
+        party=party,
+        valid_votes=100,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type=EmlType.EML_510d,
+    )
+
+    data = RegionDetailSerializer(region).data
+
+    assert len(data["vote_counts"]) == 1
+    assert data["vote_counts"][0]["eml_type"] == EmlType.EML_510d
+
+
+@pytest.mark.django_db
+def test_region_detail_serializer_prefers_510c_turnout_counts_for_kieskring():
+    contest = ContestFactory()
+    region = RegionFactory(election=contest.election, region_category=RegionCategory.KIESKRING)
+    VoterTurnoutCount.objects.create(
+        contest=contest,
+        region=region,
+        category=VoterTurnoutCount.CATEGORY_TOTALS,
+        reason_code="total counted",
+        votes=100,
+        eml_type=EmlType.EML_510c,
+    )
+    VoterTurnoutCount.objects.create(
+        contest=contest,
+        region=region,
+        category=VoterTurnoutCount.CATEGORY_TOTALS,
+        reason_code="total counted",
+        votes=100,
+        eml_type=EmlType.EML_510d,
+    )
+
+    data = RegionDetailSerializer(region).data
+
+    assert len(data["voter_turnout_counts"]) == 1
+    assert data["voter_turnout_counts"][0]["eml_type"] == EmlType.EML_510c
