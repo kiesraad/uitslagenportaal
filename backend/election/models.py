@@ -228,6 +228,7 @@ class ElectionDocument(BaseModel):
 
     class FileType(models.TextChoices):
         EML_510B = "510b", "Telling GSB"
+        EML_510C = "510c", "Totaaltelling HSB"
         EML_510D = "510d", "Totaaltelling CSB"
 
     region = models.ForeignKey(

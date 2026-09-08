@@ -8,7 +8,7 @@ import PartyVoteMatrixTable from "../../components/ResultsPage/PartyVoteMatrixTa
 import ResultsNotPublished from "../../components/ResultsPage/ResultsNotPublished.tsx";
 import ResultsPageIndex from "../../components/ResultsPage/ResultsPageIndex";
 import ResultsTimeline from "../../components/ResultsPage/ResultsTimeline.tsx";
-import { electionConfigQuery, partyVoteMatrixQuery, regionQuery } from "../../hooks/queries.ts";
+import { csbPartyVoteMatrixQuery, electionConfigQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
@@ -25,7 +25,7 @@ export function csbPartyResultsLoader(queryClient: QueryClient) {
       ]);
 
       // Only the region response names the election the matrix is asked for.
-      const partyVoteMatrixQueryOptions = partyVoteMatrixQuery(
+      const partyVoteMatrixQueryOptions = csbPartyVoteMatrixQuery(
          region.election_slug,
          params.regionSlug,
          params.partySlug,

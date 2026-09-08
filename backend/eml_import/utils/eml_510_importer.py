@@ -389,9 +389,17 @@ class EML510cImporter(EML510BaseImporter):
     """Telling HSB."""
 
     eml_type = EmlType.EML_510c
+    file_type = ElectionDocument.FileType.EML_510C
 
     def _get_election_identifier_data(self):
         return self.eml.count.election.election_identifier
+
+    def _delete(self, region: Region) -> None:
+        """Archive prior HSB totaaltelling rows for this kieskring and its gemeenten."""
+        counts_filter = Q(region=region) | Q(region__parent=region)
+        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
+        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
+        ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
 
     def _parse_data(self) -> None:
         election_domain = self._get_election_identifier_data().election_domain
@@ -412,18 +420,25 @@ class EML510cImporter(EML510BaseImporter):
                 region_name=region_name,
             )
 
-        update_fields = ["results_available_at", "updated_at"]
-        region.results_available_at = self._results_available_at()
-        counting_method = self._counting_method(self.eml.count)
-        if counting_method is not None and region.counting_method != counting_method:
-            region.counting_method = counting_method
-            update_fields.append("counting_method")
-        region.save(update_fields=update_fields)
+        is_correction = self._is_correction(region)
 
-        # Store the EML file
-        if self.eml_file is not None:
+        with transaction.atomic():
+            if is_correction:
+                self._delete(region)
+
+            update_fields = ["results_available_at", "updated_at"]
+            region.results_available_at = self._results_available_at()
+            counting_method = self._counting_method(self.eml.count)
+            if counting_method is not None and region.counting_method != counting_method:
+                region.counting_method = counting_method
+                update_fields.append("counting_method")
+            region.save(update_fields=update_fields)
+
             self._store_eml(region)
 
+            self._parse_hsb_counts(region)
+
+    def _parse_hsb_counts(self, region: Region) -> None:
         # Preload party names dict and child regions (gemeenten) by name
         party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
         child_region_by_name = {
@@ -446,7 +461,9 @@ class EML510cImporter(EML510BaseImporter):
                 child_region_name = child_region_category_re.sub("", unit.reporting_unit_identifier.value).strip()
                 child_region = child_region_by_name.get(child_region_name)
                 if child_region is None:
-                    continue
+                    raise EMLImporterException(
+                        f"Cannot find child_region_name {child_region_name} in child_region_by_name"
+                    )
 
                 contest_filter = {"election": self.election}
                 # Get the contest from the DB by name, if the contest in the EML file is set to 'alle'. This means

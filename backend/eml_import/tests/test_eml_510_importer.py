@@ -44,8 +44,8 @@ from election.tests.factories import (
     ElectionFactory,
 )
 from eml_import.exceptions import EMLImporterException
-from eml_import.utils.eml_510_importer import EML510bImporter, EML510cImporter, EML510dImporter
 from eml_import.tests.fakes import fake_eml_file
+from eml_import.utils.eml_510_importer import EML510bImporter, EML510cImporter, EML510dImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
 from mainsite.utils.eml_type import EmlType
@@ -1088,7 +1088,7 @@ def ps_hsb_totaaltelling(ps_maastricht_gemeenten, ps_contests, ps_candidates):
         ]
     )
     contest = make_contest("I", total_votes=totals, units=units)
-    EML510cImporter(make_ps_510c_eml(contests=[contest]), None).parse()
+    EML510cImporter(make_ps_510c_eml(contests=[contest]), fake_eml_file()).parse()
 
 
 def test_510c_resolves_kieskring_region_from_election_domain(ps_hsb_totaaltelling, ps_regions):

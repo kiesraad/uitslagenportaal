@@ -1,10 +1,10 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import type { Params } from "react-router";
 import {
+   getCSBPartyVoteMatrix,
    getElectionConfigBySlug,
    getElectionConfigs,
    getHSBPartyVoteMatrix,
-   getPartyVoteMatrix,
    getRegion,
    getRegions,
 } from "../api/endpoints";
@@ -44,10 +44,10 @@ export function regionsQuery(
    });
 }
 
-export function partyVoteMatrixQuery(electionSlug?: string, csbSlug?: string, partySlug?: string) {
+export function csbPartyVoteMatrixQuery(electionSlug?: string, csbSlug?: string, partySlug?: string) {
    return queryOptions({
       queryKey: ["party-vote-matrix", electionSlug, csbSlug, partySlug],
-      queryFn: () => getPartyVoteMatrix(electionSlug, partySlug, csbSlug),
+      queryFn: () => getCSBPartyVoteMatrix(electionSlug, partySlug, csbSlug),
    });
 }
 

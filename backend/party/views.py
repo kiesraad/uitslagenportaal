@@ -83,7 +83,7 @@ def _build_matrix_response(
     )
 
 
-class PartyResultMatrixView(APIView):
+class CSBPartyResultMatrixView(APIView):
     def get(self, request):
         election_slug = request.query_params.get("election")
         party_slug = request.query_params.get("party")

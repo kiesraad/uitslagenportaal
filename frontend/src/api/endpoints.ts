@@ -68,9 +68,9 @@ export function getRegion(
    return apiGet<Region>(`${url.pathname}${url.search}`);
 }
 
-export function getPartyVoteMatrix(electionSlug?: string, partySlug?: string, csbSlug?: string) {
+export function getCSBPartyVoteMatrix(electionSlug?: string, partySlug?: string, csbSlug?: string) {
    if (!electionSlug || !partySlug || !csbSlug) {
-      throw new Error("getRegion: electionSlug, partySlug and csbSlug are required.");
+      throw new Error("getCSBPartyVoteMatrix: electionSlug, partySlug and csbSlug are required.");
    }
 
    const url = new URL("/api/party-result-matrix/", window.location.origin);
