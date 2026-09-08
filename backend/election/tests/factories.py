@@ -44,9 +44,11 @@ class TimelineEntryFactory(DjangoModelFactory):
     election_config = factory.SubFactory(ElectionConfigFactory)
     variant = TimelineVariant.DEFAULT
     status = TimelineEntryStatus.PENDING
-    title = factory.Faker("sentence", nb_words=4)
+    title_nl = factory.Faker("sentence", nb_words=4)
+    title_en = factory.Faker("sentence", nb_words=4)
     date = factory.Faker("date_time_this_decade", tzinfo=datetime.timezone.utc)
-    body = factory.Faker("paragraph")
+    body_nl = factory.Faker("paragraph")
+    body_en = factory.Faker("paragraph")
 
 
 class ContestFactory(DjangoModelFactory):

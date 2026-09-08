@@ -117,16 +117,18 @@ class TimelineEntry(BaseModel):
         default=TimelineVariant.DEFAULT,
     )
     status = models.CharField(max_length=16, choices=TimelineEntryStatus.choices)
-    title = models.CharField(max_length=255)
+    title_nl = models.CharField(max_length=255)
+    title_en = models.CharField(max_length=255, blank=True)
     date = models.DateTimeField()
-    body = models.TextField()
+    body_nl = models.TextField()
+    body_en = models.TextField(blank=True)
 
     class Meta:
         # Entries are ordered chronologically by date.
         ordering = ("date",)
 
     def __str__(self):
-        return f"{self.election_config.identifier} [{self.variant}]: {self.title}"
+        return f"{self.election_config.identifier} [{self.variant}]: {self.title_nl}"
 
 
 class Contest(BaseModel):
