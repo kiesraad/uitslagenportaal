@@ -1,38 +1,35 @@
-FROM python:3.14-alpine
+# Install dependencies into a venv; the runtime stage copies only that result.
+FROM python:3.14-slim AS builder
 
-# Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Set environment variables to optimize Python/uv
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
 ENV UV_COMPILE_BYTECODE=1
-ENV UV_PYTHON_CACHE_DIR=/root/.cache/uv/python
-ENV UV_SYSTEM_PYTHON=1
 ENV UV_LINK_MODE=copy
 
-# Disable debug mode
-ENV DEBUG=false
+WORKDIR /app
 
-# Add a user and let it own /app
-RUN addgroup -S backend \
-    && adduser -S backend -G backend \
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-dev --no-install-project
+
+FROM python:3.14-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV DEBUG=false
+ENV PATH="/app/.venv/bin:$PATH"
+
+RUN groupadd --system backend \
+    && useradd --system --gid backend --no-create-home backend \
     && mkdir /app \
     && chown -R backend /app
 
 WORKDIR /app
 
-# Install dependencies
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv export --locked --no-dev --no-emit-project --format requirements-txt > /tmp/requirements.txt \
-    && uv pip install --system -r /tmp/requirements.txt
-
-# Copy application code
+COPY --from=builder --chown=backend:backend /app/.venv /app/.venv
 COPY --chown=backend:backend . .
 
-# Run as the non-root backend user
 USER backend
 
 EXPOSE 8000
