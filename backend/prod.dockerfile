@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-dev --no-install-project
 
-FROM python:3.14-slim
+FROM python:3.14-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -21,7 +21,7 @@ ENV DEBUG=false
 ENV PATH="/app/.venv/bin:$PATH"
 
 RUN groupadd --system backend \
-    && useradd --system --gid backend --home-dir /app --no-create-home backend \
+    && useradd --system --gid backend --no-create-home backend \
     && mkdir /app \
     && chown -R backend /app
 
