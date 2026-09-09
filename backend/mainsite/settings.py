@@ -73,6 +73,19 @@ DATABASES = {
         "PASSWORD": os.environ["DB_PASSWORD"],
         "HOST": os.environ["DB_HOST"],
         "PORT": os.environ.get("DB_PORT", "5432"),
+
+        # Set CONN_MAX_AGE for persistent connections and check the health of the persistent connection before using it.
+        "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "0")),
+        "CONN_HEALTH_CHECKS": True,
+
+        # TLS towards the database. psycopg2 drops the options that are None, so an unset
+        # variable falls through to the libpq default: sslmode=prefer, which encrypts when
+        # the server offers it but verifies nothing. The verify-* modes need sslrootcert
+        # to point at the CA of the database.
+        "OPTIONS": {
+            "sslmode": os.environ.get("DB_SSL_MODE"),
+            "sslrootcert": os.environ.get("DB_ROOT_CERT"),
+        },
     }
 }
 

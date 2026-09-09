@@ -14,12 +14,7 @@
     name: {{ .Values.backend.importerSecret }}
 {{- end }}
 
-{{/*
-Both CAs are read from a file: libpq takes the database one from PGSSLROOTCERT, redis-py
-the cache one from REDIS_CA_CERT_FILE. Their secrets are also consumed with envFrom, hence
-the env-var-safe keys DB_CA_CERT and REDIS_CA_CERT, renamed on the way in. Without those
-keys the mounts stay empty, which only the verify-* sslmodes and redis.tls mind.
-*/}}
+{{/* Both CAs are read from a file and used to verify the DB and Redis connections. */}}
 {{- define "uitslagenportaal.caVolumeMounts" -}}
 volumeMounts:
   - name: db-ca
