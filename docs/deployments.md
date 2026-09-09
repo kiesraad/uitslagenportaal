@@ -2,7 +2,7 @@
 
 This file gives an overview on how to deploy the application to a Kubernetes (k8s) cluster, either locally or a managed one.
 
-The directory ./k8s-config/ contains all the configuration necessary, including a Helm chart and values files for the one-time infa setup.
+The directory ./k8s-config/ contains all the configuration necessary, including a Helm chart and values files for the one-time infra setup.
 
 Commands in this file have to be run from ./k8s-config/.
 
@@ -11,7 +11,7 @@ Commands in this file have to be run from ./k8s-config/.
 The Helm chart is divided into several yaml files, see ./k8s-config/templates.
 
 - `00-config.yaml`: The `ConfigMap` with generic configuration values.
-- `01-gateway.yaml`: The Gateway config incl. which ports to use and de cert-manager `Issuer` configuration.
+- `01-gateway.yaml`: The Gateway config incl. which ports to use and the cert-manager `Issuer` configuration.
 - `02-httproute.yaml`: The route definition for `/api` and `/`, including a redirect from http -> https and the traefik middleware config.
 - `03-frontend.yaml`: Frontend deployment and service.
 - `04-backend.yaml`: Backend deployment and service, incl. an init job which runs the migrations.
@@ -19,7 +19,7 @@ The Helm chart is divided into several yaml files, see ./k8s-config/templates.
 - `06-services.yaml`: Several `StatefulSet`s for PostgreSQL/Redis/Object storage services (local deployments only).
 
 There are two values-files: `values.yaml` and `values-local.yaml`. 
-The first defines all chart values for a general deployment, and `values-local.yaml` overrides certain values for local deploys. 
+The first defines all chart values for a general deployment, and `values-local.yaml` overrides certain values for local deployments. 
 
 ### One-time infra setup
 
@@ -63,7 +63,7 @@ If no `uitlsagenportaal` namespace exists, create it: `kubectl create namespace 
 
 ```bash
 kubectl -n uitslagenportaal create secret generic db-creds \
-  --from-literal=DB_HOST=172.16.0.7 \
+  --from-literal=DB_HOST=0.0.0.0 \
   --from-literal=DB_PORT=5432 \
   --from-literal=DB_USER=uitslagenportaal \
   --from-literal=DB_NAME='rdb' \
@@ -140,7 +140,7 @@ The Helm chart contains the application-specific configuration.
 
 On a managed Kubernetes cluster at a hosting provider.
 
-1. Run the commands for the one-time infa setup, see above, if not done before.
+1. Run the commands for the one-time infra setup, see above, if not done before.
 2. Make sure the secrets are set, see the Secrets section above.
 3. Install the helm chart:
    ```bash
@@ -152,7 +152,7 @@ On a managed Kubernetes cluster at a hosting provider.
 
 E.g. on a Kubernetes cluster from Docker Desktop or kind
 
-1. Run the commands for the one-time infa setup, see above, if not done before.
+1. Run the commands for the one-time infra setup, see above, if not done before.
 2. Add a hosts value in `C:\Windows\System32\drivers\etc\hosts` or `/etc/hosts`:
    `127.0.0.1  uitslagenportaal.localdev`
 3. Set the importer secrets (services secrets are created by `06-services.yaml`).
