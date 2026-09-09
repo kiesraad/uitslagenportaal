@@ -10,6 +10,10 @@ on:
         required: true
         type: string
         description: Name of the image to build
+    outputs:
+      digest:
+        description: Digest of the pushed image, so a caller can deploy this exact build
+        value: ${{ jobs.docker-build-push.outputs.digest }}
 
 env:
   REGISTRY: ghcr.io
@@ -19,6 +23,8 @@ env:
 jobs:
   docker-build-push:
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
 
     steps:
       - name: Checkout

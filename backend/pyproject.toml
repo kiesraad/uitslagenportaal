@@ -9,6 +9,7 @@ dependencies = [
     "django>=6.0.8",
     "django-cors-headers>=4.9.0",
     "django-extensions>=4.1",
+    "django-migration-linter>=6.0.0",
     "django-redis>=7.0.0",
     "django-storages[s3]>=1.14.6",
     "djangorestframework>=3.17.2",
@@ -52,3 +53,11 @@ markers = ["playwright: browser test; needs the throwaway stack on :8081"]
 # Browser tests need a running stack and an installed Chromium, so a bare
 # `pytest` (backend-ci) skips them; the Playwright job opts in with -m playwright.
 addopts = ["-m", "not playwright"]
+
+[tool.django_migration_linter]
+# Resolve migrations from the backend root; the linter otherwise looks inside the
+# settings package and finds none of them.
+project_root_path = "."
+# Adding a unique constraint is about locking a live table, not about old code coping
+# with the new schema, which is the only thing a rolling deploy needs from a migration.
+exclude_migration_tests = ["ADD_UNIQUE"]

@@ -5,6 +5,8 @@ on:
     branches:
       - dev
       - main
+      # todo: remove tmp branch
+      - 124-deployment-cd-pipeline
     tags:
       - "*"
 
@@ -13,7 +15,9 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Runs queue rather than cancel: cancelling a superseded run would kill a deploy
+  # mid-upgrade and leave the release stuck in pending-upgrade.
+  cancel-in-progress: false
 
 jobs:
   # Every suite runs in full before anything is published: path filters apply to a
@@ -27,10 +31,13 @@ jobs:
   playwright:
     name: Playwright
     uses: ./.github/workflows/playwright.yml
+  helm-ci:
+    name: Helm CI
+    uses: ./.github/workflows/helm-ci.yml
 
   frontend-docker-image:
     name: Publish Frontend Image
-    needs: [backend-ci, frontend-ci, playwright]
+    needs: [backend-ci, frontend-ci, playwright, helm-ci]
     permissions:
       contents: read
       packages: write
@@ -44,7 +51,7 @@ jobs:
 
   backend-docker-image:
     name: Publish Backend Image
-    needs: [backend-ci, frontend-ci, playwright]
+    needs: [backend-ci, frontend-ci, playwright, helm-ci]
     permissions:
       contents: read
       packages: write
@@ -55,3 +62,71 @@ jobs:
     with:
       context: backend
       image-name: uitslagenportaal-backend
+
+  deploy:
+    name: Deploy to scaleway-dev
+    # Only dev feeds the cluster; main and tags publish images without deploying.
+    if: github.ref == 'refs/heads/dev'
+    needs: [frontend-docker-image, backend-docker-image]
+    runs-on: ubuntu-latest
+    # environment: scaleway-dev
+    permissions:
+      contents: read
+    concurrency:
+      group: deploy-dev
+      cancel-in-progress: false
+    env:
+      # Deploy the digests just built, not the moving :dev tag the values file carries:
+      # a release then pins the image it actually ran, which is what makes rollback mean
+      # something. Celery runs the backend image and must not drift from it.
+      BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-backend@${{ needs.backend-docker-image.outputs.digest }}
+      FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-frontend@${{ needs.frontend-docker-image.outputs.digest }}
+      KUBECONFIG: ${{ runner.temp }}/kubeconfig
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # The deploy token is bound to a namespaced service account, so the kubeconfig is
+      # assembled here rather than fetched from the hosting provider.
+      - name: Write kubeconfig
+        env:
+          K8S_API_SERVER: ${{ vars.K8S_API_SERVER }}
+          K8S_CA_DATA: ${{ vars.K8S_CA_DATA }}
+          K8S_DEPLOY_TOKEN: ${{ secrets.K8S_DEPLOY_TOKEN }}
+        run: |
+          install -m 600 /dev/null "$KUBECONFIG"
+          cat > "$KUBECONFIG" <<YAML
+          apiVersion: v1
+          kind: Config
+          clusters:
+            - name: cluster
+              cluster:
+                server: ${K8S_API_SERVER}
+                certificate-authority-data: ${K8S_CA_DATA}
+          users:
+            - name: deployer
+              user:
+                token: ${K8S_DEPLOY_TOKEN}
+          contexts:
+            - name: deploy
+              context:
+                cluster: cluster
+                user: deployer
+                namespace: uitslagenportaal
+          current-context: deploy
+          YAML
+
+      - uses: azure/setup-helm@v4
+
+      # No --create-namespace: the deploy account holds a namespaced Role and cannot
+      # create one. --timeout is generous because --atomic only starts rolling back once
+      # the wait expires, and the wait covers the migration job as well as the rollouts.
+      - name: Deploy
+        run: |
+          helm upgrade --install uitslagenportaal ./k8s-config \
+            --namespace uitslagenportaal \
+            -f k8s-config/values.yaml \
+            --set-string backend.image="$BACKEND_IMAGE" \
+            --set-string celery.image="$BACKEND_IMAGE" \
+            --set-string frontend.image="$FRONTEND_IMAGE" \
+            --wait --atomic --timeout 15m

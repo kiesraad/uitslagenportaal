@@ -149,21 +149,89 @@ docker compose run --rm frontend npm run test    # or: npm run test
 Stub `fetch` with `vi.stubGlobal`; wrap components in `QueryClientProvider` and
 `MemoryRouter` as the existing tests do.
 
+## Migrations
+
+**A migration must leave the old code working.** A deploy applies the migrations in a Job and
+only then rolls the pods one at a time, so between those two moments the previous release is
+serving traffic against the new schema. A failed rollout makes that permanent: the deploy runs
+`helm upgrade --atomic`, which puts the old image back but cannot undo a migration.
+
+So anything destructive is split across two releases — expand, then contract. Removing
+`Candidate.last_name` looks like this.
+
+Release 1 stops using the column while leaving it in the database. `SeparateDatabaseAndState`
+updates the model state without emitting any SQL, and the `AlterField` matters: while this
+release rolls out, new pods insert rows without the column and old pods still write it, so a
+`NOT NULL` column with no default would reject the new pods' inserts.
+
+```python
+operations = [
+    migrations.AlterField(
+        model_name="candidate",
+        name="last_name",
+        field=models.CharField(max_length=255, null=True),
+    ),
+    migrations.SeparateDatabaseAndState(
+        state_operations=[migrations.RemoveField(model_name="candidate", name="last_name")],
+        database_operations=[],
+    ),
+]
+```
+
+Release 2 drops it, once no running code refers to it. The state already has the field
+removed, so this is database-only, and `IgnoreMigration` is what tells the linter the drop is
+deliberate:
+
+```python
+from django_migration_linter import IgnoreMigration
+
+operations = [
+    IgnoreMigration(),
+    migrations.RunSQL(
+        "ALTER TABLE party_candidate DROP COLUMN last_name;",
+        reverse_sql="ALTER TABLE party_candidate ADD COLUMN last_name varchar(255);",
+    ),
+]
+```
+
+The two releases must not travel together: a push to `dev` deploys, so let release 1 land
+before merging release 2. Every step stays rollback-safe — release 1's code tolerates the
+column being present, release 2's tolerates it being gone.
+
+Renames and new `NOT NULL` columns take the same shape: add the new column, backfill, write
+both, switch the reads, then drop the old one; or add nullable, backfill, and only then add
+the constraint.
+
+`lintmigrations` catches the cases that break this — dropped columns and tables, renames,
+`NOT NULL` without a default. `ADD_UNIQUE` is excluded in `backend/pyproject.toml`: adding a
+unique constraint locks the table but does not confuse old code, which is a deployment-timing
+concern rather than a compatibility one.
+
 ## CI
 
 `.github/workflows/backend-ci.yml`: ruff check + format check, `pytest` against Postgres 16,
-and `makemigrations --check --dry-run`.
+`makemigrations --check --dry-run`, and the two migration-compatibility checks below.
 `.github/workflows/frontend-ci.yml`: `biome ci`, vitest, `npm run i18n:check` and
 `npm run build` (`tsc -b` + vite).
 `.github/workflows/playwright.yml`: the browser tests, against a throwaway stack.
+`.github/workflows/helm-ci.yml`: `helm lint` plus `helm template` piped through
+`kubeconform`, against `values.yaml` — the combination that actually gets deployed.
 
-All three run on PRs — the backend and frontend suites filtered by path, Playwright on every
-PR — and the first two check that generated files are in step with the source, so regenerate
-them as part of the change: `makemigrations` after a model change,
+All four run on PRs — the backend, frontend and Helm suites filtered by path, Playwright on
+every PR — and the first two check that generated files are in step with the source, so
+regenerate them as part of the change: `makemigrations` after a model change,
 `npm run i18n:extract-clean` after a message change. A missing migration or a stale
 catalogue fails CI. PRs target `dev`.
 
-`.github/workflows/branch-ci-cd.yml` runs on pushes to `dev` and `main`. It calls all three
+Migrations get two extra checks, because they have to be backwards-compatible; see
+[Migrations](#migrations). `lintmigrations` runs inside `migrations-check` and only looks at
+migrations added since `dev`, so the older ones that predate the rule do not block a PR.
+`migration-compat` runs the base branch's tests against the branch's schema; label a PR
+`skip-migration-compat` when a deliberate two-step change legitimately fails it.
+
+`.github/workflows/branch-ci-cd.yml` runs on pushes to `dev` and `main`. It calls all four
 workflows above in full — path filters apply to a workflow's own triggers, not to a call —
 and publishes the frontend and backend images to ghcr.io only once every one of them passes.
-`publish-docker-image.yml` is the reusable workflow that builds and pushes one image.
+`publish-docker-image.yml` is the reusable workflow that builds and pushes one image, and
+returns the digest it pushed. On `dev` only, a final `deploy` job then upgrades the Helm
+release with those digests; see [docs/deployments.md](docs/deployments.md).

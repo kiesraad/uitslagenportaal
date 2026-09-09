@@ -132,7 +132,42 @@ kubectl -n uitslagenportaal create secret generic basic-auth-creds \
 Certificate issuance is unaffected: cert-manager attaches its own HTTP-01 route to the
 Gateway, and that route carries no auth filter.
 
-### Deploy the Helm chart
+
+### Automatic deploy
+
+#### Service account
+
+For the CD pipeline we need a service account and store a token for this account in a GitHub secret.
+
+1. Make sure the service account exists or is updated: `kubectl apply -f deploy-service-account.yaml`
+2. Create the token, either update the token manually in GitHub, or pipe it directly to GitHub if the `gh` cli is installed:
+- `kubectl -n uitslagenportaal create token uitslagenportaal-deploy --duration=8760h`
+- `kubectl -n uitslagenportaal create token uitslagenportaal-deploy --duration=8760h | gh secret set K8S_DEPLOY_TOKEN --repo kiesraad/uitslagenportaal`
+
+#### The deployment pipeline
+
+A push to `dev` deploys itself. Once the backend, frontend, Playwright and Helm suites have
+all passed and both images are published, the `deploy` job in `branch-ci-cd.yml` upgrades the
+release.
+
+The job pins the digests it just built rather than the `:dev` tag in `values.yaml`, so a
+release records the image it actually ran and `helm rollback` returns to that same image. It
+runs with `--atomic`, which rolls the manifests back if the rollout fails. Helm cannot undo
+migrations, which is why migrations have to stay backwards-compatible and why `backend-ci`
+checks that they are.
+
+It authenticates as the `uitslagenportaal-deploy` service account above, reading these from
+the `scaleway-dev` GitHub Environment:
+
+| Kind     | Name                             | Value                                                    |
+|----------|----------------------------------|----------------------------------------------------------|
+| secret   | `K8S_DEPLOY_TOKEN`               | the service account token                                |
+| variable | `K8S_API_SERVER`                 | `clusters[0].cluster.server` from your kubeconfig        |
+| variable | `K8S_CA_DATA`                    | `clusters[0].cluster.certificate-authority-data` from it |
+
+The token from `kubectl create token --duration=8760h` expires, so it needs replacing before it expires.
+
+### Deploy the Helm chart manually
 
 The Helm chart contains the application-specific configuration.
 
@@ -146,7 +181,15 @@ On a managed Kubernetes cluster at a hosting provider.
    ```bash
    helm upgrade --install uitslagenportaal . -n uitslagenportaal -f values.yaml
    ```
-   
+
+Note this reverts the cluster to whatever `:dev` points at, because it passes none of the
+digest overrides CD uses. To keep the running images, read them off the cluster first and
+pass them back in:
+
+```bash
+kubectl -n uitslagenportaal get deploy uitslagenportaal-backend \
+  -o jsonpath='{.spec.template.spec.containers[0].image}'
+```
 
 #### Local deploy
 
