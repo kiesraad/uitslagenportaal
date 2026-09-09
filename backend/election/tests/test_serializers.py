@@ -3,13 +3,14 @@ from datetime import timedelta
 import pytest
 from django.utils import timezone
 
-from election.models import TimelineEntryStatus, TimelineVariant
+from election.models import ElectionCategory, TimelineEntryStatus, TimelineVariant
 from election.serializers import (
     ElectionConfigSerializer,
     ElectionDocumentSerializer,
     TimelineEntrySerializer,
 )
 from election.tests.factories import ElectionConfigFactory, ElectionDocumentFactory, TimelineEntryFactory
+from mainsite.models import RegionCategory
 
 
 @pytest.mark.django_db
@@ -47,6 +48,15 @@ def test_timeline_entry_serializer_falls_back_to_dutch_when_english_is_blank():
 
     assert data["title"] == {"nl": "Titel", "en": "Titel"}
     assert data["body"] == {"nl": "Tekst", "en": "Tekst"}
+
+
+@pytest.mark.django_db
+def test_election_config_serializer_includes_csb_type_without_imported_regions():
+    config = ElectionConfigFactory(category=ElectionCategory.WS.value)
+
+    data = ElectionConfigSerializer(config).data
+
+    assert data["csb_type"] == RegionCategory.WATERSCHAP
 
 
 @pytest.mark.django_db

@@ -7,9 +7,11 @@ from django.http import Http404
 from django.test import RequestFactory
 from django.utils import timezone
 
+from election.models import ElectionCategory
 from election.tests.factories import ElectionConfigFactory, ElectionDocumentFactory
 from election.utils import VISIBILITY_MONTHS
 from election.views import download_document
+from mainsite.models import RegionCategory
 
 
 @pytest.fixture
@@ -57,6 +59,16 @@ def test_current_election_detail_is_still_reachable(client, current_election):
 
     assert response.status_code == 200
     assert response.json()["slug"] == current_election.slug
+
+
+@pytest.mark.django_db
+def test_election_config_detail_includes_csb_type(client):
+    config = ElectionConfigFactory(identifier="AB2023-csb", category=ElectionCategory.WS.value)
+
+    response = client.get(f"/api/election_configs/{config.slug}/")
+
+    assert response.status_code == 200
+    assert response.json()["csb_type"] == RegionCategory.WATERSCHAP
 
 
 @pytest.mark.django_db
