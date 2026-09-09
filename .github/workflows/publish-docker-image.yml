@@ -15,6 +15,12 @@ on:
         description: Digest of the pushed image, so a caller can deploy this exact build
         value: ${{ jobs.docker-build-push.outputs.digest }}
 
+concurrency:
+  # Keyed on the image as well as the ref: the two images publish in parallel from the
+  # same caller and must not queue behind each other.
+  group: publish-${{ inputs.image-name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: ghcr.io
   # Image name with the registry/owner prefix.

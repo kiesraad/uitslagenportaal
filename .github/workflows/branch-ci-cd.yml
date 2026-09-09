@@ -11,11 +11,7 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  # Runs queue rather than cancel: cancelling a superseded run would kill a deploy
-  # mid-upgrade and leave the release stuck in pending-upgrade.
-  cancel-in-progress: false
+# No workflow-level concurrency on purpose: cancellation is managed per job/called workflow.
 
 jobs:
   # Every suite runs in full before anything is published: path filters apply to a
@@ -71,6 +67,8 @@ jobs:
     permissions:
       contents: read
     concurrency:
+      # The only thing serialising upgrades now, so it must not cancel: a killed helm
+      # upgrade leaves the release stuck in pending-upgrade.
       group: deploy-dev
       cancel-in-progress: false
     env:
@@ -117,10 +115,8 @@ jobs:
 
       - uses: azure/setup-helm@v4
 
-      # No --create-namespace: the deploy account holds a namespaced Role and cannot
-      # create one. --timeout is generous because --rollback-on-failure only starts rolling
-      # back once the wait expires, and the wait covers the migration job as well as the
-      # rollouts.
+      # --timeout is generous because --rollback-on-failure only starts rolling back once
+      # the wait expires, and the wait covers the migration job as well as the rollouts.
       - name: Deploy
         run: |
           helm upgrade --install uitslagenportaal ./k8s-config \
