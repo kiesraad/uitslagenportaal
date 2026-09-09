@@ -12,6 +12,13 @@ data:
   # Enable persistent connections with a max. of 60 seconds
   DB_CONN_MAX_AGE: "60"
 
+  # Granian sizes its WSGI thread pool from the connection backlog rather than from the CPU
+  # the pod may use, which works out at 512 threads per worker. Every thread that serves a
+  # request holds its own persistent database connection, so keep the pool to what this
+  # pod's CPU share can actually serve.
+  GRANIAN_WORKERS: "{{ .Values.backend.workers }}"
+  GRANIAN_BLOCKING_THREADS: "{{ .Values.backend.blockingThreads }}"
+
   # Redis
   {{- if .Values.redis.tls }}
   # Set the REDIS_CA_CERT_FILE var when TLS is enabled, the file is mounted from the redis-creds secret.

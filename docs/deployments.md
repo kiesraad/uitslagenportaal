@@ -54,7 +54,7 @@ Several secrets are needed to configure the services in the Chart.
 Some secrets are automatically configured when deploying locally because they are based on the locally deployed services.
 In production, however, it's required to set these to the values to the managed services credentials.
 
-If no `uitlsagenportaal` namespace exists, create it: `kubectl create namespace uitslagenportaal`.
+If no `uitslagenportaal` namespace exists, create it: `kubectl create namespace uitslagenportaal`.
 
 > [!NOTE]
 > Replace `\` with `` ` `` when running commands in Powershell

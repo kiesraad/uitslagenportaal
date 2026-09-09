@@ -49,6 +49,10 @@ backend:
   importerSecret: "importer-creds"
   port: 8000
   replicas: 2
+  # See the GRANIAN_* keys in the ConfigMap for why these are pinned. Scaling happens
+  # through replicas, so a pod runs a single worker.
+  workers: 1
+  blockingThreads: 16
   resources:
     requests:
       cpu: 100m
