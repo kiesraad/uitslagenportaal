@@ -154,7 +154,8 @@ Stub `fetch` with `vi.stubGlobal`; wrap components in `QueryClientProvider` and
 **A migration must leave the old code working.** A deploy applies the migrations in a Job and
 only then rolls the pods one at a time, so between those two moments the previous release is
 serving traffic against the new schema. A failed rollout makes that permanent: the deploy runs
-`helm upgrade --atomic`, which puts the old image back but cannot undo a migration.
+`helm upgrade --rollback-on-failure`, which puts the old image back but cannot undo a
+migration.
 
 So anything destructive is split across two releases — expand, then contract. Removing
 `Candidate.last_name` looks like this.

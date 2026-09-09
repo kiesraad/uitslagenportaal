@@ -5,8 +5,6 @@ on:
     branches:
       - dev
       - main
-      # todo: remove tmp branch
-      - 124-deployment-cd-pipeline
     tags:
       - "*"
 
@@ -66,8 +64,7 @@ jobs:
   deploy:
     name: Deploy to scaleway-dev
     # Only dev feeds the cluster; main and tags publish images without deploying.
-    # todo: re-enable if
-    #if: github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/dev'
     needs: [frontend-docker-image, backend-docker-image]
     runs-on: ubuntu-latest
     # environment: scaleway-dev
@@ -121,8 +118,9 @@ jobs:
       - uses: azure/setup-helm@v4
 
       # No --create-namespace: the deploy account holds a namespaced Role and cannot
-      # create one. --timeout is generous because --atomic only starts rolling back once
-      # the wait expires, and the wait covers the migration job as well as the rollouts.
+      # create one. --timeout is generous because --rollback-on-failure only starts rolling
+      # back once the wait expires, and the wait covers the migration job as well as the
+      # rollouts.
       - name: Deploy
         run: |
           helm upgrade --install uitslagenportaal ./k8s-config \
@@ -131,4 +129,4 @@ jobs:
             --set-string backend.image="$BACKEND_IMAGE" \
             --set-string celery.image="$BACKEND_IMAGE" \
             --set-string frontend.image="$FRONTEND_IMAGE" \
-            --wait --atomic --timeout 15m
+            --wait --rollback-on-failure --timeout 15m

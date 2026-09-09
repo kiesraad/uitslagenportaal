@@ -102,14 +102,13 @@ jobs:
         working-directory: backend
 
   # Runs the base branch's tests against a database migrated by this branch — the state
-  # a rolling update passes through, and the one an --atomic rollback leaves behind.
-  # Label a PR skip-migration-compat when a deliberate two-step migration breaks it.
+  # a rolling update passes through, and the one a --rollback-on-failure rollback leaves
+  # behind. Label a PR skip-migration-compat when a deliberate two-step migration breaks it.
   migration-compat:
     runs-on: ubuntu-latest
-    # todo: re-enable if
-    #if: >-
-    #  github.event_name == 'pull_request'
-    #  && !contains(github.event.pull_request.labels.*.name, 'skip-migration-compat')
+    if: >-
+      github.event_name == 'pull_request'
+      && !contains(github.event.pull_request.labels.*.name, 'skip-migration-compat')
     services:
       postgres:
         image: postgres:16

@@ -152,9 +152,9 @@ release.
 
 The job pins the digests it just built rather than the `:dev` tag in `values.yaml`, so a
 release records the image it actually ran and `helm rollback` returns to that same image. It
-runs with `--atomic`, which rolls the manifests back if the rollout fails. Helm cannot undo
-migrations, which is why migrations have to stay backwards-compatible and why `backend-ci`
-checks that they are.
+runs with `--rollback-on-failure`, which rolls the manifests back if the rollout fails. Helm
+cannot undo migrations, which is why migrations have to stay backwards-compatible and why
+`backend-ci` checks that they are.
 
 It authenticates as the `uitslagenportaal-deploy` service account above, reading these from
 the `scaleway-dev` GitHub Environment:
