@@ -42,7 +42,7 @@ issuer:
   server: "production" # "staging" or "production"
 
 backend:
-  image: "ghcr.io/kiesraad/uitslagenportaal-backend:239-helm-chart-for-k8s-deploys"
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
   # Pull always because we publish new images to the same tag
   pullPolicy: "Always"
   appSecret: "uitslagenportaal-secrets"
@@ -70,7 +70,7 @@ frontend:
       memory: 64Mi
 
 celery:
-  image: "ghcr.io/kiesraad/uitslagenportaal-backend:239-helm-chart-for-k8s-deploys"
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
   pullPolicy: "Always"
   worker:
     replicas: 1
