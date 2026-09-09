@@ -166,15 +166,47 @@ class GithubEmlFileHandler(BaseFileHandler):
 
         return batch_head_sha, files
 
+    @staticmethod
+    def _is_eml_ingress_file(filename: str) -> bool:
+        extension = filename.rsplit(".", 1)[-1].lower()
+        return extension in ("xml", "zip")
+
+    def _log_eml_removals_without_additions(self, files: list[File]) -> None:
+        """
+        Log when a removed zip/xml is not superseded by a new upload in the same folder.
+
+        The overdrachtsplatform replaces an upload by deleting the old zip and adding a
+        corrected one in the same commit; only removals do not occur. This log is here
+        to log in case this does happen.
+        """
+        folders_with_adds = {
+            file.filename.rsplit("/", 1)[0]
+            for file in files
+            if file.status == "added" and self._is_eml_ingress_file(file.filename)
+        }
+        for file in files:
+            if file.status == "removed" and self._is_eml_ingress_file(file.filename):
+                folder = file.filename.rsplit("/", 1)[0]
+                if folder not in folders_with_adds:
+                    self.logger.error(
+                        "EML file removed without a replacement in the same commit; deletion was not processed: %s",
+                        file.filename,
+                    )
+
     def _iterate_all_xml_files(self, files: list[File]) -> Iterator[NamedBytesIO]:
         """
         Iterate all XML files, including the ones from zip files.
         :param files:
         :return:
         """
+        self._log_eml_removals_without_additions(files)
+
         for file in files:
-            # Possible file statuses: added, removed, modified, renamed, copied, changed, unchanged
-            if file.filename.split(".")[-1] not in ["xml", "zip"] or file.status in ["removed", "unchanged"]:
+            # Possible file statuses: added, removed, modified, renamed, copied, changed, unchanged.
+            # Removals are swaps (old zip deleted, corrected zip added in the
+            # same commit), not removals — safe to skip. Unpaired removals are
+            # logged as errors above.
+            if not self._is_eml_ingress_file(file.filename) or file.status in ["removed", "unchanged"]:
                 self.logger.info("Skipping %s (%s)", file.filename, file.status)
                 continue
 

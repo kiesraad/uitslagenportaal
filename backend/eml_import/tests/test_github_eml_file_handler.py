@@ -50,6 +50,10 @@ def warnings_of(caplog) -> list[str]:
     return [record.getMessage() for record in caplog.records if record.levelno == logging.WARNING]
 
 
+def errors_of(caplog) -> list[str]:
+    return [record.getMessage() for record in caplog.records if record.levelno == logging.ERROR]
+
+
 def messages_containing(caplog, text: str) -> list[str]:
     return [record.getMessage() for record in caplog.records if text in record.getMessage()]
 
@@ -158,6 +162,62 @@ def test_iterate_all_xml_files_skips_removed_and_unchanged(fake_repo, build_hand
 
     assert extracted == []
     assert repo.calls_named("get_git_blob") == []
+
+
+def test_iterate_all_xml_files_logs_error_when_removed_zip_has_no_replacement_in_same_folder(
+    fake_repo, build_handler, election_config, caplog
+):
+    repo = fake_repo(commits=[FakeCommit("head")], contents={})
+    removed = FakeFile(
+        "dob1/gemeente/gemeente_foo_gsb/old-upload.zip",
+        status="removed",
+    )
+
+    with caplog.at_level(logging.ERROR):
+        list(build_handler(election_config, repo)._iterate_all_xml_files([removed]))
+
+    assert len(errors_of(caplog)) == 1
+    assert "deletion was not processed" in errors_of(caplog)[0]
+    assert "old-upload.zip" in errors_of(caplog)[0]
+
+
+def test_iterate_all_xml_files_does_not_log_error_when_removed_zip_is_replaced_in_same_folder(
+    fake_repo, build_handler, election_config, caplog
+):
+    folder = "dob1/gemeente/gemeente_brummen_gsb"
+    repo = fake_repo(
+        commits=[FakeCommit("head")],
+        contents={f"{folder}/new-upload.zip": zip_bytes({"telling.xml": XML_510B})},
+    )
+    files = [
+        FakeFile(f"{folder}/old-upload.zip", status="removed"),
+        FakeFile(f"{folder}/new-upload.zip", status="added"),
+    ]
+
+    with caplog.at_level(logging.ERROR):
+        extracted = list(build_handler(election_config, repo)._iterate_all_xml_files(files))
+
+    assert errors_of(caplog) == []
+    assert as_pairs(extracted) == [("telling.xml", XML_510B)]
+
+
+def test_iterate_all_xml_files_logs_error_when_removed_zip_is_only_replaced_in_another_folder(
+    fake_repo, build_handler, election_config, caplog
+):
+    repo = fake_repo(
+        commits=[FakeCommit("head")],
+        contents={"dob1/gemeente/gemeente_other_gsb/new-upload.zip": zip_bytes({"telling.xml": XML_510B})},
+    )
+    files = [
+        FakeFile("dob1/gemeente/gemeente_foo_gsb/old-upload.zip", status="removed"),
+        FakeFile("dob1/gemeente/gemeente_other_gsb/new-upload.zip", status="added"),
+    ]
+
+    with caplog.at_level(logging.ERROR):
+        list(build_handler(election_config, repo)._iterate_all_xml_files(files))
+
+    assert len(errors_of(caplog)) == 1
+    assert "gemeente_foo_gsb/old-upload.zip" in errors_of(caplog)[0]
 
 
 def test_iterate_all_xml_files_unpacks_nested_zip(fake_repo, build_handler, election_config):
