@@ -1,40 +1,9 @@
 import { Suspense } from "react";
-import { createBrowserRouter, Outlet, type RouteObject, ScrollRestoration } from "react-router";
+import { createBrowserRouter, type LazyRouteFunction, Outlet, type RouteObject, ScrollRestoration } from "react-router";
 import { BaseLayout } from "@/components/BaseLayout.tsx";
 import ErrorBoundaryPage from "@/pages/ErrorBoundaryPage.tsx";
 import LoadingPage from "@/pages/LoadingPage.tsx";
 import { localeLoader } from "./i18n";
-import { CSBMunicipalityListPage, csbMunicipalityListLoader } from "./pages/CSBPage/CSBMunicipalityListPage.tsx";
-import { CSBPartyResultsPage, csbPartyResultsLoader } from "./pages/CSBPage/CSBPartyResultsPage.tsx";
-import { CSBResultsPage, csbResultsLoader } from "./pages/CSBPage/CSBResultsPage.tsx";
-import {
-   ElectionConfigCSBListPage,
-   electionConfigCSBListLoader,
-} from "./pages/ElectionConfigPage/ElectionConfigCSBListPage";
-import {
-   ElectionConfigHSBListPage,
-   electionConfigHSBListLoader,
-} from "./pages/ElectionConfigPage/ElectionConfigHSBListPage";
-import {
-   ElectionConfigMunicipalityListPage,
-   electionConfigMunicipalityListLoader,
-} from "./pages/ElectionConfigPage/ElectionConfigMunicipalityListPage";
-import { HomePage } from "./pages/HomePage";
-import { HSBMunicipalityListPage, hsbMunicipalityListLoader } from "./pages/HSBPage/HSBMunicipalityListPage.tsx";
-import { HSBPartyResultsPage, hsbPartyResultsLoader } from "./pages/HSBPage/HSBPartyResultsPage.tsx";
-import { HSBResultsPage, hsbResultsLoader } from "./pages/HSBPage/HSBResultsPage.tsx";
-import { MunicipalityPartyResultsPage } from "./pages/MunicipalityPage/MunicipalityPartyResultsPage";
-import {
-   MunicipalityPollingstationListPage,
-   municipalityPollingstationListLoader,
-} from "./pages/MunicipalityPage/MunicipalityPollingstationListPage";
-import { MunicipalityResultsPage, municipalityResultsLoader } from "./pages/MunicipalityPage/MunicipalityResultsPage";
-import { NotFoundPage } from "./pages/NotFoundPage";
-import PollingStationPartyResultsPage from "./pages/PollingStationPage/PollingStationPartyResultsPage.tsx";
-import PollingStationResultsPage, {
-   pollingStationLoader,
-} from "./pages/PollingStationPage/PollingStationResultsPage.tsx";
-import { ReportIssuePage, reportIssueLoader } from "./pages/ReportIssuePage";
 import { queryClient } from "./queryClient.ts";
 
 // The Suspense boundary catches the suspense queries the pages
@@ -53,6 +22,13 @@ function RootLayout() {
    );
 }
 
+function lazyPage<TModule>(
+   importer: () => Promise<TModule>,
+   select: (module: TModule) => Awaited<ReturnType<LazyRouteFunction<RouteObject>>>,
+): LazyRouteFunction<RouteObject> {
+   return async () => select(await importer());
+}
+
 // Routes are only nested where the parent path ends in a route parameter: that is where
 // a loader for that parameter belongs. Static segments (csb, gsb, resultaten) stay
 // inline in the child path rather than adding an empty level.
@@ -64,85 +40,229 @@ export const routes: RouteObject[] = [
       ErrorBoundary: ErrorBoundaryPage,
       HydrateFallback: LoadingPage,
       children: [
-         { index: true, Component: HomePage },
+         {
+            index: true,
+            id: "HomePage",
+            lazy: lazyPage(
+               () => import("./pages/HomePage"),
+               (m) => ({ Component: m.HomePage }),
+            ),
+         },
          {
             path: ":electionConfigSlug",
             children: [
-               { index: true, Component: NotFoundPage },
-               { path: "fout-melden", loader: reportIssueLoader(queryClient), Component: ReportIssuePage },
-               { path: "csb", loader: electionConfigCSBListLoader(queryClient), Component: ElectionConfigCSBListPage },
+               {
+                  index: true,
+                  id: "NotFoundPage",
+                  lazy: lazyPage(
+                     () => import("./pages/NotFoundPage"),
+                     (m) => ({ Component: m.NotFoundPage }),
+                  ),
+               },
+               {
+                  path: "fout-melden",
+                  id: "ReportIssuePage",
+                  lazy: lazyPage(
+                     () => import("./pages/ReportIssuePage"),
+                     (m) => ({
+                        Component: m.ReportIssuePage,
+                        loader: m.reportIssueLoader(queryClient),
+                     }),
+                  ),
+               },
+               {
+                  path: "csb",
+                  id: "ElectionConfigCSBListPage",
+                  lazy: lazyPage(
+                     () => import("./pages/ElectionConfigPage/ElectionConfigCSBListPage"),
+                     (m) => ({
+                        Component: m.ElectionConfigCSBListPage,
+                        loader: m.electionConfigCSBListLoader(queryClient),
+                     }),
+                  ),
+               },
                {
                   path: "csb/:regionSlug",
                   children: [
                      {
                         index: true,
-                        loader: csbMunicipalityListLoader(queryClient),
-                        Component: CSBMunicipalityListPage,
+                        id: "CSBMunicipalityListPage",
+                        lazy: lazyPage(
+                           () => import("./pages/CSBPage/CSBMunicipalityListPage.tsx"),
+                           (m) => ({
+                              Component: m.CSBMunicipalityListPage,
+                              loader: m.csbMunicipalityListLoader(queryClient),
+                           }),
+                        ),
                      },
-                     { path: "resultaten", loader: csbResultsLoader(queryClient), Component: CSBResultsPage },
+                     {
+                        path: "resultaten",
+                        id: "CSBResultsPage",
+                        lazy: lazyPage(
+                           () => import("./pages/CSBPage/CSBResultsPage.tsx"),
+                           (m) => ({
+                              Component: m.CSBResultsPage,
+                              loader: m.csbResultsLoader(queryClient),
+                           }),
+                        ),
+                     },
                      {
                         path: "resultaten/:partySlug",
-                        loader: csbPartyResultsLoader(queryClient),
-                        Component: CSBPartyResultsPage,
+                        id: "CSBPartyResultsPage",
+                        lazy: lazyPage(
+                           () => import("./pages/CSBPage/CSBPartyResultsPage.tsx"),
+                           (m) => ({
+                              Component: m.CSBPartyResultsPage,
+                              loader: m.csbPartyResultsLoader(queryClient),
+                           }),
+                        ),
                      },
                   ],
                },
-               { path: "hsb", loader: electionConfigHSBListLoader(queryClient), Component: ElectionConfigHSBListPage },
+               {
+                  path: "hsb",
+                  id: "ElectionConfigHSBListPage",
+                  lazy: lazyPage(
+                     () => import("./pages/ElectionConfigPage/ElectionConfigHSBListPage"),
+                     (m) => ({
+                        Component: m.ElectionConfigHSBListPage,
+                        loader: m.electionConfigHSBListLoader(queryClient),
+                     }),
+                  ),
+               },
                {
                   path: "hsb/:regionSlug",
                   children: [
                      {
                         index: true,
-                        loader: hsbMunicipalityListLoader(queryClient),
-                        Component: HSBMunicipalityListPage,
+                        id: "HSBMunicipalityListPage",
+                        lazy: lazyPage(
+                           () => import("./pages/HSBPage/HSBMunicipalityListPage.tsx"),
+                           (m) => ({
+                              Component: m.HSBMunicipalityListPage,
+                              loader: m.hsbMunicipalityListLoader(queryClient),
+                           }),
+                        ),
                      },
-                     { path: "resultaten", loader: hsbResultsLoader(queryClient), Component: HSBResultsPage },
+                     {
+                        path: "resultaten",
+                        id: "HSBResultsPage",
+                        lazy: lazyPage(
+                           () => import("./pages/HSBPage/HSBResultsPage.tsx"),
+                           (m) => ({
+                              Component: m.HSBResultsPage,
+                              loader: m.hsbResultsLoader(queryClient),
+                           }),
+                        ),
+                     },
                      {
                         path: "resultaten/:partySlug",
-                        loader: hsbPartyResultsLoader(queryClient),
-                        Component: HSBPartyResultsPage,
+                        id: "HSBPartyResultsPage",
+                        lazy: lazyPage(
+                           () => import("./pages/HSBPage/HSBPartyResultsPage.tsx"),
+                           (m) => ({
+                              Component: m.HSBPartyResultsPage,
+                              loader: m.hsbPartyResultsLoader(queryClient),
+                           }),
+                        ),
                      },
                   ],
                },
                {
                   path: "gsb",
-                  loader: electionConfigMunicipalityListLoader(queryClient),
-                  Component: ElectionConfigMunicipalityListPage,
+                  id: "ElectionConfigMunicipalityListPage",
+                  lazy: lazyPage(
+                     () => import("./pages/ElectionConfigPage/ElectionConfigMunicipalityListPage"),
+                     (m) => ({
+                        Component: m.ElectionConfigMunicipalityListPage,
+                        loader: m.electionConfigMunicipalityListLoader(queryClient),
+                     }),
+                  ),
                },
                {
                   path: "gsb/:regionSlug/csb/:csbSlug",
                   children: [
                      {
                         index: true,
-                        loader: municipalityPollingstationListLoader(queryClient),
-                        Component: MunicipalityPollingstationListPage,
+                        id: "MunicipalityPollingstationListPage",
+                        lazy: lazyPage(
+                           () => import("./pages/MunicipalityPage/MunicipalityPollingstationListPage"),
+                           (m) => ({
+                              Component: m.MunicipalityPollingstationListPage,
+                              loader: m.municipalityPollingstationListLoader(queryClient),
+                           }),
+                        ),
                      },
                      {
                         path: "resultaten",
-                        loader: municipalityResultsLoader(queryClient),
-                        Component: MunicipalityResultsPage,
+                        id: "MunicipalityResultsPage",
+                        lazy: lazyPage(
+                           () => import("./pages/MunicipalityPage/MunicipalityResultsPage"),
+                           (m) => ({
+                              Component: m.MunicipalityResultsPage,
+                              loader: m.municipalityResultsLoader(queryClient),
+                           }),
+                        ),
                      },
                      {
                         path: "resultaten/:partySlug",
-                        loader: municipalityResultsLoader(queryClient),
-                        Component: MunicipalityPartyResultsPage,
+                        id: "MunicipalityPartyResultsPage",
+                        lazy: async () => {
+                           const [page, results] = await Promise.all([
+                              import("./pages/MunicipalityPage/MunicipalityPartyResultsPage"),
+                              import("./pages/MunicipalityPage/MunicipalityResultsPage"),
+                           ]);
+                           return {
+                              Component: page.MunicipalityPartyResultsPage,
+                              loader: results.municipalityResultsLoader(queryClient),
+                           };
+                        },
                      },
                      {
                         path: ":pollingStationSlug",
-                        loader: pollingStationLoader(queryClient),
-                        Component: PollingStationResultsPage,
+                        id: "PollingStationResultsPage",
+                        lazy: lazyPage(
+                           () => import("./pages/PollingStationPage/PollingStationResultsPage.tsx"),
+                           (m) => ({
+                              Component: m.default,
+                              loader: m.pollingStationLoader(queryClient),
+                           }),
+                        ),
                      },
                      {
                         path: ":pollingStationSlug/:partySlug",
-                        loader: pollingStationLoader(queryClient),
-                        Component: PollingStationPartyResultsPage,
+                        id: "PollingStationPartyResultsPage",
+                        lazy: async () => {
+                           const [page, results] = await Promise.all([
+                              import("./pages/PollingStationPage/PollingStationPartyResultsPage.tsx"),
+                              import("./pages/PollingStationPage/PollingStationResultsPage.tsx"),
+                           ]);
+                           return {
+                              Component: page.default,
+                              loader: results.pollingStationLoader(queryClient),
+                           };
+                        },
                      },
                   ],
                },
-               { path: "*", Component: NotFoundPage },
+               {
+                  path: "*",
+                  id: "NotFoundPageNested",
+                  lazy: lazyPage(
+                     () => import("./pages/NotFoundPage"),
+                     (m) => ({ Component: m.NotFoundPage }),
+                  ),
+               },
             ],
          },
-         { path: "*", Component: NotFoundPage },
+         {
+            path: "*",
+            id: "NotFoundPageRoot",
+            lazy: lazyPage(
+               () => import("./pages/NotFoundPage"),
+               (m) => ({ Component: m.NotFoundPage }),
+            ),
+         },
       ],
    },
 ];
