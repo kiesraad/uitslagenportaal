@@ -107,6 +107,10 @@ msgstr "Brondocumenten"
 msgid "Databank verkiezinguitslag"
 msgstr "Databank verkiezinguitslag"
 
+#: src/components/ListPage/RegionListNotAvailable.tsx
+msgid "De {regionPlural} zijn nog niet beschikbaar"
+msgstr "De {regionPlural} zijn nog niet beschikbaar"
+
 #: src/utils/region.ts
 msgid "de gemeente"
 msgstr "de gemeente"
@@ -118,6 +122,10 @@ msgstr "De gemeente typt de telgegevens van alle stembureaus over in de uitslage
 #: src/utils/region.ts
 msgid "de kieskring"
 msgstr "de kieskring"
+
+#: src/components/ListPage/RegionListNotAvailable.tsx
+msgid "De lijst verschijnt hier zodra de resultaten worden gepubliceerd."
+msgstr "De lijst verschijnt hier zodra de resultaten worden gepubliceerd."
 
 #: src/pages/ReportIssuePage.tsx
 msgid "De melding moet duidelijk en onderbouwd zijn: geef aan wat er precies fout is gegaan, in welke gemeente of bij welk stembureau, en waar de fout in zit."

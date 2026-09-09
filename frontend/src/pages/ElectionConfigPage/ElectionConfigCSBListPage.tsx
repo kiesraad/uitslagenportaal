@@ -75,7 +75,12 @@ export function ElectionConfigCSBListPage() {
                />
             }
          />
-         <RegionList electionConfig={electionConfig} regions={regions} regionCategory={electionConfig.csb_type} />
+         <RegionList
+            electionConfig={electionConfig}
+            regions={regions}
+            regionCategory={electionConfig.csb_type}
+            emptyPlaceholder
+         />
       </LayoutMain>
    );
 }

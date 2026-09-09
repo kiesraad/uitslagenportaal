@@ -77,7 +77,7 @@ export function ElectionConfigMunicipalityListPage() {
                />
             }
          />
-         <RegionList electionConfig={electionConfig} regions={regions} regionCategory="GEMEENTE" />
+         <RegionList electionConfig={electionConfig} regions={regions} regionCategory="GEMEENTE" emptyPlaceholder />
       </LayoutMain>
    );
 }

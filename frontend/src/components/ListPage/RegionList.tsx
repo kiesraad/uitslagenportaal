@@ -11,6 +11,7 @@ import { appRoutes } from "../../utils/routes";
 import { lowercaseFirst } from "../../utils/text";
 import type { SearchListOption } from "../SearchBar";
 import SearchBar from "../SearchBar";
+import { RegionListNotAvailable } from "./RegionListNotAvailable";
 
 function compareByStationNumber(a: SearchListOption, b: SearchListOption): number {
    return (a.stationNumber ?? 0) - (b.stationNumber ?? 0);
@@ -23,6 +24,7 @@ type Props = {
    parentRegionSlug?: string;
    parentCsbSlug?: string;
    regionTitle?: string;
+   emptyPlaceholder?: boolean;
 };
 
 export function RegionList({
@@ -32,6 +34,7 @@ export function RegionList({
    parentRegionSlug,
    parentCsbSlug,
    regionTitle,
+   emptyPlaceholder = false,
 }: Props) {
    const navigate = useNavigate();
    const { t } = useLingui();
@@ -111,6 +114,14 @@ export function RegionList({
 
       return Object.entries(grouped).sort(([a], [b]) => collator.compare(a, b));
    }, [regionOptions, collator]);
+
+   if (emptyPlaceholder && regionOptions.length === 0) {
+      return (
+         <div className="page-main">
+            <RegionListNotAvailable regionCategory={regionCategory} />
+         </div>
+      );
+   }
 
    return (
       <div className="page-main">

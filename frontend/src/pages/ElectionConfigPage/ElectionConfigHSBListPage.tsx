@@ -82,7 +82,7 @@ export function ElectionConfigHSBListPage() {
                />
             }
          />
-         <RegionList electionConfig={electionConfig} regions={regions} regionCategory="KIESKRING" />
+         <RegionList electionConfig={electionConfig} regions={regions} regionCategory="KIESKRING" emptyPlaceholder />
       </LayoutMain>
    );
 }
