@@ -38,9 +38,7 @@ describe("RegionList", () => {
       renderRegionList({ emptyPlaceholder: true });
 
       expect(screen.getByRole("heading", { name: "De gemeenten zijn nog niet beschikbaar" })).toBeInTheDocument();
-      expect(
-         screen.getByText("De lijst verschijnt hier zodra de resultaten worden gepubliceerd."),
-      ).toBeInTheDocument();
+      expect(screen.getByText("De lijst verschijnt hier zodra de resultaten worden gepubliceerd.")).toBeInTheDocument();
       expect(screen.queryByLabelText("Zoek gemeente")).not.toBeInTheDocument();
       expect(screen.queryByRole("heading", { name: "Vind een gemeente van A tot Z" })).not.toBeInTheDocument();
    });
