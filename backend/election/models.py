@@ -66,7 +66,7 @@ class ElectionConfig(BaseModel):
 
     @property
     def csb_type(self):
-        return self.elections.first().regions.first().region_category
+        return ElectionCategory(self.category).config.csb
 
     @property
     def has_hsb(self) -> bool:
