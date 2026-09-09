@@ -8,29 +8,27 @@ app:
 db:
   # verify-full would fail: the RDB cert CN is an IP, not the private endpoint.
   sslmode: "verify-ca"
-  # Created outside the chart: DB_HOST, DB_PORT, DB_USER, DB_PASSWORD and, for
-  # the verify-* sslmodes, the CA of the managed database under DB_CA_CERT.
+  # Created outside the chart: see the Secrets section in ./docs/deployments.md.
   credSecret: "db-creds"
 
 redis:
-  # Created outside the chart: REDIS_HOST, REDIS_PORT, REDIS_USER, REDIS_PASSWORD and,
-  # with tls on, the CA of the managed cache under REDIS_CA_CERT.
+  # Created outside the chart: see the Secrets section in ./docs/deployments.md.
   credSecret: "redis-creds"
   # The managed cache only accepts TLS, unlike the in-cluster stand-in.
   tls: true
 
 objectStorage:
+  # Created outside the chart: see the Secrets section in ./docs/deployments.md.
   credSecret: "s3-creds"
 
 gateway:
   enabled: true
-  # Created by the Traefik release; see infra setup in README.md.
+  # Created by the Traefik release; see infra setup in ./docs/deployments.md.
   className: "traefik"
 
 basicAuth:
   enabled: true
-  # Created outside the chart: a `users` key holding htpasswd lines.
-  # See the Secrets section in README.md.
+  # Created outside the chart: see the Secrets section in ./docs/deployments.md.
   credSecret: "basic-auth-creds"
   realm: "Uitslagenportaal"
 

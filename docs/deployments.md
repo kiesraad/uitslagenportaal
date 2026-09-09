@@ -1,6 +1,25 @@
 ## Deploy configuration
 
-Commands have to be run from ./k8s-config/.
+This file gives an overview on how to deploy the application to a Kubernetes (k8s) cluster, either locally or a managed one.
+
+The directory ./k8s-config/ contains all the configuration necessary, including a Helm chart and values files for the one-time infa setup.
+
+Commands in this file have to be run from ./k8s-config/.
+
+### Helm chart
+
+The Helm chart is divided into several yaml files, see ./k8s-config/templates.
+
+- `00-config.yaml`: The `ConfigMap` with generic configuration values.
+- `01-gateway.yaml`: The Gateway config incl. which ports to use and de cert-manager `Issuer` configuration.
+- `02-httproute.yaml`: The route definition for `/api` and `/`, including a redirect from http -> https and the traefik middleware config.
+- `03-frontend.yaml`: Frontend deployment and service.
+- `04-backend.yaml`: Backend deployment and service, incl. an init job which runs the migrations.
+- `05-celery.yaml`: Celery and Celery beat deployments.
+- `06-services.yaml`: Several `StatefulSet`s for PostgreSQL/Redis/Object storage services (local deployments only).
+
+There are two values-files: `values.yaml` and `values-local.yaml`. 
+The first defines all chart values for a general deployment, and `values-local.yaml` overrides certain values for local deploys. 
 
 ### One-time infra setup
 
@@ -117,7 +136,7 @@ Gateway, and that route carries no auth filter.
 
 The Helm chart contains the application-specific configuration.
 
-#### Cluster depoly
+#### Managed cluster deploy
 
 On a managed Kubernetes cluster at a hosting provider.
 

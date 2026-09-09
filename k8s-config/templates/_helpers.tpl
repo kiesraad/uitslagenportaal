@@ -7,6 +7,8 @@
 - secretRef:
     name: {{ .Values.redis.credSecret }}
 - secretRef:
+    name: {{ .Values.objectStorage.credSecret }}
+- secretRef:
     name: {{ .Values.backend.appSecret }}
 - secretRef:
     name: {{ .Values.backend.importerSecret }}
