@@ -66,7 +66,8 @@ jobs:
   deploy:
     name: Deploy to scaleway-dev
     # Only dev feeds the cluster; main and tags publish images without deploying.
-    if: github.ref == 'refs/heads/dev'
+    # todo: re-enable if
+    #if: github.ref == 'refs/heads/dev'
     needs: [frontend-docker-image, backend-docker-image]
     runs-on: ubuntu-latest
     # environment: scaleway-dev

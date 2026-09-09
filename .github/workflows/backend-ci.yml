@@ -106,9 +106,10 @@ jobs:
   # Label a PR skip-migration-compat when a deliberate two-step migration breaks it.
   migration-compat:
     runs-on: ubuntu-latest
-    if: >-
-      github.event_name == 'pull_request'
-      && !contains(github.event.pull_request.labels.*.name, 'skip-migration-compat')
+    # todo: re-enable if
+    #if: >-
+    #  github.event_name == 'pull_request'
+    #  && !contains(github.event.pull_request.labels.*.name, 'skip-migration-compat')
     services:
       postgres:
         image: postgres:16
