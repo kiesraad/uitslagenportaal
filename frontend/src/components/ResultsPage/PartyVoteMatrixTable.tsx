@@ -19,7 +19,7 @@ export default function PartyVoteMatrixTable({ matrix }: Props) {
    }
 
    return (
-      <div className="mt-4">
+      <div className="mt-4 max-w-full overflow-x-auto">
          <table className="border-separate border-spacing-0 whitespace-nowrap [&_td]:p-4 [&_th]:p-4">
             <thead>
                <tr className="font-bold bg-white text-left align-middle">
