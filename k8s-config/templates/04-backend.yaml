@@ -38,6 +38,8 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}-backend
+      annotations:
+        revision: "{{ .Release.Revision }}"
     spec:
       initContainers:
         {{- include "uitslagenportaal.waitForMigrations" . | nindent 8 }}

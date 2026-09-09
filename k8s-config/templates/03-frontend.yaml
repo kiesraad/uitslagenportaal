@@ -12,6 +12,8 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}-frontend
+      annotations:
+        revision: "{{ .Release.Revision }}"
     spec:
       containers:
         - name: frontend

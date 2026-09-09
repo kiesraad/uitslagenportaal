@@ -12,6 +12,8 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}-celery-worker
+      annotations:
+        revision: "{{ .Release.Revision }}"
     spec:
       # An EML import fans out over a process pool and can run for minutes;
       # cut it short and the election is left half-imported.
@@ -65,6 +67,8 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}-celery-beat
+      annotations:
+        revision: "{{ .Release.Revision }}"
     spec:
       initContainers:
         # Beat starts enqueuing on its own schedule the moment it comes up.
