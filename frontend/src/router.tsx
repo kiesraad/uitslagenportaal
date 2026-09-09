@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { createBrowserRouter, Outlet, type LazyRouteFunction, type RouteObject, ScrollRestoration } from "react-router";
+import { createBrowserRouter, type LazyRouteFunction, Outlet, type RouteObject, ScrollRestoration } from "react-router";
 import { BaseLayout } from "@/components/BaseLayout.tsx";
 import ErrorBoundaryPage from "@/pages/ErrorBoundaryPage.tsx";
 import LoadingPage from "@/pages/LoadingPage.tsx";
