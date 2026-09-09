@@ -78,10 +78,13 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
 
       - name: Remove old images
-        uses: actions/delete-package-versions@v5
+        # GHCR lists the children of an attestation index as untagged versions;
+        # this action resolves each tag's manifest and spares them. A clean-up that
+        # reads only the version list deletes them out from under a live tag.
+        uses: dataaxiom/ghcr-cleanup-action@v1
         with:
-          package-type: container
           # Package name does not work with registry/owner prefix.
-          package-name: ${{ inputs.image-name }}
-          min-versions-to-keep: 5
-          delete-only-untagged-versions: true
+          packages: ${{ inputs.image-name }}
+          delete-untagged: true
+          # Fail the run if a retained index has a child missing from the registry.
+          validate: true

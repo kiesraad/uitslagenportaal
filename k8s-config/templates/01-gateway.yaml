@@ -1,0 +1,82 @@
+{{- if .Values.gateway.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  gatewayClassName: {{ .Values.gateway.className }}
+  listeners:
+    # Ports are Traefik's entrypoints inside the pod, not the ports the load
+    # balancer publishes (80/443); a listener on 80 would match no entrypoint.
+    - name: web
+      protocol: HTTP
+      port: 8000
+      hostname: {{ .Values.app.hostname | quote }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: websecure
+      protocol: HTTPS
+      port: 8443
+      hostname: {{ .Values.app.hostname | quote }}
+      tls:
+        mode: Terminate
+        # A listener resolves certificateRefs in its own namespace only, which
+        # is why the Gateway lives with the application rather than Traefik.
+        certificateRefs:
+          - name: {{ .Release.Name }}-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+{{- if .Values.issuer.enabled }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Release.Name }}-tls
+  namespace: {{ .Values.namespace }}
+spec:
+  secretName: {{ .Release.Name }}-tls
+  dnsNames:
+    - {{ .Values.app.hostname | quote }}
+  issuerRef:
+    name: {{ .Release.Name }}-issuer
+    kind: Issuer
+---
+# Namespaced rather than a ClusterIssuer: the ACME solver names one specific
+# Gateway, so the issuer is per-environment anyway, and Helm cannot give two
+# releases their own copy of a cluster-scoped object.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ .Release.Name }}-issuer
+  namespace: {{ .Values.namespace }}
+spec:
+{{- if eq .Values.issuer.type "selfsigned" }}
+  # Issued without contacting anything, for clusters Let's Encrypt cannot reach.
+  # The certificate is untrusted, but the Gateway is wired up exactly as it is
+  # in production rather than through a second, untested code path.
+  selfSigned: {}
+{{- else }}
+  acme:
+    email: {{ .Values.issuer.email | quote }}
+    {{- if eq .Values.issuer.server "production"}}
+    server: https://acme-v02.api.letsencrypt.org/directory
+    {{- else }}
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    {{- end }}
+    privateKeySecretRef:
+      name: {{ .Release.Name }}-acme-account
+    solvers:
+      # Traefik serves no Ingress objects, so the challenge is solved over an
+      # HTTPRoute that cert-manager attaches to the Gateway.
+      - http01:
+          gatewayHTTPRoute:
+            parentRefs:
+              - name: {{ .Release.Name }}
+                namespace: {{ .Values.namespace }}
+                kind: Gateway
+{{- end }}
+{{- end }}
+{{- end }}

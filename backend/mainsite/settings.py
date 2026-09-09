@@ -1,5 +1,7 @@
 import os
+import ssl
 from pathlib import Path
+from urllib.parse import quote
 
 from dotenv import load_dotenv
 
@@ -71,27 +73,75 @@ DATABASES = {
         "PASSWORD": os.environ["DB_PASSWORD"],
         "HOST": os.environ["DB_HOST"],
         "PORT": os.environ.get("DB_PORT", "5432"),
+        # Set CONN_MAX_AGE for persistent connections and check the health of the persistent connection before using it.
+        "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "0")),
+        "CONN_HEALTH_CHECKS": True,
+        # TLS towards the database. psycopg2 drops the options that are None, so an unset
+        # variable falls through to the libpq default: sslmode=prefer, which encrypts when
+        # the server offers it but verifies nothing. The verify-* modes need sslrootcert
+        # to point at the CA of the database.
+        "OPTIONS": {
+            "sslmode": os.environ.get("DB_SSL_MODE"),
+            "sslrootcert": os.environ.get("DB_ROOT_CERT"),
+        },
     }
 }
 
 # Redis config
+# REDIS_CA_CERT_FILE points at the Redis server's CA on disk, and its presence is what
+# moves every connection over to rediss://.
+REDIS_CA_CERT_FILE = os.environ.get("REDIS_CA_CERT_FILE")
+REDIS_PROTOCOL = os.environ.get("REDIS_PROTOCOL", "rediss" if REDIS_CA_CERT_FILE else "redis")
 REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
 REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
 REDIS_USER = os.environ.get("REDIS_USER", "")
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "")
-REDIS_URL = f"redis://{REDIS_USER}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
+# Quote the Redis user and password to prevent issues with special characters. redis-py and kombu both
+# unquote what they parse, so escaping here is what they expect.
+REDIS_URL = (
+    f"{REDIS_PROTOCOL}://{quote(REDIS_USER, safe='')}:{quote(REDIS_PASSWORD, safe='')}@{REDIS_HOST}:{REDIS_PORT}"
+)
+
+# redis-py needs the CA per connection, and neither Celery nor the cache reads the other's
+# configuration: broker, result backend and cache each take their own copy.
+REDIS_SSL_OPTIONS = (
+    {
+        "ssl_cert_reqs": ssl.CERT_REQUIRED,
+        "ssl_ca_certs": REDIS_CA_CERT_FILE,
+        # IP-based connection, so don't verify hostnames (as with the database's verify-ca).
+        "ssl_check_hostname": False,
+    }
+    if REDIS_CA_CERT_FILE
+    else {}
+)
 
 # Celery config - use a different broker and result backend Redis DB
 CELERY_BROKER_URL = REDIS_URL + "/1"
 CELERY_RESULT_BACKEND = REDIS_URL + "/2"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 0.5h
+if REDIS_SSL_OPTIONS:
+    CELERY_BROKER_USE_SSL = REDIS_SSL_OPTIONS
+    CELERY_REDIS_BACKEND_USE_SSL = REDIS_SSL_OPTIONS
+
+# Prefork sizes its pool from the host's CPU count, which bears no relation to what the
+# worker is allowed to use, and a child never hands an EML batch's peak memory back to the
+# OS. So bound the fan-out and retire a child every few tasks. Both are read between tasks,
+# so neither can cut a running import short.
+CELERY_WORKER_CONCURRENCY = int(os.environ.get("CELERY_WORKER_CONCURRENCY", "2"))
+CELERY_WORKER_MAX_TASKS_PER_CHILD = int(os.environ.get("CELERY_WORKER_MAX_TASKS_PER_CHILD", "5"))
+# An import runs for minutes, so reserving more than one message per child only leaves work
+# queued behind a busy one.
+CELERY_WORKER_PREFETCH_MULTIPLIER = int(os.environ.get("CELERY_WORKER_PREFETCH_MULTIPLIER", "1"))
 
 # Cache config
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": REDIS_URL + "/0",
+        "OPTIONS": {
+            "CONNECTION_POOL_KWARGS": REDIS_SSL_OPTIONS,
+        },
     }
 }
 

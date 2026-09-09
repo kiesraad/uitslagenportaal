@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  namespace: {{ .Values.namespace }}
+data:
+  # DB
+  # Host/port/user/password/name come from the db-creds secret.
+  DB_SSL_MODE: "{{ .Values.db.sslmode }}"
+  # Pointing at a file that is not there is fine: only the verify-* sslmodes demand one.
+  DB_ROOT_CERT: "/etc/ssl/rdb/ca.pem"
+  # Enable persistent connections with a max. of 60 seconds
+  DB_CONN_MAX_AGE: "60"
+
+  # Granian sizes its WSGI thread pool from the connection backlog rather than from the CPU
+  # the pod may use, which works out at 512 threads per worker. Every thread that serves a
+  # request holds its own persistent database connection, so keep the pool to what this
+  # pod's CPU share can actually serve.
+  GRANIAN_WORKERS: "{{ .Values.backend.workers }}"
+  GRANIAN_BLOCKING_THREADS: "{{ .Values.backend.blockingThreads }}"
+
+  # Redis
+  {{- if .Values.redis.tls }}
+  # Set the REDIS_CA_CERT_FILE var when TLS is enabled, the file is mounted from the redis-creds secret.
+  REDIS_CA_CERT_FILE: "/etc/ssl/redis/ca.pem"
+  {{- end }}
+
+  # Set Celery concurrency and trigger a worker recycle after MAX_TASKS_PER_CHILD
+  # to prevent memory leaks from persisting between tasks.
+  CELERY_WORKER_CONCURRENCY: "{{ .Values.celery.worker.concurrency }}"
+  CELERY_WORKER_MAX_TASKS_PER_CHILD: "{{ .Values.celery.worker.maxTasksPerChild }}"
+  CELERY_WORKER_PREFETCH_MULTIPLIER: "{{ .Values.celery.worker.prefetchMultiplier }}"
+
+  # Both default to True upstream. Unsafe when internet-facing.
+  DEBUG: "{{ .Values.debug }}"
+  SITE_ROOT: "https://{{ .Values.app.hostname }}"
+  SITE_NAME: "{{ .Values.app.site_name }}"
+  ALLOWED_HOSTS: "{{ .Values.app.hostname }}"
+  # Behind a TLS-terminating proxy.
+  SECURE_PROXY_SSL_HEADER: "HTTP_X_FORWARDED_PROTO,https"

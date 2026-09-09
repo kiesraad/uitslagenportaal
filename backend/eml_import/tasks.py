@@ -2,6 +2,7 @@ from celery import Celery
 from celery.exceptions import BackendError
 from celery.schedules import crontab
 from django.db import DatabaseError
+from redis.exceptions import ConnectionError as RedisConnectionError
 from requests import RequestException
 
 from election.models import ElectionConfig
@@ -36,7 +37,7 @@ def import_next_eml_commits() -> None:
 
 @app.task(
     ignore_result=True,
-    autoretry_for=[DatabaseError, RequestException],
+    autoretry_for=[DatabaseError, RequestException, RedisConnectionError],
     retry_backoff=5,
     max_retries=2,
 )
