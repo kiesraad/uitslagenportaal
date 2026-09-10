@@ -166,11 +166,10 @@ A push to `dev` deploys itself. Once the backend, frontend, Playwright and Helm 
 all passed and both images are published, the `deploy` job in `branch-ci-cd.yml` upgrades the
 release.
 
-The job pins the digests it just built rather than the `:dev` tag in `values-dev.yaml`, so a
-release records the image it actually ran and `helm rollback` returns to that same image. It
-runs with `--rollback-on-failure`, which rolls the manifests back if the rollout fails. Helm
-cannot undo migrations, which is why migrations have to stay backwards-compatible and why
-`backend-ci` checks that they are.
+The job pins the digests it just built rather than the `:dev` tag in `values-dev.yaml`, so a release records the image
+sha it actually ran and `helm rollback` returns to that same image. It
+runs with `--rollback-on-failure`, which rolls the manifests back if the rollout fails. Helm cannot undo migrations,
+which is why migrations preferably stay backwards-compatible.
 
 It authenticates as the `uitslagenportaal-deploy` service account above, reading these from
 the `scaleway-dev` GitHub Environment:
