@@ -7,10 +7,6 @@ on:
     # threshold leaves three of these before the token actually expires.
     - cron: "17 7 1 * *"
   workflow_dispatch:
-  # todo: remove pull_request trigger after testing this workflow
-  pull_request:
-    paths:
-      - ".github/workflows/deploy-token-check.yml"
 
 permissions:
   contents: read
@@ -66,8 +62,7 @@ jobs:
       # workflow puts the issue on the board; the labels keep a later run from opening
       # a second one and let the board be filtered per environment.
       - name: Open or update tracking issue
-        # todo: restore threshold to 90 after testing issue creation
-        if: fromJSON(env.DAYS_LEFT) < 365
+        if: fromJSON(env.DAYS_LEFT) < 90
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -109,6 +104,4 @@ jobs:
           kubectl -n $NAMESPACE create token uitslagenportaal-deploy --duration=8760h \\
             | gh secret set K8S_DEPLOY_TOKEN --repo $GH_REPO --env $ENVIRONMENT
           \`\`\`
-
-          See [docs/deployments.md](docs/deployments.md) for the service account behind it.
           MD
