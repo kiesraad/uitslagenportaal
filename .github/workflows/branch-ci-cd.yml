@@ -5,7 +5,6 @@ on:
     branches:
       - dev
       - main
-      - 124-deployment-cd-pipeline
     tags:
       - "*"
 
@@ -61,8 +60,7 @@ jobs:
   deploy-dev:
     name: Deploy to scaleway-dev
     # Only dev feeds the cluster; main and tags publish images without deploying.
-    # todo: uncomment if after testing
-    #if: github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/dev'
     needs: [frontend-docker-image, backend-docker-image]
     runs-on: ubuntu-latest
     environment: scaleway-dev
