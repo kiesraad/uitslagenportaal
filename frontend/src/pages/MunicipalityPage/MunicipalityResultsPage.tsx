@@ -9,7 +9,7 @@ import MunicipalityPageLayout from "./MunicipalityPageLayout.tsx";
 export function municipalityResultsLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params);
+      const regionQueryOptions = regionQuery(params, "gsb");
 
       await Promise.all([
          queryClient.ensureQueryData(electionConfigQueryOptions),

@@ -24,11 +24,6 @@ def _resolve_party(party_slug: str, election_slug: str, cutoff) -> Party:
         raise NotFound({"party": "Party not found for this election."})
 
 
-def _preferred_eml_type(region: Region, preferred: str) -> str:
-    has_own_results = VoteCount.objects.filter(region=region, eml_type=preferred).exists()
-    return preferred if has_own_results else EmlType.EML_510d
-
-
 def _build_matrix_response(
     *,
     party: Party,
@@ -167,7 +162,7 @@ class HSBPartyResultMatrixView(APIView):
             region=kieskring,
             children=gemeentes,
             region_key="hsb",
-            eml_type=_preferred_eml_type(kieskring, EmlType.EML_510c),
+            eml_type=EmlType.EML_510c,
             contest_id=contest.id if contest else None,
         )
 

@@ -2,9 +2,9 @@
 After importing the Scheldestromen WS fixtures, assert that each API surface
 returns the EML type that belongs at that reporting level:
 
-- Waterschap / CSB region detail → 510d (totaaltelling)
-- Gemeente region detail → 510b only (both types are stored)
-- Stembureau region detail → 510b
+- Waterschap asked as CSB → 510d
+- Gemeente asked as GSB → 510b only (both types are stored)
+- Stembureau asked as GSB → 510b
 - Party result matrix → 510d GSB + CSB counts
 """
 
@@ -65,8 +65,8 @@ def ws_election(ab2023_config, ws_import_folder):
     return Election.objects.get(election_config=ab2023_config)
 
 
-def _region_detail(election_config_slug: str, region_slug: str, **extra):
-    params = {"election_config": election_config_slug, "region": region_slug, **extra}
+def _region_detail(election_config_slug: str, region_slug: str, level: str, **extra):
+    params = {"election_config": election_config_slug, "region": region_slug, "level": level, **extra}
     request = factory.get("/api/region/", params)
     response = RegionDetailView.as_view()(request)
     assert response.status_code == 200, response.data
@@ -89,7 +89,7 @@ def test_gemeente_stores_both_eml_types_but_region_detail_returns_510b(ws_electi
     assert VoterTurnoutCount.objects.filter(region=borsele, eml_type=EmlType.EML_510b).exists()
     assert VoterTurnoutCount.objects.filter(region=borsele, eml_type=EmlType.EML_510d).exists()
 
-    payload = _region_detail(ws_election.election_config.slug, borsele.slug)
+    payload = _region_detail(ws_election.election_config.slug, borsele.slug, "gsb")
     _assert_only_eml_type(payload, EmlType.EML_510b)
     assert len(payload["vote_counts"]) == VoteCount.objects.filter(region=borsele, eml_type=EmlType.EML_510b).count()
     assert (
@@ -105,7 +105,7 @@ def test_waterschap_region_detail_returns_510d(ws_election):
     assert VoteCount.objects.filter(region=csb).exists()
     assert not VoteCount.objects.filter(region=csb).exclude(eml_type=EmlType.EML_510d).exists()
 
-    payload = _region_detail(ws_election.election_config.slug, csb.slug)
+    payload = _region_detail(ws_election.election_config.slug, csb.slug, "csb")
     _assert_only_eml_type(payload, EmlType.EML_510d)
 
 
@@ -124,6 +124,7 @@ def test_stembureau_region_detail_returns_510b(ws_election):
     payload = _region_detail(
         ws_election.election_config.slug,
         stembureau.slug,
+        "gsb",
         parent_region=borsele.slug,
     )
     _assert_only_eml_type(payload, EmlType.EML_510b)

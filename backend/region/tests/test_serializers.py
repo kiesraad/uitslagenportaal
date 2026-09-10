@@ -3,10 +3,14 @@ import pytest
 from election.models import VoteCount, VoterTurnoutCount
 from election.tests.factories import ContestFactory
 from mainsite.models import CountingMethod, RegionCategory
-from mainsite.utils.eml_type import EmlType
+from mainsite.utils.eml_type import EmlType, ReportingLevel
 from party.tests.factories import PartyFactory
 from region.serializers import RegionDetailSerializer
 from region.tests.factories import RegionFactory
+
+
+def serialize_detail(region, level):
+    return RegionDetailSerializer(region, context={"level": level}).data
 
 
 @pytest.mark.django_db
@@ -32,11 +36,7 @@ def test_effective_variant_defaults_when_no_counting_method_available():
 
 
 @pytest.mark.django_db
-def test_region_detail_serializer_filters_510d_vote_counts_for_gemeente():
-    """
-    Gemeente regions store both 510b (telling) and 510d (totaaltelling) rows;
-    region detail only returns the 510b telling.
-    """
+def test_gsb_returns_510b_and_csb_returns_510d_for_the_same_region():
     contest = ContestFactory()
     party = PartyFactory(election=contest.election)
     region = RegionFactory(election=contest.election, region_category=RegionCategory.GEMEENTE)
@@ -52,23 +52,52 @@ def test_region_detail_serializer_filters_510d_vote_counts_for_gemeente():
         contest=contest,
         region=region,
         party=party,
-        valid_votes=100,
+        valid_votes=200,
         result_level=VoteCount.RESULT_LEVEL_PARTY,
         eml_type=EmlType.EML_510d,
     )
 
-    data = RegionDetailSerializer(region).data
+    gsb = serialize_detail(region, ReportingLevel.GSB)
+    csb = serialize_detail(region, ReportingLevel.CSB)
 
-    assert len(data["vote_counts"]) == 1
-    assert data["vote_counts"][0]["eml_type"] == EmlType.EML_510b
+    assert len(gsb["vote_counts"]) == 1
+    assert gsb["vote_counts"][0]["eml_type"] == EmlType.EML_510b
+    assert gsb["vote_counts"][0]["valid_votes"] == 100
+    assert len(csb["vote_counts"]) == 1
+    assert csb["vote_counts"][0]["eml_type"] == EmlType.EML_510d
+    assert csb["vote_counts"][0]["valid_votes"] == 200
 
 
 @pytest.mark.django_db
-def test_region_detail_serializer_prefers_510c_vote_counts_for_kieskring():
-    """
-    A kieskring with its own HSB stores both 510c (its own totaaltelling) and 510d (the CSB's
-    breakdown for it); region detail prefers the 510c totaaltelling.
-    """
+def test_gsb_is_empty_without_a_510b_telling():
+    contest = ContestFactory()
+    party = PartyFactory(election=contest.election)
+    region = RegionFactory(election=contest.election, region_category=RegionCategory.GEMEENTE)
+    VoteCount.objects.create(
+        contest=contest,
+        region=region,
+        party=party,
+        valid_votes=100,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type=EmlType.EML_510d,
+    )
+    VoterTurnoutCount.objects.create(
+        contest=contest,
+        region=region,
+        category=VoterTurnoutCount.CATEGORY_TOTALS,
+        reason_code="total counted",
+        votes=100,
+        eml_type=EmlType.EML_510d,
+    )
+
+    data = serialize_detail(region, ReportingLevel.GSB)
+
+    assert data["vote_counts"] == []
+    assert data["voter_turnout_counts"] == []
+
+
+@pytest.mark.django_db
+def test_region_detail_serializer_returns_510c_for_hsb():
     contest = ContestFactory()
     party = PartyFactory(election=contest.election)
     region = RegionFactory(election=contest.election, region_category=RegionCategory.KIESKRING)
@@ -89,18 +118,14 @@ def test_region_detail_serializer_prefers_510c_vote_counts_for_kieskring():
         eml_type=EmlType.EML_510d,
     )
 
-    data = RegionDetailSerializer(region).data
+    data = serialize_detail(region, ReportingLevel.HSB)
 
     assert len(data["vote_counts"]) == 1
     assert data["vote_counts"][0]["eml_type"] == EmlType.EML_510c
 
 
 @pytest.mark.django_db
-def test_region_detail_serializer_falls_back_to_510d_vote_counts_for_kieskring_without_hsb():
-    """
-    A kieskring that submitted centrally to the CSB (no HSB of its own) has only 510d rows;
-    region detail falls back to those instead of returning nothing.
-    """
+def test_region_detail_serializer_hides_510d_when_asked_as_hsb_without_510c():
     contest = ContestFactory()
     party = PartyFactory(election=contest.election)
     region = RegionFactory(election=contest.election, region_category=RegionCategory.KIESKRING)
@@ -113,14 +138,13 @@ def test_region_detail_serializer_falls_back_to_510d_vote_counts_for_kieskring_w
         eml_type=EmlType.EML_510d,
     )
 
-    data = RegionDetailSerializer(region).data
+    data = serialize_detail(region, ReportingLevel.HSB)
 
-    assert len(data["vote_counts"]) == 1
-    assert data["vote_counts"][0]["eml_type"] == EmlType.EML_510d
+    assert data["vote_counts"] == []
 
 
 @pytest.mark.django_db
-def test_region_detail_serializer_prefers_510c_turnout_counts_for_kieskring():
+def test_region_detail_serializer_returns_510c_turnout_for_hsb():
     contest = ContestFactory()
     region = RegionFactory(election=contest.election, region_category=RegionCategory.KIESKRING)
     VoterTurnoutCount.objects.create(
@@ -140,7 +164,7 @@ def test_region_detail_serializer_prefers_510c_turnout_counts_for_kieskring():
         eml_type=EmlType.EML_510d,
     )
 
-    data = RegionDetailSerializer(region).data
+    data = serialize_detail(region, ReportingLevel.HSB)
 
     assert len(data["voter_turnout_counts"]) == 1
     assert data["voter_turnout_counts"][0]["eml_type"] == EmlType.EML_510c

@@ -7,7 +7,7 @@ from mainsite.serializers import (
     VoteCountSummarySerializer,
     VoterTurnoutCountSummarySerializer,
 )
-from mainsite.utils.eml_type import EmlType
+from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL
 from region.models import Region
 
 
@@ -32,30 +32,30 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     vote_counts = serializers.SerializerMethodField()
     timeline_entries = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
-    documents = ElectionDocumentSerializer(many=True, read_only=True)
+    documents = serializers.SerializerMethodField()
     csb_name = serializers.CharField(source="csb.region_name", default=None, read_only=True)
     csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
     election_slug = serializers.CharField(source="election.slug", read_only=True)
 
-    _PREFERRED_EML_TYPE = {
-        RegionCategory.GEMEENTE: EmlType.EML_510b,
-        RegionCategory.KIESKRING: EmlType.EML_510c,
-    }
+    def _eml_type(self) -> str:
+        return EML_TYPE_BY_REPORTING_LEVEL[self.context["level"]]
 
-    def _filter_to_preferred_source(self, region, counts):
-        preferred = self._PREFERRED_EML_TYPE.get(region.region_category)
-        if preferred is None:
-            return counts
-        preferred_counts = [count for count in counts if count.eml_type == preferred]
-        return preferred_counts or counts
+    def _counts_for_level(self, counts):
+        eml_type = self._eml_type()
+        return [count for count in counts if count.eml_type == eml_type]
 
     def get_vote_counts(self, obj):
-        vote_counts = self._filter_to_preferred_source(obj, list(obj.vote_counts.all()))
+        vote_counts = self._counts_for_level(list(obj.vote_counts.all()))
         return VoteCountSummarySerializer(vote_counts, many=True).data
 
     def get_voter_turnout_counts(self, obj):
-        turnout_counts = self._filter_to_preferred_source(obj, list(obj.voter_turnout_counts.all()))
+        turnout_counts = self._counts_for_level(list(obj.voter_turnout_counts.all()))
         return VoterTurnoutCountSummarySerializer(turnout_counts, many=True).data
+
+    def get_documents(self, obj):
+        eml_type = self._eml_type()
+        documents = [document for document in obj.documents.all() if document.file_type == eml_type]
+        return ElectionDocumentSerializer(documents, many=True, context=self.context).data
 
     class Meta:
         model = Region

@@ -5,7 +5,7 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView
 from election.models import ElectionDocument
 from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
-from mainsite.utils.eml_type import EmlType
+from mainsite.utils.eml_type import EmlType, ReportingLevel
 from region.models import Region
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
@@ -67,9 +67,15 @@ class RegionListView(ListAPIView):
 class RegionDetailView(RetrieveAPIView):
     serializer_class = RegionDetailSerializer
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["level"] = self.request.query_params.get("level")
+        return context
+
     def get_object(self):
         election_config_slug = self.request.query_params.get("election_config")
         region_slug = self.request.query_params.get("region")
+        level = self.request.query_params.get("level")
         # optional
         csb_slug = self.request.query_params.get("csb")
         parent_region_slug = self.request.query_params.get("parent_region")
@@ -78,6 +84,8 @@ class RegionDetailView(RetrieveAPIView):
             raise ValidationError({"election_config": "This query parameter is required."})
         if not region_slug:
             raise ValidationError({"region": "This query parameter is required."})
+        if level not in ReportingLevel.values:
+            raise ValidationError({"level": "This query parameter is required and must be gsb, hsb, or csb."})
 
         queryset = (
             Region.objects.select_related(
