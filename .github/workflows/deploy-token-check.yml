@@ -66,7 +66,8 @@ jobs:
       # workflow puts the issue on the board; the labels keep a later run from opening
       # a second one and let the board be filtered per environment.
       - name: Open or update tracking issue
-        if: fromJSON(env.DAYS_LEFT) < 90
+        # todo: restore threshold to 90 after testing issue creation
+        if: fromJSON(env.DAYS_LEFT) < 365
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -78,6 +79,16 @@ jobs:
           else
             status="expires on **$EXPIRES_ON**, in **$DAYS_LEFT days**"
           fi
+
+          # Created on demand so adding an environment needs no setup beyond its matrix
+          # entry. Only an absent label is written, leaving a recoloured one alone;
+          # --force covers two environments racing to create the shared label.
+          ensure_label() {
+            gh api "repos/$GH_REPO/labels/$1" --silent 2>/dev/null \
+              || gh label create "$1" --force --color "$2" --description "$3"
+          }
+          ensure_label renew-deploy-token d70520 "Deploy token nears expiry"
+          ensure_label "$ENVIRONMENT" 1d76db "Concerns the $ENVIRONMENT environment"
 
           existing=$(gh issue list --state open \
             --label renew-deploy-token --label "$ENVIRONMENT" \
