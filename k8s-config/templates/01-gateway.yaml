@@ -3,7 +3,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: {{ .Release.Name }}
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
 spec:
   gatewayClassName: {{ .Values.gateway.className }}
   listeners:
@@ -35,7 +35,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: {{ .Release.Name }}-tls
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
 spec:
   secretName: {{ .Release.Name }}-tls
   dnsNames:
@@ -51,7 +51,7 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: {{ .Release.Name }}-issuer
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
 spec:
 {{- if eq .Values.issuer.type "selfsigned" }}
   # Issued without contacting anything, for clusters Let's Encrypt cannot reach.
@@ -75,7 +75,7 @@ spec:
           gatewayHTTPRoute:
             parentRefs:
               - name: {{ .Release.Name }}
-                namespace: {{ .Values.namespace }}
+                namespace: {{ .Release.Namespace }}
                 kind: Gateway
 {{- end }}
 {{- end }}

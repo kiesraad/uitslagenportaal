@@ -11,9 +11,7 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+# No workflow-level concurrency on purpose: cancellation is managed per job/called workflow.
 
 jobs:
   # Every suite runs in full before anything is published: path filters apply to a
@@ -27,10 +25,13 @@ jobs:
   playwright:
     name: Playwright
     uses: ./.github/workflows/playwright.yml
+  helm-ci:
+    name: Helm CI
+    uses: ./.github/workflows/helm-ci.yml
 
   frontend-docker-image:
     name: Publish Frontend Image
-    needs: [backend-ci, frontend-ci, playwright]
+    needs: [backend-ci, frontend-ci, playwright, helm-ci]
     permissions:
       contents: read
       packages: write
@@ -44,7 +45,7 @@ jobs:
 
   backend-docker-image:
     name: Publish Backend Image
-    needs: [backend-ci, frontend-ci, playwright]
+    needs: [backend-ci, frontend-ci, playwright, helm-ci]
     permissions:
       contents: read
       packages: write
@@ -55,3 +56,73 @@ jobs:
     with:
       context: backend
       image-name: uitslagenportaal-backend
+
+  deploy-dev:
+    name: Deploy to scaleway-dev
+    # Only dev feeds the cluster; main and tags publish images without deploying.
+    if: github.ref == 'refs/heads/dev'
+    needs: [frontend-docker-image, backend-docker-image]
+    runs-on: ubuntu-latest
+    environment: scaleway-dev
+    permissions:
+      contents: read
+    concurrency:
+      # The only thing serialising upgrades now, so it must not cancel: a killed helm
+      # upgrade leaves the release stuck in pending-upgrade.
+      group: deploy-dev
+      cancel-in-progress: false
+    env:
+      # Deploy the digests just built, not the moving :dev tag the values file carries:
+      # a release then pins the image it actually ran, which is what makes rollback mean
+      # something. Celery runs the backend image and must not drift from it.
+      BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-backend@${{ needs.backend-docker-image.outputs.digest }}
+      FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-frontend@${{ needs.frontend-docker-image.outputs.digest }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # The deploy token is bound to a namespaced service account, so the kubeconfig is
+      # assembled here rather than fetched from the hosting provider.
+      - name: Write kubeconfig
+        env:
+          K8S_API_SERVER: ${{ vars.K8S_API_SERVER }}
+          K8S_CA_DATA: ${{ vars.K8S_CA_DATA }}
+          K8S_DEPLOY_TOKEN: ${{ secrets.K8S_DEPLOY_TOKEN }}
+        run: |
+          KUBECONFIG="$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
+          install -m 600 /dev/null "$KUBECONFIG"
+          cat > "$KUBECONFIG" <<YAML
+          apiVersion: v1
+          kind: Config
+          clusters:
+            - name: cluster
+              cluster:
+                server: ${K8S_API_SERVER}
+                certificate-authority-data: ${K8S_CA_DATA}
+          users:
+            - name: deployer
+              user:
+                token: ${K8S_DEPLOY_TOKEN}
+          contexts:
+            - name: deploy
+              context:
+                cluster: cluster
+                user: deployer
+                namespace: uitslagenportaal-dev
+          current-context: deploy
+          YAML
+
+      - uses: azure/setup-helm@v4
+
+      # --timeout is generous because --rollback-on-failure only starts rolling back once
+      # the wait expires, and the wait covers the migration job as well as the rollouts.
+      - name: Deploy
+        run: |
+          helm upgrade --install uitslagenportaal ./k8s-config \
+            --namespace uitslagenportaal-dev \
+            -f k8s-config/values-dev.yaml \
+            --set-string backend.image="$BACKEND_IMAGE" \
+            --set-string celery.image="$BACKEND_IMAGE" \
+            --set-string frontend.image="$FRONTEND_IMAGE" \
+            --wait --rollback-on-failure --timeout 15m
