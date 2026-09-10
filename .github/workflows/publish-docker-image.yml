@@ -97,6 +97,8 @@ jobs:
         with:
           # Package name does not work with registry/owner prefix.
           packages: ${{ inputs.image-name }}
-          delete-untagged: true
-          # Fail the run if a retained index has a child missing from the registry.
+          # The moving :dev tag leaves each deployed digest untagged, so keep as many
+          # as Helm keeps revisions to roll back to.
+          keep-n-untagged: 10
+          # Warn if a retained index has a child missing from the registry.
           validate: true
