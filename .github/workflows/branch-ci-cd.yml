@@ -109,7 +109,7 @@ jobs:
               context:
                 cluster: cluster
                 user: deployer
-                namespace: uitslagenportaal
+                namespace: uitslagenportaal-dev
           current-context: deploy
           YAML
 
@@ -120,8 +120,8 @@ jobs:
       - name: Deploy
         run: |
           helm upgrade --install uitslagenportaal ./k8s-config \
-            --namespace uitslagenportaal \
-            -f k8s-config/values.yaml \
+            --namespace uitslagenportaal-dev \
+            -f k8s-config/values-dev.yaml \
             --set-string backend.image="$BACKEND_IMAGE" \
             --set-string celery.image="$BACKEND_IMAGE" \
             --set-string frontend.image="$FRONTEND_IMAGE" \

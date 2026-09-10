@@ -23,7 +23,7 @@ jobs:
           # Each environment holds its own K8S_DEPLOY_TOKEN under the same name; the
           # namespace is what the reissue command in the issue body needs.
           - environment: scaleway-dev
-            namespace: uitslagenportaal
+            namespace: uitslagenportaal-dev
     environment: ${{ matrix.environment }}
     permissions:
       contents: read
