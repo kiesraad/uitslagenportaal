@@ -142,7 +142,8 @@ For the CD pipeline we need a service account and store a token for this account
 1. Make sure the service account exists or is updated: `kubectl apply -f deploy-service-account.yaml`
 2. Create the token, either update the token manually in GitHub, or pipe it directly to GitHub if the `gh` cli is installed:
 - `kubectl -n uitslagenportaal create token uitslagenportaal-deploy --duration=8760h`
-- `kubectl -n uitslagenportaal create token uitslagenportaal-deploy --duration=8760h | gh secret set K8S_DEPLOY_TOKEN --repo kiesraad/uitslagenportaal`
+-
+`kubectl -n uitslagenportaal create token uitslagenportaal-deploy --duration=8760h | gh secret set K8S_DEPLOY_TOKEN --repo kiesraad/uitslagenportaal --env [deploy-env-name]`
 
 #### The deployment pipeline
 
