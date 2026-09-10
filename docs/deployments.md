@@ -166,7 +166,21 @@ the `scaleway-dev` GitHub Environment:
 | variable | `K8S_API_SERVER`                 | `clusters[0].cluster.server` from your kubeconfig        |
 | variable | `K8S_CA_DATA`                    | `clusters[0].cluster.certificate-authority-data` from it |
 
-The token from `kubectl create token --duration=8760h` expires, so it needs replacing before it expires.
+#### Watching the token expire
+
+The token from `kubectl create token --duration=8760h` expires, so it needs replacing before it does.
+`deploy-token-check.yml` runs on the first of each month and reads the expiry out of the token itself — it is a bound
+JWT, and the deploy service account is granted nothing in `authentication.k8s.io`, so asking the cluster is not an
+option. That also shows what was actually issued: `--duration` is a request, and the API server clamps it to
+`--service-account-max-token-expiration`, which may be well under a year.
+
+Every run writes the expiry date to its job summary. Under 90 days it opens an issue labelled
+`renew-deploy-token` and `<environment>` — the first is the handle for all of them, the pair narrows the board to one
+environment — and comments on it each month until the token is replaced and the issue closed. A secret that is not a
+usable token fails the run outright rather than passing quietly.
+
+Adding an environment takes three things: a matrix entry in the workflow naming it and its namespace, a
+`K8S_DEPLOY_TOKEN` secret in the matching GitHub Environment, and a label named after it.
 
 ### Deploy the Helm chart manually
 

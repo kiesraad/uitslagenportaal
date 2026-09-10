@@ -236,3 +236,7 @@ and publishes the frontend and backend images to ghcr.io only once every one of 
 `publish-docker-image.yml` is the reusable workflow that builds and pushes one image, and
 returns the digest it pushed. On `dev` only, a final `deploy` job then upgrades the Helm
 release with those digests; see [docs/deployments.md](docs/deployments.md).
+
+`.github/workflows/deploy-token-check.yml` is on a schedule rather than on PRs: on the first of each month it reads the
+expiry out of each environment's `K8S_DEPLOY_TOKEN` and, under 90 days, opens and then monthly comments on a
+`renew-deploy-token` issue.
