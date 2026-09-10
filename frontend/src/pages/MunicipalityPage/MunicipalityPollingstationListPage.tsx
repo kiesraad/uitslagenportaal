@@ -10,7 +10,7 @@ import MunicipalityPageLayout from "./MunicipalityPageLayout.tsx";
 export function municipalityPollingstationListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params);
+      const regionQueryOptions = regionQuery(params, "gsb");
       const pollingStationsQueryOptions = regionsQuery(params, "STEMBUREAU");
 
       await Promise.all([

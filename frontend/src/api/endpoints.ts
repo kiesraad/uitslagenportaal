@@ -6,6 +6,7 @@ import type {
    Region,
    RegionCategory,
    RegionResponse,
+   ReportingLevel,
 } from "./types";
 
 export function getElectionConfigs() {
@@ -51,14 +52,16 @@ export function getRegion(
    regionSlug?: string,
    csbSlug?: string,
    parentRegionSlug?: string,
+   level?: ReportingLevel,
 ) {
-   if (!electionConfigSlug || !regionSlug) {
-      throw new Error("getRegion: electionConfigSlug and regionSlug are required.");
+   if (!electionConfigSlug || !regionSlug || !level) {
+      throw new Error("getRegion: electionConfigSlug, regionSlug and level are required.");
    }
 
    const url = new URL("/api/region/", window.location.origin);
    url.searchParams.append("election_config", electionConfigSlug);
    url.searchParams.append("region", regionSlug);
+   url.searchParams.append("level", level);
    if (csbSlug) {
       url.searchParams.append("csb", csbSlug);
    }

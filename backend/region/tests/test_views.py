@@ -133,11 +133,25 @@ def test_region_detail_requires_query_params():
 
 
 @pytest.mark.django_db
+def test_region_detail_requires_reporting_level():
+    election = ElectionFactory()
+    request = factory.get(
+        "/api/region/",
+        {"election_config": election.election_config.slug, "region": "anywhere"},
+    )
+
+    response = RegionDetailView.as_view()(request)
+
+    assert response.status_code == 400
+    assert "level" in response.data
+
+
+@pytest.mark.django_db
 def test_region_detail_returns_404_for_nonexistent_region():
     election = ElectionFactory()
     request = factory.get(
         "/api/region/",
-        {"election_config": election.election_config.slug, "region": "does-not-exist"},
+        {"election_config": election.election_config.slug, "region": "does-not-exist", "level": "gsb"},
     )
 
     response = RegionDetailView.as_view()(request)
@@ -180,7 +194,7 @@ def test_region_detail_disambiguates_by_parent_region():
 
     ambiguous_request = factory.get(
         "/api/region/",
-        {"election_config": election.election_config.slug, "region": "SB1-basisschool"},
+        {"election_config": election.election_config.slug, "region": "SB1-basisschool", "level": "gsb"},
     )
     ambiguous_response = RegionDetailView.as_view()(ambiguous_request)
     assert ambiguous_response.status_code == 400
@@ -191,6 +205,7 @@ def test_region_detail_disambiguates_by_parent_region():
             "election_config": election.election_config.slug,
             "region": "SB1-basisschool",
             "parent_region": "bergen",
+            "level": "gsb",
         },
     )
     response = RegionDetailView.as_view()(request)
@@ -247,6 +262,7 @@ def test_region_detail_disambiguates_waterschap_polling_station_by_csb_and_paren
             "region": stembureau.slug,
             "parent_region": gemeente.slug,
             "csb": waterschap.slug,
+            "level": "gsb",
         },
     )
     response = RegionDetailView.as_view()(request)

@@ -16,3 +16,18 @@ class EmlType(TextChoices):
     EML_510c = "510c", "Totaaltelling HSB"
     EML_510d = "510d", "Totaaltelling CSB"
     EML_520 = "520", "Resultaat"
+
+
+class ReportingLevel(TextChoices):
+    GSB = "gsb"
+    HSB = "hsb"
+    CSB = "csb"
+
+
+# The reporting body, not the region's geography, decides which telling to show.
+# A GR gemeente is GSB on /gsb/ and CSB on /csb/; same row, different file.
+EML_TYPE_BY_REPORTING_LEVEL = {
+    ReportingLevel.GSB: EmlType.EML_510b,
+    ReportingLevel.HSB: EmlType.EML_510c,
+    ReportingLevel.CSB: EmlType.EML_510d,
+}

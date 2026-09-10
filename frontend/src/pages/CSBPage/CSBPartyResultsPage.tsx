@@ -17,7 +17,7 @@ import { getPartyVoteCount } from "../../utils/voteCounts.ts";
 export function csbPartyResultsLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params);
+      const regionQueryOptions = regionQuery(params, "csb");
 
       const [, region] = await Promise.all([
          queryClient.ensureQueryData(electionConfigQueryOptions),

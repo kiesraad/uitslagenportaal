@@ -13,7 +13,7 @@ import { appRoutes } from "../../utils/routes.ts";
 export function csbMunicipalityListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params);
+      const regionQueryOptions = regionQuery(params, "csb");
       // The region parameter names the CSB the gemeentes report to, not their parent region.
       const regionsQueryOptions = regionsQuery(
          { electionConfigSlug: params.electionConfigSlug, csbSlug: params.regionSlug },

@@ -13,14 +13,17 @@ import { appRoutes } from "../../utils/routes";
 export function pollingStationLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params);
+      const regionQueryOptions = regionQuery(params, "gsb");
       // The stembureau is the region being fetched here; the gemeente in the URL is its parent.
-      const pollingStationQueryOptions = regionQuery({
-         electionConfigSlug: params.electionConfigSlug,
-         regionSlug: params.pollingStationSlug,
-         csbSlug: params.csbSlug,
-         parentRegionSlug: params.regionSlug,
-      });
+      const pollingStationQueryOptions = regionQuery(
+         {
+            electionConfigSlug: params.electionConfigSlug,
+            regionSlug: params.pollingStationSlug,
+            csbSlug: params.csbSlug,
+            parentRegionSlug: params.regionSlug,
+         },
+         "gsb",
+      );
 
       await Promise.all([
          queryClient.ensureQueryData(electionConfigQueryOptions),
