@@ -14,7 +14,7 @@ Na afloop van verkiezingen worden in de stembureaus de stembiljetten met de hand
 
 ## Technische Documentatie
 
-Er is een beschrijving voor opzetten van de ontwikkelomgeving, tooling, testen en operationele documentatie van het Uitslagenportaal. Kijk hiervoor in de sectie [DEVELOPMENT.md](DEVELOPMENT.md).
+Er is een beschrijving voor opzetten van de ontwikkelomgeving, tooling, testen en operationele documentatie van het Uitslagenportaal. Kijk hiervoor in de sectie [development.md](docs/development.md).
 
 ## Bijdragen
 
