@@ -67,7 +67,7 @@ go to S3-compatible storage through Django's `default_storage`.
 
 Celery (app in `mainsite/celery.py`, tasks in `<app>/tasks.py`) runs with Redis backend.
 Celery Beat is used for periodic tasks, and tasks are scheduled in `tasks.py`. The `celery` compose service
-runs worker and beat together (`celery -A mainsite worker --beat`) under `watchmedo`
+runs worker and beat together (`celery -A mainsite worker --beat`) under `watchfiles`
 for autoreload. Put new tasks in `<app>/tasks.py` — the app autodiscovers them.
 
 ### Frontend (`frontend/src`)
