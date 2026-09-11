@@ -37,5 +37,5 @@ class Command(BaseCommand):
             raise CommandError(f"--workers must be at least 1, got {workers}")
 
         start = time.time()
-        FolderEMLFileHandler().import_folder(folder, workers=workers)
+        FolderEMLFileHandler(folder, workers=workers).run()
         self.stdout.write(self.style.SUCCESS(f"Processed {folder} in {time.time() - start:.1f} seconds"))
