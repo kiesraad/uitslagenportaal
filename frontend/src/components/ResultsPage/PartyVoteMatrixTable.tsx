@@ -23,14 +23,14 @@ export default function PartyVoteMatrixTable({ matrix }: Props) {
          <table className="border-separate border-spacing-0 whitespace-nowrap [&_td]:p-4 [&_th]:p-4">
             <thead>
                <tr className="font-bold bg-white text-left align-middle">
-                  <th className="border-r border-b border-gray-200 sticky left-0 top-0 bg-inherit z-20">
+                  <th className="border-r border-b border-gray-200 sticky left-0 bg-inherit z-20">
                      <Trans>Kandidaat</Trans>
                   </th>
                   <th className="min-w-24 border-b border-gray-200 bg-inherit">
                      <Trans>Totaal</Trans>
                   </th>
                   {matrix.columns.map((column) => (
-                     <th key={column.slug} className="min-w-24 border-b border-gray-200 sticky top-0 bg-inherit">
+                     <th key={column.slug} className="min-w-24 border-b border-gray-200 bg-inherit">
                         {column.region_name}
                      </th>
                   ))}
