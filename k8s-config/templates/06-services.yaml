@@ -232,7 +232,7 @@ spec:
           requests:
             storage: {{ .Values.services.objectStorage.storage }}
 ---
-# Compose runs this as the backend's pre_start; here it waits for the release
+# Compose runs this as the backend's post_start; here it waits for the release
 # to be up. Idempotent, so re-running it on every upgrade costs nothing.
 apiVersion: batch/v1
 kind: Job
@@ -254,7 +254,7 @@ spec:
         - name: ensure-bucket
           image: {{ .Values.backend.image }}
           imagePullPolicy: {{ .Values.backend.pullPolicy }}
-          command: ["python", "manage.py", "ensure_bucket", "--public"]
+          command: ["python", "manage.py", "ensure_bucket"]
           envFrom:
             {{- include "uitslagenportaal.backendEnvFrom" . | nindent 12 }}
 {{- end }}

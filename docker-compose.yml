@@ -3,9 +3,9 @@ services:
     build:
       context: ./backend
       dockerfile: dev.dockerfile
-    # Init container: creates the bucket and makes its objects publicly readable.
+    # Init container: creates the bucket.
     post_start:
-      - command: ["python", "manage.py", "ensure_bucket", "--public"]
+      - command: ["python", "manage.py", "ensure_bucket"]
     # Run Django under debugpy so VS Code can attach ("Django: attach (Docker)").
     command: python -m debugpy --listen 0.0.0.0:5678 manage.py runserver 0.0.0.0:8000
     ports:
