@@ -10,7 +10,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 stringData:
   DB_HOST: "postgres"
-  DB_PORT: "5432"
+  DB_PORT: "5532"
   DB_USER: {{ .Values.services.username | quote }}
   DB_PASSWORD: {{ .Values.services.password | quote }}
   DB_NAME: {{ .Values.services.name | quote }}
@@ -22,7 +22,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 stringData:
   REDIS_HOST: "redis"
-  REDIS_PORT: "6379"
+  REDIS_PORT: "6479"
   REDIS_USER: ""
   REDIS_PASSWORD: ""
 ---
@@ -46,8 +46,8 @@ stringData:
   S3_ADDRESSING_STYLE: "path"
   # Uploads travel over the cluster network, but the URLs handed to the browser
   # have to be reachable from the host instead.
-  S3_ENDPOINT_URL: "http://object-storage:9000"
-  S3_PUBLIC_DOMAIN: "localhost:9000/{{ .Values.services.name }}"
+  S3_ENDPOINT_URL: "http://object-storage:9100"
+  S3_PUBLIC_DOMAIN: "localhost:9100/{{ .Values.services.name }}"
   S3_URL_PROTOCOL: "http:"
 ---
 apiVersion: v1
@@ -59,7 +59,8 @@ spec:
   selector:
     app: postgres
   ports:
-    - port: 5432
+    - port: 5532
+      targetPort: 5432
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -119,7 +120,8 @@ spec:
   selector:
     app: redis
   ports:
-    - port: 6379
+    - port: 6479
+      targetPort: 6379
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -165,17 +167,18 @@ metadata:
   name: object-storage
   namespace: {{ .Release.Namespace }}
 spec:
-  # LoadBalancer, not ClusterIP: the browser follows the storage URLs itself,
-  # so on Docker Desktop this has to answer on localhost:9000 as compose does.
+  # LoadBalancer, not ClusterIP: the browser follows the storage URLs itself, so on
+  # Docker Desktop this claims a host port. It sits 100 above the one compose
+  # publishes, so both stacks can run at once.
   type: LoadBalancer
   selector:
     app: object-storage
   ports:
     - name: s3
-      port: 9000
+      port: 9100
       targetPort: 9000
     - name: console
-      port: 9001
+      port: 9101
       targetPort: 9001
 ---
 apiVersion: apps/v1
@@ -229,7 +232,7 @@ spec:
           requests:
             storage: {{ .Values.services.objectStorage.storage }}
 ---
-# Compose runs this as the backend's pre_start; here it waits for the release
+# Compose runs this as the backend's post_start; here it waits for the release
 # to be up. Idempotent, so re-running it on every upgrade costs nothing.
 apiVersion: batch/v1
 kind: Job
@@ -251,7 +254,7 @@ spec:
         - name: ensure-bucket
           image: {{ .Values.backend.image }}
           imagePullPolicy: {{ .Values.backend.pullPolicy }}
-          command: ["python", "manage.py", "ensure_bucket", "--public"]
+          command: ["python", "manage.py", "ensure_bucket"]
           envFrom:
             {{- include "uitslagenportaal.backendEnvFrom" . | nindent 12 }}
 {{- end }}

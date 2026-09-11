@@ -13,7 +13,7 @@ def in_memory_storage(settings):
     for every test makes that impossible by default rather than by convention.
     """
     settings.STORAGES = {
-        "default": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
+        "default": {"BACKEND": "mainsite.tests.storage.InMemoryPresignStorage"},
         "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
     }
 

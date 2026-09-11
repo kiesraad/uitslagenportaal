@@ -41,10 +41,9 @@ the `object-storage` service (RustFS); in production it is Scaleway Object Stora
 
 - API: http://localhost:9000
 - Console: http://localhost:9001 (user `uitslagenportaal`, password `password`)
-- Bucket: `uitslagenportaal`, created on `docker compose up` by a `pre_start` init
-  container on the `backend` service, which also makes its objects publicly readable.
-  To (re)create it by hand:
-  `docker compose run --rm backend-scripts python manage.py ensure_bucket --public`
+- Bucket: `uitslagenportaal`, created on `docker compose up` by a `post_start` init
+  container on the `backend` service. To (re)create it by hand:
+  `docker compose run --rm backend-scripts python manage.py ensure_bucket`
 
 The backend reaches the bucket at `object-storage:9000` over the compose network,
 but generates public URLs pointing at `localhost:9000`, since that is the host the
@@ -153,7 +152,8 @@ uv sync
 
 3. Make sure all the required files are there for debugging:
 
-- Make a `backend/.env` file with `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_HOST`.
+- Make a `backend/.env` file with `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_HOST`. Use `127.0.0.1` as DB_HOST
+  instead of `localhost` to avoid a failing IPv6 connection which takes ~20s from a Windows host.
 - Have a `backend/.data` folder for debug data and fill it with EML files from an election.
 - For the GitHub EML ingress, optionally set `GITHUB_TOKEN` and `GITHUB_INGRESS_REPO`.
   Use a Personal Access Token (classic) with `repo` scope as `GITHUB_TOKEN`.
@@ -200,7 +200,7 @@ Run these from `backend/` with `uv run manage.py <command>`, or against the runn
 | `import_election` | Imports all EML files in the `.data` folder |
 | `reset_and_import` | Wipe, seed & import in one |
 | `import_next_github_commits [election identifier]` | Runs the GitHub importer for the next batch of commits |
-| `ensure_bucket --public` | (Re)creates the object storage bucket |
+| `ensure_bucket` | (Re)creates the object storage bucket |
 | `delete_expired_elections [--confirm]` | Removes elections past their retention window |
 
 ## Object storage configuration
@@ -221,9 +221,8 @@ Docker. Outside Docker, set these in `backend/.env`:
 | `S3_REGION` | `nl-ams` | Region (Scaleway Amsterdam; ignored by RustFS) |
 | `S3_ADDRESSING_STYLE` | `path` | `path` for RustFS, `auto` for real S3 providers |
 
-Objects are public-read, so generated URLs are unsigned and do not expire. In
-production the bucket must therefore be configured to allow anonymous
-`s3:GetObject`. For Scaleway that means:
+The bucket is never public: the URLs handed to the browser are presigned and
+expire after an hour, the `django-storages` default. For Scaleway, configure:
 
 ```
 S3_ENDPOINT_URL=https://s3.nl-ams.scw.cloud

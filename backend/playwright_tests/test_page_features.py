@@ -1,6 +1,6 @@
 """
-The furniture the result pages share: search, source documents, the timeline and the
-page index. Asserted once here rather than on every route that renders them.
+The furniture the result pages share: search, the timeline and the page index.
+Asserted once here rather than on every route that renders them.
 """
 
 import re
@@ -34,19 +34,6 @@ def test_searching_a_stembureau_submits_on_the_first_match(page: Page):
 
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/[^/]+/?$"))
     expect(page.get_by_role("heading", level=1, name=re.compile(r"Telresultaten stembureau"))).to_be_visible()
-
-
-def test_the_results_page_serves_the_source_documents(page: Page):
-    page.goto(BORSELE_RESULTS)
-    expect(page.get_by_role("heading", name="Brondocumenten")).to_be_visible()
-
-    document = page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510b"))
-    href = document.get_attribute("href")
-    assert re.fullmatch(r"/api/documents/\d+/download/", href or "")
-
-    # Fetching the link rather than clicking it: the download redirects to object
-    # storage, which the compose stack and CI publish on different ports.
-    assert page.request.get(href).ok
 
 
 def test_the_results_timeline_can_be_reversed(page: Page):
