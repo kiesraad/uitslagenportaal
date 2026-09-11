@@ -13,6 +13,11 @@ class FolderEMLFileHandler(BaseFileHandler):
     # Set once per worker process by FolderEMLFileHandler._import_file
     _WORKER_PARSER: XmlParser | None = None
 
+    def __init__(self, folder: Path, workers: int = 1):
+        super().__init__()
+        self.folder = folder
+        self.workers = workers
+
     def _process_file_paths(self, parser_type: str, xml_files: list[Path]) -> None:
         """
         Process the list of paths of `xml_files` using the parser for `parser_type`
@@ -33,21 +38,21 @@ class FolderEMLFileHandler(BaseFileHandler):
                     f"with exception: {type(e).__name__} {e}\033[0m"
                 )
 
-    def import_folder(self, folder: Path, workers: int = 1) -> None:
+    def run(self) -> tuple[int, bool]:
         """
         Import all XML files from the given folder.
 
-        With `workers` > 1 the files of each document type are imported
+        With `workers` > 1, the files of each document type are imported
         concurrently. The document types themselves stay sequential.
         """
-        files = sorted(folder.rglob("*.xml"))
+        files = sorted(self.folder.rglob("*.xml"))
         xml_files = self._classify_files(files)
 
-        workers = self._usable_workers(workers)
+        workers = self._usable_workers(self.workers)
         if workers == 1:
             for parser_type in self._DOCUMENT_TYPES:
                 self._process_file_paths(parser_type, xml_files[parser_type])
-            return
+            return len(files), False
 
         # Hand no open connection to the children, and force "spawn" so a forked
         # child can never inherit this process's socket.
@@ -61,6 +66,8 @@ class FolderEMLFileHandler(BaseFileHandler):
                 # Each phase is a barrier: _process_file_paths_parallel does not
                 # return until every file of this document type is imported.
                 self._process_file_paths_parallel(pool, parser_type, xml_files[parser_type], workers)
+
+            return len(files), False
 
     def _usable_workers(self, workers: int) -> int:
         """Refuse to spawn workers when they could not see the caller's data."""

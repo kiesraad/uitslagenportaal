@@ -6,12 +6,19 @@ from eml_import.utils.file_handler import BaseFileHandler
 from mainsite.utils.eml_type import EmlType
 
 
+class StubFileHandler(BaseFileHandler):
+    """BaseFileHandler is abstract; classification does not depend on run()."""
+
+    def run(self) -> tuple[int, bool]:
+        return 0, False
+
+
 def xml_with_id(document_id: str) -> BytesIO:
     return BytesIO(f"<EML Id='{document_id}'/>".encode())
 
 
 def test_classify_files_buckets_known_ids_in_import_order():
-    handler = BaseFileHandler()
+    handler = StubFileHandler()
     files = [
         xml_with_id("510d"),
         xml_with_id("110a"),
@@ -41,7 +48,7 @@ def test_classify_files_buckets_known_ids_in_import_order():
 
 
 def test_classify_files_ignores_unknown_root_ids():
-    handler = BaseFileHandler()
+    handler = StubFileHandler()
     files = [
         xml_with_id("110a"),
         xml_with_id("110b"),

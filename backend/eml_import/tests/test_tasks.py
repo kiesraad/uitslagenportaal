@@ -31,11 +31,36 @@ def test_fan_out_task_queues_one_import_per_visible_election_config(delay):
 def test_import_task_imports_the_election_config_it_was_queued_for(github_eml_file_handler):
     election_config = ElectionConfigFactory()
     ElectionConfigFactory()
+    github_eml_file_handler.return_value.run.return_value = (0, False)
 
     import_election_eml_commits(election_config.id)
 
     github_eml_file_handler.assert_called_once_with(election_config)
     github_eml_file_handler.return_value.run.assert_called_once_with()
+
+
+@pytest.mark.django_db
+@patch.object(tasks.import_election_eml_commits, "apply_async")
+@patch.object(tasks, "GithubEmlFileHandler", autospec=True)
+def test_import_task_queues_a_follow_up_while_commits_remain(github_eml_file_handler, apply_async):
+    election_config = ElectionConfigFactory()
+    github_eml_file_handler.return_value.run.return_value = (1, True)
+
+    import_election_eml_commits(election_config.id)
+
+    apply_async.assert_called_once_with(args=[election_config.id], countdown=2)
+
+
+@pytest.mark.django_db
+@patch.object(tasks.import_election_eml_commits, "apply_async")
+@patch.object(tasks, "GithubEmlFileHandler", autospec=True)
+def test_import_task_queues_nothing_once_all_commits_are_imported(github_eml_file_handler, apply_async):
+    election_config = ElectionConfigFactory()
+    github_eml_file_handler.return_value.run.return_value = (1, False)
+
+    import_election_eml_commits(election_config.id)
+
+    apply_async.assert_not_called()
 
 
 @pytest.mark.django_db

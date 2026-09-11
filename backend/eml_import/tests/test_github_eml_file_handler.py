@@ -70,7 +70,7 @@ def fake_repo(monkeypatch, settings):
     def build(commits, contents=None):
         branches = commits if isinstance(commits, dict) else {BRANCH_EXCHANGE: commits}
         repo = FakeRepo(branches, contents)
-        monkeypatch.setattr(github_eml_file_handler, "Github", lambda auth, per_page: FakeGithub(repo))
+        monkeypatch.setattr(github_eml_file_handler, "Github", lambda auth: FakeGithub(repo))
         return repo
 
     return build
@@ -259,10 +259,11 @@ def test_get_files_for_next_commit_starts_at_the_oldest_commit(fake_repo, build_
         ]
     )
 
-    head_sha, files = build_handler(election_config, repo)._get_files_for_next_commit(None, BRANCH_EXCHANGE)
+    head_sha, files, has_more = build_handler(election_config, repo)._get_files_for_next_commit(None, BRANCH_EXCHANGE)
 
     assert head_sha == "oldest"
     assert [file.filename for file in files] == ["a.xml"]
+    assert has_more is True
     assert repo.calls_named("get_commits") == [("get_commits", BRANCH_EXCHANGE)]
     assert repo.calls_named("get_commit") == [("get_commit", "oldest")]
     assert repo.calls_named("compare") == []
@@ -277,23 +278,47 @@ def test_get_files_for_next_commit_resumes_after_the_base_commit(fake_repo, buil
         ]
     )
 
-    head_sha, files = build_handler(election_config, repo)._get_files_for_next_commit("imported", BRANCH_EXCHANGE)
+    head_sha, files, has_more = build_handler(election_config, repo)._get_files_for_next_commit(
+        "imported", BRANCH_EXCHANGE
+    )
 
     assert head_sha == "next"
     assert [file.filename for file in files] == ["a.xml"]
+    assert has_more is True
     assert repo.calls_named("compare")[0] == ("compare", "imported", BRANCH_EXCHANGE)
 
 
 def test_get_files_for_next_commit_returns_nothing_when_up_to_date(fake_repo, build_handler, election_config):
     repo = fake_repo(commits=[FakeCommit("imported", [FakeFile("a.xml")])])
 
-    head_sha, files = build_handler(election_config, repo)._get_files_for_next_commit("imported", BRANCH_EXCHANGE)
+    head_sha, files, has_more = build_handler(election_config, repo)._get_files_for_next_commit(
+        "imported", BRANCH_EXCHANGE
+    )
 
     assert head_sha is None
     assert files == []
+    assert has_more is False
     # Bails out before fetching any files
     assert repo.calls_named("get_commit") == []
     assert repo.calls_named("compare") == [("compare", "imported", BRANCH_EXCHANGE)]
+
+
+def test_get_files_for_next_commit_reports_no_more_commits_after_the_last_one(
+    fake_repo, build_handler, election_config
+):
+    repo = fake_repo(
+        commits=[
+            FakeCommit("imported", [FakeFile("already-done.xml")]),
+            FakeCommit("last", [FakeFile("a.xml")]),
+        ]
+    )
+
+    head_sha, files, has_more = build_handler(election_config, repo)._get_files_for_next_commit(
+        "imported", BRANCH_EXCHANGE
+    )
+
+    assert head_sha == "last"
+    assert has_more is False
 
 
 @pytest.mark.django_db
@@ -351,14 +376,13 @@ def test_run_imports_from_the_first_commit_and_records_progress(fake_repo, impor
         contents={"verkiezingsdefinitie.xml": XML_110A, "kandidatenlijst.xml": XML_230B},
     )
 
-    file_count = GithubEmlFileHandler(stored_election_config).run()
+    file_count, commits_remaining = GithubEmlFileHandler(stored_election_config).run()
 
-    assert file_count == 2
+    assert file_count == 1
+    assert commits_remaining is True
     assert as_pairs(imported_batches[0]) == [("verkiezingsdefinitie.xml", XML_110A)]
-    assert as_pairs(imported_batches[1]) == [("kandidatenlijst.xml", XML_230B)]
     assert list(ImportedCommit.objects.values_list("election_config", "branch_type", "commit_sha")) == [
         (stored_election_config.pk, BranchType.EXCHANGE, "first"),
-        (stored_election_config.pk, BranchType.EXCHANGE, "second"),
     ]
 
 
@@ -407,8 +431,12 @@ def test_run_processes_exchange_before_counting_results(fake_repo, imported_batc
         contents={"uitslag.xml": XML_510B, "telling.xml": XML_510B},
     )
 
-    GithubEmlFileHandler(stored_election_config).run()
+    first = GithubEmlFileHandler(stored_election_config).run()
+    second = GithubEmlFileHandler(stored_election_config).run()
 
+    # The first run imports only exchange, but reports the counting results branch as work remaining
+    assert first == (1, True)
+    assert second == (1, False)
     assert as_pairs(imported_batches[0]) == [("uitslag.xml", XML_510B)]
     assert as_pairs(imported_batches[1]) == [("telling.xml", XML_510B)]
     assert list(ImportedCommit.objects.values_list("branch_type", "commit_sha")) == [
@@ -429,9 +457,10 @@ def test_run_continues_on_the_counting_results_branch_once_the_exchange_branch_i
     )
     ImportedCommitFactory(election_config=stored_election_config, commit_sha="exchange-1")
 
-    file_count = GithubEmlFileHandler(stored_election_config).run()
+    file_count, commits_remaining = GithubEmlFileHandler(stored_election_config).run()
 
     assert file_count == 1
+    assert commits_remaining is False
     assert as_pairs(imported_batches[0]) == [("telling.xml", XML_510B)]
     assert list(ImportedCommit.objects.order_by("created_at").values_list("branch_type", "commit_sha")) == [
         (BranchType.EXCHANGE, "exchange-1"),
@@ -450,10 +479,12 @@ def test_run_continues_on_the_counting_results_branch_after_exchange_even_withou
         contents={"telling.xml": XML_510B},
     )
 
-    file_count = GithubEmlFileHandler(stored_election_config).run()
+    first = GithubEmlFileHandler(stored_election_config).run()
+    second = GithubEmlFileHandler(stored_election_config).run()
 
     # The exchange commit is consumed even though it holds nothing to import
-    assert file_count == 1
+    assert first == (0, True)
+    assert second == (1, False)
     assert as_pairs(imported_batches[0]) == []
     assert as_pairs(imported_batches[1]) == [("telling.xml", XML_510B)]
     assert list(ImportedCommit.objects.values_list("branch_type", "commit_sha")) == [
@@ -476,9 +507,10 @@ def test_run_does_nothing_when_no_branch_has_new_commits(fake_repo, imported_bat
         commit_sha="counting-1",
     )
 
-    file_count = GithubEmlFileHandler(stored_election_config).run()
+    file_count, commits_remaining = GithubEmlFileHandler(stored_election_config).run()
 
     assert file_count == 0
+    assert commits_remaining is False
     assert imported_batches == []
     assert ImportedCommit.objects.count() == 2
 
@@ -514,10 +546,12 @@ def test_run_skips_the_import_while_another_worker_holds_the_lock(
 
     # Stand in for a second worker that is already importing this election
     with cache.lock(handler.cache_lock_key, timeout=LOCK_TIMEOUT):
-        file_count = handler.run()
+        file_count, commits_remaining = handler.run()
 
     # It gives up rather than waiting, so the beat schedule cannot pile workers up on one election
     assert file_count == 0
+    # Nor does it queue a follow-up; the worker holding the lock does that
+    assert commits_remaining is False
     assert imported_batches == []
     assert ImportedCommit.objects.count() == 0
     # Returning 0 is indistinguishable from an election with nothing left to import,
@@ -533,7 +567,7 @@ def test_run_locks_per_election_and_not_globally(fake_repo, imported_batches, st
 
     # An import running for a different election must not hold this one up
     with cache.lock(other_election.cache_lock_key, timeout=LOCK_TIMEOUT):
-        file_count = GithubEmlFileHandler(stored_election_config).run()
+        file_count, commits_remaining = GithubEmlFileHandler(stored_election_config).run()
 
     assert file_count == 1
     assert as_pairs(imported_batches[0]) == [("telling.xml", XML_510B)]
@@ -575,7 +609,7 @@ def test_run_keeps_its_result_when_the_lock_expires_mid_import(fake_repo, monkey
 
     monkeypatch.setattr(GithubEmlFileHandler, "import_file_objects", expire_lock)
 
-    file_count = handler.run()
+    file_count, _ = handler.run()
 
     # Releasing an expired lock fails, but the import itself ran to completion,
     # so its result and its bookkeeping stand rather than being reported as a skipped run
