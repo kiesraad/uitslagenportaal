@@ -1,6 +1,7 @@
 import datetime
 
 import pytest
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.http import Http404
@@ -79,7 +80,9 @@ def test_download_document_returns_file_for_valid_storage_key():
     response = download_document(RequestFactory().get("/"), document.pk)
 
     assert response.status_code == 302
-    assert response.url == default_storage.url("document.xml")
+    assert response.url == f"{settings.MEDIA_URL}document.xml"
+
+    assert default_storage.url_parameters["document.xml"] == {"ResponseContentDisposition": "attachment"}
 
 
 @pytest.mark.django_db

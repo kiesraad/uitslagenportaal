@@ -153,7 +153,8 @@ uv sync
 
 3. Make sure all the required files are there for debugging:
 
-- Make a `backend/.env` file with `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_HOST`.
+- Make a `backend/.env` file with `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_HOST`. Use `127.0.0.1` as DB_HOST
+  instead of `localhost` to avoid a failing IPv6 connection which takes ~20s from a Windows host.
 - Have a `backend/.data` folder for debug data and fill it with EML files from an election.
 - For the GitHub EML ingress, optionally set `GITHUB_TOKEN` and `GITHUB_INGRESS_REPO`.
   Use a Personal Access Token (classic) with `repo` scope as `GITHUB_TOKEN`.

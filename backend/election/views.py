@@ -50,4 +50,7 @@ def download_document(request, pk):
     if not default_storage.exists(document.storage_key):
         raise Http404("Document not found")
 
-    return HttpResponseRedirect(default_storage.url(document.storage_key))
+    # Instruct browser to download the file using content-disposition header
+    return HttpResponseRedirect(
+        default_storage.url(document.storage_key, parameters={"ResponseContentDisposition": "attachment"})
+    )

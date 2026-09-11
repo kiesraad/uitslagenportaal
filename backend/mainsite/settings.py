@@ -200,7 +200,7 @@ GITHUB_INGRESS_REPO = os.environ.get("GITHUB_INGRESS_REPO")  # "owner/repo"
 # S3-compatible: RustFS locally (see docker-compose.yml), Scaleway in production.
 STORAGES = {
     "default": {
-        "BACKEND": "storages.backends.s3.S3Storage",
+        "BACKEND": "mainsite.utils.custom_s3_storage.SignedCustomDomainS3Storage",
         "OPTIONS": {
             "bucket_name": os.environ.get("S3_BUCKET_NAME", "uitslagenportaal"),
             "endpoint_url": os.environ.get("S3_ENDPOINT_URL", "http://localhost:9000"),
@@ -212,11 +212,8 @@ STORAGES = {
             # RustFS is reached by hostname, so virtual-host style addressing
             # (bucket.object-storage:9000) would not resolve.
             "addressing_style": os.environ.get("S3_ADDRESSING_STYLE", "path"),
-            # Public objects: no signature on generated URLs.
-            "querystring_auth": False,
+            "querystring_auth": True,
             "file_overwrite": True,
-            # Makes browsers download documents instead of rendering them.
-            "object_parameters": {"ContentDisposition": "attachment"},
         },
     },
     # Assigning STORAGES replaces Django's default dict, so staticfiles has to
