@@ -70,7 +70,7 @@ def fake_repo(monkeypatch, settings):
     def build(commits, contents=None):
         branches = commits if isinstance(commits, dict) else {BRANCH_EXCHANGE: commits}
         repo = FakeRepo(branches, contents)
-        monkeypatch.setattr(github_eml_file_handler, "Github", lambda auth, per_page: FakeGithub(repo))
+        monkeypatch.setattr(github_eml_file_handler, "Github", lambda auth: FakeGithub(repo))
         return repo
 
     return build
