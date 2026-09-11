@@ -227,9 +227,13 @@ class ElectionDocument(BaseModel):
     """
 
     class FileType(models.TextChoices):
-        EML_510B = "510b", "Telling GSB"
-        EML_510C = "510c", "Totaaltelling HSB"
-        EML_510D = "510d", "Totaaltelling CSB"
+        """
+        Available file types, prefixed with the extensions (i.e. EML, PDF).
+        Make sure to also update FILE_TYPE_MAPPINGS in the frontend code on change.
+        """
+        EML_510B = "EML510b", "Telling GSB"
+        EML_510C = "EML510c", "Totaaltelling HSB"
+        EML_510D = "EML510d", "Totaaltelling CSB"
 
     region = models.ForeignKey(
         "region.Region",
