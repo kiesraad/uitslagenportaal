@@ -26,7 +26,7 @@ export default function PartyVoteMatrixTable({ matrix }: Props) {
                   <th className="border-r border-b border-gray-200 sticky left-0 top-0 bg-inherit z-20">
                      <Trans>Kandidaat</Trans>
                   </th>
-                  <th className="min-w-24 border-b border-gray-200 sticky top-0 bg-inherit">
+                  <th className="min-w-24 border-b border-gray-200 bg-inherit">
                      <Trans>Totaal</Trans>
                   </th>
                   {matrix.columns.map((column) => (
