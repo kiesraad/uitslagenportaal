@@ -204,7 +204,7 @@ On a managed Kubernetes cluster at a hosting provider.
 2. Make sure the secrets are set, see the Secrets section above.
 3. Install the helm chart:
    ```bash
-   helm upgrade --install uitslagenportaal . -n uitslagenportaal-[env] -f values-[env].yaml
+   helm upgrade --install uitslagenportaal . -n uitslagenportaal-[env] -f values.yaml -f values-[env].yaml
    ```
 
 Note this reverts the cluster to whatever `:dev` points at, because it passes none of the
