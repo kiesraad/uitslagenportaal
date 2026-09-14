@@ -923,6 +923,13 @@ h4,
    }
 }
 
+.f-logo-grid-item {
+   position: relative;
+   width: 140px;
+   height: 110px;
+   border: 1px solid var(--c-muted);
+}
+
 .f-logo-grid-h > .f-logo-grid-item {
    border-left: 0;
    border-bottom: 0;
@@ -942,13 +949,6 @@ h4,
 
 .f-logo-grid-v > .f-logo-grid-item:last-child {
    border-bottom: 0;
-}
-
-.f-logo-grid-item {
-   position: relative;
-   width: 140px;
-   height: 110px;
-   border: 1px solid var(--c-muted);
 }
 
 .f-logo-grid-h > .f-logo-grid-item > .f-logo-grid-item-bullet:first-child {
