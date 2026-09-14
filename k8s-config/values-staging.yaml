@@ -1,0 +1,15 @@
+# 'staging' until deploy succeeded and domain name is available
+issuer:
+  server: "staging" # "staging" or "production"
+
+app:
+  hostname: "uitslagenportaal-staging.kiesraad.net"
+
+backend:
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:main"
+
+frontend:
+  image: "ghcr.io/kiesraad/uitslagenportaal-frontend:main"
+
+celery:
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:main"
