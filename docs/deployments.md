@@ -153,12 +153,16 @@ namespace. Install it as an administrator, once per environment.
    ```bash
    helm upgrade --install uitslagenportaal-service-accounts ./service-accounts -n uitslagenportaal-[env]
    ```
-2. Create the token, either update the token manually in GitHub, or pipe it directly to GitHub if the `gh` cli is installed:
-
-- `kubectl -n uitslagenportaal-[env] create token uitslagenportaal-deploy --duration=8760h`
--
-
-`kubectl -n uitslagenportaal-[env] create token uitslagenportaal-deploy --duration=8760h | gh secret set K8S_DEPLOY_TOKEN --repo kiesraad/uitslagenportaal --env [deploy-env-name]`
+2. Create a token and store it as the `K8S_DEPLOY_TOKEN` secret of the matching GitHub Environment, either by pasting
+   the output into GitHub by hand:
+   ```bash
+   kubectl -n uitslagenportaal-[env] create token uitslagenportaal-deploy --duration=8760h
+   ```
+   or, with the `gh` CLI installed, by piping it straight in:
+   ```bash
+   kubectl -n uitslagenportaal-[env] create token uitslagenportaal-deploy --duration=8760h \
+     | gh secret set K8S_DEPLOY_TOKEN --repo kiesraad/uitslagenportaal --env [deploy-env-name]
+   ```
 
 #### The deployment pipeline
 

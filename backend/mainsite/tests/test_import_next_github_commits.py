@@ -16,7 +16,7 @@ def imported_configs(monkeypatch):
             configs.append(election_config)
 
         def run(self):
-            return 3
+            return 3, False
 
     monkeypatch.setattr(import_next_github_commits, "GithubEmlFileHandler", RecordingImporter)
     return configs

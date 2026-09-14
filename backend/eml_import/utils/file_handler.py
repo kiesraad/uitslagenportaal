@@ -1,4 +1,5 @@
 import logging
+from abc import ABC, abstractmethod
 from io import BytesIO
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -34,7 +35,7 @@ def build_parser() -> XmlParser:
     )
 
 
-class BaseFileHandler:
+class BaseFileHandler(ABC):
     _DOCUMENT_TYPES: dict[str, tuple[type[Emlstructure], type[EMLBaseImporter]]] = {
         EmlType.EML_110a: (Eml110a, EML110aImporter),  # Verkiezingsdefinitie
         EmlType.EML_230b: (Eml230, EML230bImporter),  # Kandidatenlijst
@@ -72,3 +73,10 @@ class BaseFileHandler:
             if document_id and document_id in xml_files:
                 xml_files[document_id].append(xml_file_path)
         return xml_files
+
+    @abstractmethod
+    def run(self) -> tuple[int, bool]:
+        """
+        Run the file handler.
+        :return: A tuple of [number of processed files, if work remains for the next run]
+        """

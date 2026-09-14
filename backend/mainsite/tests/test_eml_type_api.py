@@ -61,7 +61,7 @@ def ab2023_config(db):
 
 @pytest.fixture
 def ws_election(ab2023_config, ws_import_folder):
-    FolderEMLFileHandler().import_folder(ws_import_folder)
+    FolderEMLFileHandler(ws_import_folder).run()
     return Election.objects.get(election_config=ab2023_config)
 
 

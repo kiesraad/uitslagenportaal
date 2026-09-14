@@ -14,7 +14,7 @@ from github.Repository import Repository
 from redis.exceptions import LockError
 
 from election.models import ElectionConfig
-from eml_import.exceptions import GithubImportException
+from eml_import.exceptions import EMLImporterException, GithubImportException
 from eml_import.models import BranchType, ImportedCommit
 from eml_import.utils.file_handler import BaseFileHandler
 from eml_import.utils.named_bytes_io import NamedBytesIO
@@ -42,7 +42,7 @@ class GithubEmlFileHandler(BaseFileHandler):
     def cache_lock_key(self):
         return f"github-eml-importer:{self.election_config.identifier.lower()}"
 
-    def run(self) -> int:
+    def run(self) -> tuple[int, bool]:
         self.logger.info(
             "Starting GitHub importer for election %s",
             self.election_config.identifier,
@@ -51,70 +51,71 @@ class GithubEmlFileHandler(BaseFileHandler):
         if not settings.GITHUB_TOKEN or not settings.GITHUB_INGRESS_REPO:
             raise GithubImportException("GITHUB_TOKEN and/or GITHUB_INGRESS_REPO not configured.")
 
-        self.gh = Github(auth=Auth.Token(settings.GITHUB_TOKEN), per_page=500)
+        self.gh = Github(auth=Auth.Token(settings.GITHUB_TOKEN))
         self.repo = self.gh.get_repo(settings.GITHUB_INGRESS_REPO)
 
-        return self._run_import()
+        # One import per election at a time, so two workers cannot import the same commits twice
+        lock = cache.lock(self.cache_lock_key, timeout=LOCK_TIMEOUT, blocking=False)
+        if not lock.acquire():
+            self.logger.warning(
+                "Could not acquire lock, GithubEmlFileHandler is already running for %s",
+                self.election_config.identifier,
+            )
+            # No files are processed and set remaining commits to False, so no follow-up task is scheduled
+            return 0, False
 
-    def _run_import(self) -> int:
+        try:
+            return self._run_import()
+        finally:
+            try:
+                lock.release()
+            except LockError:
+                self.logger.warning(
+                    "Lock for %s expired while importing commits",
+                    self.election_config.identifier,
+                )
+
+    def _run_import(self) -> tuple[int, bool]:
         """
-        Import all remaining commits, one at a time, from each configured branch.
-        :return: the number of imported files
+        Import the next commit.
+        :return: Tuple of [the number of imported files, if commits remain to be processed]
         """
-        imported_files = 0
+        imported_files, commits_remaining = 0, False
 
-        for branch_type, branch in self._iterate_branches():
-            while True:
-                # One import per election at a time, so two workers cannot import the same commits twice
-                lock = cache.lock(self.cache_lock_key, timeout=LOCK_TIMEOUT, blocking=False)
-                if not lock.acquire():
-                    self.logger.warning(
-                        "Could not acquire lock, GithubEmlFileHandler is already running for %s",
-                        self.election_config.identifier,
-                    )
-                    return imported_files
+        branches = list(self._iterate_branches())
+        for index, (branch_type, branch) in enumerate(branches):
+            last_imported = (
+                ImportedCommit.objects.filter(election_config=self.election_config, branch_type=branch_type)
+                .order_by("-created_at")
+                .first()
+            )
 
-                try:
-                    last_imported = (
-                        ImportedCommit.objects.filter(election_config=self.election_config, branch_type=branch_type)
-                        .order_by("-created_at")
-                        .first()
-                    )
+            next_commit_sha, files, commits_remaining = self._get_files_for_next_commit(
+                last_imported.commit_sha if last_imported else None, branch
+            )
+            self.logger.info(
+                "Fetched files for next commit on branch %s at %s: %s",
+                branch,
+                last_imported.commit_sha if last_imported else "first commit",
+                f"{len(files)} files" if next_commit_sha else "no commits remaining",
+            )
+            if next_commit_sha is None:
+                continue
 
-                    self.logger.info(
-                        "Fetching files for next commit on branch %s at %s...",
-                        branch,
-                        last_imported.commit_sha if last_imported else "first commit",
-                    )
-                    batch_head_sha, files = self._get_files_for_next_commit(
-                        last_imported.commit_sha if last_imported else None, branch
-                    )
-                    if batch_head_sha is None:
-                        self.logger.info(
-                            "No commits remaining on %s branch (%s)",
-                            branch_type,
-                            branch,
-                        )
-                        break
+            xml_files = list(self._iterate_all_xml_files(files))
+            self.import_file_objects(xml_files)
+            ImportedCommit.objects.create(
+                election_config=self.election_config,
+                branch_type=branch_type,
+                commit_sha=next_commit_sha,
+            )
+            imported_files += len(xml_files)
 
-                    xml_files = list(self._iterate_all_xml_files(files))
-                    self.import_file_objects(xml_files)
-                    ImportedCommit.objects.create(
-                        election_config=self.election_config,
-                        branch_type=branch_type,
-                        commit_sha=batch_head_sha,
-                    )
-                    imported_files += len(xml_files)
-                finally:
-                    try:
-                        lock.release()
-                    except LockError:
-                        self.logger.warning(
-                            "Lock for %s expired while importing commits",
-                            self.election_config.identifier,
-                        )
+            # A later branch may still hold commits even when this one is caught up
+            return imported_files, commits_remaining or index < len(branches) - 1
 
-        return imported_files
+        # We reach this only if all commits are processed
+        return imported_files, False
 
     def import_file_objects(self, files: list[NamedBytesIO]) -> None:
         """
@@ -128,7 +129,8 @@ class GithubEmlFileHandler(BaseFileHandler):
                 try:
                     with transaction.atomic():
                         importer_cls(eml, file).parse()
-                except Exception as e:
+                except EMLImporterException as e:
+                    # Let other exceptions (like DB connection issues) bubble up so they are not silenced
                     self.logger.error(
                         f"\033[31mFailed importing {parser_type} file {file.filename} "
                         f"with exception: {type(e).__name__} {e}\033[0m"
@@ -147,24 +149,25 @@ class GithubEmlFileHandler(BaseFileHandler):
             else:
                 self.logger.info("No %s branch configured for %s", branch_type, self.election_config.identifier)
 
-    def _get_files_for_next_commit(self, base_sha: str | None, branch: str) -> tuple[str | None, list[File]]:
+    def _get_files_for_next_commit(self, base_sha: str | None, branch: str) -> tuple[str | None, list[File], bool]:
+        """
+        :return: A tuple of [the head sha, list of files, if there are remaining commits]
+        """
         if base_sha is not None:
             # Get the commits ahead of the base_sha ref, so commits[0] is the first commit after base_Sha
             ahead = self.repo.compare(base_sha, branch)
-            commits = list(itertools.islice(ahead.commits, 1))
+            commits = list(itertools.islice(ahead.commits, 2))
         else:
             # Get the first commits of the branch, so commits[0] is the first ever commit
-            commits = list(itertools.islice(self.repo.get_commits(sha=branch).reversed, 1))
+            commits = list(itertools.islice(self.repo.get_commits(sha=branch).reversed, 2))
 
         if not commits:
-            return None, []
-        else:
-            commit = commits[0]
+            return None, [], False
 
-        batch_head_sha = commit.sha
+        commit = commits[0]
         files = list(self.repo.get_commit(commit.sha).files)
 
-        return batch_head_sha, files
+        return commit.sha, files, len(commits) > 1
 
     @staticmethod
     def _is_eml_ingress_file(filename: str) -> bool:
