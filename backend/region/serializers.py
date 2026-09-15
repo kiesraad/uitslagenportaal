@@ -7,7 +7,6 @@ from mainsite.serializers import (
     VoteCountSummarySerializer,
     VoterTurnoutCountSummarySerializer,
 )
-from mainsite.utils.eml_type import EmlType
 from region.models import Region
 
 
@@ -28,34 +27,14 @@ class RegionListSerializer(serializers.ModelSerializer):
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):
-    voter_turnout_counts = serializers.SerializerMethodField()
-    vote_counts = serializers.SerializerMethodField()
+    voter_turnout_counts = VoterTurnoutCountSummarySerializer(read_only=True, many=True)
+    vote_counts = VoteCountSummarySerializer(read_only=True, many=True)
+    documents = ElectionDocumentSerializer(read_only=True, many=True)
     timeline_entries = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
-    documents = ElectionDocumentSerializer(many=True, read_only=True)
     csb_name = serializers.CharField(source="csb.region_name", default=None, read_only=True)
     csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
     election_slug = serializers.CharField(source="election.slug", read_only=True)
-
-    _PREFERRED_EML_TYPE = {
-        RegionCategory.GEMEENTE: EmlType.EML_510b,
-        RegionCategory.KIESKRING: EmlType.EML_510c,
-    }
-
-    def _filter_to_preferred_source(self, region, counts):
-        preferred = self._PREFERRED_EML_TYPE.get(region.region_category)
-        if preferred is None:
-            return counts
-        preferred_counts = [count for count in counts if count.eml_type == preferred]
-        return preferred_counts or counts
-
-    def get_vote_counts(self, obj):
-        vote_counts = self._filter_to_preferred_source(obj, list(obj.vote_counts.all()))
-        return VoteCountSummarySerializer(vote_counts, many=True).data
-
-    def get_voter_turnout_counts(self, obj):
-        turnout_counts = self._filter_to_preferred_source(obj, list(obj.voter_turnout_counts.all()))
-        return VoterTurnoutCountSummarySerializer(turnout_counts, many=True).data
 
     class Meta:
         model = Region

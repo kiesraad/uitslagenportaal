@@ -13,7 +13,7 @@ import { appRoutes } from "../../utils/routes.ts";
 export function csbResultsLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params);
+      const regionQueryOptions = regionQuery(params, "csb");
 
       await Promise.all([
          queryClient.ensureQueryData(electionConfigQueryOptions),

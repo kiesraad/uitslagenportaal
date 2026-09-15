@@ -8,7 +8,7 @@ import {
    getRegion,
    getRegions,
 } from "../api/endpoints";
-import type { RegionCategory } from "../api/types";
+import type { RegionCategory, ReportingLevel } from "../api/types";
 
 // The query factories carry no `enabled`: a suspense query cannot be disabled, and the route
 // loaders that build them always have their parameters.
@@ -19,10 +19,13 @@ export function electionConfigQuery(slug?: string) {
    });
 }
 
-export function regionQuery({ electionConfigSlug, regionSlug, csbSlug, parentRegionSlug }: Params) {
+export function regionQuery(
+   { electionConfigSlug, regionSlug, csbSlug, parentRegionSlug }: Params,
+   level: ReportingLevel,
+) {
    return queryOptions({
-      queryKey: ["region", electionConfigSlug, regionSlug, csbSlug ?? null, parentRegionSlug ?? null],
-      queryFn: () => getRegion(electionConfigSlug, regionSlug, csbSlug, parentRegionSlug),
+      queryKey: ["region", electionConfigSlug, regionSlug, csbSlug ?? null, parentRegionSlug ?? null, level],
+      queryFn: () => getRegion(electionConfigSlug, regionSlug, csbSlug, parentRegionSlug, level),
    });
 }
 

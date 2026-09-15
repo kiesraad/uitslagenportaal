@@ -2,16 +2,23 @@ from django.db.models import Prefetch
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
-from election.models import ElectionDocument
+from election.models import ElectionDocument, VoteCount, VoterTurnoutCount
 from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
-from mainsite.utils.eml_type import EmlType
+from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, EmlType, ReportingLevel
 from region.models import Region
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
 _OWN_RESULTS_EML_TYPE = {
     RegionCategory.GEMEENTE: EmlType.EML_510b,
     RegionCategory.KIESKRING: EmlType.EML_510c,
+}
+
+# FileType values are EML510b, not the EmlType strings 510b used on vote counts.
+_DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL = {
+    ReportingLevel.GSB: ElectionDocument.FileType.EML_510B,
+    ReportingLevel.HSB: ElectionDocument.FileType.EML_510C,
+    ReportingLevel.CSB: ElectionDocument.FileType.EML_510D,
 }
 
 
@@ -70,6 +77,7 @@ class RegionDetailView(RetrieveAPIView):
     def get_object(self):
         election_config_slug = self.request.query_params.get("election_config")
         region_slug = self.request.query_params.get("region")
+        level = self.request.query_params.get("level")
         # optional
         csb_slug = self.request.query_params.get("csb")
         parent_region_slug = self.request.query_params.get("parent_region")
@@ -78,19 +86,28 @@ class RegionDetailView(RetrieveAPIView):
             raise ValidationError({"election_config": "This query parameter is required."})
         if not region_slug:
             raise ValidationError({"region": "This query parameter is required."})
+        if level not in ReportingLevel.values:
+            raise ValidationError({"level": "This query parameter is required and must be gsb, hsb, or csb."})
 
+        eml_type = EML_TYPE_BY_REPORTING_LEVEL[level]
+        document_file_type = _DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL[level]
         queryset = (
             Region.objects.select_related(
                 "csb",
                 "election__election_config",
             )
             .prefetch_related(
-                "vote_counts__party",
-                "vote_counts__candidate",
-                "voter_turnout_counts",
+                Prefetch(
+                    "vote_counts",
+                    queryset=VoteCount.objects.filter(eml_type=eml_type).select_related("party", "candidate"),
+                ),
+                Prefetch(
+                    "voter_turnout_counts",
+                    queryset=VoterTurnoutCount.objects.filter(eml_type=eml_type),
+                ),
                 # ElectionDocument uses CurrentManager; explicit Prefetch ensures prefetched
                 # rows match obj.documents.all(), not all_objects.
-                Prefetch("documents", queryset=ElectionDocument.objects.all()),
+                Prefetch("documents", queryset=ElectionDocument.objects.filter(file_type=document_file_type)),
                 "election__election_config__timeline_entries",
             )
             .filter(

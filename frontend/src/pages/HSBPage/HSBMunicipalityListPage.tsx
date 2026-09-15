@@ -14,7 +14,7 @@ import { appRoutes } from "../../utils/routes.ts";
 export function hsbMunicipalityListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params);
+      const regionQueryOptions = regionQuery(params, "hsb");
       const regionsQueryOptions = regionsQuery(params, "GEMEENTE");
 
       const [electionConfig] = await Promise.all([
