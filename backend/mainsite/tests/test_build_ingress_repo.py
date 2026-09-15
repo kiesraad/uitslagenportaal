@@ -10,7 +10,10 @@ carried off onto branches. That is enough to check what matters: which branch ea
 written for (`dob2pk/` vs `dob1/`), how the zips nest, and how the work was spread over commits.
 """
 
+import codecs
+import csv
 import io
+import re
 import subprocess
 import zipfile
 from collections import Counter
@@ -26,6 +29,7 @@ from django.core.management.base import CommandError
 from eml_import.utils.file_handler import BaseFileHandler
 from mainsite.management.commands import build_ingress_repo
 from mainsite.management.commands._corrigenda import corrigenda_for, draw_corrigenda
+from mainsite.management.commands._osv_csv import read_candidate_names, render_csv
 from mainsite.management.commands.build_ingress_repo import (
     COUNTING_LEVELS,
     EXCHANGE_LEVELS,
@@ -233,16 +237,30 @@ def test_exchange_documents_are_zipped_under_their_own_name(replica):
     ]
 
 
-def test_a_counting_upload_nests_the_eml_document_and_nothing_else(source, replica):
-    """The real uploads carry the control protocol export too, but the importer reads only XML."""
+def test_a_counting_upload_nests_the_eml_document_and_its_csv(source, replica):
+    """The CSV is rendered from the document, not copied from the export lying in the source."""
     upload = next(content for name, content in written_files(replica, f"dob1/{GSB_DIR}/").items())
 
-    assert zip_names(upload) == ["Telling_TK2025_gemeente_Amsterdam.zip"]
+    assert zip_names(upload) == [
+        "Telling_TK2025_gemeente_Amsterdam.zip",
+        "osv4-3_telling_tk2025_gemeente_amsterdam.csv",
+    ]
 
     inner = zip_member(upload, "Telling_TK2025_gemeente_Amsterdam.zip")
     document = source / "Telling_TK2025_gemeente_Amsterdam.eml.xml"
     assert zip_member(inner, document.name) == document.read_bytes()
     assert not [name for name in written_files(replica) if name.endswith(".csv")]
+
+
+def test_the_resultaat_is_zipped_under_its_own_name_beside_the_totaaltelling_upload(replica):
+    """Only counts come in an upload archive with a CSV; the Resultaat is zipped like an exchange document."""
+    uploads = written_files(replica, f"dob1/{CSB_DIR}/")
+    resultaat = uploads.pop(f"dob1/{CSB_DIR}/Resultaat_TK2025.zip")
+
+    assert zip_names(resultaat) == ["Resultaat_TK2025.eml.xml"]
+    [(name, totaaltelling)] = uploads.items()
+    assert name.rsplit("/", 1)[1].startswith("definitieve-documenten_tk2025_nederland-")
+    assert zip_names(totaaltelling) == ["Totaaltelling_TK2025.zip", "osv4-3_telling_tk2025.csv"]
 
 
 def test_a_national_central_stembureau_keeps_its_documents_together(run, tmp_path):
@@ -273,14 +291,15 @@ def test_counting_uploads_are_filed_per_organisation_and_committed_bottom_up(rep
     A gemeente counts, its hoofdstembureau totals the kieskring, the central stembureau publishes.
 
     The importer replays commits oldest first, so that order has to hold. Gemeente and kieskring
-    Amsterdam share a name, and each still gets a folder of its own.
+    Amsterdam share a name, and each still gets a folder of its own. Only the upload archives say
+    when they were pushed, so the Resultaat zip is left out of the ordering.
     """
-    uploads = sorted(written_files(replica, "dob1/"), key=pushed_at)
+    archives = [name for name in written_files(replica, "dob1/") if "/definitieve-documenten_" in name]
+    uploads = sorted(archives, key=pushed_at)
 
     assert [name.rsplit("/", 1)[0] for name in uploads] == [
         f"dob1/{GSB_DIR}",
         f"dob1/{HSB_DIR}",
-        f"dob1/{CSB_DIR}",
         f"dob1/{CSB_DIR}",
     ]
 
@@ -488,6 +507,7 @@ def render_telling(
   <Count>
     <Election>
       <ElectionIdentifier Id="{election_id}">
+        <ElectionName>Tweede Kamer der Staten-Generaal 2025</ElectionName>
         <kr:ElectionDomain>Nederland</kr:ElectionDomain>
         <kr:ElectionDate>{ELECTION_DAY}</kr:ElectionDate>
       </ElectionIdentifier>
@@ -696,3 +716,183 @@ def test_the_seed_decides_the_corrigenda(run, counted_source, tmp_path):
 def test_refuses_a_corrigenda_rate_that_is_not_a_chance(run, counted_source, tmp_path, rate):
     with pytest.raises(CommandError, match="--corrigenda-rate must be between 0 and 1"):
         build(counted_source, tmp_path / "replica", corrigenda_rate=rate)
+
+
+# osv4-3 CSV ---------------------------------------------------------------------------------
+
+COUNTED_CSV = "osv4-3_telling_tk2025_gemeente_amsterdam.csv"
+
+
+def render_kandidatenlijst(contest: str = "geen") -> str:
+    """A 230b naming the first party's candidates only, one of them with a name prefix."""
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<EML xmlns="urn:oasis:names:tc:evs:schema:eml" xmlns:xnl="urn:oasis:names:tc:ciq:xsdschema:xNL:2.0" Id="230b">
+  <CandidateList>
+    <Election>
+      <ElectionIdentifier Id="{ELECTION_ID}"/>
+      <Contest>
+        <ContestIdentifier Id="{contest}"/>
+        <Affiliation>
+          <AffiliationIdentifier Id="1"><RegisteredName>{PARTY_NAMES["1"]}</RegisteredName></AffiliationIdentifier>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName><xnl:PersonName>
+              <xnl:NameLine NameType="Initials">A.B.</xnl:NameLine>
+              <xnl:NamePrefix>van den</xnl:NamePrefix>
+              <xnl:LastName>Berg</xnl:LastName>
+            </xnl:PersonName></CandidateFullName>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName><xnl:PersonName>
+              <xnl:NameLine NameType="Initials">C.</xnl:NameLine>
+              <xnl:LastName>Jansen</xnl:LastName>
+            </xnl:PersonName></CandidateFullName>
+          </Candidate>
+        </Affiliation>
+      </Contest>
+    </Election>
+  </CandidateList>
+</EML>
+"""
+
+
+@pytest.fixture
+def candidate_names(tmp_path):
+    path = tmp_path / "Kandidatenlijsten_TK2025.eml.xml"
+    path.write_text(render_kandidatenlijst(), encoding="utf-8")
+    return read_candidate_names(path)
+
+
+def csv_rows(data: bytes) -> list[list[str]]:
+    return list(csv.reader(io.StringIO(data.decode("utf-8-sig")), delimiter=";"))
+
+
+def selection_rows(rows: list[list[str]]) -> list[list[str]]:
+    """The party and candidate rows: a list number in the first column, or a candidate number in the third."""
+    return [row for row in rows if len(row) > 4 and (row[0].isdigit() or row[2].isdigit())]
+
+
+def test_the_csv_prints_the_counts_of_the_municipality_and_each_polling_station(candidate_names):
+    rows = csv_rows(render_csv(render_telling().encode(), candidate_names))
+
+    assert rows == [
+        ["Verkiezing", "", "Tweede Kamer der Staten-Generaal 2025"],
+        ["Datum", "", ELECTION_DAY],
+        ["Gebied", "", COUNTED_GEMEENTE],
+        ["Nummer", "", "1884"],
+        [],
+        ["Lijstnummer", "Aanduiding", "Volgnummer", "Naam kandidaat", "Totaal", "SB1", "SB2", "SB3", "SB4"],
+        ["Gebiednummer", "", "", "", "", "1", "2", "3", "4"],
+        ["", "opgeroepenen", "", "", "740", "200", "180", "170", "190"],
+        ["", "geldige stempas", "", "", "355", "100", "90", "80", "85"],
+        ["", "geldig volmachtbewijs", "", "", "61", "15", "16", "15", "15"],
+        ["", "toegelaten kiezers", "", "", "416", "115", "106", "95", "100"],
+        ["", "geldige stembiljetten", "", "", "394", "110", "101", "90", "93"],
+        ["", "blanco stembiljetten", "", "", "8", "2", "1", "3", "2"],
+        ["", "ongeldige stembiljetten", "", "", "14", "3", "4", "2", "5"],
+        # Not in the document: the counted, blank and invalid ballots together.
+        ["", "aangetroffen stembiljetten", "", "", "416", "115", "106", "95", "100"],
+        ["", "meer stembiljetten dan toegelaten kiezers", "", "", "0", "0", "0", "0", "0"],
+        ["", "minder stembiljetten dan toegelaten kiezers", "", "", "0", "0", "0", "0", "0"],
+        ["1", "Eerste Partij", "", "", "194", "70", "40", "43", "41"],
+        ["", "", "1", "van den Berg, A.B.", "110", "40", "22", "31", "17"],
+        ["", "", "2", "Jansen, C.", "84", "30", "18", "12", "24"],
+        ["2", "Tweede Partij", "", "", "200", "40", "61", "47", "52"],
+        # This party's list is not in the source, so its candidates go without a name.
+        ["", "", "1", "", "120", "25", "35", "19", "41"],
+        ["", "", "2", "", "80", "15", "26", "28", "11"],
+    ]
+
+
+def test_the_csv_is_encoded_the_way_the_counting_software_writes_it(candidate_names):
+    """UTF-8 with a BOM and CRLF, every cell quoted unless it is empty, and no line break at the end."""
+    data = render_csv(render_telling().encode(), candidate_names)
+
+    assert data.startswith(codecs.BOM_UTF8)
+    lines = data.removeprefix(codecs.BOM_UTF8).decode().split("\r\n")
+    assert '"Gebiednummer";;;;;"1";"2";"3";"4"' in lines
+    assert ';;"1";"van den Berg, A.B.";"110";"40";"22";"31";"17"' in lines
+    assert lines[-1] == ';;"2";;"80";"15";"26";"28";"11"'
+    assert not [line for line in lines if "\n" in line]
+
+
+def test_a_count_the_document_does_not_carry_gets_no_row(candidate_names):
+    """A kieskring total has no admitted voters, and its CSV leaves that row out rather than printing zeros."""
+    document = re.sub(r'<UncountedVotes ReasonCode="toegelaten kiezers">\d+</UncountedVotes>', "", render_telling())
+
+    rows = csv_rows(render_csv(document.encode(), candidate_names))
+
+    labels = [row[1] for row in rows if len(row) > 4 and not row[0] and row[1]]
+    assert labels == [
+        "opgeroepenen",
+        "geldige stempas",
+        "geldig volmachtbewijs",
+        "geldige stembiljetten",
+        "blanco stembiljetten",
+        "ongeldige stembiljetten",
+        "aangetroffen stembiljetten",
+        "meer stembiljetten dan toegelaten kiezers",
+        "minder stembiljetten dan toegelaten kiezers",
+    ]
+
+
+def test_a_polling_station_postcode_gets_a_row_of_its_own(candidate_names):
+    document = render_telling().replace("Stembureau SB1<", "Stembureau SB1 (postcode: 1011 AB)<")
+
+    rows = csv_rows(render_csv(document.encode(), candidate_names))
+
+    assert rows[5][5:] == ["SB1", "SB2", "SB3", "SB4"]
+    assert rows[7] == ["Postcode", "", "", "", "", "1011 AB", "", "", ""]
+
+
+@pytest.mark.parametrize(
+    ("doc_type", "contest", "area"),
+    [
+        ("510b", "geen", "Amsterdam"),
+        ("510b", "9", "Gemeente Amsterdam"),
+        ("510c", "9", "Kieskring Amsterdam"),
+    ],
+)
+def test_the_area_names_its_kind_only_in_an_election_with_kieskringen(candidate_names, doc_type, contest, area):
+    document = (
+        render_telling()
+        .replace('Id="510b"', f'Id="{doc_type}"')
+        .replace('<ContestIdentifier Id="geen"/>', f'<ContestIdentifier Id="{contest}"/>')
+    )
+
+    assert csv_rows(render_csv(document.encode(), candidate_names))[2] == ["Gebied", "", area]
+
+
+def test_a_candidate_is_named_from_a_list_submitted_in_another_contest(tmp_path):
+    """A count and the list its candidates stand on need not share a contest."""
+    path = tmp_path / "Kandidatenlijsten_TK2025_Amsterdam.eml.xml"
+    path.write_text(render_kandidatenlijst(contest="9"), encoding="utf-8")
+
+    rows = csv_rows(render_csv(render_telling().encode(), read_candidate_names(path)))
+
+    assert ["", "", "1", "van den Berg, A.B."] in [row[:4] for row in rows]
+
+
+def test_the_uploaded_csv_names_the_candidates_on_the_lists_in_the_source(run, counted_source, tmp_path):
+    (counted_source / "Kandidatenlijsten_TK2025_Amsterdam.eml.xml").write_text(
+        render_kandidatenlijst(), encoding="utf-8"
+    )
+
+    replica = build(counted_source, tmp_path / "replica")
+
+    upload = next(iter(written_files(replica, f"dob1/{GSB_DIR}/").values()))
+    assert ["", "", "1", "van den Berg, A.B."] in [row[:4] for row in csv_rows(zip_member(upload, COUNTED_CSV))]
+
+
+def test_each_upload_of_a_corrected_telling_carries_the_csv_of_its_own_revision(corrected):
+    """Only the first upload is the final documents; every correction after it prints its own counts."""
+    uploads = sorted(written_files(corrected, f"dob1/{GSB_DIR}/").items(), key=lambda item: pushed_at(item[0]))
+
+    kinds = [name.rsplit("/", 1)[1].split("_", 1)[0] for name, _ in uploads]
+    assert kinds == ["definitieve-documenten", "correctie", "correctie", "correctie"]
+
+    for (_, archive), revision in zip(uploads, telling_revisions(corrected), strict=True):
+        totals = [int(row[4]) for row in selection_rows(csv_rows(zip_member(archive, COUNTED_CSV)))]
+        # The municipality's selections open the document, ahead of every polling station.
+        assert totals == valid_votes(revision)[: len(totals)]
