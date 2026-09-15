@@ -309,8 +309,8 @@ TIMELINE_ENTRIES = {
 
 WS2023_ELECTION_SEED = {
     "election": {
-        "id": "AB2026",
-        "label": "Waterschapsverkiezingen 2026",
+        "id": "AB2023",
+        "label": "Waterschapsverkiezingen 2023",
         "category": "WS",
         "date": "2026-09-23T08:00:00",
         "issue_report_opens_at": "2026-09-23T10:00:00",
@@ -326,8 +326,8 @@ WS2023_ELECTION_SEED = {
 
 PS2023_ELECTION_SEED = {
     "election": {
-        "id": "PS2026",
-        "label": "Provinciale Statenverkiezingen 2026",
+        "id": "PS2023",
+        "label": "Provinciale Statenverkiezingen 2023",
         "category": "PS",
         "date": "2026-09-23T08:00:00",
         "issue_report_opens_at": "2026-09-23T10:00:00",
