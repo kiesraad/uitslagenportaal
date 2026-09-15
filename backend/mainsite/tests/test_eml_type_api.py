@@ -2,9 +2,9 @@
 After importing the Scheldestromen WS fixtures, assert that each API surface
 returns the EML type that belongs at that reporting level:
 
-- Waterschap asked as CSB → 510d
-- Gemeente asked as GSB → 510b only (both types are stored)
-- Stembureau asked as GSB → 510b
+- Waterschap (CSB) → 510d
+- Gemeente (GSB) → 510b only (both types are stored)
+- Stembureau (GSB) → 510b
 - Party result matrix → 510d GSB + CSB counts
 """
 
