@@ -872,6 +872,7 @@ h4,
    display: flex;
    justify-content: space-between;
    gap: 48px;
+   border-bottom: 1px solid var(--c-muted);
 }
 
 .footer-logo {
@@ -900,7 +901,7 @@ h4,
 
 .f-logo-grid-h {
    display: flex;
-   gap: 0px;
+   gap: 0;
 }
 
 @media (max-width: 1300px) {
@@ -916,10 +917,22 @@ h4,
       margin-top: 0;
       padding-top: 68px;
    }
+
+   .footer-top {
+      border-bottom: none;
+   }
+}
+
+.f-logo-grid-item {
+   position: relative;
+   width: 140px;
+   height: 110px;
+   border: 1px solid var(--c-muted);
 }
 
 .f-logo-grid-h > .f-logo-grid-item {
    border-left: 0;
+   border-bottom: 0;
 }
 
 .f-logo-grid-v-container {
@@ -936,13 +949,6 @@ h4,
 
 .f-logo-grid-v > .f-logo-grid-item:last-child {
    border-bottom: 0;
-}
-
-.f-logo-grid-item {
-   position: relative;
-   width: 140px;
-   height: 110px;
-   border: 1px solid var(--c-muted);
 }
 
 .f-logo-grid-h > .f-logo-grid-item > .f-logo-grid-item-bullet:first-child {
@@ -1028,7 +1034,6 @@ h4,
 /* Bottom area: tagline left, copyright right */
 .footer-meta {
    position: relative;
-   border-top: 1px solid var(--c-muted);
    margin: 0 6rem 0;
    padding: 38px 0 60px 0;
    display: flex;
@@ -1134,14 +1139,14 @@ h4,
    position: absolute;
    bottom: -3rem;
    right: -5rem;
-   z-index: 0 !important;
+   z-index: 0;
 }
 .hero-grid-left {
    display: flex;
 }
 .hero-grid-h {
    display: flex;
-   gap: 0px;
+   gap: 0;
 }
 
 @media (max-width: 1300px) {
@@ -1159,11 +1164,24 @@ h4,
    }
 }
 
+.hero-grid-item {
+   position: relative;
+   width: 140px;
+   height: 110px;
+   border: 1px solid var(--c-blue);
+}
+
 .hero-grid-h > .hero-grid-item {
    border-left: 0;
 }
+.hero-grid-h:first-child > .hero-grid-item {
+   border-bottom: 0;
+}
 .hero-grid-v > .hero-grid-item {
    border-bottom: 0;
+}
+.hero-grid-v:first-child > .hero-grid-item {
+   border-right: 0;
 }
 
 .hero-grid-v-container {
@@ -1172,13 +1190,6 @@ h4,
    justify-content: space-between;
    width: 100%;
    padding-left: 6rem;
-}
-
-.hero-grid-item {
-   position: relative;
-   width: 140px;
-   height: 110px;
-   border: 1px solid var(--c-blue);
 }
 
 .hero-grid-h > .hero-grid-item > .hero-grid-item-bullet:first-child {
