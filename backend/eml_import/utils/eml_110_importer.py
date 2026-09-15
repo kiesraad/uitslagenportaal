@@ -3,6 +3,7 @@ from pyeml_bindings import (
     Eml110a,
 )
 
+from election.models import Contest
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from mainsite.utils.eml_type import EmlType
 from party.models import Party
@@ -22,6 +23,7 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
             if self._is_correction():
                 self._ensure_exchange_correction_allowed()
                 self._delete()
+            self._parse_contest()
             self._parse_regions()
             self._parse_registered_parties()
         self.logger.info("Successfully imported data for Election")
@@ -37,8 +39,20 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
         return False
 
     def _delete(self) -> None:
+        Contest.objects.filter(election=self.election).delete()
         Party.objects.filter(election=self.election).delete()
         Region.objects.filter(election=self.election).delete()
+
+    def _parse_contest(self) -> None:
+        """
+        Parse the contest from the election definition; only the top-level contest is defined here, which has a name
+        of something like "alle" or "geen", depending on the election.
+        """
+        Contest.objects.create(
+            identifier=self.eml.election_event.election.contest.contest_identifier.id,
+            election=self.election,
+            name=self.eml.election_event.election.contest.contest_identifier.contest_name,
+        )
 
     def _parse_regions(self) -> None:
         region_nodes = self.eml.election_event.election.election_tree.region
