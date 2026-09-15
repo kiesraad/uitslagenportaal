@@ -24,11 +24,23 @@ const FILE_TYPE_MAPPINGS: Record<
    string,
    { name: MessageDescriptor; fileType: string; description: MessageDescriptor; icon: IconDefinition }
 > = (() => ({
-   "510b": {
+   EML510b: {
       name: msg`EML_NL tellingbestand 510b`,
       fileType: "xml",
       icon: faFolder,
       description: msg`Output van de optelsoftware, bevat de resultaten van alle stembureaus en de optelling van de hele gemeente.`,
+   },
+   EML510c: {
+      name: msg`EML_NL tellingbestand 510c`,
+      fileType: "xml",
+      icon: faFolder,
+      description: msg`Output van de optelsoftware, bevat de optelling van het hoofdstembureau.`,
+   },
+   EML510d: {
+      name: msg`EML_NL tellingbestand 510d`,
+      fileType: "xml",
+      icon: faFolder,
+      description: msg`Output van de optelsoftware, bevat de resultaten van alle onderliggende regio's en de totaaltellingen.`,
    },
 }))();
 

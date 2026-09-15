@@ -21,5 +21,5 @@ class Command(BaseCommand):
         except ElectionConfig.DoesNotExist:
             raise CommandError(f"Election config does not exist: {identifier}")
 
-        file_cnt = GithubEmlFileHandler(election_config).run()
+        file_cnt, _ = GithubEmlFileHandler(election_config).run()
         self.stdout.write(self.style.SUCCESS(f"Processed {file_cnt} file(s)."))

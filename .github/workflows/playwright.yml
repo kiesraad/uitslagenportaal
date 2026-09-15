@@ -93,7 +93,7 @@ jobs:
       - run: uv run playwright install --only-shell chromium
         working-directory: backend
       - name: Create the storage bucket
-        run: uv run python manage.py ensure_bucket --public
+        run: uv run python manage.py ensure_bucket
         working-directory: backend
 
       # conftest.py migrates too, but doing it here lets the readiness check below hit a

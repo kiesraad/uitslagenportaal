@@ -207,6 +207,14 @@ msgstr "Eerste stap bovenaan"
 msgid "EML_NL tellingbestand 510b"
 msgstr "EML_NL tellingbestand 510b"
 
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "EML_NL tellingbestand 510c"
+msgstr "EML_NL tellingbestand 510c"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "EML_NL tellingbestand 510d"
+msgstr "EML_NL tellingbestand 510d"
+
 #: src/pages/ErrorBoundaryPage.tsx
 msgid "Er is een fout opgetreden"
 msgstr "Er is een fout opgetreden"
@@ -446,6 +454,14 @@ msgstr "Op dit moment zijn er nog geen telresultaten van een verkiezing beschikb
 #: src/pages/HomePage.tsx
 msgid "Opnieuw proberen"
 msgstr "Opnieuw proberen"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Output van de optelsoftware, bevat de optelling van het hoofdstembureau."
+msgstr "Output van de optelsoftware, bevat de optelling van het hoofdstembureau."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Output van de optelsoftware, bevat de resultaten van alle onderliggende regio's en de totaaltellingen."
+msgstr "Output van de optelsoftware, bevat de resultaten van alle onderliggende regio's en de totaaltellingen."
 
 #: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Output van de optelsoftware, bevat de resultaten van alle stembureaus en de optelling van de hele gemeente."

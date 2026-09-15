@@ -68,6 +68,11 @@ export default function VotesResume({ votes, type }: Props & { type: VotesResume
 
    const boxVotes = getAdmittedVoterVotes(votes, type === "votesCast" ? VOTES_CAST : ADMITTED_VOTER_ROWS);
 
+   // If Stempassen is missing at HSB/CSB, hide the block.
+   if (type === "admittedVoters" && !votes?.some((entry) => entry.reason_code === "geldige stempassen")) {
+      return null;
+   }
+
    return (
       <section className="admitted-voters">
          {type === "admittedVoters" && (

@@ -207,6 +207,14 @@ msgstr "First step first"
 msgid "EML_NL tellingbestand 510b"
 msgstr "EML_NL count file 510b"
 
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "EML_NL tellingbestand 510c"
+msgstr "EML_NL count file 510c"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "EML_NL tellingbestand 510d"
+msgstr "EML_NL count file 510d"
+
 #: src/pages/ErrorBoundaryPage.tsx
 msgid "Er is een fout opgetreden"
 msgstr "Something went wrong"
@@ -446,6 +454,14 @@ msgstr "There are currently no counting results available for any election. As p
 #: src/pages/HomePage.tsx
 msgid "Opnieuw proberen"
 msgstr "Try again"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Output van de optelsoftware, bevat de optelling van het hoofdstembureau."
+msgstr "Output of the tabulation software; contains the total for the district electoral committee."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Output van de optelsoftware, bevat de resultaten van alle onderliggende regio's en de totaaltellingen."
+msgstr "Output of the tabulation software; contains the results of all underlying regions and the overall totals."
 
 #: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Output van de optelsoftware, bevat de resultaten van alle stembureaus en de optelling van de hele gemeente."

@@ -10,6 +10,16 @@ on:
         required: true
         type: string
         description: Name of the image to build
+    outputs:
+      digest:
+        description: Digest of the pushed image, so a caller can deploy this exact build
+        value: ${{ jobs.docker-build-push.outputs.digest }}
+
+concurrency:
+  # Keyed on the image as well as the ref: the two images publish in parallel from the
+  # same caller and must not queue behind each other.
+  group: publish-${{ inputs.image-name }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
@@ -19,6 +29,8 @@ env:
 jobs:
   docker-build-push:
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
 
     steps:
       - name: Checkout
@@ -85,6 +97,8 @@ jobs:
         with:
           # Package name does not work with registry/owner prefix.
           packages: ${{ inputs.image-name }}
-          delete-untagged: true
-          # Fail the run if a retained index has a child missing from the registry.
+          # The moving :dev tag leaves each deployed digest untagged, so keep as many
+          # as Helm keeps revisions to roll back to.
+          keep-n-untagged: 10
+          # Warn if a retained index has a child missing from the registry.
           validate: true

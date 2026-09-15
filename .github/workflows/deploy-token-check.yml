@@ -1,0 +1,107 @@
+# The deploy token expires; without this the first sign is a failed deploy on dev.
+name: Deploy token check
+
+on:
+  schedule:
+    # First of the month. Which weekday that lands on does not matter: the 90-day
+    # threshold leaves three of these before the token actually expires.
+    - cron: "17 7 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check ${{ matrix.environment }} deploy token
+    runs-on: ubuntu-latest
+    strategy:
+      # A broken secret in one environment must not hide the others' expiry dates.
+      fail-fast: false
+      matrix:
+        include:
+          # Each environment holds its own K8S_DEPLOY_TOKEN under the same name; the
+          # namespace is what the reissue command in the issue body needs.
+          - environment: scaleway-dev
+            namespace: uitslagenportaal-dev
+    environment: ${{ matrix.environment }}
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      # The expiry is read from the secret itself: the deploy service account is granted
+      # nothing in authentication.k8s.io, so TokenReview is out of reach. It also reports
+      # what the API server actually issued, which may be far short of the --duration asked.
+      - name: Read token expiry
+        env:
+          K8S_DEPLOY_TOKEN: ${{ secrets.K8S_DEPLOY_TOKEN }}
+        run: |
+          exp=$(python3 - <<'PY'
+          import base64, json, os, sys
+
+          # Deploy tokens always come from `kubectl create token`, so they are bound JWTs:
+          # anything without a readable exp is a broken secret, not a long-lived token.
+          token = os.environ["K8S_DEPLOY_TOKEN"]
+          try:
+              payload = token.split(".")[1]
+              exp = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))["exp"]
+          except Exception:
+              sys.exit("K8S_DEPLOY_TOKEN is not a bound service account token; reissue it with `kubectl create token`.")
+          print(int(exp))
+          PY
+          )
+          echo "EXPIRES_ON=$(date -ud "@$exp" +%F)" >> "$GITHUB_ENV"
+          echo "DAYS_LEFT=$(( (exp - $(date +%s)) / 86400 ))" >> "$GITHUB_ENV"
+
+      - name: Report
+        run: |
+          echo "${{ matrix.environment }}: token expires $EXPIRES_ON ($DAYS_LEFT days left)." \
+            >> "$GITHUB_STEP_SUMMARY"
+
+      # Three months is enough warning to reissue without hurry. The project's auto-add
+      # workflow puts the issue on the board; the labels keep a later run from opening
+      # a second one and let the board be filtered per environment.
+      - name: Open or update tracking issue
+        if: fromJSON(env.DAYS_LEFT) < 90
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ENVIRONMENT: ${{ matrix.environment }}
+          NAMESPACE: ${{ matrix.namespace }}
+        run: |
+          if [ "$DAYS_LEFT" -le 0 ]; then
+            status="**expired on $EXPIRES_ON** — deploys to \`$ENVIRONMENT\` are failing"
+          else
+            status="expires on **$EXPIRES_ON**, in **$DAYS_LEFT days**"
+          fi
+
+          # Created on demand so adding an environment needs no setup beyond its matrix
+          # entry. Only an absent label is written, leaving a recoloured one alone;
+          # --force covers two environments racing to create the shared label.
+          ensure_label() {
+            gh api "repos/$GH_REPO/labels/$1" --silent 2>/dev/null \
+              || gh label create "$1" --force --color "$2" --description "$3"
+          }
+          ensure_label renew-deploy-token d70520 "Deploy token nears expiry"
+          ensure_label "$ENVIRONMENT" 1d76db "Concerns the $ENVIRONMENT environment"
+
+          existing=$(gh issue list --state open \
+            --label renew-deploy-token --label "$ENVIRONMENT" \
+            --limit 1 --json number -q '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Still open: the token $status."
+            exit 0
+          fi
+
+          # Unquoted heredoc, so the variables expand and every backtick must be escaped.
+          gh issue create --label renew-deploy-token --label "$ENVIRONMENT" \
+            --title "Reissue the $ENVIRONMENT deploy token" --body-file - <<MD
+          The \`K8S_DEPLOY_TOKEN\` secret in the \`$ENVIRONMENT\` environment $status.
+
+          Reissue it and close this issue:
+
+          \`\`\`bash
+          kubectl -n $NAMESPACE create token uitslagenportaal-deploy --duration=8760h \\
+            | gh secret set K8S_DEPLOY_TOKEN --repo $GH_REPO --env $ENVIRONMENT
+          \`\`\`
+          MD

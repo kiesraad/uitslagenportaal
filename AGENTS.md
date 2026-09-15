@@ -67,7 +67,7 @@ go to S3-compatible storage through Django's `default_storage`.
 
 Celery (app in `mainsite/celery.py`, tasks in `<app>/tasks.py`) runs with Redis backend.
 Celery Beat is used for periodic tasks, and tasks are scheduled in `tasks.py`. The `celery` compose service
-runs worker and beat together (`celery -A mainsite worker --beat`) under `watchmedo`
+runs worker and beat together (`celery -A mainsite worker --beat`) under `watchfiles`
 for autoreload. Put new tasks in `<app>/tasks.py` — the app autodiscovers them.
 
 ### Frontend (`frontend/src`)
@@ -95,12 +95,12 @@ Lint/format is **ruff** (line length 120, rules `E,F,I`, migrations excluded) fo
 backend and **biome** (`npm run lint`, `npm run format`) for the frontend. Run them before
 finishing a change.
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for management commands, object-storage variables, and
+See [development.md](docs/development.md) for management commands, object-storage variables, and
 the election visibility/deletion rules.
 
 ## Translations
 
-See the Internationalisation section in [DEVELOPMENT.md](DEVELOPMENT.md) for the setup,
+See the Internationalisation section in [development.md](docs/development.md) for the setup,
 marking text for translations and translation rules.
 
 Lingui publishes agent skills, context files and an MCP server for working with its API:
@@ -151,19 +151,28 @@ Stub `fetch` with `vi.stubGlobal`; wrap components in `QueryClientProvider` and
 
 ## CI
 
-`.github/workflows/backend-ci.yml`: ruff check + format check, `pytest` against Postgres 16,
-and `makemigrations --check --dry-run`.
+`.github/workflows/backend-ci.yml`: ruff check + format check, `pytest` against Postgres 16, and
+`makemigrations --check --dry-run`.
 `.github/workflows/frontend-ci.yml`: `biome ci`, vitest, `npm run i18n:check` and
 `npm run build` (`tsc -b` + vite).
 `.github/workflows/playwright.yml`: the browser tests, against a throwaway stack.
+`.github/workflows/helm-ci.yml`: `helm lint` plus `helm template` piped through
+`kubeconform`, for the application chart against `values-dev.yaml` and for the
+`service-accounts` chart — the combination that actually gets deployed.
 
-All three run on PRs — the backend and frontend suites filtered by path, Playwright on every
-PR — and the first two check that generated files are in step with the source, so regenerate
-them as part of the change: `makemigrations` after a model change,
+All four run on PRs — the backend, frontend and Helm suites filtered by path, Playwright on
+every PR — and the first two check that generated files are in step with the source, so
+regenerate them as part of the change: `makemigrations` after a model change,
 `npm run i18n:extract-clean` after a message change. A missing migration or a stale
 catalogue fails CI. PRs target `dev`.
 
-`.github/workflows/branch-ci-cd.yml` runs on pushes to `dev` and `main`. It calls all three
+`.github/workflows/branch-ci-cd.yml` runs on pushes to `dev` and `main`. It calls all four
 workflows above in full — path filters apply to a workflow's own triggers, not to a call —
 and publishes the frontend and backend images to ghcr.io only once every one of them passes.
-`publish-docker-image.yml` is the reusable workflow that builds and pushes one image.
+`publish-docker-image.yml` is the reusable workflow that builds and pushes one image, and
+returns the digest it pushed. On `dev` only, a final `deploy` job then upgrades the Helm
+release with those digests; see [docs/deployments.md](docs/deployments.md).
+
+`.github/workflows/deploy-token-check.yml` is on a schedule rather than on PRs: on the first of each month it reads the
+expiry out of each environment's `K8S_DEPLOY_TOKEN` and, under 90 days, opens and then monthly comments on a
+`renew-deploy-token` issue.

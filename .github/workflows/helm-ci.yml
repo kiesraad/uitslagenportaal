@@ -1,0 +1,54 @@
+name: Helm CI
+
+on:
+  # Workflow only runs on pull_requests and is run from branch-ci-cd.yml
+  pull_request:
+    paths:
+      - "k8s-config/**"
+      - ".github/workflows/helm-ci.yml"
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helm-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Match the cluster, so --strict rejects fields the cluster's API set does not have.
+  KUBERNETES_VERSION: "1.36.4"
+  KUBECONFORM_VERSION: "0.7.0"
+
+jobs:
+  # Only the deployed combination is checked; values-local.yaml never leaves a
+  # developer machine, where a broken render shows up immediately. The namespace
+  # is arbitrary: nothing is applied here and no manifest varies by it.
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v4
+
+      - name: Install kubeconform
+        run: |
+          curl -sSfL "https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin kubeconform
+
+      - run: helm lint k8s-config -f k8s-config/values-dev.yaml --namespace uitslagenportaal
+      - run: helm lint k8s-config/service-accounts --namespace uitslagenportaal
+
+      # The gateway and route templates are entirely CRDs, which the default schema
+      # set does not cover. Without the catalogue they would be skipped silently —
+      # exactly the manifests most likely to be wrong.
+      - name: Validate rendered manifests
+        run: |
+          {
+            helm template uitslagenportaal k8s-config -f k8s-config/values-dev.yaml \
+              --namespace uitslagenportaal
+            helm template uitslagenportaal-service-accounts k8s-config/service-accounts \
+              --namespace uitslagenportaal
+          } | kubeconform -strict -summary \
+                -kubernetes-version "$KUBERNETES_VERSION" \
+                -schema-location default \
+                -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
