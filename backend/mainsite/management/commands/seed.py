@@ -13,7 +13,7 @@ TIMELINE_ENTRIES = {
                 "nl": "De Kiesraad publiceert de uitslag",
                 "en": "De Kiesraad publishes the result",
             },
-            "date": "2026-12-15T11:00:00",
+            "date": "2026-09-26T16:00:00",
             "body": {
                 "nl": (
                     "In de uitslag staat hoeveel stemmen elke kandidaat heeft gekregen, "
@@ -30,7 +30,7 @@ TIMELINE_ENTRIES = {
                 "nl": "Centraal Stembureau controleert",
                 "en": "Central Polling Station checks",
             },
-            "date": "2026-12-14T10:00:00",
+            "date": "2026-09-26T09:00:00",
             "body": {
                 "nl": (
                     "De Kiesraad controleert de telresultaten van alle kieskringen, gemeenten en stembureaus. "
@@ -55,7 +55,7 @@ TIMELINE_ENTRIES = {
                 "nl": "Optelling per kieskring",
                 "en": "Tally per kieskring",
             },
-            "date": "2026-12-09T12:00:00",
+            "date": "2026-09-25T09:00:00",
             "body": {
                 "nl": (
                     "De 20 kieskringen in Nederland tellen de resultaten van alle gemeenten "
@@ -72,7 +72,7 @@ TIMELINE_ENTRIES = {
                 "nl": "Optelling per gemeente",
                 "en": "Tally per municipality",
             },
-            "date": "2026-12-09T08:00:00",
+            "date": "2026-09-24T09:00:00",
             "body": {
                 "nl": (
                     "De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in "
@@ -91,7 +91,7 @@ TIMELINE_ENTRIES = {
                 "nl": "Telling in de stembureaus",
                 "en": "Count at the polling stations",
             },
-            "date": "2026-12-08T21:00:00",
+            "date": "2026-09-23T20:00:00",
             "body": {
                 "nl": (
                     "Op de avond van de stemming tellen de stembureaus alleen de stemmen per lijst. Het GSB "
@@ -113,7 +113,7 @@ TIMELINE_ENTRIES = {
                 "nl": "De Kiesraad publiceert de uitslag",
                 "en": "De Kiesraad publishes the result",
             },
-            "date": "2023-12-15T11:00:00",
+            "date": "2026-09-26T16:00:00",
             "body": {
                 "nl": (
                     "In de uitslag staat hoeveel stemmen elke kandidaat heeft gekregen, "
@@ -130,7 +130,7 @@ TIMELINE_ENTRIES = {
                 "nl": "Centraal Stembureau controleert",
                 "en": "Central Polling Station checks",
             },
-            "date": "2026-12-14T10:00:00",
+            "date": "2026-09-26T09:00:00",
             "body": {
                 "nl": (
                     "De Kiesraad controleert de telresultaten van alle kieskringen, gemeenten en stembureaus. "
@@ -155,7 +155,7 @@ TIMELINE_ENTRIES = {
                 "nl": "Optelling per kieskring",
                 "en": "Tally per kieskring",
             },
-            "date": "2026-12-09T12:00:00",
+            "date": "2026-09-25T09:00:00",
             "body": {
                 "nl": (
                     "De 20 kieskringen in Nederland tellen de resultaten van alle gemeenten "
@@ -172,7 +172,7 @@ TIMELINE_ENTRIES = {
                 "nl": "Optelling per gemeente",
                 "en": "Tally per municipality",
             },
-            "date": "2026-12-09T08:00:00",
+            "date": "2026-09-24T09:00:00",
             "body": {
                 "nl": (
                     "De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in "
@@ -191,7 +191,7 @@ TIMELINE_ENTRIES = {
                 "nl": "Telling in de stembureaus",
                 "en": "Count at the polling stations",
             },
-            "date": "2026-12-08T21:00:00",
+            "date": "2026-09-23T20:00:00",
             "body": {
                 "nl": (
                     "Op de avond van de stemming telt het stembureau de stemmen per lijst én per kandidaat. "
@@ -214,7 +214,7 @@ TIMELINE_ENTRIES = {
                 "nl": "De Kiesraad publiceert de uitslag",
                 "en": "De Kiesraad publishes the result",
             },
-            "date": "2026-12-15T11:00:00",
+            "date": "2026-09-26T16:00:00",
             "body": {
                 "nl": (
                     "In de uitslag staat hoeveel stemmen elke kandidaat heeft gekregen, "
@@ -231,7 +231,7 @@ TIMELINE_ENTRIES = {
                 "nl": "Centraal Stembureau controleert",
                 "en": "Central Polling Station checks",
             },
-            "date": "2026-12-14T10:00:00",
+            "date": "2026-09-26T09:00:00",
             "body": {
                 "nl": (
                     "De Kiesraad controleert de telresultaten van alle kieskringen, gemeenten en stembureaus. "
@@ -256,7 +256,7 @@ TIMELINE_ENTRIES = {
                 "nl": "Optelling per kieskring",
                 "en": "Tally per constituency",
             },
-            "date": "2026-12-09T12:00:00",
+            "date": "2026-09-25T09:00:00",
             "body": {
                 "nl": (
                     "De 20 kieskringen in Nederland tellen de resultaten van alle gemeenten "
@@ -273,7 +273,7 @@ TIMELINE_ENTRIES = {
                 "nl": "Optelling per gemeente",
                 "en": "Tally per municipality",
             },
-            "date": "2026-12-09T08:00:00",
+            "date": "2026-09-24T09:00:00",
             "body": {
                 "nl": (
                     "De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in "
@@ -292,7 +292,7 @@ TIMELINE_ENTRIES = {
                 "nl": "Telling in de stembureaus",
                 "en": "Count at the polling stations",
             },
-            "date": "2026-12-08T21:00:00",
+            "date": "2026-09-23T20:00:00",
             "body": {
                 "nl": (
                     "De stemmen worden geteld bij de stembureaus. **Het is dus "
@@ -312,13 +312,13 @@ WS2023_ELECTION_SEED = {
         "id": "AB2023",
         "label": "Waterschapsverkiezingen 2023",
         "category": "WS",
-        "date": "2026-08-12T10:00:00",
-        "issue_report_opens_at": "2026-08-12T11:00:00",
-        "issue_report_deadline": "2026-09-12T10:00:00",
+        "date": "2026-09-23T08:00:00",
+        "issue_report_opens_at": "2026-09-23T10:00:00",
+        "issue_report_deadline": "2026-09-27T17:00:00",
         "report_error_url": "https://www.kiesraad.nl/service/contact",
         "counting_info_url": "https://www.kiesraad.nl/verkiezingen",
         "voting_url": "https://www.kiesraad.nl/actueel/agenda",
-        "gh_counting_results_branch": "auto-ab2023-tel",
+        "gh_counting_results_branch": "auto-ab2023-partial-tel",
         "gh_exchange_branch": "auto-ab2023-uit",
     },
     **TIMELINE_ENTRIES,
@@ -329,13 +329,13 @@ PS2023_ELECTION_SEED = {
         "id": "PS2023",
         "label": "Provinciale Statenverkiezingen 2023",
         "category": "PS",
-        "date": "2026-08-12T10:00:00",
-        "issue_report_opens_at": "2026-08-08T11:00:00",
-        "issue_report_deadline": "2026-09-12T10:00:00",
+        "date": "2026-09-23T08:00:00",
+        "issue_report_opens_at": "2026-09-23T10:00:00",
+        "issue_report_deadline": "2026-09-27T17:00:00",
         "report_error_url": "https://www.kiesraad.nl/service/contact",
         "counting_info_url": "https://www.kiesraad.nl/verkiezingen",
         "voting_url": "https://www.kiesraad.nl/actueel/agenda",
-        "gh_counting_results_branch": "auto-ps2023-tel",
+        "gh_counting_results_branch": "auto-ps2023-partial-tel",
         "gh_exchange_branch": "auto-ps2023-uit",
     },
     **TIMELINE_ENTRIES,
