@@ -1,7 +1,3 @@
-# 'staging' until deploy succeeded and domain name is available
-issuer:
-  server: "staging" # "staging" or "production"
-
 app:
   hostname: "uitslagenportaal-staging.kiesraad.net"
 
