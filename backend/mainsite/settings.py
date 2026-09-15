@@ -96,6 +96,8 @@ REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
 REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
 REDIS_USER = os.environ.get("REDIS_USER", "")
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "")
+# We use multiple DBs in Redis so REDIS_DB is the multiplier. I.e. REDIS_DB 0 means using DBs 0-3, 1 means 4-7 etc.
+REDIS_DB = int(os.environ.get("REDIS_DB", "0"))
 # Quote the Redis user and password to prevent issues with special characters. redis-py and kombu both
 # unquote what they parse, so escaping here is what they expect.
 REDIS_URL = (
@@ -116,8 +118,8 @@ REDIS_SSL_OPTIONS = (
 )
 
 # Celery config - use a different broker and result backend Redis DB
-CELERY_BROKER_URL = REDIS_URL + "/1"
-CELERY_RESULT_BACKEND = REDIS_URL + "/2"
+CELERY_BROKER_URL = f"{REDIS_URL}/{REDIS_DB * 4 + 1}"
+CELERY_RESULT_BACKEND = f"{REDIS_URL}/{REDIS_DB * 4 + 2}"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 0.5h
 if REDIS_SSL_OPTIONS:
@@ -138,7 +140,7 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = int(os.environ.get("CELERY_WORKER_PREFETCH_M
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL + "/0",
+        "LOCATION": f"{REDIS_URL}/{REDIS_DB * 4}",
         "OPTIONS": {
             "CONNECTION_POOL_KWARGS": REDIS_SSL_OPTIONS,
         },

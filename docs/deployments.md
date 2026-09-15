@@ -19,9 +19,8 @@ The Helm chart is divided into several yaml files, see ./k8s-config/templates.
 - `05-celery.yaml`: Celery and Celery beat deployments.
 - `06-services.yaml`: Several `StatefulSet`s for PostgreSQL/Redis/Object storage services (local deployments only).
 
-There are two values-files: `values-dev.yaml` and `values-local.yaml`. The first defines the chart values for the `dev`
-environment, and `values-local.yaml` overrides certain values for local deployments. Neither is named `values.yaml`, so
-Helm loads no defaults of its own: `-f` is required, not optional.
+There is one main `values.yaml` file, and a file per environment. Each environment file overrides certain values for the
+environment's deployments.
 
 Every command below writes the namespace as `uitslagenportaal-[env]`; substitute the environment you are deploying to,
 `uitslagenportaal-dev` for the one CD deploys. The manifests take their namespace from the release, so the `-n` flag is
@@ -205,7 +204,7 @@ On a managed Kubernetes cluster at a hosting provider.
 2. Make sure the secrets are set, see the Secrets section above.
 3. Install the helm chart:
    ```bash
-   helm upgrade --install uitslagenportaal . -n uitslagenportaal-[env] -f values-[env].yaml
+   helm upgrade --install uitslagenportaal . -n uitslagenportaal-[env] -f values.yaml -f values-[env].yaml
    ```
 
 Note this reverts the cluster to whatever `:dev` points at, because it passes none of the
@@ -228,5 +227,5 @@ E.g. on a Kubernetes cluster from Docker Desktop or kind
 4. Install the helm chart:
    ```bash
    helm upgrade --install uitslagenportaal . -n uitslagenportaal-local \
-     --create-namespace -f values-dev.yaml -f values-local.yaml
+     --create-namespace -f values.yaml -f values-local.yaml
    ```
