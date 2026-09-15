@@ -1,4 +1,5 @@
 from io import BytesIO
+from os import path
 
 
 class NamedBytesIO(BytesIO):
@@ -10,3 +11,11 @@ class NamedBytesIO(BytesIO):
 
     def __str__(self) -> str:
         return f"<NamedBytesIO {self.filename}>"
+
+    @property
+    def name(self) -> str:
+        return self.filename
+
+    @property
+    def suffix(self) -> str:
+        return path.splitext(self.filename)[1]

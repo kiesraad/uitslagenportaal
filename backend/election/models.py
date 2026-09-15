@@ -235,6 +235,9 @@ class ElectionDocument(BaseModel):
         EML_510B = "EML510b", "Telling GSB"
         EML_510C = "EML510c", "Totaaltelling HSB"
         EML_510D = "EML510d", "Totaaltelling CSB"
+        CSV_GSB = "CSV_GSB", "Telling GSB"
+        CSV_HSB = "CSV_HSB", "Totaaltelling HSB"
+        CSV_CSB = "CSV_CSB", "Totaaltelling CSB"
 
     region = models.ForeignKey(
         "region.Region",

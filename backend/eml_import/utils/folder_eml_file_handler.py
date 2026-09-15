@@ -45,13 +45,13 @@ class FolderEMLFileHandler(BaseFileHandler):
         With `workers` > 1, the files of each document type are imported
         concurrently. The document types themselves stay sequential.
         """
-        files = sorted(self.folder.rglob("*.xml"))
-        xml_files = self._classify_files(files)
+        files = sorted(self.folder.rglob("*.*"))
+        files = self._classify_files(files)
 
         workers = self._usable_workers(self.workers)
         if workers == 1:
             for parser_type in self._DOCUMENT_TYPES:
-                self._process_file_paths(parser_type, xml_files[parser_type])
+                self._process_file_paths(parser_type, files[parser_type])
             return len(files), False
 
         # Hand no open connection to the children, and force "spawn" so a forked
@@ -65,7 +65,7 @@ class FolderEMLFileHandler(BaseFileHandler):
             for parser_type in self._DOCUMENT_TYPES:
                 # Each phase is a barrier: _process_file_paths_parallel does not
                 # return until every file of this document type is imported.
-                self._process_file_paths_parallel(pool, parser_type, xml_files[parser_type], workers)
+                self._process_file_paths_parallel(pool, parser_type, files[parser_type], workers)
 
             return len(files), False
 

@@ -3,6 +3,7 @@ import io
 import itertools
 import logging
 import zipfile
+from os import path
 from typing import Iterator
 
 from django.conf import settings
@@ -215,22 +216,24 @@ class GithubEmlFileHandler(BaseFileHandler):
 
             self.logger.info("Downloading %s (sha: %s)", file.filename, file.sha)
             content = base64.b64decode(self.repo.get_git_blob(file.sha).content)
+            file_ext = path.splitext(file.filename)[1]
 
             # Unzip any zip file and iterate its content
-            if file.filename.endswith(".zip"):
+            if file_ext == ".zip":
                 for extracted_file in self._iterate_zip(content):
                     yield extracted_file
 
             # Yield any xml file directly
-            if file.filename.endswith(".xml"):
+            if file_ext in self._VALID_EXTENSIONS:
                 yield NamedBytesIO(content, file.filename)
 
     def _iterate_zip(self, content: bytes) -> Iterator[NamedBytesIO]:
         with zipfile.ZipFile(io.BytesIO(content)) as zf:
             for name in zf.namelist():
-                if name.endswith(".zip"):
+                file_ext = path.splitext(name)[1]
+                if file_ext == ".zip":
                     for file in self._iterate_zip(zf.read(name)):
                         yield file
 
-                if name.endswith(".xml"):
+                if file_ext in self._VALID_EXTENSIONS:
                     yield NamedBytesIO(zf.read(name), name)
