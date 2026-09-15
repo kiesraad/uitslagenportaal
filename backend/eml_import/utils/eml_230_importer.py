@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Count
 from pyeml_bindings import (
     Eml230,
 )
@@ -28,10 +29,12 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
                 self._ensure_exchange_correction_allowed()
                 self._delete(contest_data)
 
-            contest = Contest.objects.create(
+            # The contest can already exist for elections with one contest, but for elections with multiple contests
+            # we still need to create it. name is never set in 110a, so select on id/election only.
+            contest, _ = Contest.objects.update_or_create(
                 identifier=contest_data.contest_identifier.id,
                 election=self.election,
-                name=contest_data.contest_identifier.contest_name,
+                defaults={"name": contest_data.contest_identifier.contest_name},
             )
 
             candidates: list[Candidate] = []
@@ -82,12 +85,19 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
                 Candidate.objects.bulk_create(candidates, batch_size=self.BULK_BATCH_SIZE)
 
     def _is_correction(self, contest_data) -> bool:
+        """
+        The EML 230b file being imported is a correction if the contest exists and candidates exist for the contest.
+        :param contest_data:
+        :return:
+        """
         try:
-            contest = Contest.objects.get(
+            contest = Contest.objects.annotate(candidate_count=Count("candidates")).get(
                 identifier=contest_data.contest_identifier.id,
                 election=self.election,
-                name=contest_data.contest_identifier.contest_name,
             )
+            if contest.candidate_count == 0:
+                return False
+
             self.logger.info(
                 "\033[32mCorrection detected for contest %s eml_type=%s\033[0m",
                 contest.identifier,
@@ -102,7 +112,6 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
         contest = Contest.objects.get(
             identifier=contest_data.contest_identifier.id,
             election=self.election,
-            name=contest_data.contest_identifier.contest_name,
         )
         Candidate.objects.filter(contest=contest).delete()
         Contest.objects.filter(pk=contest.pk).delete()
