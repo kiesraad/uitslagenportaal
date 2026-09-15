@@ -7,7 +7,6 @@ from mainsite.serializers import (
     VoteCountSummarySerializer,
     VoterTurnoutCountSummarySerializer,
 )
-from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL
 from region.models import Region
 
 
@@ -28,34 +27,14 @@ class RegionListSerializer(serializers.ModelSerializer):
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):
-    voter_turnout_counts = serializers.SerializerMethodField()
-    vote_counts = serializers.SerializerMethodField()
+    voter_turnout_counts = VoterTurnoutCountSummarySerializer(read_only=True, many=True)
+    vote_counts = VoteCountSummarySerializer(read_only=True, many=True)
+    documents = ElectionDocumentSerializer(read_only=True, many=True)
     timeline_entries = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
-    documents = serializers.SerializerMethodField()
     csb_name = serializers.CharField(source="csb.region_name", default=None, read_only=True)
     csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
     election_slug = serializers.CharField(source="election.slug", read_only=True)
-
-    def _eml_type(self) -> str:
-        return EML_TYPE_BY_REPORTING_LEVEL[self.context["level"]]
-
-    def _counts_for_level(self, counts):
-        eml_type = self._eml_type()
-        return [count for count in counts if count.eml_type == eml_type]
-
-    def get_vote_counts(self, obj):
-        vote_counts = self._counts_for_level(list(obj.vote_counts.all()))
-        return VoteCountSummarySerializer(vote_counts, many=True).data
-
-    def get_voter_turnout_counts(self, obj):
-        turnout_counts = self._counts_for_level(list(obj.voter_turnout_counts.all()))
-        return VoterTurnoutCountSummarySerializer(turnout_counts, many=True).data
-
-    def get_documents(self, obj):
-        eml_type = self._eml_type()
-        documents = [document for document in obj.documents.all() if document.file_type == eml_type]
-        return ElectionDocumentSerializer(documents, many=True, context=self.context).data
 
     class Meta:
         model = Region

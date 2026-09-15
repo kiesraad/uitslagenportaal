@@ -2,10 +2,10 @@ from django.db.models import Prefetch
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
-from election.models import ElectionDocument
+from election.models import ElectionDocument, VoteCount, VoterTurnoutCount
 from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
-from mainsite.utils.eml_type import EmlType, ReportingLevel
+from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, EmlType, ReportingLevel
 from region.models import Region
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
@@ -67,11 +67,6 @@ class RegionListView(ListAPIView):
 class RegionDetailView(RetrieveAPIView):
     serializer_class = RegionDetailSerializer
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context["level"] = self.request.query_params.get("level")
-        return context
-
     def get_object(self):
         election_config_slug = self.request.query_params.get("election_config")
         region_slug = self.request.query_params.get("region")
@@ -87,18 +82,24 @@ class RegionDetailView(RetrieveAPIView):
         if level not in ReportingLevel.values:
             raise ValidationError({"level": "This query parameter is required and must be gsb, hsb, or csb."})
 
+        eml_type = EML_TYPE_BY_REPORTING_LEVEL[level]
         queryset = (
             Region.objects.select_related(
                 "csb",
                 "election__election_config",
             )
             .prefetch_related(
-                "vote_counts__party",
-                "vote_counts__candidate",
-                "voter_turnout_counts",
+                Prefetch(
+                    "vote_counts",
+                    queryset=VoteCount.objects.filter(eml_type=eml_type).select_related("party", "candidate"),
+                ),
+                Prefetch(
+                    "voter_turnout_counts",
+                    queryset=VoterTurnoutCount.objects.filter(eml_type=eml_type),
+                ),
                 # ElectionDocument uses CurrentManager; explicit Prefetch ensures prefetched
                 # rows match obj.documents.all(), not all_objects.
-                Prefetch("documents", queryset=ElectionDocument.objects.all()),
+                Prefetch("documents", queryset=ElectionDocument.objects.filter(file_type=eml_type)),
                 "election__election_config__timeline_entries",
             )
             .filter(

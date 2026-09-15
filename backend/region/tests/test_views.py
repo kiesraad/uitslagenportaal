@@ -4,7 +4,7 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 
-from election.models import VoteCount
+from election.models import VoteCount, VoterTurnoutCount
 from election.tests.factories import ContestFactory, ElectionFactory
 from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
@@ -158,6 +158,136 @@ def test_region_detail_returns_404_for_nonexistent_region():
 
     assert response.status_code == 404
     assert response.data["detail"] == "Region not found for this election."
+
+
+def region_detail(region, level):
+    request = factory.get(
+        "/api/region/",
+        {
+            "election_config": region.election.election_config.slug,
+            "region": region.slug,
+            "level": level,
+        },
+    )
+    response = RegionDetailView.as_view()(request)
+    assert response.status_code == 200
+    return response.data
+
+
+@pytest.mark.django_db
+def test_gsb_returns_510b_and_csb_returns_510d_for_the_same_region():
+    contest = ContestFactory()
+    party = PartyFactory(election=contest.election)
+    region = RegionFactory(election=contest.election, region_category=RegionCategory.GEMEENTE)
+    VoteCount.objects.create(
+        contest=contest,
+        region=region,
+        party=party,
+        valid_votes=100,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type=EmlType.EML_510b,
+    )
+    VoteCount.objects.create(
+        contest=contest,
+        region=region,
+        party=party,
+        valid_votes=200,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type=EmlType.EML_510d,
+    )
+
+    gsb = region_detail(region, "gsb")
+    csb = region_detail(region, "csb")
+
+    assert len(gsb["vote_counts"]) == 1
+    assert gsb["vote_counts"][0]["eml_type"] == EmlType.EML_510b
+    assert gsb["vote_counts"][0]["valid_votes"] == 100
+    assert len(csb["vote_counts"]) == 1
+    assert csb["vote_counts"][0]["eml_type"] == EmlType.EML_510d
+    assert csb["vote_counts"][0]["valid_votes"] == 200
+
+
+@pytest.mark.django_db
+def test_gsb_is_empty_without_a_510b_telling():
+    contest = ContestFactory()
+    party = PartyFactory(election=contest.election)
+    region = RegionFactory(election=contest.election, region_category=RegionCategory.GEMEENTE)
+    VoteCount.objects.create(
+        contest=contest,
+        region=region,
+        party=party,
+        valid_votes=100,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type=EmlType.EML_510d,
+    )
+    VoterTurnoutCount.objects.create(
+        contest=contest,
+        region=region,
+        category=VoterTurnoutCount.CATEGORY_TOTALS,
+        reason_code="total counted",
+        votes=100,
+        eml_type=EmlType.EML_510d,
+    )
+
+    data = region_detail(region, "gsb")
+
+    assert data["vote_counts"] == []
+    assert data["voter_turnout_counts"] == []
+
+
+@pytest.mark.django_db
+def test_region_detail_returns_510c_for_hsb():
+    contest = ContestFactory()
+    party = PartyFactory(election=contest.election)
+    region = RegionFactory(election=contest.election, region_category=RegionCategory.KIESKRING)
+    VoteCount.objects.create(
+        contest=contest,
+        region=region,
+        party=party,
+        valid_votes=100,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type=EmlType.EML_510c,
+    )
+    VoteCount.objects.create(
+        contest=contest,
+        region=region,
+        party=party,
+        valid_votes=100,
+        result_level=VoteCount.RESULT_LEVEL_PARTY,
+        eml_type=EmlType.EML_510d,
+    )
+
+    data = region_detail(region, "hsb")
+
+    assert len(data["vote_counts"]) == 1
+    assert data["vote_counts"][0]["eml_type"] == EmlType.EML_510c
+
+
+@pytest.mark.django_db
+def test_region_detail_returns_510c_turnout_for_hsb():
+    contest = ContestFactory()
+    region = RegionFactory(election=contest.election, region_category=RegionCategory.KIESKRING)
+    VoterTurnoutCount.objects.create(
+        contest=contest,
+        region=region,
+        category=VoterTurnoutCount.CATEGORY_TOTALS,
+        reason_code="total counted",
+        votes=100,
+        eml_type=EmlType.EML_510c,
+    )
+    VoterTurnoutCount.objects.create(
+        contest=contest,
+        region=region,
+        category=VoterTurnoutCount.CATEGORY_TOTALS,
+        reason_code="total counted",
+        votes=100,
+        eml_type=EmlType.EML_510d,
+    )
+
+    data = region_detail(region, "hsb")
+
+    assert len(data["voter_turnout_counts"]) == 1
+    assert data["voter_turnout_counts"][0]["eml_type"] == EmlType.EML_510c
 
 
 @pytest.mark.django_db
