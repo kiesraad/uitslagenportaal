@@ -14,6 +14,13 @@ _OWN_RESULTS_EML_TYPE = {
     RegionCategory.KIESKRING: EmlType.EML_510c,
 }
 
+# FileType values are EML510b, not the EmlType strings 510b used on vote counts.
+_DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL = {
+    ReportingLevel.GSB: ElectionDocument.FileType.EML_510B,
+    ReportingLevel.HSB: ElectionDocument.FileType.EML_510C,
+    ReportingLevel.CSB: ElectionDocument.FileType.EML_510D,
+}
+
 
 class RegionListView(ListAPIView):
     serializer_class = RegionListSerializer
@@ -83,6 +90,7 @@ class RegionDetailView(RetrieveAPIView):
             raise ValidationError({"level": "This query parameter is required and must be gsb, hsb, or csb."})
 
         eml_type = EML_TYPE_BY_REPORTING_LEVEL[level]
+        document_file_type = _DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL[level]
         queryset = (
             Region.objects.select_related(
                 "csb",
@@ -99,7 +107,7 @@ class RegionDetailView(RetrieveAPIView):
                 ),
                 # ElectionDocument uses CurrentManager; explicit Prefetch ensures prefetched
                 # rows match obj.documents.all(), not all_objects.
-                Prefetch("documents", queryset=ElectionDocument.objects.filter(file_type=eml_type)),
+                Prefetch("documents", queryset=ElectionDocument.objects.filter(file_type=document_file_type)),
                 "election__election_config__timeline_entries",
             )
             .filter(
