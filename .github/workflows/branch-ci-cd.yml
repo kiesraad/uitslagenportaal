@@ -113,7 +113,7 @@ jobs:
           current-context: deploy
           YAML
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
 
       # --timeout is generous because --rollback-on-failure only starts rolling back once
       # the wait expires, and the wait covers the migration job as well as the rollouts.
