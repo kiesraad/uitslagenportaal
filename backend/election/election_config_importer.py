@@ -14,9 +14,7 @@ _TIMELINE_VARIANTS = {
     "timeline_entries_default": TimelineVariant.DEFAULT,
 }
 
-# Changing either of these invalidates everything already imported for the election:
-# the GithubEmlFileHandler cursor (ImportedCommit) and the data imported under it
-# (Election and everything cascading from it) point at commits on the old branch.
+# Changing either of these invalidates everything already imported for the election.
 _BRANCH_FIELDS = ("gh_exchange_branch", "gh_counting_results_branch")
 
 
