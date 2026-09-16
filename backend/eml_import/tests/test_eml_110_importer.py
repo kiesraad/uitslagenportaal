@@ -25,7 +25,7 @@ from pyeml_bindings import (
 )
 from xsdata.models.datatype import XmlDate
 
-from election.models import Election
+from election.models import Contest, Election
 from election.tests.factories import ElectionConfigFactory
 from eml_import.tests.fakes import fake_eml_file
 from eml_import.utils.eml_110_importer import EML110aImporter
@@ -148,6 +148,27 @@ def test_creates_registered_parties(election_config):
     election = Election.objects.get(election_config=election_config)
     names = Party.objects.filter(election=election).values_list("registered_name", flat=True)
     assert set(names) == {"Partij voor Zeeland", "CDA"}
+
+
+def test_creates_top_level_contest(election_config):
+    EML110aImporter(make_eml(contest_id="alle"), fake_eml_file()).parse()
+
+    election = Election.objects.get(election_config=election_config)
+    contest = Contest.objects.get(election=election)
+    # The 110a schema omits ContestName
+    assert (contest.identifier, contest.name) == ("alle", None)
+
+
+def test_correction_replaces_prior_contest(election_config):
+    EML110aImporter(make_eml(), fake_eml_file()).parse()
+    election = Election.objects.get(election_config=election_config)
+    original_contest_id = Contest.objects.get(election=election).pk
+
+    EML110aImporter(make_eml(), fake_eml_file()).parse()
+
+    contest = Contest.objects.get(election=election)
+    assert contest.pk != original_contest_id
+    assert contest.identifier == CONTEST_ID
 
 
 def test_correction_deletes_prior_regions_and_parties(election_config):
