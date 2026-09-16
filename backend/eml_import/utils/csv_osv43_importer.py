@@ -45,12 +45,19 @@ class CSVOsv43Importer(BaseImporter):
         if isinstance(file_path, Path):
             with file_path.open("r", newline="", encoding="utf-8-sig") as file_handle:
                 return read_header(file_handle)
-        else:
-            return read_header(io.TextIOWrapper(file_path, encoding="utf-8-sig", newline=""))
+
+        file_path.seek(0)
+        wrapper = io.TextIOWrapper(file_path, encoding="utf-8-sig", newline="")
+        try:
+            return read_header(wrapper)
+        finally:
+            # Detach, or the wrapper closes the underlying buffer when it is garbage-collected
+            wrapper.detach()
+            file_path.seek(0)
 
     def _parse_data(self):
         csv_headers = self.read_csv_header(self.file_path)
-        if {"Verkiezing", "Nummer"} >= csv_headers.keys():
+        if not {"Verkiezing", "Nummer", "Gebied"} <= csv_headers.keys():
             raise EMLImporterException("Not a valid OSV4-3 CSV file")
 
         election = self._find_election(csv_headers)
@@ -125,15 +132,7 @@ class CSVOsv43Importer(BaseImporter):
         size = len(file_content.getvalue())
         stored_file_path = default_storage.save(file_path, file_content)
 
-        existing = ElectionDocument.objects.get(
-            region=region,
-            file_type=self.file_type,
-        )
-
-        # Archive existing CSV if it exists
-        if existing:
-            existing.is_current = False
-            existing.save()
+        ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
 
         ElectionDocument.objects.create(
             storage_key=stored_file_path,

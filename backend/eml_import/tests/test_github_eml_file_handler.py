@@ -116,55 +116,70 @@ def build_handler():
     return build
 
 
-def test_iterate_all_xml_files_yields_xml_and_unpacks_zip(fake_repo, build_handler, election_config):
+def test_iterate_all_supported_files_yields_xml_and_csv_and_unpacks_zip(fake_repo, build_handler, election_config):
     repo = fake_repo(
         commits=[FakeCommit("head")],
         contents={
             "results/telling.xml": XML_510B,
-            "results/bundle.zip": zip_bytes({"inner/kandidaten.xml": XML_230B, "inner/readme.txt": b"nope"}),
+            "results/osv4-3_telling.csv": b"top-level csv",
+            "results/bundle.zip": zip_bytes(
+                {
+                    "inner/kandidaten.xml": XML_230B,
+                    "inner/osv4-3_telling.csv": b"zipped csv",
+                    "inner/readme.txt": b"nope",
+                }
+            ),
         },
     )
     files = [
         FakeFile("results/telling.xml"),
+        FakeFile("results/osv4-3_telling.csv"),
         FakeFile("results/bundle.zip"),
         FakeFile("results/notes.txt"),
     ]
 
-    extracted = list(build_handler(election_config, repo)._iterate_all_xml_files(files))
+    extracted = list(build_handler(election_config, repo)._iterate_all_supported_files(files))
 
     assert as_pairs(extracted) == [
         ("results/telling.xml", XML_510B),
+        ("results/osv4-3_telling.csv", b"top-level csv"),
         ("inner/kandidaten.xml", XML_230B),
+        ("inner/osv4-3_telling.csv", b"zipped csv"),
     ]
     # Files with an unsupported extension are never fetched
     assert repo.calls_named("get_git_blob") == [
         ("get_git_blob", "results/telling.xml"),
+        ("get_git_blob", "results/osv4-3_telling.csv"),
         ("get_git_blob", "results/bundle.zip"),
     ]
 
 
 @pytest.mark.parametrize("status", ["added", "modified", "renamed", "copied", "changed"])
-def test_iterate_all_xml_files_imports_every_status_that_leaves_a_file_behind(
+def test_iterate_all_supported_files_imports_every_status_that_leaves_a_file_behind(
     fake_repo, build_handler, election_config, status
 ):
     repo = fake_repo(commits=[FakeCommit("head")], contents={"telling.xml": XML_510B})
 
-    extracted = list(build_handler(election_config, repo)._iterate_all_xml_files([FakeFile("telling.xml", status)]))
+    extracted = list(
+        build_handler(election_config, repo)._iterate_all_supported_files([FakeFile("telling.xml", status)])
+    )
 
     assert as_pairs(extracted) == [("telling.xml", XML_510B)]
 
 
 @pytest.mark.parametrize("status", ["removed", "unchanged"])
-def test_iterate_all_xml_files_skips_removed_and_unchanged(fake_repo, build_handler, election_config, status):
+def test_iterate_all_supported_files_skips_removed_and_unchanged(fake_repo, build_handler, election_config, status):
     repo = fake_repo(commits=[FakeCommit("head")], contents={"telling.xml": XML_510B})
 
-    extracted = list(build_handler(election_config, repo)._iterate_all_xml_files([FakeFile("telling.xml", status)]))
+    extracted = list(
+        build_handler(election_config, repo)._iterate_all_supported_files([FakeFile("telling.xml", status)])
+    )
 
     assert extracted == []
     assert repo.calls_named("get_git_blob") == []
 
 
-def test_iterate_all_xml_files_logs_error_when_removed_zip_has_no_replacement_in_same_folder(
+def test_iterate_all_supported_files_logs_error_when_removed_zip_has_no_replacement_in_same_folder(
     fake_repo, build_handler, election_config, caplog
 ):
     repo = fake_repo(commits=[FakeCommit("head")], contents={})
@@ -174,14 +189,14 @@ def test_iterate_all_xml_files_logs_error_when_removed_zip_has_no_replacement_in
     )
 
     with caplog.at_level(logging.ERROR):
-        list(build_handler(election_config, repo)._iterate_all_xml_files([removed]))
+        list(build_handler(election_config, repo)._iterate_all_supported_files([removed]))
 
     assert len(errors_of(caplog)) == 1
     assert "deletion was not processed" in errors_of(caplog)[0]
     assert "old-upload.zip" in errors_of(caplog)[0]
 
 
-def test_iterate_all_xml_files_does_not_log_error_when_removed_zip_is_replaced_in_same_folder(
+def test_iterate_all_supported_files_does_not_log_error_when_removed_zip_is_replaced_in_same_folder(
     fake_repo, build_handler, election_config, caplog
 ):
     folder = "dob1/gemeente/gemeente_brummen_gsb"
@@ -195,13 +210,13 @@ def test_iterate_all_xml_files_does_not_log_error_when_removed_zip_is_replaced_i
     ]
 
     with caplog.at_level(logging.ERROR):
-        extracted = list(build_handler(election_config, repo)._iterate_all_xml_files(files))
+        extracted = list(build_handler(election_config, repo)._iterate_all_supported_files(files))
 
     assert errors_of(caplog) == []
     assert as_pairs(extracted) == [("telling.xml", XML_510B)]
 
 
-def test_iterate_all_xml_files_logs_error_when_removed_zip_is_only_replaced_in_another_folder(
+def test_iterate_all_supported_files_logs_error_when_removed_zip_is_only_replaced_in_another_folder(
     fake_repo, build_handler, election_config, caplog
 ):
     repo = fake_repo(
@@ -214,20 +229,20 @@ def test_iterate_all_xml_files_logs_error_when_removed_zip_is_only_replaced_in_a
     ]
 
     with caplog.at_level(logging.ERROR):
-        list(build_handler(election_config, repo)._iterate_all_xml_files(files))
+        list(build_handler(election_config, repo)._iterate_all_supported_files(files))
 
     assert len(errors_of(caplog)) == 1
     assert "gemeente_foo_gsb/old-upload.zip" in errors_of(caplog)[0]
 
 
-def test_iterate_all_xml_files_unpacks_nested_zip(fake_repo, build_handler, election_config):
+def test_iterate_all_supported_files_unpacks_nested_zip(fake_repo, build_handler, election_config):
     inner = zip_bytes({"telling.xml": XML_510B})
     repo = fake_repo(
         commits=[FakeCommit("head")],
         contents={"outer.zip": zip_bytes({"nested/inner.zip": inner})},
     )
 
-    extracted = list(build_handler(election_config, repo)._iterate_all_xml_files([FakeFile("outer.zip")]))
+    extracted = list(build_handler(election_config, repo)._iterate_all_supported_files([FakeFile("outer.zip")]))
 
     # Named after the entry inside the archive, not after the zip it arrived in
     assert as_pairs(extracted) == [("telling.xml", XML_510B)]

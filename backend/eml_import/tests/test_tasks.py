@@ -48,7 +48,7 @@ def test_import_task_queues_a_follow_up_while_commits_remain(github_eml_file_han
 
     import_election_eml_commits(election_config.id)
 
-    apply_async.assert_called_once_with(args=[election_config.id], countdown=2)
+    apply_async.assert_called_once_with(args=[election_config.id], countdown=5)
 
 
 @pytest.mark.django_db

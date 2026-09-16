@@ -103,7 +103,7 @@ class GithubEmlFileHandler(BaseFileHandler):
             if next_commit_sha is None:
                 continue
 
-            xml_files = list(self._iterate_all_xml_files(files))
+            xml_files = list(self._iterate_all_supported_files(files))
             self.import_file_objects(xml_files)
             ImportedCommit.objects.create(
                 election_config=self.election_config,
@@ -170,10 +170,10 @@ class GithubEmlFileHandler(BaseFileHandler):
 
         return commit.sha, files, len(commits) > 1
 
-    @staticmethod
-    def _is_eml_ingress_file(filename: str) -> bool:
-        extension = filename.rsplit(".", 1)[-1].lower()
-        return extension in ("xml", "zip")
+    @classmethod
+    def _is_eml_ingress_file(cls, filename: str) -> bool:
+        extension = path.splitext(filename)[1].lower()
+        return extension == ".zip" or extension in cls._VALID_EXTENSIONS
 
     def _log_eml_removals_without_additions(self, files: list[File]) -> None:
         """
@@ -197,9 +197,9 @@ class GithubEmlFileHandler(BaseFileHandler):
                         file.filename,
                     )
 
-    def _iterate_all_xml_files(self, files: list[File]) -> Iterator[NamedBytesIO]:
+    def _iterate_all_supported_files(self, files: list[File]) -> Iterator[NamedBytesIO]:
         """
-        Iterate all XML files, including the ones from zip files.
+        Iterate all XML and CSV files, including the ones from zip files.
         :param files:
         :return:
         """
