@@ -54,7 +54,15 @@ jobs:
           K8S_CA_DATA: ${{ vars.K8S_CA_DATA }}
           K8S_DEPLOY_TOKEN: ${{ secrets.K8S_DEPLOY_TOKEN }}
           NAMESPACE: ${{ inputs.namespace }}
+          ENVIRONMENT: ${{ inputs.environment }}
         run: |
+          # An absent token is not an error anywhere: it yields a kubeconfig the API server
+          # answers as system:anonymous, which reads as a permissions problem two steps on.
+          if [ -z "$K8S_DEPLOY_TOKEN" ]; then
+            echo "::error::K8S_DEPLOY_TOKEN is empty for environment $ENVIRONMENT"
+            exit 1
+          fi
+
           KUBECONFIG="$RUNNER_TEMP/kubeconfig"
           echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
           install -m 600 /dev/null "$KUBECONFIG"

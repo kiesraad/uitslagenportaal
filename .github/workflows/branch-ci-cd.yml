@@ -65,6 +65,7 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/deploy.yml
+    secrets: inherit
     with:
       environment: scaleway-dev
       namespace: uitslagenportaal-dev
@@ -80,6 +81,7 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/deploy.yml
+    secrets: inherit
     with:
       environment: scaleway-staging
       namespace: uitslagenportaal-staging
