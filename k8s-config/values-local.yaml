@@ -1,11 +1,4 @@
-# Overrides for a local single-node cluster (Docker Desktop):
-#   helm upgrade --install uitslagenportaal . -n uitslagenportaal-local \
-#     --create-namespace -f values.yaml -f values-local.yaml
-#
-# Requires 127.0.0.1 uitslagenportaal.localdev in the hosts file: both the
-# Gateway listeners and the routes match on hostname, so a request that does
-# not carry it reaches nothing. Avoid a .localhost suffix — browsers resolve
-# those to loopback themselves, Windows DNS does not.
+# See docs/deployments.md on how to use this for local deployments.
 
 debug: true
 
