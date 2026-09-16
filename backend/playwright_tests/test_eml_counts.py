@@ -19,7 +19,7 @@ from playwright_tests.eml_counts import (
     total_party_counts,
 )
 
-pytestmark = pytest.mark.playwright
+pytestmark = [pytest.mark.playwright, pytest.mark.usefixtures("seeded_database")]
 
 WS_510B = EML_FIXTURES / "ws" / "Telling_AB2023_Scheldestromen_gemeente_Borsele.eml.xml"
 WS_510D = EML_FIXTURES / "ws" / "Totaaltelling_AB2023_Scheldestromen_waterschap_Scheldestromen.eml.xml"

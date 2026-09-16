@@ -5,7 +5,7 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
-pytestmark = pytest.mark.playwright
+pytestmark = [pytest.mark.playwright, pytest.mark.usefixtures("seeded_database")]
 
 BORSELE_RESULTS = "/ab2023/gsb/654-borsele/csb/17-scheldestromen/resultaten"
 

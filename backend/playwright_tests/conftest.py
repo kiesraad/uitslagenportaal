@@ -93,10 +93,10 @@ def migrated_database(django_db_blocker, stack_services: None) -> None:
         )
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="module")
 def seeded_database(django_db_blocker, require_running_stack: None, migrated_database: None) -> Iterator[None]:
     """
-    Wipe, seed, and import the EML fixtures around every test module.
+    Wipe, seed, and import the EML fixtures for modules that request this fixture.
 
     unblock() rather than the `db` fixture, whose transaction the stack could never see.
     workers=1 is not tuning: the importer's pool spawns interpreters that would re-import
@@ -107,6 +107,12 @@ def seeded_database(django_db_blocker, require_running_stack: None, migrated_dat
     yield
     with django_db_blocker.unblock():
         call_command("wipe_db")
+
+
+@pytest.fixture
+def empty_database(transactional_db) -> None:
+    """Wipe the stack database so a trickle test does not see another module's import."""
+    call_command("wipe_db")
 
 
 @pytest.fixture(scope="session")

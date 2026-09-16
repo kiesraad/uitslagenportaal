@@ -5,7 +5,7 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
-pytestmark = pytest.mark.playwright
+pytestmark = [pytest.mark.playwright, pytest.mark.usefixtures("seeded_database")]
 
 
 def test_homepage_leads_through_the_waterschappen_list_to_the_party_matrix(page: Page):

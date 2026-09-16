@@ -6,10 +6,8 @@ waiting stay in good order. States are built with the ORM, not by importing EML.
 """
 
 import re
-from collections.abc import Iterator
 
 import pytest
-from django.core.management import call_command
 from playwright.sync_api import Page, expect
 
 from election.models import ElectionCategory
@@ -27,24 +25,11 @@ from playwright_tests.trickle import (
     ws_definition,
 )
 
-pytestmark = pytest.mark.playwright
-
-
-@pytest.fixture(scope="module", autouse=True)
-def seeded_database(django_db_blocker, require_running_stack: None, migrated_database: None) -> Iterator[None]:
-    """Skip the full-election import; each test builds the database itself."""
-    with django_db_blocker.unblock():
-        call_command("wipe_db")
-    yield
-    with django_db_blocker.unblock():
-        call_command("wipe_db")
-
-
-@pytest.fixture
-def election_db(django_db_blocker, seeded_database: None):
-    with django_db_blocker.unblock():
-        call_command("wipe_db")
-    return django_db_blocker
+pytestmark = [
+    pytest.mark.playwright,
+    pytest.mark.django_db(transaction=True),
+    pytest.mark.usefixtures("empty_database"),
+]
 
 
 def expect_ws_tabs_without_hsb(page: Page) -> None:
@@ -81,16 +66,16 @@ def home_election_link(page: Page, label: str):
     return page.get_by_role("link", name=label, exact=True)
 
 
-def test_home_with_no_election_shows_coming_soon(page: Page, election_db):
+def test_home_with_no_election_shows_coming_soon(page: Page):
     page.goto("/")
     expect(page.get_by_role("heading", name="Telresultaten volgen binnenkort")).to_be_visible()
     expect(home_election_link(page, WS_LABEL)).to_have_count(0)
     expect(page.get_by_role("heading", name="Hoe komt de uitslag tot stand?")).to_have_count(0)
 
 
-def test_one_election_config_has_empty_region_lists_and_a_timeline(page: Page, election_db):
-    config = visible_config(election_db, identifier="AB2023", label=WS_LABEL, category=ElectionCategory.WS.value)
-    add_home_timeline(election_db, config)
+def test_one_election_config_has_empty_region_lists_and_a_timeline(page: Page):
+    config = visible_config(identifier="AB2023", label=WS_LABEL, category=ElectionCategory.WS.value)
+    add_home_timeline(config)
 
     page.goto("/")
     expect(home_election_link(page, WS_LABEL)).to_be_visible()
@@ -100,11 +85,11 @@ def test_one_election_config_has_empty_region_lists_and_a_timeline(page: Page, e
     expect_empty_region_lists(page)
 
 
-def test_two_election_configs_hide_the_timeline_and_expired_elections(page: Page, election_db):
-    visible_config(election_db, identifier="AB2023", label=WS_LABEL, category=ElectionCategory.WS.value)
-    visible_config(election_db, identifier="PS2023", label=PS_LABEL, category=ElectionCategory.PS.value)
-    expired_config(election_db, identifier="GR2026", label=GR_LABEL, category=ElectionCategory.GR.value)
-    expired_config(election_db, identifier="TK2025", label=TK_LABEL, category=ElectionCategory.TK.value)
+def test_two_election_configs_hide_the_timeline_and_expired_elections(page: Page):
+    visible_config(identifier="AB2023", label=WS_LABEL, category=ElectionCategory.WS.value)
+    visible_config(identifier="PS2023", label=PS_LABEL, category=ElectionCategory.PS.value)
+    expired_config(identifier="GR2026", label=GR_LABEL, category=ElectionCategory.GR.value)
+    expired_config(identifier="TK2025", label=TK_LABEL, category=ElectionCategory.TK.value)
 
     page.goto("/")
     expect(home_election_link(page, WS_LABEL)).to_be_visible()
@@ -124,8 +109,8 @@ def test_two_election_configs_hide_the_timeline_and_expired_elections(page: Page
     expect(page.get_by_role("heading", level=1, name="Pagina niet gevonden")).to_be_visible()
 
 
-def test_after_definition_lists_show_unpublished_regions(page: Page, election_db):
-    ws_definition(election_db)
+def test_after_definition_lists_show_unpublished_regions(page: Page):
+    ws_definition()
 
     page.goto("/ab2023/gsb")
     expect_ws_tabs_without_hsb(page)
@@ -145,9 +130,9 @@ def test_after_definition_lists_show_unpublished_regions(page: Page, election_db
     expect_unpublished_csb(page)
 
 
-def test_after_candidate_lists_results_are_still_unpublished(page: Page, election_db):
-    ws = ws_definition(election_db)
-    add_candidate_lists(election_db, ws)
+def test_after_candidate_lists_results_are_still_unpublished(page: Page):
+    ws = ws_definition()
+    add_candidate_lists(ws)
 
     page.goto("/ab2023/gsb")
     page.get_by_role("link", name="Borsele").click()
@@ -158,10 +143,10 @@ def test_after_candidate_lists_results_are_still_unpublished(page: Page, electio
     expect_unpublished_csb(page)
 
 
-def test_after_borsele_telling_goes_and_csb_are_still_unpublished(page: Page, election_db):
-    ws = ws_definition(election_db)
-    add_candidate_lists(election_db, ws)
-    add_borsele_telling(election_db, ws)
+def test_after_borsele_telling_goes_and_csb_are_still_unpublished(page: Page):
+    ws = ws_definition()
+    add_candidate_lists(ws)
+    add_borsele_telling(ws)
 
     page.goto("/ab2023/gsb")
     page.get_by_role("link", name="Borsele").click()
@@ -186,11 +171,11 @@ def test_after_borsele_telling_goes_and_csb_are_still_unpublished(page: Page, el
     expect_unpublished_csb(page)
 
 
-def test_after_csb_totaaltelling_goes_stays_unpublished(page: Page, election_db):
-    ws = ws_definition(election_db)
-    add_candidate_lists(election_db, ws)
-    add_borsele_telling(election_db, ws)
-    add_csb_totaaltelling(election_db, ws)
+def test_after_csb_totaaltelling_goes_stays_unpublished(page: Page):
+    ws = ws_definition()
+    add_candidate_lists(ws)
+    add_borsele_telling(ws)
+    add_csb_totaaltelling(ws)
 
     page.goto("/ab2023/csb")
     page.get_by_role("link", name="Scheldestromen").click()

@@ -5,10 +5,8 @@ a 510c, and GSB/HSB/CSB each keep their own telling. States are built with the O
 """
 
 import re
-from collections.abc import Iterator
 
 import pytest
-from django.core.management import call_command
 from playwright.sync_api import Page, expect
 
 from playwright_tests.trickle import (
@@ -19,24 +17,11 @@ from playwright_tests.trickle import (
     ps_definition,
 )
 
-pytestmark = pytest.mark.playwright
-
-
-@pytest.fixture(scope="module", autouse=True)
-def seeded_database(django_db_blocker, require_running_stack: None, migrated_database: None) -> Iterator[None]:
-    """Skip the full-election import; each test builds the database itself."""
-    with django_db_blocker.unblock():
-        call_command("wipe_db")
-    yield
-    with django_db_blocker.unblock():
-        call_command("wipe_db")
-
-
-@pytest.fixture
-def election_db(django_db_blocker, seeded_database: None):
-    with django_db_blocker.unblock():
-        call_command("wipe_db")
-    return django_db_blocker
+pytestmark = [
+    pytest.mark.playwright,
+    pytest.mark.django_db(transaction=True),
+    pytest.mark.usefixtures("empty_database"),
+]
 
 
 def expect_ps_tabs_without_hsb(page: Page) -> None:
@@ -68,8 +53,8 @@ def expect_hsb_is_not_found(page: Page) -> None:
     expect(page.get_by_role("heading", level=1, name="Pagina niet gevonden")).to_be_visible()
 
 
-def test_after_definition_lists_show_unpublished_regions(page: Page, election_db):
-    ps_definition(election_db)
+def test_after_definition_lists_show_unpublished_regions(page: Page):
+    ps_definition()
 
     page.goto("/ps2023/gsb")
     expect_ps_tabs_without_hsb(page)
@@ -91,9 +76,9 @@ def test_after_definition_lists_show_unpublished_regions(page: Page, election_db
     expect_hsb_is_not_found(page)
 
 
-def test_after_candidate_lists_results_are_still_unpublished(page: Page, election_db):
-    ps = ps_definition(election_db)
-    add_ps_candidate_lists(election_db, ps)
+def test_after_candidate_lists_results_are_still_unpublished(page: Page):
+    ps = ps_definition()
+    add_ps_candidate_lists(ps)
 
     page.goto("/ps2023/gsb")
     expect_ps_tabs_without_hsb(page)
@@ -107,10 +92,10 @@ def test_after_candidate_lists_results_are_still_unpublished(page: Page, electio
     expect_hsb_is_not_found(page)
 
 
-def test_after_aa_en_hunze_telling_emmen_and_higher_levels_are_still_unpublished(page: Page, election_db):
-    ps = ps_definition(election_db)
-    add_ps_candidate_lists(election_db, ps)
-    add_aa_en_hunze_telling(election_db, ps)
+def test_after_aa_en_hunze_telling_emmen_and_higher_levels_are_still_unpublished(page: Page):
+    ps = ps_definition()
+    add_ps_candidate_lists(ps)
+    add_aa_en_hunze_telling(ps)
 
     page.goto("/ps2023/gsb")
     expect_ps_tabs_without_hsb(page)
@@ -140,11 +125,11 @@ def test_after_aa_en_hunze_telling_emmen_and_higher_levels_are_still_unpublished
     expect_hsb_is_not_found(page)
 
 
-def test_after_assen_hsb_the_kieskring_tab_appears(page: Page, election_db):
-    ps = ps_definition(election_db)
-    add_ps_candidate_lists(election_db, ps)
-    add_aa_en_hunze_telling(election_db, ps)
-    add_assen_hsb(election_db, ps)
+def test_after_assen_hsb_the_kieskring_tab_appears(page: Page):
+    ps = ps_definition()
+    add_ps_candidate_lists(ps)
+    add_aa_en_hunze_telling(ps)
+    add_assen_hsb(ps)
 
     page.goto("/ps2023/gsb")
     expect_ps_tabs_with_hsb(page)
@@ -174,12 +159,12 @@ def test_after_assen_hsb_the_kieskring_tab_appears(page: Page, election_db):
     expect_unpublished_csb(page)
 
 
-def test_after_drenthe_csb_emmen_stays_unpublished_on_gsb(page: Page, election_db):
-    ps = ps_definition(election_db)
-    add_ps_candidate_lists(election_db, ps)
-    add_aa_en_hunze_telling(election_db, ps)
-    add_assen_hsb(election_db, ps)
-    add_drenthe_csb(election_db, ps)
+def test_after_drenthe_csb_emmen_stays_unpublished_on_gsb(page: Page):
+    ps = ps_definition()
+    add_ps_candidate_lists(ps)
+    add_aa_en_hunze_telling(ps)
+    add_assen_hsb(ps)
+    add_drenthe_csb(ps)
 
     page.goto("/ps2023/csb")
     page.get_by_role("link", name="Drenthe").click()
