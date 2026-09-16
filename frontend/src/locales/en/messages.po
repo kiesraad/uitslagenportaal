@@ -71,6 +71,10 @@ msgstr "View the counting results by municipality for the {electionLabel}."
 msgid "Bekijk de telresultaten per kieskring van de {electionLabel}."
 msgstr "View the counting results by electoral district for the {electionLabel}."
 
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Bekijk het proces-verbaal"
+msgstr "View the certified election results"
+
 #: src/pages/HomePage.tsx
 msgid "Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?"
 msgstr "Curious about the results at the polling station where you voted?"
@@ -162,6 +166,10 @@ msgstr "the state"
 #: src/components/ResultsPage/ResultsNotPublished.tsx
 msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra de {regionLabel} ze publiceert."
 msgstr "The counting results and certified election results for {regionLabel} will appear here as soon as {regionLabel} publishes them."
+
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen."
+msgstr "The counting results on this page come from the results software. They were transcribed from the certified election results drawn up after the votes were counted."
 
 #: src/components/ResultsPage/ResultsNotPublished.tsx
 msgid "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
@@ -415,6 +423,7 @@ msgid "Meld een fout"
 msgstr "Report a mistake"
 
 #: src/components/ResultsPage/IssueNotice.tsx
+#: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Meld een fout of iets dat niet klopt"
 msgstr "Report a mistake or something that is not right"
 
@@ -522,6 +531,7 @@ msgid "Resultaten per stembureau"
 msgstr "Results by polling station"
 
 #: src/components/ResultsPage/IssueNotice.tsx
+#: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Soms gaat er iets mis bij het tellen, opschrijven of overtypen van de stemmen. Fouten die na {deadline} worden gemeld, kunnen we nog onderzoeken en herstellen. Dan kan de juiste informatie mee in de officiele uitslag."
 msgstr "Sometimes something goes wrong when votes are counted, recorded or transcribed. Mistakes reported after {deadline} can still be investigated and corrected, so that the right information can be included in the official result."
 
@@ -659,6 +669,14 @@ msgstr "Find a {regionInline} from A to Z"
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Volmachtbewijzen"
 msgstr "Proxy certificates"
+
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Voorbeeld van een proces-verbaal"
+msgstr "Example of the certified election results"
+
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Waar komen deze telresultaten vandaan?"
+msgstr "Where do these counting results come from?"
 
 #: src/pages/ReportIssuePage.tsx
 msgid "Waarvoor kunt u een melding maken?"

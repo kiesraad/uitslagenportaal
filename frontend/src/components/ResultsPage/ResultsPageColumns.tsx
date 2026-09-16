@@ -1,0 +1,15 @@
+import type { ReactNode } from "react";
+import ResultsSourceBox from "./ResultsSourceBox";
+
+type Props = {
+   children: ReactNode;
+};
+
+export default function ResultsPageColumns({ children }: Props) {
+   return (
+      <div className="page-main page-main-two-columns">
+         <div className="page-space-3">{children}</div>
+         <ResultsSourceBox />
+      </div>
+   );
+}

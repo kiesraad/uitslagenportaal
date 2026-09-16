@@ -165,6 +165,8 @@
 
 .counting-results-infobox {
    margin-top: 8.5rem;
+   position: sticky;
+   top: 1.5rem;
 }
 
 .party-level-title {

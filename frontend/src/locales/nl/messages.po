@@ -71,6 +71,10 @@ msgstr "Bekijk de telresultaten per gemeente van de {electionLabel}."
 msgid "Bekijk de telresultaten per kieskring van de {electionLabel}."
 msgstr "Bekijk de telresultaten per kieskring van de {electionLabel}."
 
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Bekijk het proces-verbaal"
+msgstr "Bekijk het proces-verbaal"
+
 #: src/pages/HomePage.tsx
 msgid "Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?"
 msgstr "Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?"
@@ -162,6 +166,10 @@ msgstr "de staat"
 #: src/components/ResultsPage/ResultsNotPublished.tsx
 msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra de {regionLabel} ze publiceert."
 msgstr "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra de {regionLabel} ze publiceert."
+
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen."
+msgstr "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen."
 
 #: src/components/ResultsPage/ResultsNotPublished.tsx
 msgid "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
@@ -415,6 +423,7 @@ msgid "Meld een fout"
 msgstr "Meld een fout"
 
 #: src/components/ResultsPage/IssueNotice.tsx
+#: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Meld een fout of iets dat niet klopt"
 msgstr "Meld een fout of iets dat niet klopt"
 
@@ -522,6 +531,7 @@ msgid "Resultaten per stembureau"
 msgstr "Resultaten per stembureau"
 
 #: src/components/ResultsPage/IssueNotice.tsx
+#: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Soms gaat er iets mis bij het tellen, opschrijven of overtypen van de stemmen. Fouten die na {deadline} worden gemeld, kunnen we nog onderzoeken en herstellen. Dan kan de juiste informatie mee in de officiele uitslag."
 msgstr "Soms gaat er iets mis bij het tellen, opschrijven of overtypen van de stemmen. Fouten die na {deadline} worden gemeld, kunnen we nog onderzoeken en herstellen. Dan kan de juiste informatie mee in de officiele uitslag."
 
@@ -659,6 +669,14 @@ msgstr "Vind een {regionInline} van A tot Z"
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Volmachtbewijzen"
 msgstr "Volmachtbewijzen"
+
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Voorbeeld van een proces-verbaal"
+msgstr "Voorbeeld van een proces-verbaal"
+
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Waar komen deze telresultaten vandaan?"
+msgstr "Waar komen deze telresultaten vandaan?"
 
 #: src/pages/ReportIssuePage.tsx
 msgid "Waarvoor kunt u een melding maken?"
