@@ -126,10 +126,10 @@ class GithubEmlFileHandler(BaseFileHandler):
         for parser_type, (binding, importer_cls) in self._DOCUMENT_TYPES.items():
             for file in xml_files[parser_type]:
                 self.logger.info(f"Importing {parser_type} file {file.filename}")
-                eml = self._parser.from_bytes(file.getvalue(), binding)
+                eml = self._xml_parser.from_bytes(file.getvalue(), binding) if binding else None
                 try:
                     with transaction.atomic():
-                        importer_cls(eml, file).parse()
+                        importer_cls(file, eml=eml).parse()
                 except EMLImporterException as e:
                     # Let other exceptions (like DB connection issues) bubble up so they are not silenced
                     self.logger.error(

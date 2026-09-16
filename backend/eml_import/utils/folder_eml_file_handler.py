@@ -7,7 +7,7 @@ from django.db import connection, connections, transaction
 from xsdata.formats.dataclass.parsers import XmlParser
 
 from eml_import.exceptions import EMLImporterException
-from eml_import.utils.file_handler import BaseFileHandler, build_parser
+from eml_import.utils.file_handler import BaseFileHandler, build_xml_parser
 
 
 class FolderEMLFileHandler(BaseFileHandler):
@@ -28,11 +28,11 @@ class FolderEMLFileHandler(BaseFileHandler):
         file_cnt = len(xml_files)
         for i, xml_file_path in enumerate(xml_files, start=1):
             self.logger.info(f"Processing [{i}/{file_cnt}] {xml_file_path}...")
-            eml = self._parser.from_path(xml_file_path, binding)
+            eml = self._xml_parser.from_path(xml_file_path, binding) if binding else None
             # Use a transaction to prevent auto-commit round-trips for each insert query
             try:
                 with transaction.atomic():
-                    importer_cls(eml, xml_file_path).parse()
+                    importer_cls(xml_file_path, eml=eml).parse()
             except Exception as e:
                 self.logger.error(
                     f"\033[31mFailed importing {parser_type} file {xml_file_path} "
@@ -130,14 +130,14 @@ class FolderEMLFileHandler(BaseFileHandler):
         """
         if cls._WORKER_PARSER is None:
             # Once per worker process, not once per file.
-            cls._WORKER_PARSER = build_parser()
+            cls._WORKER_PARSER = build_xml_parser()
         assert cls._WORKER_PARSER is not None, "Worker parser not initialized."
 
         binding, importer_cls = cls._DOCUMENT_TYPES[parser_type]
         path = Path(raw_path)
 
-        eml = cls._WORKER_PARSER.from_path(path, binding)
+        eml = cls._WORKER_PARSER.from_path(path, binding) if binding else None
         with transaction.atomic():
-            importer_cls(eml, path).parse()
+            importer_cls(path, eml=eml).parse()
 
         return raw_path

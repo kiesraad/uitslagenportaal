@@ -546,7 +546,7 @@ STORAGE_KEY_TIMESTAMP = r"\d{8}T\d{12}"
 def make_ws_importer(importer_cls, eml_file):
     """A real importer for the waterschap election, whichever 510 flavour is under test."""
     eml = make_ws_510b_eml(contests=[]) if importer_cls is EML510bImporter else make_ws_510d_eml(contests=[])
-    return importer_cls(eml, eml_file)
+    return importer_cls(eml_file, eml=eml)
 
 
 def assert_storage_key(storage_key: str, expected_stem: str) -> None:

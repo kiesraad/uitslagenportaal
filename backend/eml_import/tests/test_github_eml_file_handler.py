@@ -346,7 +346,7 @@ def test_idempotency_within_one_commit_when_failing_halfway(monkeypatch):
         return make_110a_eml()
 
     handler = GithubEmlFileHandler(config)
-    monkeypatch.setattr(handler._parser, "from_bytes", from_bytes)
+    monkeypatch.setattr(handler._xml_parser, "from_bytes", from_bytes)
 
     with pytest.raises(RuntimeError, match="hard failure mid-commit"):
         handler.import_file_objects(files)

@@ -109,6 +109,9 @@ class Election(BaseModel):
             self.slug = name_to_slug(self.name)[:49]
         super().save(*args, **kwargs)
 
+    def __str__(self) -> str:
+        return f"<Election {self.name} ({self.pk})>"
+
 
 class TimelineEntryStatus(models.TextChoices):
     PENDING = "pending", "Pending"
@@ -232,12 +235,12 @@ class ElectionDocument(BaseModel):
         Make sure to also update FILE_TYPE_MAPPINGS in the frontend code on change.
         """
 
+        EML_110A = "EML110a", "Verkiezingsdefinitie"
+        EML_230B = "EML230b", "Kandidatenlijst"
         EML_510B = "EML510b", "Telling GSB"
         EML_510C = "EML510c", "Totaaltelling HSB"
         EML_510D = "EML510d", "Totaaltelling CSB"
-        CSV_GSB = "CSV_GSB", "Telling GSB"
-        CSV_HSB = "CSV_HSB", "Totaaltelling HSB"
-        CSV_CSB = "CSV_CSB", "Totaaltelling CSB"
+        CSV_OSV43 = "CSV_OSV4-3", "OSV4-3 telling CSV"
 
     region = models.ForeignKey(
         "region.Region",
