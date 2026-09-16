@@ -1,7 +1,7 @@
 {{- if .Values.services.enabled }}
 # Stand-ins for the managed database, cache and object storage, mirroring
 # docker-compose.yml. Names match the compose service names so the defaults in
-# values-dev.yaml resolve unchanged. Local clusters only: the credentials below are
+# values.yaml resolve unchanged. Local clusters only: the credentials below are
 # the ones from compose, and they are in version control.
 apiVersion: v1
 kind: Secret

@@ -24,6 +24,8 @@ jobs:
           # namespace is what the reissue command in the issue body needs.
           - environment: scaleway-dev
             namespace: uitslagenportaal-dev
+          - environment: scaleway-staging
+            namespace: uitslagenportaal-staging
     environment: ${{ matrix.environment }}
     permissions:
       contents: read

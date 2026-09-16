@@ -6,6 +6,7 @@ import django
 from django.db import connection, connections, transaction
 from xsdata.formats.dataclass.parsers import XmlParser
 
+from eml_import.exceptions import EMLImporterException
 from eml_import.utils.file_handler import BaseFileHandler, build_parser
 
 
@@ -110,7 +111,7 @@ class FolderEMLFileHandler(BaseFileHandler):
                 processed_path = future.result()
                 done += 1
                 self.logger.info(f"[{done}/{len(ordered)}] Processed {parser_type} file {processed_path}...")
-            except Exception as e:
+            except EMLImporterException as e:
                 # With any error the importer should continue as to not have everything fail
                 self.logger.error(
                     f"\033[31mFailed importing {parser_type} file {path} with exception: {type(e).__name__} {e}\033[0m"

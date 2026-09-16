@@ -15,10 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint-changed:
-    # Only enforce Biome on the files a PR touches; the rest of the codebase is
-    # not Biome-clean yet. Skipped on pushes to dev/main for now.
-    if: github.event_name == 'pull_request'
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -36,7 +33,6 @@ jobs:
       # which is what GitHub needs to attach them to the PR diff.
       - run: >
           ./frontend/node_modules/.bin/biome ci
-          --changed --since=${{ github.event.pull_request.base.sha }}
           --no-errors-on-unmatched
           --reporter=github
 
