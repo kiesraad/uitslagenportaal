@@ -1,7 +1,7 @@
 debug: false
 
 app:
-  hostname: "uitslagenportaal.kiesraad.nl"
+  hostname: "uitslagen.kiesraad.nl"
   site_name: "Uitslagenportaal"
 
 db:
