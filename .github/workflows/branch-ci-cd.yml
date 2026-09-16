@@ -5,6 +5,7 @@ on:
     branches:
       - dev
       - main
+      - 276-add-staging-deploy
     tags:
       - "*"
 
@@ -73,7 +74,8 @@ jobs:
 
   deploy-staging:
     name: Deploy to scaleway-staging
-    if: github.ref == 'refs/heads/main'
+    # todo: revert condition
+    # if: github.ref == 'refs/heads/main'
     needs: [ frontend-docker-image, backend-docker-image ]
     permissions:
       contents: read
