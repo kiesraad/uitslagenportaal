@@ -78,6 +78,20 @@ uv run manage.py build_ingress_repo --source .data/AB23 --dest ../../uitslagenpo
 Then push the branches to the remote, and configure the repo in the `.env` file to start importing its data using
 the Celery task `import_next_eml_commits`. 
 
+### Importing election configs from object storage
+
+In production, election configs are not seeded: they are placed by hand as JSON files (see
+`backend/mainsite/management/commands/election_seeds/election_config_template.json` for the
+shape) in the bucket under `election_configs/`, e.g. `election_configs/AB2023.json`. A Celery beat
+task (`election.tasks.import_election_configs`) polls that folder every 5 minutes and imports any
+file that is new or has changed since it was last imported.
+
+To trigger it by hand instead of waiting for the schedule:
+
+```bash
+docker compose run --rm backend-scripts python manage.py import_election_configs
+```
+
 ### One-off commands
 
 The `backend-scripts` service can run management commands while the stack keeps running:
@@ -200,6 +214,7 @@ Run these from `backend/` with `uv run manage.py <command>`, or against the runn
 | `import_election` | Imports all EML files in the `.data` folder |
 | `reset_and_import` | Wipe, seed & import in one |
 | `import_next_github_commits [election identifier]` | Runs the GitHub importer for the next batch of commits |
+| `import_election_configs` | Imports new/changed election_config JSON files from object storage (`election_configs/*.json`) |
 | `ensure_bucket` | (Re)creates the object storage bucket |
 | `delete_expired_elections [--confirm]` | Removes elections past their retention window |
 

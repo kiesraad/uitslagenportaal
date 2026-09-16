@@ -1,5 +1,4 @@
 {
-  "_comment": "Template for an ElectionConfig seed. Copy this file per election, fill in `election` and all three timeline_entries_* lists, then remove this _comment key. Dates are ISO 8601 local (no timezone offset); they are made timezone-aware as Europe/Amsterdam at seed time.",
   "election": {
     "id": "string, unique election identifier, e.g. TK2025",
     "label": "string, human-readable election name",

@@ -63,6 +63,7 @@ class ElectionConfig(BaseModel):
     voting_url = models.URLField(max_length=500, blank=True, default="")
     gh_counting_results_branch = models.CharField(max_length=255, null=True)
     gh_exchange_branch = models.CharField(max_length=255, null=True)
+    source_hash = models.CharField(max_length=64, null=True, blank=True)
 
     @property
     def csb_type(self):
