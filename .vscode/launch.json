@@ -1,0 +1,192 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Import Github with debugger",
+            "type": "debugpy",
+            "request": "attach",
+            "preLaunchTask": "docker: run import_next_github_commits with debugpy",
+            "postDebugTask": "docker: stop import_next_github_commits",
+            "connect": {
+                "host": "localhost",
+                "port": 5679
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}/backend",
+                    "remoteRoot": "/app"
+                }
+            ],
+            "django": true,
+            "justMyCode": true
+        },
+        {
+            // Attach to debugpy inside the backend container (docker compose up).
+            // For runserver
+            "name": "Runserver deubugger attach",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}/backend",
+                    "remoteRoot": "/app"
+                }
+            ],
+            "django": true,
+            "justMyCode": true
+        },
+        {
+            "name": "Django: runserver",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "runserver"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Django: import_election",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "import_election",
+                "${workspaceFolder}/backend/.data"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Django: wipe_db",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "wipe_db"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Django: seed",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "seed"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Django: wipe, seed & import single worker",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "reset_and_import",
+                "${workspaceFolder}/backend/.data",
+                "--workers",
+                "1"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Django: wipe, seed & import max workers",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "reset_and_import",
+                "${workspaceFolder}/backend/.data"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Django: shell_plus",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "shell_plus"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Django: import_next_github_commits",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "import_next_github_commits",
+                "GR2026"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Django: pytest",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        }
+    ]
+}

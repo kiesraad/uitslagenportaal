@@ -1,0 +1,77 @@
+import { Trans } from "@lingui/react/macro";
+import type { PartyVoteMatrix } from "../../api/types";
+import { useFormatters } from "../../utils/format";
+import { formatCandidateName } from "../../utils/formatCandidateName";
+
+type Props = {
+   matrix: PartyVoteMatrix;
+};
+
+export default function PartyVoteMatrixTable({ matrix }: Props) {
+   const { formatNumber } = useFormatters();
+
+   function formatVotes(value: number | null | undefined): string {
+      if (value == null) {
+         return "-";
+      }
+
+      return formatNumber(value);
+   }
+
+   return (
+      <div className="mt-4 max-w-full overflow-x-auto">
+         <table className="border-separate border-spacing-0 whitespace-nowrap [&_td]:p-4 [&_th]:p-4">
+            <thead>
+               <tr className="font-bold bg-white text-left align-middle">
+                  <th className="border-r border-b border-gray-200 sticky left-0 bg-inherit z-20">
+                     <Trans>Kandidaat</Trans>
+                  </th>
+                  <th className="min-w-24 border-b border-gray-200 bg-inherit">
+                     <Trans>Totaal</Trans>
+                  </th>
+                  {matrix.columns.map((column) => (
+                     <th key={column.slug} className="min-w-24 border-b border-gray-200 bg-inherit">
+                        {column.region_name}
+                     </th>
+                  ))}
+               </tr>
+            </thead>
+            <tbody>
+               {matrix.rows.map(({ candidate, total, votes }) => (
+                  <tr key={candidate.position} className="bg-white odd:bg-blue-50">
+                     <td className="border-r border-gray-200 bg-inherit sticky left-0">
+                        <div className="flex items-center gap-3.5">
+                           <span className="min-w-6 text-gray-500">{candidate.position}</span>
+                           <span>{formatCandidateName(candidate)}</span>
+                        </div>
+                     </td>
+                     <td className="min-w-20 font-bold font-number">{formatVotes(total)}</td>
+                     {matrix.columns.map((column) => (
+                        <td key={column.slug} className="min-w-16 font-number">
+                           {formatVotes(votes[column.slug])}
+                        </td>
+                     ))}
+                  </tr>
+               ))}
+               <tr className="border-t border-gray-200 bg-white">
+                  <td className="border-r border-t border-gray-200 bg-inherit sticky left-0">
+                     <div className="flex items-center gap-3.5">
+                        <span className="font-bold">
+                           <Trans>Totaal</Trans>
+                        </span>
+                     </div>
+                  </td>
+                  <td className="min-w-20 bold font-number border-t border-gray-200">
+                     {formatVotes(matrix.totals.total)}
+                  </td>
+                  {matrix.columns.map((column) => (
+                     <td key={column.slug} className="min-w-16 font-number border-t border-gray-200">
+                        {formatVotes(matrix.totals.votes[column.slug])}
+                     </td>
+                  ))}
+               </tr>
+            </tbody>
+         </table>
+      </div>
+   );
+}

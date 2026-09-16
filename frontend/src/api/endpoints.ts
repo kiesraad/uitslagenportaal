@@ -1,0 +1,96 @@
+import { apiGet } from "./client";
+import type {
+   ElectionConfig,
+   ElectionConfigsResponse,
+   PartyVoteMatrix,
+   Region,
+   RegionCategory,
+   RegionResponse,
+   ReportingLevel,
+} from "./types";
+
+export function getElectionConfigs() {
+   return apiGet<ElectionConfigsResponse>("/api/election_configs/");
+}
+
+export function getElectionConfigBySlug(slug?: string) {
+   return apiGet<ElectionConfig>(`/api/election_configs/${slug}/`);
+}
+
+export function getRegions(
+   electionConfigSlug?: string,
+   parentRegionSlug?: string,
+   regionCategory?: RegionCategory,
+   csbSlug?: string,
+   hasOwnResults?: boolean,
+) {
+   if (!electionConfigSlug || (!parentRegionSlug && !regionCategory && !csbSlug)) {
+      throw new Error(
+         "getRegions: electionConfigSlug and one of parentRegionSlug, regionCategory, or csbSlug are required.",
+      );
+   }
+
+   const url = new URL("/api/regions/", window.location.origin);
+   url.searchParams.append("election_config", electionConfigSlug);
+   if (parentRegionSlug) {
+      url.searchParams.append("parent_region", parentRegionSlug);
+   }
+   if (regionCategory) {
+      url.searchParams.append("region_category", regionCategory);
+   }
+   if (csbSlug) {
+      url.searchParams.append("csb", csbSlug);
+   }
+   if (hasOwnResults) {
+      url.searchParams.append("has_own_results", "true");
+   }
+   return apiGet<RegionResponse>(`${url.pathname}${url.search}`);
+}
+
+export function getRegion(
+   electionConfigSlug?: string,
+   regionSlug?: string,
+   csbSlug?: string,
+   parentRegionSlug?: string,
+   level?: ReportingLevel,
+) {
+   if (!electionConfigSlug || !regionSlug || !level) {
+      throw new Error("getRegion: electionConfigSlug, regionSlug and level are required.");
+   }
+
+   const url = new URL("/api/region/", window.location.origin);
+   url.searchParams.append("election_config", electionConfigSlug);
+   url.searchParams.append("region", regionSlug);
+   url.searchParams.append("level", level);
+   if (csbSlug) {
+      url.searchParams.append("csb", csbSlug);
+   }
+   if (parentRegionSlug) {
+      url.searchParams.append("parent_region", parentRegionSlug);
+   }
+   return apiGet<Region>(`${url.pathname}${url.search}`);
+}
+
+export function getCSBPartyVoteMatrix(electionSlug?: string, partySlug?: string, csbSlug?: string) {
+   if (!electionSlug || !partySlug || !csbSlug) {
+      throw new Error("getCSBPartyVoteMatrix: electionSlug, partySlug and csbSlug are required.");
+   }
+
+   const url = new URL("/api/party-result-matrix/", window.location.origin);
+   url.searchParams.append("election", electionSlug);
+   url.searchParams.append("party", partySlug);
+   url.searchParams.append("csb", csbSlug);
+   return apiGet<PartyVoteMatrix>(`${url.pathname}${url.search}`);
+}
+
+export function getHSBPartyVoteMatrix(electionSlug?: string, partySlug?: string, hsbSlug?: string) {
+   if (!electionSlug || !partySlug || !hsbSlug) {
+      throw new Error("getHSBPartyVoteMatrix: electionSlug, partySlug and hsbSlug are required.");
+   }
+
+   const url = new URL("/api/hsb-party-result-matrix/", window.location.origin);
+   url.searchParams.append("election", electionSlug);
+   url.searchParams.append("party", partySlug);
+   url.searchParams.append("hsb", hsbSlug);
+   return apiGet<PartyVoteMatrix>(`${url.pathname}${url.search}`);
+}

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<EML xmlns:xnl="urn:oasis:names:tc:ciq:xsdschema:xNL:2.0" xmlns="urn:oasis:names:tc:evs:schema:eml" xmlns:xal="urn:oasis:names:tc:ciq:xsdschema:xAL:2.0" xmlns:kr="http://www.kiesraad.nl/extensions" Id="110a" SchemaVersion="5">
+  <TransactionId>1</TransactionId>
+  <IssueDate>2023-02-03</IssueDate>
+  <kr:CreationDateTime>2023-02-03T17:19:28.712</kr:CreationDateTime>
+  <ElectionEvent>
+    <EventIdentifier/>
+    <Election>
+      <ElectionIdentifier Id="AB2023_Scheldestromen">
+        <ElectionName>Algemeen bestuur van het waterschap Scheldestromen 2023</ElectionName>
+        <ElectionCategory>AB</ElectionCategory>
+        <kr:ElectionSubcategory>AB2</kr:ElectionSubcategory>
+        <kr:ElectionDomain Id="17">Scheldestromen</kr:ElectionDomain>
+        <kr:ElectionDate>2023-03-15</kr:ElectionDate>
+        <kr:NominationDate>2023-01-30</kr:NominationDate>
+      </ElectionIdentifier>
+      <Contest>
+        <ContestIdentifier Id="geen"/>
+        <VotingMethod>SPV</VotingMethod>
+        <MaxVotes/>
+      </Contest>
+      <kr:NumberOfSeats>26</kr:NumberOfSeats>
+      <kr:PreferenceThreshold>25</kr:PreferenceThreshold>
+      <kr:ElectionTree>
+        <kr:Region RegionNumber="17" RegionCategory="WATERSCHAP">
+          <kr:RegionName>Scheldestromen</kr:RegionName>
+        </kr:Region>
+        <kr:Region RegionNumber="1" RegionCategory="KIESKRING" SuperiorRegionNumber="17" SuperiorRegionCategory="WATERSCHAP">
+          <kr:RegionName>Scheldestromen</kr:RegionName>
+          <kr:Committee CommitteeCategory="CSB"/>
+          <kr:Committee CommitteeCategory="HSB"/>
+        </kr:Region>
+        <kr:Region RegionNumber="654" RegionCategory="GEMEENTE" SuperiorRegionNumber="1" SuperiorRegionCategory="KIESKRING">
+          <kr:RegionName>Borsele</kr:RegionName>
+        </kr:Region>
+        <kr:Region RegionNumber="664" RegionCategory="GEMEENTE" SuperiorRegionNumber="1" SuperiorRegionCategory="KIESKRING">
+          <kr:RegionName>Goes</kr:RegionName>
+        </kr:Region>
+      </kr:ElectionTree>
+      <kr:RegisteredParties>
+        <kr:RegisteredParty>
+          <kr:RegisteredAppellation>Partij voor Zeeland</kr:RegisteredAppellation>
+        </kr:RegisteredParty>
+        <kr:RegisteredParty>
+          <kr:RegisteredAppellation>CDA</kr:RegisteredAppellation>
+        </kr:RegisteredParty>
+      </kr:RegisteredParties>
+    </Election>
+  </ElectionEvent>
+</EML>

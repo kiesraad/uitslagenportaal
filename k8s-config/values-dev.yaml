@@ -1,0 +1,11 @@
+app:
+  hostname: "uitslagenportaal.kiesraad.net"
+
+backend:
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
+
+frontend:
+  image: "ghcr.io/kiesraad/uitslagenportaal-frontend:dev"
+
+celery:
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"

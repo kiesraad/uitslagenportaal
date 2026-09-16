@@ -1,0 +1,144 @@
+<?xml version="1.0"?>
+<EML xmlns="urn:oasis:names:tc:evs:schema:eml" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:kr="http://www.kiesraad.nl/extensions" xmlns:xal="urn:oasis:names:tc:ciq:xsdschema:xAL:2.0" xmlns:xnl="urn:oasis:names:tc:ciq:xsdschema:xNL:2.0" Id="230b" SchemaVersion="5">
+  <TransactionId>1</TransactionId>
+  <ManagingAuthority>
+    <AuthorityIdentifier Id="CSB">Centraal stembureau Scheldestromen</AuthorityIdentifier>
+    <AuthorityAddress/>
+  </ManagingAuthority>
+  <IssueDate>2023-02-03</IssueDate>
+  <kr:CreationDateTime>2023-02-03T17:19:28.712</kr:CreationDateTime>
+  <ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"/>
+  <CandidateList>
+    <Election>
+      <ElectionIdentifier Id="AB2023_Scheldestromen">
+        <ElectionName>Algemeen bestuur van het waterschap Scheldestromen 2023</ElectionName>
+        <ElectionCategory>AB</ElectionCategory>
+        <kr:ElectionSubcategory>AB2</kr:ElectionSubcategory>
+        <kr:ElectionDomain Id="17">Scheldestromen</kr:ElectionDomain>
+        <kr:ElectionDate>2023-03-15</kr:ElectionDate>
+        <kr:NominationDate>2023-01-30</kr:NominationDate>
+      </ElectionIdentifier>
+      <Contest>
+        <ContestIdentifier Id="geen"/>
+        <Affiliation>
+          <AffiliationIdentifier Id="1">
+            <RegisteredName>Partij voor Zeeland</RegisteredName>
+          </AffiliationIdentifier>
+          <Type>op zichzelf staande lijst</Type>
+          <kr:ListData PublicationLanguage="nl" PublishGender="true"/>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">G.C.J.</xnl:NameLine>
+                <xnl:FirstName>Gert-Jan</xnl:FirstName>
+                <xnl:LastName>Minderhoud</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Oudelande</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">M.</xnl:NameLine>
+                <xnl:FirstName>Marien</xnl:FirstName>
+                <xnl:LastName>Weststrate</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Krabbendijke</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+        </Affiliation>
+        <Affiliation>
+          <AffiliationIdentifier Id="2">
+            <RegisteredName>CDA</RegisteredName>
+          </AffiliationIdentifier>
+          <Type>op zichzelf staande lijst</Type>
+          <kr:ListData PublicationLanguage="nl" PublishGender="true"/>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">C.J.C.</xnl:NameLine>
+                <xnl:FirstName>Carla</xnl:FirstName>
+                <xnl:LastName>Michielsen</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Goes</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.</xnl:NameLine>
+                <xnl:FirstName>Johan</xnl:FirstName>
+                <xnl:LastName>Kloet</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Zierikzee</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+        </Affiliation>
+        <Affiliation>
+          <AffiliationIdentifier Id="12">
+            <RegisteredName/>
+          </AffiliationIdentifier>
+          <Type>op zichzelf staande lijst</Type>
+          <kr:ListData PublicationLanguage="nl" PublishGender="true"/>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">T.E.</xnl:NameLine>
+                <xnl:FirstName>Theo</xnl:FirstName>
+                <xnl:LastName>Richel</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Yerseke</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">L.L.</xnl:NameLine>
+                <xnl:FirstName>Linda</xnl:FirstName>
+                <xnl:NamePrefix>Van</xnl:NamePrefix>
+                <xnl:LastName>Giezen</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Middelburg</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+        </Affiliation>
+      </Contest>
+    </Election>
+  </CandidateList>
+</EML>

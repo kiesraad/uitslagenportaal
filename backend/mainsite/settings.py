@@ -1,0 +1,265 @@
+import os
+import ssl
+from pathlib import Path
+from urllib.parse import quote
+
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
+SECRET_KEY = os.environ.get("SECRET_KEY", "secret")
+
+DEBUG = os.environ.get("DEBUG", "true").strip().lower() in {"1", "true", "yes"}
+
+ALLOWED_HOSTS = [
+    host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]").split(",") if host.strip()
+]
+
+
+INSTALLED_APPS = [
+    "mainsite.apps.MainsiteConfig",
+    "election.apps.ElectionConfig",
+    "region.apps.RegionConfig",
+    "party.apps.PartyConfig",
+    "eml_import.apps.EmlImportConfig",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django_extensions",
+    "rest_framework",
+    "corsheaders",
+]
+
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+ROOT_URLCONF = "mainsite.urls"
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = "mainsite.wsgi.application"
+
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ["DB_NAME"],
+        "USER": os.environ["DB_USER"],
+        "PASSWORD": os.environ["DB_PASSWORD"],
+        "HOST": os.environ["DB_HOST"],
+        "PORT": os.environ.get("DB_PORT", "5432"),
+        # Set CONN_MAX_AGE for persistent connections and check the health of the persistent connection before using it.
+        "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "0")),
+        "CONN_HEALTH_CHECKS": True,
+        # TLS towards the database. psycopg2 drops the options that are None, so an unset
+        # variable falls through to the libpq default: sslmode=prefer, which encrypts when
+        # the server offers it but verifies nothing. The verify-* modes need sslrootcert
+        # to point at the CA of the database.
+        "OPTIONS": {
+            "sslmode": os.environ.get("DB_SSL_MODE"),
+            "sslrootcert": os.environ.get("DB_ROOT_CERT"),
+        },
+    }
+}
+
+# Redis config
+# REDIS_CA_CERT_FILE points at the Redis server's CA on disk, and its presence is what
+# moves every connection over to rediss://.
+REDIS_CA_CERT_FILE = os.environ.get("REDIS_CA_CERT_FILE")
+REDIS_PROTOCOL = os.environ.get("REDIS_PROTOCOL", "rediss" if REDIS_CA_CERT_FILE else "redis")
+REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
+REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
+REDIS_USER = os.environ.get("REDIS_USER", "")
+REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "")
+# We use multiple DBs in Redis so REDIS_DB is the multiplier. I.e. REDIS_DB 0 means using DBs 0-3, 1 means 4-7 etc.
+REDIS_DB = int(os.environ.get("REDIS_DB", "0"))
+# Quote the Redis user and password to prevent issues with special characters. redis-py and kombu both
+# unquote what they parse, so escaping here is what they expect.
+REDIS_URL = (
+    f"{REDIS_PROTOCOL}://{quote(REDIS_USER, safe='')}:{quote(REDIS_PASSWORD, safe='')}@{REDIS_HOST}:{REDIS_PORT}"
+)
+
+# redis-py needs the CA per connection, and neither Celery nor the cache reads the other's
+# configuration: broker, result backend and cache each take their own copy.
+REDIS_SSL_OPTIONS = (
+    {
+        "ssl_cert_reqs": ssl.CERT_REQUIRED,
+        "ssl_ca_certs": REDIS_CA_CERT_FILE,
+        # IP-based connection, so don't verify hostnames (as with the database's verify-ca).
+        "ssl_check_hostname": False,
+    }
+    if REDIS_CA_CERT_FILE
+    else {}
+)
+
+# Celery config - use a different broker and result backend Redis DB
+CELERY_BROKER_URL = f"{REDIS_URL}/{REDIS_DB * 4 + 1}"
+CELERY_RESULT_BACKEND = f"{REDIS_URL}/{REDIS_DB * 4 + 2}"
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 0.5h
+if REDIS_SSL_OPTIONS:
+    CELERY_BROKER_USE_SSL = REDIS_SSL_OPTIONS
+    CELERY_REDIS_BACKEND_USE_SSL = REDIS_SSL_OPTIONS
+
+# Prefork sizes its pool from the host's CPU count, which bears no relation to what the
+# worker is allowed to use, and a child never hands an EML batch's peak memory back to the
+# OS. So bound the fan-out and retire a child every few tasks. Both are read between tasks,
+# so neither can cut a running import short.
+CELERY_WORKER_CONCURRENCY = int(os.environ.get("CELERY_WORKER_CONCURRENCY", "2"))
+CELERY_WORKER_MAX_TASKS_PER_CHILD = int(os.environ.get("CELERY_WORKER_MAX_TASKS_PER_CHILD", "5"))
+# An import runs for minutes, so reserving more than one message per child only leaves work
+# queued behind a busy one.
+CELERY_WORKER_PREFETCH_MULTIPLIER = int(os.environ.get("CELERY_WORKER_PREFETCH_MULTIPLIER", "1"))
+
+# Cache config
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"{REDIS_URL}/{REDIS_DB * 4}",
+        "OPTIONS": {
+            "CONNECTION_POOL_KWARGS": REDIS_SSL_OPTIONS,
+        },
+    }
+}
+
+# Password validation
+# https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+]
+
+
+# Internationalization
+# https://docs.djangoproject.com/en/6.0/topics/i18n/
+
+LANGUAGE_CODE = "en-us"
+
+USE_TZ = True
+TIME_ZONE = "Europe/Amsterdam"
+
+
+STATIC_URL = "static/"
+
+# No pagination for now
+# REST_FRAMEWORK = {
+#     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+#     "PAGE_SIZE": 100,
+# }
+
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:3000,http://localhost:5173",
+    ).split(",")
+    if origin.strip()
+]
+
+
+# GitHub EML ingress
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+GITHUB_INGRESS_REPO = os.environ.get("GITHUB_INGRESS_REPO")  # "owner/repo"
+
+
+# Object storage
+# S3-compatible: RustFS locally (see docker-compose.yml), Scaleway in production.
+STORAGES = {
+    "default": {
+        "BACKEND": "mainsite.utils.custom_s3_storage.SignedCustomDomainS3Storage",
+        "OPTIONS": {
+            "bucket_name": os.environ.get("S3_BUCKET_NAME", "uitslagenportaal"),
+            "endpoint_url": os.environ.get("S3_ENDPOINT_URL", "http://localhost:9000"),
+            "access_key": os.environ.get("S3_ACCESS_KEY", "uitslagenportaal"),
+            "secret_key": os.environ.get("S3_SECRET_KEY", "password"),
+            "region_name": os.environ.get("S3_REGION", "nl-ams"),
+            "custom_domain": os.environ.get("S3_PUBLIC_DOMAIN", "localhost:9000/uitslagenportaal"),
+            "url_protocol": os.environ.get("S3_URL_PROTOCOL", "http:"),
+            # RustFS is reached by hostname, so virtual-host style addressing
+            # (bucket.object-storage:9000) would not resolve.
+            "addressing_style": os.environ.get("S3_ADDRESSING_STYLE", "path"),
+            "querystring_auth": True,
+            "file_overwrite": True,
+        },
+    },
+    # Assigning STORAGES replaces Django's default dict, so staticfiles has to
+    # be restated here or collectstatic and the admin lose their backend.
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+
+# Logging
+# https://docs.djangoproject.com/en/6.0/topics/logging/
+
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "DEBUG" if DEBUG else "INFO")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "{asctime} {processName} - {levelname} - {name} - {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "stdout": {
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+            "formatter": "simple",
+        },
+    },
+    # Handler on the root logger, so every app logger is covered without
+    # having to list them here.
+    "root": {
+        "handlers": ["stdout"],
+        "level": LOG_LEVEL,
+    },
+    "loggers": {
+        # Set some loggers to INFO to prevent spam if LOG_LEVEL is DEBUG
+        "django": {"level": "INFO"},
+        "boto3": {"level": "INFO"},
+        "botocore": {"level": "INFO"},
+        "s3transfer": {"level": "INFO"},
+        "urllib3": {"level": "INFO"},
+        "celery": {"level": "INFO"},
+        "kombu": {"level": "INFO"},
+        "redis.connection": {"level": "INFO"},
+    },
+}
