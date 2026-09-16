@@ -34,19 +34,41 @@ PS_GSB = "/ps2023/gsb/1680-aa-en-hunze/csb/3-drenthe/resultaten"
 PS_CSB = "/ps2023/csb/3-drenthe/resultaten"
 
 
+def party_row_name(party: PartyCount) -> str:
+    """Accessible name of a VotesList party link: list number, name, and formatted votes."""
+    return f"{party.list_number} {party.name} {format_nl(party.votes)}"
+
+
+def party_link(page: Page, party: PartyCount):
+    return page.get_by_role("link", name=party_row_name(party), exact=True)
+
+
 def expect_party_totals(page: Page, parties: list[PartyCount]) -> None:
     for party in parties:
-        row = page.get_by_role("link", name=party.name, exact=True)
         if party.votes == 0:
             expect(page.get_by_text(party.name, exact=True)).to_be_visible()
             continue
-        expect(row).to_be_visible()
-        expect(row).to_contain_text(format_nl(party.votes))
+        expect(party_link(page, party)).to_be_visible()
 
 
-def expect_candidate_totals(page: Page, party: PartyCount, candidates: list[CandidateCount]) -> None:
-    expect(page.get_by_text(f"Totaal stemmen lijst {party.list_number}")).to_contain_text(format_nl(party.votes))
+def expect_candidate_totals(
+    page: Page, party: PartyCount, candidates: list[CandidateCount], *, matrix: bool = False
+) -> None:
+    if matrix:
+        footer = page.get_by_role("row").filter(has_text="Totaal").last
+        expect(footer).to_contain_text(format_nl(party.votes))
+        for candidate in candidates:
+            row = page.get_by_role("row").filter(has_text=candidate.label)
+            expect(row).to_contain_text(format_nl(candidate.votes))
+        return
+
+    expect(page.get_by_text(f"Totaal stemmen lijst {party.list_number}").locator("..")).to_contain_text(
+        format_nl(party.votes)
+    )
     for candidate in candidates:
+        if candidate.votes == 0:
+            expect(page.get_by_text(candidate.label, exact=True)).to_be_visible()
+            continue
         row = page.locator("div").filter(has_text=candidate.label).filter(has_text=format_nl(candidate.votes))
         expect(row.first).to_be_visible()
 
@@ -91,8 +113,8 @@ def test_candidate_totals_on_the_party_page_match_the_eml(page: Page, url, eml_5
     candidates = total_candidate_counts(eml_510, eml_230, party.list_number)
 
     page.goto(url)
-    page.get_by_role("link", name=party.name, exact=True).click()
-    expect_candidate_totals(page, party, candidates)
+    party_link(page, party).click()
+    expect_candidate_totals(page, party, candidates, matrix=url in (WS_CSB, PS_CSB))
 
 
 def test_stembureau_party_totals_match_the_eml(page: Page):
@@ -115,7 +137,7 @@ def test_csb_matrix_totals_match_the_eml(page: Page, url, eml, gemeente):
     unit = next(p for p in reporting_unit_party_counts(eml, gemeente) if p.list_number == party.list_number)
 
     page.goto(url)
-    page.get_by_role("link", name=party.name, exact=True).click()
+    party_link(page, party).click()
 
     footer = page.get_by_role("row").filter(has_text="Totaal").last
     expect(footer).to_contain_text(format_nl(party.votes))
