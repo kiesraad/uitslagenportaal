@@ -39,6 +39,8 @@ export type ElectionDocument = {
    file_type: string;
 };
 
+export type ReportingLevel = "gsb" | "hsb" | "csb";
+
 export type RegionCategory = "STAAT" | "WATERSCHAP" | "KIESKRING" | "GEMEENTE" | "PROVINCIE" | "STEMBUREAU";
 
 export type VoterTurnoutCategory = "REJECTED" | "UNCOUNTED";

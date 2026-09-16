@@ -455,7 +455,7 @@ def test_hsb_party_result_matrix_supports_a_kieskring_with_a_single_gemeente():
 
 
 @pytest.mark.django_db
-def test_hsb_party_result_matrix_falls_back_to_510d_without_its_own_hsb():
+def test_hsb_party_result_matrix_does_not_use_510d_without_its_own_hsb():
     election = ElectionFactory()
     contest = ContestFactory(election=election)
     party = PartyFactory(election=election)
@@ -488,4 +488,5 @@ def test_hsb_party_result_matrix_falls_back_to_510d_without_its_own_hsb():
     response = HSBPartyResultMatrixView.as_view()(_hsb_matrix_request(election.slug, party.slug, kieskring.slug))
 
     assert response.status_code == 200
-    assert response.data["rows"][0]["votes"][gemeente.slug] == 17
+    assert response.data["rows"][0]["votes"][gemeente.slug] is None
+    assert response.data["rows"][0]["total"] is None

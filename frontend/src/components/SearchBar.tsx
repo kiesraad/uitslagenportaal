@@ -166,6 +166,7 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
                {isOpen && (
                   <ul id={suggestionsId} ref={listRef} className="search-suggestions">
                      {suggestions.map((option, index) => (
+                        // biome-ignore lint/a11y/noNoninteractiveElementInteractions: Will be fixed in #205
                         <li
                            key={`${option.id}-${option.csbSlug ?? ""}`}
                            id={`${suggestionsId}-${index}`}

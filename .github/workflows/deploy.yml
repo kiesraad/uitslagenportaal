@@ -1,0 +1,107 @@
+# Upgrades the application release in one environment. Called from branch-ci-cd.yml once
+# both images are published; the caller decides which ref maps to which environment.
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+        description: GitHub Environment holding the cluster credentials, e.g. scaleway-dev
+      namespace:
+        required: true
+        type: string
+        description: Namespace the release lives in, e.g. uitslagenportaal-dev
+      values-file:
+        required: true
+        type: string
+        description: Chart values file for this environment, relative to the repository root
+      # The digests just built, not the moving tag the values file carries: a release then
+      # pins the image it actually ran, which is what makes rollback mean something.
+      backend-image:
+        required: true
+        type: string
+        description: Backend image reference including its digest; celery runs it too and must not drift from it
+      frontend-image:
+        required: true
+        type: string
+        description: Frontend image reference including its digest
+
+permissions:
+  contents: read
+
+concurrency:
+  # The only thing serialising upgrades, so it must not cancel: a killed helm upgrade
+  # leaves the release stuck in pending-upgrade. Keyed on the environment, because one
+  # environment's upgrade has no reason to wait for another's.
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # The deploy token is bound to a namespaced service account, so the kubeconfig is
+      # assembled here rather than fetched from the hosting provider.
+      - name: Write kubeconfig
+        env:
+          K8S_API_SERVER: ${{ vars.K8S_API_SERVER }}
+          K8S_CA_DATA: ${{ vars.K8S_CA_DATA }}
+          K8S_DEPLOY_TOKEN: ${{ secrets.K8S_DEPLOY_TOKEN }}
+          NAMESPACE: ${{ inputs.namespace }}
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          # An absent token is not an error anywhere: it yields a kubeconfig the API server
+          # answers as system:anonymous, which reads as a permissions problem two steps on.
+          if [ -z "$K8S_DEPLOY_TOKEN" ]; then
+            echo "::error::K8S_DEPLOY_TOKEN is empty for environment $ENVIRONMENT"
+            exit 1
+          fi
+
+          KUBECONFIG="$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
+          install -m 600 /dev/null "$KUBECONFIG"
+          cat > "$KUBECONFIG" <<YAML
+          apiVersion: v1
+          kind: Config
+          clusters:
+            - name: cluster
+              cluster:
+                server: ${K8S_API_SERVER}
+                certificate-authority-data: ${K8S_CA_DATA}
+          users:
+            - name: deployer
+              user:
+                token: ${K8S_DEPLOY_TOKEN}
+          contexts:
+            - name: deploy
+              context:
+                cluster: cluster
+                user: deployer
+                namespace: ${NAMESPACE}
+          current-context: deploy
+          YAML
+
+      - uses: azure/setup-helm@v5
+
+      # --timeout is generous because --rollback-on-failure only starts rolling back once
+      # the wait expires, and the wait covers the migration job as well as the rollouts.
+      - name: Deploy
+        env:
+          NAMESPACE: ${{ inputs.namespace }}
+          VALUES_FILE: ${{ inputs.values-file }}
+          BACKEND_IMAGE: ${{ inputs.backend-image }}
+          FRONTEND_IMAGE: ${{ inputs.frontend-image }}
+        run: |
+          helm upgrade --install uitslagenportaal ./k8s-config \
+            --namespace "$NAMESPACE" \
+            -f "$VALUES_FILE" \
+            --set-string backend.image="$BACKEND_IMAGE" \
+            --set-string celery.image="$BACKEND_IMAGE" \
+            --set-string frontend.image="$FRONTEND_IMAGE" \
+            --wait --rollback-on-failure --timeout 15m

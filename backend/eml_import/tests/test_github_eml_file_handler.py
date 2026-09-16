@@ -356,7 +356,7 @@ def test_idempotency_within_one_commit_when_failing_halfway(monkeypatch):
     assert not ImportedEmlHash.already_imported(file_230b)
     region_ids = list(Region.objects.values_list("pk", flat=True))
     assert region_ids
-    assert not Contest.objects.exists()
+    assert not Candidate.objects.exists()
 
     handler.import_file_objects(files)
 

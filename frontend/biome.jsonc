@@ -1,5 +1,5 @@
 {
-   "$schema": "https://biomejs.dev/schemas/2.5.9/schema.json",
+   "$schema": "https://biomejs.dev/schemas/2.5.13/schema.json",
    "root": false,
    "vcs": {
       "enabled": true,
@@ -19,7 +19,8 @@
    "linter": {
       "enabled": true,
       "rules": {
-         "preset": "recommended"
+         "preset": "recommended",
+         "a11y": "error"
       }
    },
    "javascript": {
