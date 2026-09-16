@@ -427,7 +427,6 @@ h4,
    color: var(--c-blue);
    flex-shrink: 0;
    margin-left: 8px;
-   text-decoration: none !important;
 }
 
 /* Empty */
@@ -1174,10 +1173,10 @@ h4,
 .hero-grid-h > .hero-grid-item {
    border-left: 0;
 }
-.hero-grid-h:first-child > .hero-grid-item {
+.hero-grid-v > .hero-grid-item {
    border-bottom: 0;
 }
-.hero-grid-v > .hero-grid-item {
+.hero-grid-h:first-child > .hero-grid-item {
    border-bottom: 0;
 }
 .hero-grid-v:first-child > .hero-grid-item {
