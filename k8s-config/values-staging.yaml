@@ -2,13 +2,10 @@ app:
   hostname: "uitslagenportaal-staging.kiesraad.net"
 
 backend:
-  # todo: revert to :main
-  image: "ghcr.io/kiesraad/uitslagenportaal-backend:276-add-staging-deploy"
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:main"
 
 frontend:
-  # todo: revert to :main
-  image: "ghcr.io/kiesraad/uitslagenportaal-frontend:276-add-staging-deploy"
+  image: "ghcr.io/kiesraad/uitslagenportaal-frontend:main"
 
 celery:
-  # todo: revert to :main
-  image: "ghcr.io/kiesraad/uitslagenportaal-backend:276-add-staging-deploy"
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:main"
