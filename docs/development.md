@@ -80,17 +80,36 @@ the Celery task `import_next_eml_commits`.
 
 ### Importing election configs from object storage
 
-In production, election configs are not seeded: they are placed by hand as JSON files (see
-`backend/mainsite/management/commands/election_seeds/election_config_template.json` for the
-shape) in the bucket under `election_configs/`, e.g. `election_configs/AB2023.json`. A Celery beat
-task (`election.tasks.import_election_configs`) polls that folder every 5 minutes and imports any
-file that is new or has changed since it was last imported.
+In production, election configs are not seeded: they are placed by hand as JSON files in the
+bucket under `election_configs/`, e.g. `election_configs/AB2023.json`. A Celery beat task
+(`election.tasks.import_election_configs`) polls that folder every 5 minutes and imports any file
+that is new or has changed since it was last imported.
 
 To trigger it by hand instead of waiting for the schedule:
 
 ```bash
 docker compose run --rm backend-scripts python manage.py import_election_configs
 ```
+
+To write a new election config, start from the template command, which prints the expected shape
+(type/description/example per field) to stdout:
+
+```bash
+docker compose run --rm backend-scripts python manage.py generate_election_config_template
+```
+
+Pass `--output` to write it to a file instead of printing it, e.g.
+`--output my_election.json`. Pick a path outside `election_configs/` in the bucket — writing the
+raw template there would let the Celery task pick it up and try to import it as-is.
+
+After filling in the template with real values, validate it before uploading it to the bucket:
+
+```bash
+docker compose run --rm backend-scripts python manage.py validate_election_config my_election.json
+```
+
+This checks required fields, the `category` enum, ISO 8601 datetimes and the timeline entry shape,
+and reports every problem it finds rather than stopping at the first one.
 
 ### One-off commands
 
@@ -215,6 +234,8 @@ Run these from `backend/` with `uv run manage.py <command>`, or against the runn
 | `reset_and_import` | Wipe, seed & import in one |
 | `import_next_github_commits [election identifier]` | Runs the GitHub importer for the next batch of commits |
 | `import_election_configs` | Imports new/changed election_config JSON files from object storage (`election_configs/*.json`) |
+| `generate_election_config_template [--output PATH]` | Prints a descriptive election_config.json template; writes to a file instead of stdout if `--output` is given |
+| `validate_election_config <path>` | Validates a filled-in election_config JSON file against the shape the importer expects |
 | `ensure_bucket` | (Re)creates the object storage bucket |
 | `delete_expired_elections [--confirm]` | Removes elections past their retention window |
 
