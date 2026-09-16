@@ -233,3 +233,163 @@ def add_csb_totaaltelling(blocker, ws: WsPortal) -> None:
         # Goes has CSB numbers only: the matrix shows them, the GSB page must not.
         _party_count(ws.contest, ws.goes, ws.zeeland, 43, EmlType.EML_510d)
         _candidate_count(ws.contest, ws.goes, ws.zeeland, ws.minderhoud, 20, EmlType.EML_510d)
+
+
+@dataclass
+class PsPortal:
+    config: ElectionConfig
+    election: Election
+    provincie: Region
+    assen: Region
+    aa_en_hunze: Region
+    emmen: Region
+    vvd: Party
+    cda: Party
+    contest: Contest | None = None
+    meeuwissen: Candidate | None = None
+
+
+def ps_definition(blocker) -> PsPortal:
+    """Election, region tree and registered parties — as after a 110a."""
+    with blocker.unblock():
+        config = ElectionConfigFactory(
+            identifier="PS2023",
+            label=PS_LABEL,
+            category=ElectionCategory.PS.value,
+            date=timezone.now() - timedelta(days=1),
+        )
+        election = ElectionFactory(
+            election_config=config,
+            name="Provinciale Staten Drenthe 2023",
+            subcategory="PS1",
+        )
+        provincie = RegionFactory(
+            election=election,
+            region_category=RegionCategory.PROVINCIE,
+            region_number="3",
+            region_name="Drenthe",
+        )
+        assen = RegionFactory(
+            election=election,
+            parent=provincie,
+            csb=provincie,
+            region_category=RegionCategory.KIESKRING,
+            region_number="1",
+            region_name="Assen",
+        )
+        aa_en_hunze = RegionFactory(
+            election=election,
+            parent=assen,
+            csb=provincie,
+            region_category=RegionCategory.GEMEENTE,
+            region_number="1680",
+            region_name="Aa en Hunze",
+        )
+        # Not in the tiny PS fixture; stands in for a gemeente that has no 510b yet.
+        emmen = RegionFactory(
+            election=election,
+            parent=assen,
+            csb=provincie,
+            region_category=RegionCategory.GEMEENTE,
+            region_number="114",
+            region_name="Emmen",
+        )
+        vvd = PartyFactory(election=election, registered_name="VVD")
+        cda = PartyFactory(election=election, registered_name="CDA")
+    return PsPortal(
+        config=config,
+        election=election,
+        provincie=provincie,
+        assen=assen,
+        aa_en_hunze=aa_en_hunze,
+        emmen=emmen,
+        vvd=vvd,
+        cda=cda,
+    )
+
+
+def add_ps_candidate_lists(blocker, ps: PsPortal) -> None:
+    with blocker.unblock():
+        # HSB matrix selects candidates by contest name == kieskring name.
+        ps.contest = ContestFactory(election=ps.election, identifier="geen", name="Assen")
+        ps.vvd.list_number = 1
+        ps.vvd.save(update_fields=["list_number", "updated_at"])
+        ps.cda.list_number = 2
+        ps.cda.save(update_fields=["list_number", "updated_at"])
+        ps.meeuwissen = CandidateFactory(
+            contest=ps.contest,
+            party=ps.vvd,
+            identifier=1,
+            position=1,
+            last_name="Meeuwissen-Dekker",
+        )
+        CandidateFactory(
+            contest=ps.contest,
+            party=ps.cda,
+            identifier=1,
+            position=1,
+            last_name="Jansen",
+        )
+
+
+def add_aa_en_hunze_telling(blocker, ps: PsPortal) -> None:
+    assert ps.contest is not None and ps.meeuwissen is not None
+    with blocker.unblock():
+        station = RegionFactory(
+            election=ps.election,
+            parent=ps.aa_en_hunze,
+            csb=ps.provincie,
+            region_category=RegionCategory.STEMBUREAU,
+            region_number="1680::SB1",
+            region_name="Gemeentehuis Gieten",
+        )
+        ps.aa_en_hunze.results_available_at = timezone.now()
+        ps.aa_en_hunze.save(update_fields=["results_available_at", "updated_at"])
+        ElectionDocumentFactory(
+            region=ps.aa_en_hunze,
+            file_type=ElectionDocument.FileType.EML_510B,
+            size=1024,
+        )
+        for region in (ps.aa_en_hunze, station):
+            _party_count(ps.contest, region, ps.vvd, 100, EmlType.EML_510b)
+            _party_count(ps.contest, region, ps.cda, 50, EmlType.EML_510b)
+            _candidate_count(ps.contest, region, ps.vvd, ps.meeuwissen, 80, EmlType.EML_510b)
+
+
+def add_assen_hsb(blocker, ps: PsPortal) -> None:
+    assert ps.contest is not None and ps.meeuwissen is not None
+    with blocker.unblock():
+        ps.assen.results_available_at = timezone.now()
+        ps.assen.save(update_fields=["results_available_at", "updated_at"])
+        ElectionDocumentFactory(
+            region=ps.assen,
+            file_type=ElectionDocument.FileType.EML_510C,
+            size=1536,
+        )
+        _party_count(ps.contest, ps.assen, ps.vvd, 140, EmlType.EML_510c)
+        _party_count(ps.contest, ps.assen, ps.cda, 70, EmlType.EML_510c)
+        _candidate_count(ps.contest, ps.assen, ps.vvd, ps.meeuwissen, 90, EmlType.EML_510c)
+        _party_count(ps.contest, ps.aa_en_hunze, ps.vvd, 100, EmlType.EML_510c)
+        _candidate_count(ps.contest, ps.aa_en_hunze, ps.vvd, ps.meeuwissen, 80, EmlType.EML_510c)
+        # Emmen has HSB numbers only: the matrix shows them, the GSB page must not.
+        _party_count(ps.contest, ps.emmen, ps.vvd, 40, EmlType.EML_510c)
+        _candidate_count(ps.contest, ps.emmen, ps.vvd, ps.meeuwissen, 20, EmlType.EML_510c)
+
+
+def add_drenthe_csb(blocker, ps: PsPortal) -> None:
+    assert ps.contest is not None and ps.meeuwissen is not None
+    with blocker.unblock():
+        ps.provincie.results_available_at = timezone.now()
+        ps.provincie.save(update_fields=["results_available_at", "updated_at"])
+        ElectionDocumentFactory(
+            region=ps.provincie,
+            file_type=ElectionDocument.FileType.EML_510D,
+            size=2048,
+        )
+        _party_count(ps.contest, ps.provincie, ps.vvd, 142, EmlType.EML_510d)
+        _party_count(ps.contest, ps.provincie, ps.cda, 70, EmlType.EML_510d)
+        _candidate_count(ps.contest, ps.provincie, ps.vvd, ps.meeuwissen, 90, EmlType.EML_510d)
+        _party_count(ps.contest, ps.aa_en_hunze, ps.vvd, 99, EmlType.EML_510d)
+        _candidate_count(ps.contest, ps.aa_en_hunze, ps.vvd, ps.meeuwissen, 70, EmlType.EML_510d)
+        _party_count(ps.contest, ps.emmen, ps.vvd, 43, EmlType.EML_510d)
+        _candidate_count(ps.contest, ps.emmen, ps.vvd, ps.meeuwissen, 20, EmlType.EML_510d)
