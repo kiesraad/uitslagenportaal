@@ -80,6 +80,12 @@ def stack_services() -> Iterator[None]:
         yield
 
 
+@pytest.fixture(autouse=True)
+def in_memory_storage():
+    """The suite shares the stack's bucket; the unit-test double would hide it."""
+    yield
+
+
 @pytest.fixture(scope="session", autouse=True)
 def migrated_database(django_db_blocker, stack_services: None) -> None:
     """Migrate once per run and, being the first query, answer for an unreachable database."""
