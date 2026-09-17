@@ -1,4 +1,4 @@
-"""Build Waterschap portal states with the ORM, one pause at a time."""
+"""Build election states with the ORM, document by document."""
 
 from dataclasses import dataclass
 from datetime import timedelta

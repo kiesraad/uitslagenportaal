@@ -111,7 +111,7 @@ def seeded_database(django_db_blocker, require_running_stack: None, migrated_dat
 
 @pytest.fixture
 def empty_database(transactional_db) -> None:
-    """Wipe the stack database so a trickle test does not see another module's import."""
+    """Wipe the stack database so a test that builds its own election does not see another module's import."""
     call_command("wipe_db")
 
 
