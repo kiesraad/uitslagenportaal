@@ -98,9 +98,10 @@ To write a new election config, start from the template command, which prints th
 docker compose run --rm backend-scripts python manage.py generate_election_config_template
 ```
 
-Pass `--output` to write it to a file instead of printing it, e.g.
-`--output my_election.json`. Pick a path outside `election_configs/` in the bucket — writing the
-raw template there would let the Celery task pick it up and try to import it as-is.
+Pass `--output` to write it to a local file instead of printing it, e.g.
+`--output my_election.json`. This command is only meant to be run locally, to give an
+administrator or developer a starting point to fill in by hand; it writes to the local
+filesystem.
 
 After filling in the template with real values, validate it before uploading it to the bucket:
 
