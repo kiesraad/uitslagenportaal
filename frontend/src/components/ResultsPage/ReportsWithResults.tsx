@@ -1,6 +1,6 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faFolder } from "@fortawesome/free-regular-svg-icons";
-import { faFile } from "@fortawesome/free-solid-svg-icons";
+import { faFile, faTable } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -41,6 +41,12 @@ const FILE_TYPE_MAPPINGS: Record<
       fileType: "xml",
       icon: faFolder,
       description: msg`Output van de optelsoftware, bevat de resultaten van alle onderliggende regio's en de totaaltellingen.`,
+   },
+   "CSV_OSV4-3": {
+      name: msg`OSV4-3 tellingbestand`,
+      fileType: "csv",
+      icon: faTable,
+      description: msg`Output van de optelsoftware, bevat alle resultaten voor de regio en onderliggende regio's.`,
    },
 }))();
 

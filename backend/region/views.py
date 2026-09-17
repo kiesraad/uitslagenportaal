@@ -90,7 +90,7 @@ class RegionDetailView(RetrieveAPIView):
             raise ValidationError({"level": "This query parameter is required and must be gsb, hsb, or csb."})
 
         eml_type = EML_TYPE_BY_REPORTING_LEVEL[level]
-        document_file_type = _DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL[level]
+        document_file_type = [_DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL[level], ElectionDocument.FileType.CSV_OSV43]
         queryset = (
             Region.objects.select_related(
                 "csb",
@@ -107,7 +107,7 @@ class RegionDetailView(RetrieveAPIView):
                 ),
                 # ElectionDocument uses CurrentManager; explicit Prefetch ensures prefetched
                 # rows match obj.documents.all(), not all_objects.
-                Prefetch("documents", queryset=ElectionDocument.objects.filter(file_type=document_file_type)),
+                Prefetch("documents", queryset=ElectionDocument.objects.filter(file_type__in=document_file_type)),
                 "election__election_config__timeline_entries",
             )
             .filter(
