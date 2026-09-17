@@ -456,6 +456,14 @@ msgid "Opnieuw proberen"
 msgstr "Try again"
 
 #: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "OSV4-3 tellingbestand"
+msgstr "OSV4-3 count file"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Output van de optelsoftware, bevat alle resultaten voor de regio en onderliggende regio's."
+msgstr "Output of the tabulation software; contains all results for the region and its underlying regions."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Output van de optelsoftware, bevat de optelling van het hoofdstembureau."
 msgstr "Output of the tabulation software; contains the total for the district electoral committee."
 

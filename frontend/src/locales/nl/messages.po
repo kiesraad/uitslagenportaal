@@ -456,6 +456,14 @@ msgid "Opnieuw proberen"
 msgstr "Opnieuw proberen"
 
 #: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "OSV4-3 tellingbestand"
+msgstr "OSV4-3 tellingbestand"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Output van de optelsoftware, bevat alle resultaten voor de regio en onderliggende regio's."
+msgstr "Output van de optelsoftware, bevat alle resultaten voor de regio en onderliggende regio's."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Output van de optelsoftware, bevat de optelling van het hoofdstembureau."
 msgstr "Output van de optelsoftware, bevat de optelling van het hoofdstembureau."
 
