@@ -18,6 +18,12 @@ class EmlType(TextChoices):
     EML_520 = "520", "Resultaat"
 
 
+class CsvType(TextChoices):
+    # Labels should not be changed as they're used to determine the EML file names.
+    # Changing them will result in different file names when importing the same data.
+    CSV_OSV43 = "osv4-3", "Telling OSV4-3"
+
+
 class ReportingLevel(TextChoices):
     GSB = "gsb"
     HSB = "hsb"

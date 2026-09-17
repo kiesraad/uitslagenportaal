@@ -66,7 +66,7 @@ def test_resolves_election_config_from_identifier_prefix():
     """ElectionIdentifier/@Id may carry a suffix (e.g. re-election); only the prefix is the config id."""
     ElectionConfigFactory(identifier=CONFIG_IDENTIFIER)
 
-    EML110aImporter(make_110a_eml(), fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=make_110a_eml()).parse()
 
     election = Election.objects.get()
     assert election.election_config.identifier == CONFIG_IDENTIFIER
@@ -81,7 +81,7 @@ def test_imports_against_an_expired_election_config():
     )
     assert not ElectionConfig.objects.filter(identifier=CONFIG_IDENTIFIER).exists()
 
-    EML110aImporter(make_110a_eml(), fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=make_110a_eml()).parse()
 
     assert Election.objects.filter(election_config__identifier=CONFIG_IDENTIFIER).exists()
 
@@ -91,7 +91,7 @@ def test_raises_when_election_config_is_missing():
     eml_file = fake_eml_file("definitie.eml.xml")
 
     with pytest.raises(ElectionConfig.DoesNotExist):
-        EML110aImporter(make_110a_eml(), eml_file)
+        EML110aImporter(eml_file, eml=make_110a_eml())
 
     assert not Election.objects.exists()
     assert not ImportedEmlHash.objects.exists()
@@ -102,11 +102,11 @@ def test_records_hash_after_successful_import_and_skips_duplicate():
     ElectionConfigFactory(identifier=CONFIG_IDENTIFIER)
     content = b"<eml identical bytes/>"
 
-    EML110aImporter(make_110a_eml(), NamedBytesIO(content, "definitie.eml.xml")).parse()
+    EML110aImporter(NamedBytesIO(content, "definitie.eml.xml"), eml=make_110a_eml()).parse()
     assert ImportedEmlHash.objects.count() == 1
     region_ids = list(Region.objects.values_list("pk", flat=True))
 
-    EML110aImporter(make_110a_eml(), NamedBytesIO(content, "other-name.eml.xml")).parse()
+    EML110aImporter(NamedBytesIO(content, "other-name.eml.xml"), eml=make_110a_eml()).parse()
 
     assert ImportedEmlHash.objects.count() == 1
     # Duplicate short-circuits before correction; current regions are untouched
@@ -125,7 +125,7 @@ def test_failed_import_does_not_record_a_hash():
     eml = make_ws_telling(authority_id="0999", authority_name="Onbekend")
 
     with pytest.raises(EMLImporterException):
-        EML510bImporter(eml, NamedBytesIO(b"<eml/>", "telling.eml.xml")).parse()
+        EML510bImporter(NamedBytesIO(b"<eml/>", "telling.eml.xml"), eml=eml).parse()
 
     assert not ImportedEmlHash.objects.exists()
 
@@ -133,11 +133,11 @@ def test_failed_import_does_not_record_a_hash():
 @pytest.mark.django_db
 def test_110a_correction_blocked_once_counting_results_exist():
     ElectionConfigFactory(identifier=CONFIG_IDENTIFIER)
-    EML110aImporter(make_110a_eml(), fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=make_110a_eml()).parse()
     _seed_counting_result(Election.objects.get())
 
     with pytest.raises(EMLImporterException, match="counting results already imported"):
-        EML110aImporter(make_110a_eml(), fake_eml_file()).parse()
+        EML110aImporter(fake_eml_file(), eml=make_110a_eml()).parse()
 
 
 @pytest.mark.django_db
@@ -150,8 +150,8 @@ def test_230b_correction_blocked_once_counting_results_exist():
         date=DATE_230,
     )
     PartyFactory(election=election, registered_name=REGISTERED_NAME)
-    EML230bImporter(make_230b_eml(), fake_eml_file()).parse()
+    EML230bImporter(fake_eml_file(), eml=make_230b_eml()).parse()
     _seed_counting_result(election)
 
     with pytest.raises(EMLImporterException, match="counting results already imported"):
-        EML230bImporter(make_230b_eml(), fake_eml_file()).parse()
+        EML230bImporter(fake_eml_file(), eml=make_230b_eml()).parse()
