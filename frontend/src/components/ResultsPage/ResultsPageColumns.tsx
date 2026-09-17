@@ -9,7 +9,9 @@ export default function ResultsPageColumns({ children }: Props) {
    return (
       <div className="page-main page-main-two-columns">
          <div className="page-space-3">{children}</div>
-         <ResultsSourceBox />
+         <div className="counting-results-column">
+            <ResultsSourceBox />
+         </div>
       </div>
    );
 }
