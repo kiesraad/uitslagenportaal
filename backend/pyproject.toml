@@ -29,6 +29,7 @@ dev = [
     "pytest>=8.4.0",
     "pytest-django>=4.13.0",
     "pytest-playwright>=0.9.0",
+    "pytest-playwright-axe>=4.13.0",
     "factory-boy>=3.3.3",
     "fakeredis[lua]>=2.37.0",
     "watchfiles>=1.2.0",
@@ -48,7 +49,11 @@ select = ["E", "F", "I"]
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "mainsite.settings"
 python_files = ["test_*.py"]
-markers = ["playwright: browser test; needs the throwaway stack on :8081"]
+markers = [
+    "playwright: browser test; needs the throwaway stack on :8081",
+    "axe: axe-core accessibility scan; run with -m axe",
+]
 # Browser tests need a running stack and an installed Chromium, so a bare
 # `pytest` (backend-ci) skips them; the Playwright job opts in with -m playwright.
-addopts = ["-m", "not playwright"]
+# Axe scans opt in with -m axe and are not part of the Playwright job.
+addopts = ["-m", "not playwright and not axe"]

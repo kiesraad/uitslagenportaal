@@ -300,6 +300,14 @@ The `-m playwright` marker is required: a bare `uv run pytest` deliberately dese
 the browser tests, so `backend-ci` never tries to run them without a stack or a
 browser.
 
+Axe-core scans of one of each page kind are a separate marker. They need the same
+stack, and they will fail until the findings are fixed, so they are not part of
+`-m playwright` or CI yet:
+
+```bash
+uv run pytest playwright_tests -m axe -v
+```
+
 Run a single module, or filter by test name:
 
 ```bash
