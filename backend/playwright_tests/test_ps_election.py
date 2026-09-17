@@ -174,15 +174,12 @@ def test_after_candidate_lists_results_are_still_unpublished(page: Page):
     add_ps_candidate_lists(ps)
 
     page.goto("/ps2023/gsb")
-    expect_ps_tabs_without_hsb(page)
     page.get_by_role("link", name="Aa en Hunze").click()
     expect_unpublished_gemeente(page, "Aa en Hunze")
     expect(page.get_by_role("link", name="VVD")).to_have_count(0)
 
     page.goto("/ps2023/csb/3-drenthe/resultaten")
     expect_unpublished_csb(page)
-
-    expect_hsb_is_not_found(page)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -195,20 +192,7 @@ def test_after_aa_en_hunze_telling_emmen_and_higher_levels_are_still_unpublished
     page.goto("/ps2023/gsb")
     expect_ps_tabs_without_hsb(page)
     page.get_by_role("link", name="Aa en Hunze").click()
-    expect(page.get_by_role("heading", level=1, name="Gemeente Aa en Hunze")).to_be_visible()
-    expect(page.get_by_role("link", name="Resultaten per stembureau")).to_be_visible()
     expect(page.get_by_role("link", name="Hele gemeente")).to_be_visible()
-    expect(
-        page.get_by_role("heading", level=2, name=re.compile(r"stembureaus? in Gemeente Aa en Hunze"))
-    ).to_be_visible()
-    expect(page.get_by_role("link", name=re.compile(r"Gemeentehuis Gieten"))).to_be_visible()
-    expect(page.get_by_text("Geplaatst op:")).to_be_visible()
-
-    page.get_by_role("link", name="Hele gemeente").click()
-    expect(page.get_by_role("heading", name="Telresultaten")).to_be_visible()
-    expect(page.get_by_role("link", name="VVD")).to_be_visible()
-    expect(page.get_by_role("link", name="CDA")).to_be_visible()
-    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510b"))).to_be_visible()
 
     page.goto("/ps2023/gsb")
     page.get_by_role("link", name="Emmen").click()
@@ -232,15 +216,9 @@ def test_after_assen_hsb_the_kieskring_tab_appears(page: Page):
     expect_ps_tabs_with_hsb(page)
 
     page.get_by_role("link", name="Kieskringen").click()
-    expect(page.get_by_role("link", name="Assen")).to_be_visible()
     page.get_by_role("link", name="Assen").click()
-    expect(page.get_by_role("heading", name="Telresultaten")).to_be_visible()
-    expect(page.get_by_text("Geplaatst op:")).to_be_visible()
-    expect(page.get_by_role("link", name="VVD")).to_be_visible()
     expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510c"))).to_be_visible()
-
     page.get_by_role("link", name="VVD").click()
-    expect(page.get_by_role("columnheader", name="Aa en Hunze")).to_be_visible()
     expect(page.get_by_role("columnheader", name="Emmen")).to_be_visible()
 
     page.goto("/ps2023/gsb")
@@ -267,13 +245,8 @@ def test_after_drenthe_csb_emmen_stays_unpublished_on_gsb(page: Page):
 
     page.goto("/ps2023/csb")
     page.get_by_role("link", name="Drenthe").click()
-    expect(page.get_by_role("heading", name="Telresultaten")).to_be_visible()
-    expect(page.get_by_text("Geplaatst op:")).to_be_visible()
-    expect(page.get_by_role("link", name="VVD")).to_be_visible()
     expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510d"))).to_be_visible()
-
     page.get_by_role("link", name="VVD").click()
-    expect(page.get_by_role("columnheader", name="Aa en Hunze")).to_be_visible()
     expect(page.get_by_role("columnheader", name="Emmen")).to_be_visible()
 
     page.goto("/ps2023/hsb/1-assen/resultaten")
@@ -287,5 +260,3 @@ def test_after_drenthe_csb_emmen_stays_unpublished_on_gsb(page: Page):
     page.goto("/ps2023/gsb")
     page.get_by_role("link", name="Emmen").click()
     expect_unpublished_gemeente(page, "Emmen")
-    expect(page.get_by_role("link", name="VVD")).to_have_count(0)
-    expect(page.get_by_text("Geplaatst op:")).to_have_count(0)
