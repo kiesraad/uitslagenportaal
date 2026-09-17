@@ -36,6 +36,14 @@ accessLog:
   enabled: true
   format: json
 
+# Request rate, error rate and latency per route, which covers the frontend and the
+# backend at once without either of them being instrumented. The ServiceMonitor is
+# read by kube-prometheus-stack in the monitoring namespace.
+metrics:
+  prometheus:
+    serviceMonitor:
+      enabled: true
+
 # No CPU limit on purpose: throttling the proxy hurts most during the traffic
 # spike it exists to absorb. The memory limit restarts a leaking pod instead of
 # letting it take the node down.

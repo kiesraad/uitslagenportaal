@@ -1,0 +1,108 @@
+# Loki: log aggregation, installed once per cluster. Alloy ships pod logs here and
+# Grafana queries them; Loki itself has no UI and is not behind monitoring-proxy.
+
+# SingleBinary mode is deliberate: a microservice deployment is not worth running for
+# four workloads. Chunks live in Scaleway object storage, in a bucket of their own
+# rather than the application's, because the retention policy differs and log chunks
+# should not share a bucket with election documents.
+deploymentMode: SingleBinary
+
+loki:
+  # Single-tenant: nothing here multiplexes customers, and enabling auth would mean
+  # every query and push carrying a tenant header for no gain.
+  auth_enabled: false
+
+  # One ingester, so one copy. The chart defaults this to 3 and single-binary mode does
+  # not override it, so leaving it alone means every push is rejected for want of live
+  # replicas and Loki stores nothing at all.
+  commonConfig:
+    replication_factor: 1
+
+  # Credentials come from the loki-s3-creds secret through the environment, expanded by
+  # -config.expand-env below. Inlining the keys here would put a live credential in git.
+  storage:
+    type: s3
+    bucketNames:
+      chunks: uitslagenportaal-loki
+      ruler: uitslagenportaal-loki
+    s3:
+      endpoint: https://s3.nl-ams.scw.cloud
+      region: nl-ams
+      accessKeyId: ${AWS_ACCESS_KEY_ID}
+      secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+
+  # The schema is append-only: to change it, add a period starting on a future date
+  # rather than editing this one, or existing chunks become unreadable.
+  schemaConfig:
+    configs:
+      - from: "2026-01-01"
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+
+  limits_config:
+    # Thirty days, matching the Prometheus retention.
+    retention_period: 720h
+
+  # Retention does nothing until the compactor enforces it. Left at the default of
+  # false, chunks stay in the bucket forever no matter what retention_period says —
+  # the usual way a Loki bill grows quietly.
+  compactor:
+    retention_enabled: true
+    delete_request_store: s3
+
+singleBinary:
+  replicas: 1
+  # Loki does not expand environment variables in its config unless told to, and the
+  # storage block above is written in terms of them.
+  extraArgs:
+    - -config.expand-env=true
+  extraEnv:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: loki-s3-creds
+          key: AWS_ACCESS_KEY_ID
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: loki-s3-creds
+          key: AWS_SECRET_ACCESS_KEY
+  persistence:
+    enabled: true
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+
+# SingleBinary runs every component in one process, so the scalable-mode deployments
+# must be held at zero or the chart renders a second, idle copy of each.
+read:
+  replicas: 0
+write:
+  replicas: 0
+backend:
+  replicas: 0
+
+# The memcached tiers are sized for clusters far larger than this one.
+chunksCache:
+  enabled: false
+resultsCache:
+  enabled: false
+
+# Grafana reaches Loki directly over cluster DNS; there is no second entry point to run.
+gateway:
+  enabled: false
+
+# A synthetic log stream used to measure ingestion lag, and the chart's own test pod.
+# Neither earns its keep here.
+lokiCanary:
+  enabled: false
+test:
+  enabled: false
