@@ -73,6 +73,21 @@ def test_import_new_election_configs_reimports_a_changed_file(uploaded_config):
 
 
 @pytest.mark.django_db
+def test_import_new_election_configs_skips_a_reformatted_but_unchanged_file(uploaded_config):
+    key = f"{ELECTION_CONFIGS_PREFIX}AB2099.json"
+    default_storage.delete(key)
+    default_storage.save(key, ContentFile(json.dumps(MINIMAL_DATA).encode()))
+    import_new_election_configs()
+
+    # Same data, different formatting: indentation and key order both changed.
+    default_storage.delete(key)
+    default_storage.save(key, ContentFile(json.dumps(MINIMAL_DATA, indent=4, sort_keys=True).encode()))
+    imported = import_new_election_configs()
+
+    assert imported == 0
+
+
+@pytest.mark.django_db
 def test_import_new_election_configs_ignores_non_json_files():
     key = f"{ELECTION_CONFIGS_PREFIX}readme.txt"
     default_storage.save(key, ContentFile(b"not a config"))

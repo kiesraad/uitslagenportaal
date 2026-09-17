@@ -1,10 +1,9 @@
-import hashlib
 import json
 import logging
 
 from django.core.files.storage import default_storage
 
-from election.election_config_importer import import_election_config
+from election.election_config_importer import hash_election_config_data, import_election_config
 from election.models import ElectionConfig
 
 logger = logging.getLogger(__name__)
@@ -18,8 +17,10 @@ def import_new_election_configs() -> int:
     """
     Scan the bucket for election_config JSON files and import any that are new or changed.
 
-    A file is skipped once its content hash matches ElectionConfig.source_hash for that
-    identifier, so re-polling an unchanged upload is a no-op. Returns the number imported.
+    A file is skipped once the hash of its parsed data matches ElectionConfig.source_hash for
+    that identifier, so re-polling an unchanged upload is a no-op. Hashing the parsed data
+    rather than the raw bytes means formatting-only re-uploads (whitespace, key order) are
+    also skipped. Returns the number imported.
 
     Uses the generic Storage API (listdir/open) rather than boto3 directly, so it works
     against any configured backend, including the in-memory one used in tests.
@@ -41,7 +42,6 @@ def import_new_election_configs() -> int:
 
         with default_storage.open(key, "rb") as fh:
             content = fh.read()
-        content_hash = hashlib.sha256(content).hexdigest()
 
         try:
             data = json.loads(content)
@@ -59,12 +59,12 @@ def import_new_election_configs() -> int:
 
         # Keyed on the id the file itself declares, not the file name, so a mismatch
         # (logged above) still dedupes correctly on every later poll.
-        if known_hashes.get(identifier) == content_hash:
+        if known_hashes.get(identifier) == hash_election_config_data(data):
             continue
 
         logger.info("Importing election config %s from %s", identifier, key)
         try:
-            import_election_config(data, source_hash=content_hash)
+            import_election_config(data)
         except Exception:
             logger.exception("Failed to import election config from %s", key)
             continue

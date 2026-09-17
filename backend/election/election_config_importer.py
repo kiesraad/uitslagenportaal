@@ -1,3 +1,5 @@
+import hashlib
+import json
 import logging
 from datetime import datetime
 
@@ -23,7 +25,18 @@ def _aware(value: str):
     return timezone.make_aware(datetime.fromisoformat(value))
 
 
-def import_election_config(data: dict, *, source_hash: str | None = None) -> ElectionConfig:
+def hash_election_config_data(data: dict) -> str:
+    """
+    Hash the parsed election_config data, not the raw file bytes.
+
+    Formatting-only changes to an uploaded file (whitespace, key order) then leave the
+    hash unchanged, so they aren't treated as a real content change.
+    """
+    datadump = json.dumps(data, sort_keys=True)
+    return hashlib.sha256(datadump.encode()).hexdigest()
+
+
+def import_election_config(data: dict) -> ElectionConfig:
     """
     Create or update an ElectionConfig (and its timeline entries) from parsed election_config JSON.
 
@@ -33,6 +46,7 @@ def import_election_config(data: dict, *, source_hash: str | None = None) -> Ele
     """
     election_data = data["election"]
     identifier = election_data["id"]
+    source_hash = hash_election_config_data(data)
 
     election_config = ElectionConfig.with_expired.filter(identifier=identifier).first()
     if election_config is not None and any(
@@ -79,7 +93,7 @@ def _wipe_election_data(election_config: ElectionConfig) -> None:
 
 @transaction.atomic
 def _save_election_config(
-    election_config: ElectionConfig | None, identifier: str, election_data: dict, data: dict, source_hash: str | None
+    election_config: ElectionConfig | None, identifier: str, election_data: dict, data: dict, source_hash: str
 ) -> ElectionConfig:
     if election_config is None:
         election_config = ElectionConfig(identifier=identifier)

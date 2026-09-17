@@ -1,3 +1,4 @@
+import json
 import threading
 
 import pytest
@@ -5,7 +6,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db.models import QuerySet
 
-from election.election_config_importer import import_election_config
+from election.election_config_importer import hash_election_config_data, import_election_config
 from election.models import ElectionConfig, ElectionDocument, TimelineVariant
 from election.tests.factories import ElectionConfigFactory, ElectionDocumentFactory, ElectionFactory
 from eml_import.models import BranchType, ImportedCommit
@@ -42,12 +43,12 @@ MINIMAL_DATA = {
 
 @pytest.mark.django_db
 def test_import_creates_a_new_election_config_with_its_timeline_entries():
-    config = import_election_config(MINIMAL_DATA, source_hash="hash-1")
+    config = import_election_config(MINIMAL_DATA)
 
     assert config.identifier == "TK2025"
     assert config.category == "TK"
     assert config.label == "Tweede Kamer Verkiezingen 2025"
-    assert config.source_hash == "hash-1"
+    assert config.source_hash == hash_election_config_data(MINIMAL_DATA)
     assert config.timeline_entries.filter(variant=TimelineVariant.CSO).count() == 1
     assert config.timeline_entries.filter(variant=TimelineVariant.DSO).count() == 0
     assert config.timeline_entries.filter(variant=TimelineVariant.DEFAULT).count() == 1
@@ -57,12 +58,12 @@ def test_import_creates_a_new_election_config_with_its_timeline_entries():
 def test_import_updates_an_existing_config_in_place_and_replaces_timeline_entries():
     existing = ElectionConfigFactory(identifier="TK2025", label="Old label")
 
-    config = import_election_config(MINIMAL_DATA, source_hash="hash-2")
+    config = import_election_config(MINIMAL_DATA)
 
     assert config.pk == existing.pk
     assert ElectionConfig.with_expired.filter(identifier="TK2025").count() == 1
     assert config.label == "Tweede Kamer Verkiezingen 2025"
-    assert config.source_hash == "hash-2"
+    assert config.source_hash == hash_election_config_data(MINIMAL_DATA)
 
 
 @pytest.mark.django_db
@@ -75,7 +76,7 @@ def test_import_is_a_noop_for_unchanged_branches():
     election = ElectionFactory(election_config=existing)
     ImportedCommit.objects.create(election_config=existing, branch_type=BranchType.EXCHANGE, commit_sha="abc123")
 
-    import_election_config(MINIMAL_DATA, source_hash="hash-3")
+    import_election_config(MINIMAL_DATA)
 
     assert existing.elections.filter(pk=election.pk).exists()
     assert existing.imported_commits.exists()
@@ -91,7 +92,7 @@ def test_import_wipes_election_data_when_a_github_branch_changes():
     election = ElectionFactory(election_config=existing)
     ImportedCommit.objects.create(election_config=existing, branch_type=BranchType.EXCHANGE, commit_sha="abc123")
 
-    config = import_election_config(MINIMAL_DATA, source_hash="hash-4")
+    config = import_election_config(MINIMAL_DATA)
 
     assert not config.elections.filter(pk=election.pk).exists()
     assert not config.imported_commits.exists()
@@ -99,10 +100,13 @@ def test_import_wipes_election_data_when_a_github_branch_changes():
 
 
 @pytest.mark.django_db
-def test_import_leaves_source_hash_null_when_not_given():
-    import_election_config(MINIMAL_DATA)
+def test_import_hash_is_unaffected_by_formatting_only_differences():
+    reformatted = json.loads(json.dumps(MINIMAL_DATA, indent=4, sort_keys=False))
 
-    assert ElectionConfig.with_expired.get(identifier="TK2025").source_hash is None
+    import_election_config(MINIMAL_DATA)
+    config = import_election_config(reformatted)
+
+    assert config.source_hash == hash_election_config_data(MINIMAL_DATA)
 
 
 @pytest.mark.django_db
@@ -118,7 +122,7 @@ def test_import_deletes_stored_documents_when_a_github_branch_changes():
     default_storage.save(document.storage_key, ContentFile(b"<xml />"))
 
     try:
-        config = import_election_config(MINIMAL_DATA, source_hash="hash-4")
+        config = import_election_config(MINIMAL_DATA)
 
         assert config.gh_exchange_branch == "auto-tk2025-uit"
         assert not ElectionDocument.all_objects.filter(pk=document.pk).exists()
@@ -162,7 +166,7 @@ def test_import_blanks_branches_before_wiping_so_a_concurrent_task_skips_the_con
 
     monkeypatch.setattr(QuerySet, "delete", _delete_and_capture)
 
-    config = import_election_config(MINIMAL_DATA, source_hash="hash-5")
+    config = import_election_config(MINIMAL_DATA)
 
     assert branches_seen_by_other_connection
     assert all(branches == (None, None) for branches in branches_seen_by_other_connection)
