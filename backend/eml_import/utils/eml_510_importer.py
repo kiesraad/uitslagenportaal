@@ -34,8 +34,8 @@ from region.models import Region, build_region_slug
 class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
     file_type: ElectionDocument.FileType
 
-    def __init__(self, eml: Eml510, eml_file: Path | NamedBytesIO | None):
-        super().__init__(eml, eml_file)
+    def __init__(self, file_path: Path | NamedBytesIO, eml: Eml510):
+        super().__init__(file_path, eml=eml)
         self.election_documents = {doc.storage_key: doc for doc in ElectionDocument.objects.all()}
 
     def _results_available_at(self) -> datetime | None:
@@ -203,10 +203,10 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
         filename = re.sub(r"[^A-Za-z0-9_-]", "", filename.replace(" ", "_"))
         file_path = f"{self.election_config.identifier}/{filename}.eml.xml"
 
-        if isinstance(self.eml_file, Path):
-            file_content = BytesIO(self.eml_file.read_bytes())
+        if isinstance(self.file_path, Path):
+            file_content = BytesIO(self.file_path.read_bytes())
         else:
-            file_content = self.eml_file
+            file_content = self.file_path
         file_content.seek(0)
         size = len(file_content.getvalue())
         stored_file_path = default_storage.save(file_path, file_content)
@@ -338,7 +338,7 @@ class EML510bImporter(EML510BaseImporter):
                 region.counting_method = counting_method
             region.save()
 
-            if self.eml_file is not None:
+            if self.file_path is not None:
                 self._store_eml(region)
 
             # Preload party names dict

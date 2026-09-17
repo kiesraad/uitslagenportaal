@@ -1,4 +1,3 @@
-import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -13,32 +12,28 @@ from election.models import (
     VoterTurnoutCount,
 )
 from eml_import.exceptions import EMLImporterException
-from eml_import.models import ImportedEmlHash
+from eml_import.utils.base_importer import BaseImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.utils.eml_type import EmlType
 from region.models import Region
 
 
-class EMLBaseImporter[T](ABC):
+class EMLBaseImporter[T](BaseImporter, ABC):
     BLANCO_PARTY_REGISTERED_NAME = "Blanco Lijst"
     BULK_BATCH_SIZE = 4000
 
     eml_type: EmlType
 
-    def __init__(self, eml: T, eml_file: Path | NamedBytesIO):
-        self.eml = eml
-        self.eml_file = eml_file
+    def __init__(self, file_path: Path | NamedBytesIO, *, eml: T):
+        super().__init__(file_path)
 
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.eml = eml
         self.election_config = None
         self.linked_region = None
         self._parse_election()
 
     @abstractmethod
     def _get_election_identifier_data(self) -> ElectionIdentifierStructureKr: ...
-
-    @abstractmethod
-    def _parse_data(self): ...
 
     def _parse_election(self) -> None:
         election_identifier = self._get_election_identifier_data().id.split("_")[0]
@@ -54,21 +49,6 @@ class EMLBaseImporter[T](ABC):
             },
         )
         self.election = election
-
-    def parse(self):
-        if ImportedEmlHash.already_imported(self.eml_file):
-            self.logger.info(
-                "\033[32mSkipping duplicate %s file %s\033[0m",
-                self.eml_type.value,
-                self.eml_file,
-            )
-            return
-        try:
-            self._parse_data()
-        except ElectionConfig.DoesNotExist:
-            self.logger.warning("Election is not configured, skipping %s data import", self.eml_type.value)
-        else:
-            ImportedEmlHash.record(self.eml_file)
 
     def _ensure_exchange_correction_allowed(self) -> None:
         """Reject 110a/230b corrections once any current telling exists for this election."""

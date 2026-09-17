@@ -3,7 +3,7 @@ from pyeml_bindings import (
     Eml110a,
 )
 
-from election.models import Contest
+from election.models import Contest, ElectionDocument
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from mainsite.utils.eml_type import EmlType
 from party.models import Party
@@ -14,6 +14,7 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
     """Verkiezingsdefinitie"""
 
     eml_type = EmlType.EML_110a
+    file_type = ElectionDocument.FileType.EML_110A
 
     def _get_election_identifier_data(self):
         return self.eml.election_event.election.election_identifier

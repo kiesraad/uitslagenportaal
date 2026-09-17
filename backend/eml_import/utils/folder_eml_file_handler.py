@@ -7,7 +7,7 @@ from django.db import connection, connections, transaction
 from xsdata.formats.dataclass.parsers import XmlParser
 
 from eml_import.exceptions import EMLImporterException
-from eml_import.utils.file_handler import BaseFileHandler, build_parser
+from eml_import.utils.file_handler import BaseFileHandler, build_xml_parser
 
 
 class FolderEMLFileHandler(BaseFileHandler):
@@ -28,11 +28,11 @@ class FolderEMLFileHandler(BaseFileHandler):
         file_cnt = len(xml_files)
         for i, xml_file_path in enumerate(xml_files, start=1):
             self.logger.info(f"Processing [{i}/{file_cnt}] {xml_file_path}...")
-            eml = self._parser.from_path(xml_file_path, binding)
+            eml = self._xml_parser.from_path(xml_file_path, binding) if binding else None
             # Use a transaction to prevent auto-commit round-trips for each insert query
             try:
                 with transaction.atomic():
-                    importer_cls(eml, xml_file_path).parse()
+                    importer_cls(xml_file_path, eml=eml).parse()
             except Exception as e:
                 self.logger.error(
                     f"\033[31mFailed importing {parser_type} file {xml_file_path} "
@@ -41,18 +41,18 @@ class FolderEMLFileHandler(BaseFileHandler):
 
     def run(self) -> tuple[int, bool]:
         """
-        Import all XML files from the given folder.
+        Import all XML and CSV files from the given folder.
 
         With `workers` > 1, the files of each document type are imported
         concurrently. The document types themselves stay sequential.
         """
-        files = sorted(self.folder.rglob("*.xml"))
-        xml_files = self._classify_files(files)
+        files = sorted(path for path in self.folder.rglob("*") if path.suffix in self._VALID_EXTENSIONS)
+        classified_files = self._classify_files(files)
 
         workers = self._usable_workers(self.workers)
         if workers == 1:
             for parser_type in self._DOCUMENT_TYPES:
-                self._process_file_paths(parser_type, xml_files[parser_type])
+                self._process_file_paths(parser_type, classified_files[parser_type])
             return len(files), False
 
         # Hand no open connection to the children, and force "spawn" so a forked
@@ -66,7 +66,7 @@ class FolderEMLFileHandler(BaseFileHandler):
             for parser_type in self._DOCUMENT_TYPES:
                 # Each phase is a barrier: _process_file_paths_parallel does not
                 # return until every file of this document type is imported.
-                self._process_file_paths_parallel(pool, parser_type, xml_files[parser_type], workers)
+                self._process_file_paths_parallel(pool, parser_type, classified_files[parser_type], workers)
 
             return len(files), False
 
@@ -130,14 +130,14 @@ class FolderEMLFileHandler(BaseFileHandler):
         """
         if cls._WORKER_PARSER is None:
             # Once per worker process, not once per file.
-            cls._WORKER_PARSER = build_parser()
+            cls._WORKER_PARSER = build_xml_parser()
         assert cls._WORKER_PARSER is not None, "Worker parser not initialized."
 
         binding, importer_cls = cls._DOCUMENT_TYPES[parser_type]
         path = Path(raw_path)
 
-        eml = cls._WORKER_PARSER.from_path(path, binding)
+        eml = cls._WORKER_PARSER.from_path(path, binding) if binding else None
         with transaction.atomic():
-            importer_cls(eml, path).parse()
+            importer_cls(path, eml=eml).parse()
 
         return raw_path
