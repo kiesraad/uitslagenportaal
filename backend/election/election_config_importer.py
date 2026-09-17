@@ -4,7 +4,8 @@ from datetime import datetime
 from django.db import transaction
 from django.utils import timezone
 
-from election.models import ElectionConfig, TimelineEntry, TimelineVariant
+from election.models import ElectionConfig, ElectionDocument, TimelineEntry, TimelineVariant
+from election.utils import delete_stored_documents, folder_prefixes
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,6 @@ def _aware(value: str):
     return timezone.make_aware(datetime.fromisoformat(value))
 
 
-@transaction.atomic
 def import_election_config(data: dict, *, source_hash: str | None = None) -> ElectionConfig:
     """
     Create or update an ElectionConfig (and its timeline entries) from parsed election_config JSON.
@@ -35,15 +35,54 @@ def import_election_config(data: dict, *, source_hash: str | None = None) -> Ele
     identifier = election_data["id"]
 
     election_config = ElectionConfig.with_expired.filter(identifier=identifier).first()
-    if election_config is None:
-        election_config = ElectionConfig(identifier=identifier)
-    elif any(election_data.get(field) != getattr(election_config, field) for field in _BRANCH_FIELDS):
-        logger.warning(
-            "GitHub branch(es) changed for election config %s; wiping previously imported election data.",
-            identifier,
+    if election_config is not None and any(
+        election_data.get(field) != getattr(election_config, field) for field in _BRANCH_FIELDS
+    ):
+        _wipe_election_data(election_config)
+
+    return _save_election_config(election_config, identifier, election_data, data, source_hash)
+
+
+def _wipe_election_data(election_config: ElectionConfig) -> None:
+    logger.warning(
+        "GitHub branch(es) changed for election config %s; wiping previously imported election data.",
+        election_config.identifier,
+    )
+
+    # Blanked and committed in its own transaction, ahead of the wipe below.
+    for field in _BRANCH_FIELDS:
+        setattr(election_config, field, None)
+    election_config.save(update_fields=_BRANCH_FIELDS)
+
+    with transaction.atomic():
+        # The rows are the only reference to the stored documents, so the keys have
+        # to be collected before the cascade deletes ElectionDocument along with them.
+        storage_keys = list(
+            ElectionDocument.all_objects.filter(region__election__election_config=election_config).values_list(
+                "storage_key", flat=True
+            )
         )
+        prefixes = folder_prefixes(storage_keys)
+
         election_config.elections.all().delete()
         election_config.imported_commits.all().delete()
+
+    _, failed = delete_stored_documents(storage_keys, prefixes)
+    if failed:
+        logger.warning(
+            "%d stored document(s) for election config %s could not be deleted and are now orphaned: %s",
+            len(failed),
+            election_config.identifier,
+            failed,
+        )
+
+
+@transaction.atomic
+def _save_election_config(
+    election_config: ElectionConfig | None, identifier: str, election_data: dict, data: dict, source_hash: str | None
+) -> ElectionConfig:
+    if election_config is None:
+        election_config = ElectionConfig(identifier=identifier)
 
     election_config.category = election_data["category"]
     election_config.label = election_data["label"]

@@ -1,9 +1,15 @@
+import threading
+
 import pytest
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.db.models import QuerySet
 
 from election.election_config_importer import import_election_config
-from election.models import ElectionConfig, TimelineVariant
-from election.tests.factories import ElectionConfigFactory, ElectionFactory
+from election.models import ElectionConfig, ElectionDocument, TimelineVariant
+from election.tests.factories import ElectionConfigFactory, ElectionDocumentFactory, ElectionFactory
 from eml_import.models import BranchType, ImportedCommit
+from region.tests.factories import RegionFactory
 
 MINIMAL_DATA = {
     "election": {
@@ -97,3 +103,68 @@ def test_import_leaves_source_hash_null_when_not_given():
     import_election_config(MINIMAL_DATA)
 
     assert ElectionConfig.with_expired.get(identifier="TK2025").source_hash is None
+
+
+@pytest.mark.django_db
+def test_import_deletes_stored_documents_when_a_github_branch_changes():
+    existing = ElectionConfigFactory(
+        identifier="TK2025",
+        gh_exchange_branch="some-old-branch",
+        gh_counting_results_branch="auto-tk2025-tel",
+    )
+    election = ElectionFactory(election_config=existing)
+    region = RegionFactory(election=election)
+    document = ElectionDocumentFactory(region=region, storage_key="TK2025/gsb/doc.xml")
+    default_storage.save(document.storage_key, ContentFile(b"<xml />"))
+
+    try:
+        config = import_election_config(MINIMAL_DATA, source_hash="hash-4")
+
+        assert config.gh_exchange_branch == "auto-tk2025-uit"
+        assert not ElectionDocument.all_objects.filter(pk=document.pk).exists()
+        assert not default_storage.exists(document.storage_key)
+    finally:
+        default_storage.delete(document.storage_key)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_import_blanks_branches_before_wiping_so_a_concurrent_task_skips_the_config(monkeypatch):
+    """
+    The branch-blanking save() has to be visible to *other* DB connections before the wipe
+    starts, not just readable within the same connection/transaction. A separate thread (with
+    its own connection, like a Celery worker) is used here so the assertion actually exercises
+    cross-connection visibility instead of read-your-own-writes, which would pass either way.
+    """
+    existing = ElectionConfigFactory(
+        identifier="TK2025",
+        gh_exchange_branch="some-old-branch",
+        gh_counting_results_branch="auto-tk2025-tel",
+    )
+    ElectionFactory(election_config=existing)
+
+    branches_seen_by_other_connection = []
+    original_delete = QuerySet.delete
+
+    def _delete_and_capture(self, *args, **kwargs):
+        def _read_from_another_connection():
+            from django.db import connections
+
+            try:
+                row = ElectionConfig.with_expired.using("default").get(pk=existing.pk)
+                branches_seen_by_other_connection.append((row.gh_exchange_branch, row.gh_counting_results_branch))
+            finally:
+                connections["default"].close()
+
+        thread = threading.Thread(target=_read_from_another_connection)
+        thread.start()
+        thread.join()
+        return original_delete(self, *args, **kwargs)
+
+    monkeypatch.setattr(QuerySet, "delete", _delete_and_capture)
+
+    config = import_election_config(MINIMAL_DATA, source_hash="hash-5")
+
+    assert branches_seen_by_other_connection
+    assert all(branches == (None, None) for branches in branches_seen_by_other_connection)
+    assert config.gh_exchange_branch == "auto-tk2025-uit"
+    assert config.gh_counting_results_branch == "auto-tk2025-tel"
