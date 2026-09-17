@@ -163,8 +163,14 @@
    color: white;
 }
 
+/* Stretches with the results column so the inner box can stick while scrolling. */
+.counting-results-column {
+   padding-top: 8.5rem;
+}
+
 .counting-results-infobox {
-   margin-top: 8.5rem;
+   position: sticky;
+   top: 1.5rem;
 }
 
 .party-level-title {
@@ -337,7 +343,7 @@
 }
 
 @media (max-width: 1024px) {
-   .counting-results-infobox {
-      margin-top: 0;
+   .counting-results-column {
+      padding-top: 0;
    }
 }

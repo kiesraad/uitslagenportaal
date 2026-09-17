@@ -4,6 +4,7 @@ import { type LoaderFunctionArgs, useLoaderData } from "react-router";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent";
+import ResultsPageColumns from "../../components/ResultsPage/ResultsPageColumns";
 import { electionConfigQuery, regionQuery } from "../../hooks/queries";
 import { useFormatters } from "../../utils/format";
 import { getCsbCrumb } from "../../utils/region";
@@ -83,19 +84,17 @@ export default function PollingStationResultsPage() {
                { href: pollingStationResultsRoute, label: pollingStation.region_name },
             ]}
          />
-         <div className="page-main page-main-two-columns">
-            <div className="page-space-3">
-               <RegionResultsContent
-                  intro={t`De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware.`}
-                  voteCounts={pollingStation.vote_counts}
-                  turnoutVotes={pollingStation.voter_turnout_counts}
-                  timelineVariant={pollingStation.timeline_variant}
-                  timelineEntries={pollingStation.timeline_entries ?? []}
-                  issueReportDeadline={electionConfig.issue_report_deadline}
-                  notPublishedRegionLabel={region.region_name}
-               />
-            </div>
-         </div>
+         <ResultsPageColumns>
+            <RegionResultsContent
+               intro={t`De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware.`}
+               voteCounts={pollingStation.vote_counts}
+               turnoutVotes={pollingStation.voter_turnout_counts}
+               timelineVariant={pollingStation.timeline_variant}
+               timelineEntries={pollingStation.timeline_entries ?? []}
+               issueReportDeadline={electionConfig.issue_report_deadline}
+               notPublishedRegionLabel={region.region_name}
+            />
+         </ResultsPageColumns>
       </LayoutMain>
    );
 }
