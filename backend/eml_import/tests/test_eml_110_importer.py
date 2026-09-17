@@ -151,7 +151,7 @@ def test_creates_registered_parties(election_config):
 
 
 def test_creates_top_level_contest(election_config):
-    EML110aImporter(make_eml(contest_id="alle"), fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=make_eml(contest_id="alle")).parse()
 
     election = Election.objects.get(election_config=election_config)
     contest = Contest.objects.get(election=election)
@@ -160,11 +160,11 @@ def test_creates_top_level_contest(election_config):
 
 
 def test_correction_replaces_prior_contest(election_config):
-    EML110aImporter(make_eml(), fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=make_eml()).parse()
     election = Election.objects.get(election_config=election_config)
     original_contest_id = Contest.objects.get(election=election).pk
 
-    EML110aImporter(make_eml(), fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=make_eml()).parse()
 
     contest = Contest.objects.get(election=election)
     assert contest.pk != original_contest_id
