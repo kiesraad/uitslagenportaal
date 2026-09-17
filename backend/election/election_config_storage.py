@@ -52,7 +52,7 @@ def import_new_election_configs() -> int:
 
         if filename.removesuffix(".json") != identifier:
             logger.warning(
-                "election_config at %s declares id %s, which does not match the file name; imported anyway.",
+                "election_config at %s declares id %s, which does not match the file name; importing anyway.",
                 key,
                 identifier,
             )
