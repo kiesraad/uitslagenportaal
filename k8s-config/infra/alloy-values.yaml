@@ -1,0 +1,81 @@
+# Grafana Alloy: collects pod logs cluster-wide and writes them to Loki. Installed once
+# per cluster, so both application namespaces are covered without the application chart
+# knowing anything about logging.
+#
+# Logs are read through the Kubernetes API rather than from the node filesystem, which
+# keeps this a plain workload with no host mounts.
+
+alloy:
+  configMap:
+    content: |-
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      // Only the labels worth querying on are kept. Every other discovery label would
+      // become part of the stream's identity, and each distinct combination is a
+      // separate stream for Loki to index.
+      discovery.relabel "pod_logs" {
+        targets = discovery.kubernetes.pods.targets
+
+        // discovery.kubernetes lists every pod in the cluster, and this runs on every
+        // node. Without this filter each collector would tail all of them, so the API
+        // server serves one read per pod per node and Loki stores as many copies.
+        rule {
+          source_labels = ["__meta_kubernetes_pod_node_name"]
+          regex         = sys.env("NODE_NAME")
+          action        = "keep"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app"]
+          target_label  = "app"
+        }
+      }
+
+      loki.source.kubernetes "pod_logs" {
+        targets    = discovery.relabel.pod_logs.output
+        forward_to = [loki.write.default.receiver]
+      }
+
+      loki.write "default" {
+        endpoint {
+          url = "http://loki:3100/loki/api/v1/push"
+        }
+      }
+
+  # Names the node this collector runs on, which is what the keep rule above filters
+  # against.
+  extraEnv:
+    - name: NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+# One collector per node, each reading only the pods scheduled there.
+controller:
+  type: daemonset
+
+# The chart's own scrape endpoint. Nothing collects it yet, and turning it on would
+# create a ServiceMonitor before there is a reason to read it.
+serviceMonitor:
+  enabled: false

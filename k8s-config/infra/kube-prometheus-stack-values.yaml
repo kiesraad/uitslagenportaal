@@ -1,0 +1,134 @@
+# kube-prometheus-stack: Prometheus, Alertmanager, Grafana, node-exporter and
+# kube-state-metrics. Installed once per cluster, outside the application chart, the
+# same way Traefik and cert-manager are.
+#
+# Alertmanager is installed but delivers nowhere: no receiver is configured until a
+# notification channel is settled. Alerts are grouped and visible in its UI, and go no
+# further.
+
+prometheus:
+  prometheusSpec:
+    # Multiple environment namespaces can share a cluster, so Prometheus has to select
+    # objects outside its own release. Left at the chart default it matches only what
+    # carries this release's labels, and every ServiceMonitor in the project would be
+    # created and then silently never scraped.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    scrapeConfigSelectorNilUsesHelmValues: false
+
+    # Served under a path so one port-forward to monitoring-proxy reaches every UI.
+    # externalUrl is what the Source and Silence links in a notification point at, so
+    # it names the proxy rather than a service name that resolves nowhere for a reader.
+    routePrefix: /prometheus
+    externalUrl: http://localhost:9090/prometheus
+
+    # Time and size both bound retention and whichever trips first wins. The size limit
+    # is the one that matters: Prometheus does not stop writing when the volume fills,
+    # it crashes, and it does so exactly when something interesting is happening. 40GB
+    # against a 50Gi volume leaves the WAL, head chunks and compaction their room.
+    retention: 30d
+    retentionSize: 40GB
+
+    # Without this the pod falls back to emptyDir and loses every metric on restart,
+    # including the restart being investigated. A StatefulSet's volumeClaimTemplates
+    # are immutable, so this is sized for both namespaces growing, not for today.
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          resources:
+            requests:
+              storage: 50Gi
+
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        memory: 2Gi
+
+alertmanager:
+  alertmanagerSpec:
+    routePrefix: /alertmanager
+    externalUrl: http://localhost:9090/alertmanager
+
+    # Silences and the notification log live on disk. Without a volume a restart
+    # forgets every silence, including one placed deliberately mid-incident.
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          resources:
+            requests:
+              storage: 5Gi
+
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
+
+grafana:
+  # Created by hand by an administrator; see the Secrets section in ./docs/deployments.md.
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+
+  # Grafana builds its asset URLs from its own root, so it has to be told the prefix it
+  # is served under. Without both of these every stylesheet and API call escapes the
+  # prefix and the page renders unstyled behind the proxy.
+  grafana.ini:
+    server:
+      root_url: http://localhost:9090/grafana
+      serve_from_sub_path: true
+
+  # The chart provisions Prometheus and Alertmanager and nothing else, so without this
+  # Grafana has no way to reach Loki and the logs are unqueryable.
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki.monitoring.svc.cluster.local:3100
+
+  # Dashboards and the preferences that go with them are worth keeping across restarts.
+  persistence:
+    enabled: true
+    size: 5Gi
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+
+# A managed control plane exposes none of these components, so their targets are
+# permanently down and their alerts fire forever. That teaches everyone to ignore the
+# alerts long before a real one arrives, which is the failure this whole stack exists
+# to avoid.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+nodeExporter:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 64Mi

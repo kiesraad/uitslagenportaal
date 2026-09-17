@@ -37,22 +37,56 @@ That's why the values-files are not part of the chart.
    kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
    ```
 
-2. Add the traefik/cert-manager repos
+2. Add the chart repos:
    ```bash
-    helm repo add traefik  https://traefik.github.io/charts
-    helm repo add jetstack https://charts.jetstack.io
-    helm repo update
-    ```
+   helm repo add traefik  https://traefik.github.io/charts
+   helm repo add jetstack https://charts.jetstack.io
+   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+   helm repo add grafana https://grafana.github.io/helm-charts
+   helm repo update
+   ```
 
-3. Install Traefik as an ingress controller and Gateway API implementation:
+3. Install the monitoring stack. It comes before Traefik and cert-manager because both of their values files now ask for
+   a `ServiceMonitor`, and their charts stop with an error rather than skipping it while the `monitoring.coreos.com`
+   CRDs are absent. Create the namespace and its secrets first (see the Secrets section below), then:
+   ```bash
+   helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack --version 91.4.1 -n monitoring -f infra/kube-prometheus-stack-values.yaml --wait --timeout 15m
+   helm upgrade --install loki grafana/loki --version 7.3.0 -n monitoring -f infra/loki-values.yaml --wait --timeout 10m
+   helm upgrade --install alloy grafana/alloy --version 1.12.1 -n monitoring -f infra/alloy-values.yaml --wait --timeout 10m
+   kubectl apply -f infra/monitoring-proxy.yaml
+   ```
+
+4. Install Traefik as an ingress controller and Gateway API implementation:
    ```bash
    helm upgrade --install traefik traefik/traefik --version 41.4.0 -n traefik --create-namespace -f infra/traefik-values.yaml --wait --timeout 10m
    ```
 
-4. Install cert-manager to issue the TLS certificates:
+5. Install cert-manager to issue the TLS certificates:
    ```bash
    helm upgrade --install cert-manager jetstack/cert-manager --version v1.21.1 -n cert-manager --create-namespace -f infra/cert-manager-values.yaml --wait --timeout 10m
    ```
+
+### Monitoring
+
+Installed in step 3 above: metrics, logs and alert rules for the whole cluster.
+
+> [!NOTE]
+> Alertmanager is installed with no receiver configured, so alerts are grouped and visible in its UI
+> and **sent to nobody**. Deciding the channel and configuring it is separate work; until then this
+> stack tells you what is wrong only once you go and look.
+
+#### Reaching the monitoring UIs
+
+Port-forwarding only: nothing in the `monitoring` namespace has a hostname, a certificate or a route through the
+Gateway. One forward covers all of it.
+
+```bash
+kubectl -n monitoring port-forward svc/monitoring-proxy 9090:80
+```
+
+<http://localhost:9090> lists the services and links to each: `/grafana`, `/prometheus` and
+`/alertmanager`. Port 9090 rather than 8080 because `docker compose` publishes the application stack on 8080, and
+wanting monitoring while that is running is exactly when the two would collide.
 
 ### Secrets
 
@@ -119,6 +153,29 @@ kubectl -n uitslagenportaal-[env] create secret generic importer-creds \
   --from-literal=GITHUB_TOKEN="" \
   --from-literal=GITHUB_INGRESS_REPO=""
 ```
+
+**Monitoring**
+
+In the `monitoring` namespace rather than an environment's, because the stack is installed once for the cluster. Create
+the namespace first: `kubectl create namespace monitoring`.
+
+```bash
+kubectl -n monitoring create secret generic grafana-admin \
+  --from-literal=admin-user='admin' \
+  --from-literal=admin-password="$(openssl rand -base64 24)"
+
+kubectl -n monitoring create secret generic loki-s3-creds \
+  --from-literal=AWS_ACCESS_KEY_ID='' \
+  --from-literal=AWS_SECRET_ACCESS_KEY=''
+```
+
+Loki needs a bucket of its own, separate from the application's: its retention differs and log chunks should not share a
+bucket with election documents.
+
+> [!NOTE]
+> Use `--from-literal` here, never `--from-file`. A file written by an editor carries a trailing
+> newline, and a credential with a newline in it fails in ways that do not look like a credential
+> problem.
 
 **Basic authentication**
 

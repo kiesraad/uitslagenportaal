@@ -1,0 +1,284 @@
+{{- if .Values.monitoring.enabled }}
+{{- /*
+Exporters for the three managed services the application depends on. They run here,
+beside the credentials they need, rather than in the monitoring namespace: those secrets
+exist only in this namespace and differ per environment, and copying them would mean
+keeping two sets in step.
+
+Kubernetes expands $(VAR) in env and args only against entries in this container's own
+env list, never against envFrom, which is why every part of a connection string below is
+named explicitly instead of pulled in wholesale.
+*/}}
+{{- if .Values.monitoring.exporters.postgres.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-postgres-exporter
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-postgres-exporter
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-postgres-exporter
+    spec:
+      containers:
+        - name: postgres-exporter
+          image: {{ .Values.monitoring.exporters.postgres.image }}
+          ports:
+            - name: metrics
+              containerPort: 9187
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.db.credSecret }}
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.db.credSecret }}
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.db.credSecret }}
+                  key: DB_NAME
+            # The application's own role. Everything alerted on here is readable by any
+            # login role; a role holding pg_monitor is only needed for pg_stat_statements,
+            # replication, and other sessions' query text.
+            - name: DATA_SOURCE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.db.credSecret }}
+                  key: DB_USER
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.db.credSecret }}
+                  key: DB_PASSWORD
+            # User and password stay in their own variables so neither has to survive
+            # being URL-encoded into this one.
+            - name: DATA_SOURCE_URI
+              value: "$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode={{ .Values.db.sslmode }}&sslrootcert=/etc/ssl/rdb/ca.pem"
+          resources:
+            {{- toYaml .Values.monitoring.exporters.postgres.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ ALL ]
+          {{- include "uitslagenportaal.caVolumeMounts" . | nindent 10 }}
+      {{- include "uitslagenportaal.caVolumes" . | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-postgres-exporter
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-postgres-exporter
+spec:
+  selector:
+    app: {{ .Release.Name }}-postgres-exporter
+  ports:
+    - name: metrics
+      port: 9187
+      targetPort: metrics
+---
+{{- end }}
+{{- if .Values.monitoring.exporters.redis.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-redis-exporter
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-redis-exporter
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-redis-exporter
+    spec:
+      containers:
+        - name: redis-exporter
+          image: {{ .Values.monitoring.exporters.redis.image }}
+          ports:
+            - name: metrics
+              containerPort: 9121
+          env:
+            # REDIS_USER and REDIS_PASSWORD are read by the exporter itself under these
+            # exact names, so they are passed through rather than composed into the URL.
+            - name: REDIS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.credSecret }}
+                  key: REDIS_USER
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.credSecret }}
+                  key: REDIS_PASSWORD
+            - name: REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.credSecret }}
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.credSecret }}
+                  key: REDIS_PORT
+            - name: REDIS_ADDR
+              value: "{{ if .Values.redis.tls }}rediss{{ else }}redis{{ end }}://$(REDIS_HOST):$(REDIS_PORT)"
+            {{- if .Values.redis.tls }}
+            # Despite a help string that talks about client authentication, this is the
+            # CA the exporter verifies the server against: it is loaded into RootCAs on
+            # the connection to Redis.
+            - name: REDIS_EXPORTER_TLS_CA_CERT_FILE
+              value: "/etc/ssl/redis/ca.pem"
+            {{- if .Values.monitoring.exporters.redis.tlsServerName }}
+            # Verified against this name rather than the address dialled, for an endpoint
+            # the certificate names instead of addressing.
+            - name: REDIS_EXPORTER_TLS_SERVER_NAME
+              value: {{ .Values.monitoring.exporters.redis.tlsServerName | quote }}
+            {{- else if .Values.monitoring.exporters.redis.skipTlsVerification }}
+            # No name to verify against, so verification goes off altogether: this sets
+            # InsecureSkipVerify, which discards the CA check along with the hostname one.
+            # Mutually exclusive with the above, because it would otherwise win silently.
+            - name: REDIS_EXPORTER_SKIP_TLS_VERIFICATION
+              value: "true"
+            {{- end }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.monitoring.exporters.redis.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ ALL ]
+          {{- include "uitslagenportaal.caVolumeMounts" . | nindent 10 }}
+      {{- include "uitslagenportaal.caVolumes" . | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-redis-exporter
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-redis-exporter
+spec:
+  selector:
+    app: {{ .Release.Name }}-redis-exporter
+  ports:
+    - name: metrics
+      port: 9121
+      targetPort: metrics
+---
+{{- end }}
+{{- if .Values.monitoring.exporters.celery.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-celery-exporter
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-celery-exporter
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-celery-exporter
+    spec:
+      containers:
+        - name: celery-exporter
+          image: {{ .Values.monitoring.exporters.celery.image }}
+          ports:
+            - name: metrics
+              containerPort: 9808
+          # The broker is database redis.db * 4 + 1; settings.py derives it the same way
+          # from the same value, so the two cannot drift.
+          #
+          # The credentials are percent-encoded here exactly as settings.py does with
+          # quote(), because the secret has to hold the raw password that the backend and
+          # redis_exporter both read. Interpolating it raw would quietly authenticate
+          # with a different password whenever it contains a character reserved in a URL.
+          # Command substitution uses backticks rather than $( ), which Kubernetes would
+          # try to resolve as a variable reference before the shell ever saw it.
+          #
+          # The TLS options mirror REDIS_SSL_OPTIONS in settings.py: the CA is verified
+          # and so is the server's identity, because the certificate names the private IP
+          # dialled here as its only subject alternative name. They go through
+          # --broker-ssl-option rather than the broker URL, since that dict is merged
+          # straight into redis-py's connection arguments, whereas the URL carries no
+          # ssl_check_hostname.
+          #
+          # The values have to be written numerically: the exporter keeps anything
+          # non-numeric as a string, and a string like "False" is truthy, so a spelled-out
+          # boolean would mean the opposite of what it reads as.
+          #
+          # This replaces the image's ENTRYPOINT, so it has to name the script that
+          # entrypoint runs. That couples it to the image, which is why the tag is pinned.
+          command:
+            - sh
+            - -c
+            - |
+              creds=`python -c 'import os, urllib.parse as u; print(u.quote(os.environ["REDIS_USER"], safe="") + ":" + u.quote(os.environ["REDIS_PASSWORD"], safe=""))'`
+              {{- if .Values.redis.tls }}
+              ssl_opts="--broker-ssl-option ssl_cert_reqs=required --broker-ssl-option ssl_ca_certs=/etc/ssl/redis/ca.pem --broker-ssl-option ssl_check_hostname=1"
+              {{- else }}
+              ssl_opts=""
+              {{- end }}
+              exec python /app/cli.py --broker-url="{{ if .Values.redis.tls }}rediss{{ else }}redis{{ end }}://${creds}@${REDIS_HOST}:${REDIS_PORT}/{{ mul .Values.redis.db 4 | add1 }}" ${ssl_opts}
+          env:
+            - name: REDIS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.credSecret }}
+                  key: REDIS_USER
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.credSecret }}
+                  key: REDIS_PASSWORD
+            - name: REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.credSecret }}
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.credSecret }}
+                  key: REDIS_PORT
+          resources:
+            {{- toYaml .Values.monitoring.exporters.celery.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ ALL ]
+          {{- include "uitslagenportaal.caVolumeMounts" . | nindent 10 }}
+      {{- include "uitslagenportaal.caVolumes" . | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-celery-exporter
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-celery-exporter
+spec:
+  selector:
+    app: {{ .Release.Name }}-celery-exporter
+  ports:
+    - name: metrics
+      port: 9808
+      targetPort: metrics
+{{- end }}
+{{- end }}
