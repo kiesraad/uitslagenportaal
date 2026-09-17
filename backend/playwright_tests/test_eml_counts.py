@@ -43,6 +43,14 @@ def party_link(page: Page, party: PartyCount):
     return page.get_by_role("link", name=party_row_name(party), exact=True)
 
 
+def expect_votes_beside(page: Page, label: str, formatted: str) -> None:
+    expect(page.get_by_text(label, exact=True).locator("xpath=following-sibling::span[1]")).to_have_text(formatted)
+
+
+def matrix_footer(page: Page):
+    return page.get_by_role("row").filter(has_text="Totaal").last
+
+
 def expect_party_totals(page: Page, parties: list[PartyCount]) -> None:
     for party in parties:
         if party.votes == 0:
@@ -55,31 +63,22 @@ def expect_candidate_totals(
     page: Page, party: PartyCount, candidates: list[CandidateCount], *, matrix: bool = False
 ) -> None:
     if matrix:
-        footer = page.get_by_role("row").filter(has_text="Totaal").last
-        expect(footer).to_contain_text(format_nl(party.votes))
+        expect(matrix_footer(page).get_by_role("cell").nth(1)).to_have_text(format_nl(party.votes))
         for candidate in candidates:
             row = page.get_by_role("row").filter(has_text=candidate.label)
-            expect(row).to_contain_text(format_nl(candidate.votes))
+            expect(row.get_by_role("cell").nth(1)).to_have_text(format_nl(candidate.votes))
         return
 
-    expect(page.get_by_text(f"Totaal stemmen lijst {party.list_number}").locator("..")).to_contain_text(
-        format_nl(party.votes)
-    )
+    expect_votes_beside(page, f"Totaal stemmen lijst {party.list_number}", format_nl(party.votes))
     for candidate in candidates:
-        if candidate.votes == 0:
-            expect(page.get_by_text(candidate.label, exact=True)).to_be_visible()
-            continue
-        row = page.locator("div").filter(has_text=candidate.label).filter(has_text=format_nl(candidate.votes))
-        expect(row.first).to_be_visible()
+        formatted = format_nl(candidate.votes) if candidate.votes else "–"
+        expect_votes_beside(page, candidate.label, formatted)
 
 
 def expect_turnout(page: Page, path) -> None:
-    counted = format_nl(total_counted(path))
-    blanco = format_nl(rejected_votes(path, "blanco"))
-    ongeldig = format_nl(rejected_votes(path, "ongeldig"))
-    expect(page.get_by_text("Totaal stemmen op kandidaten").locator("..")).to_contain_text(counted)
-    expect(page.get_by_text("Blanco stemmen").locator("..")).to_contain_text(blanco)
-    expect(page.get_by_text("Ongeldige stemmen").locator("..")).to_contain_text(ongeldig)
+    expect_votes_beside(page, "Totaal stemmen op kandidaten", format_nl(total_counted(path)))
+    expect_votes_beside(page, "Blanco stemmen", format_nl(rejected_votes(path, "blanco")))
+    expect_votes_beside(page, "Ongeldige stemmen", format_nl(rejected_votes(path, "ongeldig")))
 
 
 @pytest.mark.parametrize(
@@ -139,7 +138,7 @@ def test_csb_matrix_totals_match_the_eml(page: Page, url, eml, gemeente):
     page.goto(url)
     party_link(page, party).click()
 
-    footer = page.get_by_role("row").filter(has_text="Totaal").last
-    expect(footer).to_contain_text(format_nl(party.votes))
-    expect(footer).to_contain_text(format_nl(unit.votes))
-    expect(page.get_by_role("columnheader", name=gemeente)).to_be_visible()
+    footer = matrix_footer(page)
+    expect(footer.get_by_role("cell").nth(1)).to_have_text(format_nl(party.votes))
+    column = page.get_by_role("columnheader").all_inner_texts().index(gemeente)
+    expect(footer.get_by_role("cell").nth(column)).to_have_text(format_nl(unit.votes))
