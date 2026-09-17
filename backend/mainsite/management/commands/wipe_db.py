@@ -20,7 +20,7 @@ class Command(BaseCommand):
             if count:
                 self.stdout.write(f"  {label}: {count}")
 
-        bucket = getattr(default_storage, "bucket")
+        bucket = getattr(default_storage, "bucket", None)
         if bucket:
             bucket.objects.all().delete()
             self.stdout.write(self.style.SUCCESS("Object storage bucket emptied."))
