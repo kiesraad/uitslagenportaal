@@ -50,6 +50,20 @@ but generates public URLs pointing at `localhost:9000`, since that is the host t
 browser can reach. Both are configured through `S3_*` environment variables in
 `docker-compose.yml`.
 
+#### Using the RustFS console
+
+To browse the bucket by hand, open http://localhost:9001 and log in with the
+`uitslagenportaal` / `password` credentials above. This is RustFS's own web UI, so it
+speaks RustFS's XML natively.
+
+A generic S3 GUI client (e.g. Cyberduck) can be pointed at http://localhost:9000
+instead, but RustFS omits the `<Owner>` element that older S3 libraries expect on
+listing responses. Cyberduck's built-in "Amazon S3" profile uses such a library and
+fails with `Failed to parse XML document ... ListBucketHandler`, so the RustFS console
+is the more reliable option for local dev.
+
+When uploading files such as election_config.json files, it is advised to use an S3 GUI client. Credentials are maintained by the development team.
+
 ### First-time database setup
 
 After the stack is running:
@@ -267,6 +281,12 @@ S3_PUBLIC_DOMAIN=<bucket>.s3.nl-ams.scw.cloud
 S3_URL_PROTOCOL=https:
 S3_ADDRESSING_STYLE=auto
 ```
+
+Scaleway's S3 API is standards-compliant, so any generic S3 GUI client works (unlike RustFS, see above) — for example [Cyberduck](https://cyberduck.io/)
+(macOS/Windows, free) or [S3 Browser](https://s3browser.com/) (Windows). Connect using
+the "Amazon S3" protocol with server `s3.nl-ams.scw.cloud`, virtual-hosted-style
+addressing, and the access/secret key from the Kubernetes secret or the
+Scaleway console.
 
 ## Internationalisation
 
