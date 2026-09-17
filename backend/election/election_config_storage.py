@@ -25,9 +25,7 @@ def import_new_election_configs() -> int:
     against any configured backend, including the in-memory one used in tests.
     """
     imported = 0
-    known_hashes = dict(
-        ElectionConfig.with_expired.exclude(source_hash=None).values_list("identifier", "source_hash")
-    )
+    known_hashes = dict(ElectionConfig.with_expired.exclude(source_hash=None).values_list("identifier", "source_hash"))
 
     try:
         _, filenames = default_storage.listdir(ELECTION_CONFIGS_PREFIX)

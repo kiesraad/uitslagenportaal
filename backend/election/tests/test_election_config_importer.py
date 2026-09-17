@@ -67,9 +67,7 @@ def test_import_is_a_noop_for_unchanged_branches():
         gh_counting_results_branch="auto-tk2025-tel",
     )
     election = ElectionFactory(election_config=existing)
-    ImportedCommit.objects.create(
-        election_config=existing, branch_type=BranchType.EXCHANGE, commit_sha="abc123"
-    )
+    ImportedCommit.objects.create(election_config=existing, branch_type=BranchType.EXCHANGE, commit_sha="abc123")
 
     import_election_config(MINIMAL_DATA, source_hash="hash-3")
 
@@ -85,9 +83,7 @@ def test_import_wipes_election_data_when_a_github_branch_changes():
         gh_counting_results_branch="auto-tk2025-tel",
     )
     election = ElectionFactory(election_config=existing)
-    ImportedCommit.objects.create(
-        election_config=existing, branch_type=BranchType.EXCHANGE, commit_sha="abc123"
-    )
+    ImportedCommit.objects.create(election_config=existing, branch_type=BranchType.EXCHANGE, commit_sha="abc123")
 
     config = import_election_config(MINIMAL_DATA, source_hash="hash-4")
 
