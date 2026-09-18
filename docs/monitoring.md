@@ -28,8 +28,8 @@ There is no Sentry, no Prometheus client and no OpenTelemetry anywhere in the re
 
 ## The stack
 
-Installed into a `monitoring` namespace as a one-time infra release, alongside Traefik and cert-manager. One chart per
-cluster. Pin the chart versions the way those two already are.
+Installed into a `monitoring` namespace as a one-time infra release, alongside Traefik and cert-manager: one umbrella
+chart, `k8s-config/monitoring`, with the charts below as dependencies pinned in its `Chart.yaml` and `Chart.lock`.
 
 | Component             | Chart                                        | Role                                                                                                                                           |
 |-----------------------|----------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -54,8 +54,9 @@ else's problem while the alerting rules stay on the cluster.
 
 ## Where it lives
 
-Values files in `k8s-config/infra/`, installed by an administrator, documented as further steps under "One-time infra
-setup" in [deployments.md](deployments.md).
+The `k8s-config/monitoring` chart: its `values.yaml` holds the configuration of every component, `values-local.yaml`
+the differences for a local cluster, and `templates/` the proxy and Grafana's admin secret. Installed by an
+administrator, documented under "One-time infra setup" in [deployments.md](deployments.md).
 
 It has to sit outside the application chart for the same reason `service-accounts` does: it needs ClusterRoles and CRDs,
 and the deploy token deliberately cannot touch RBAC.
@@ -171,7 +172,7 @@ refused.
 
 ### Routing
 
-The whole configuration lives in `k8s-config/infra/kube-prometheus-stack-values.yaml`. No credential is in it —
+The whole configuration lives under `kube-prometheus-stack` in `k8s-config/monitoring/values.yaml`. No credential is in it —
 Alertmanager performs no environment-variable substitution, and secrets enter only through fields with a `_file`
 variant — so the routing policy stays reviewable in git.
 
@@ -348,9 +349,8 @@ Bugsink would take a `/bugsink` entry alongside these if it is ever adopted; it 
 
 ### The proxy
 
-An nginx `Deployment`, `Service` and `ConfigMap` in `k8s-config/infra/monitoring-proxy.yaml`, applied with
-`kubectl apply -f` alongside the chart installs. Deliberately not a chart: it holds one config file and one page of
-HTML, and a chart would be more machinery than content.
+An nginx `Deployment` and `Service` in `k8s-config/monitoring/templates/monitoring-proxy.yaml`, with the `ConfigMap`
+in `monitoring-proxy-config.yaml` beside it, installed with the rest of the monitoring chart.
 
 The ConfigMap carries both the nginx configuration and the index page, so **adding a service is one edit in one file** —
 a `location` block and a line in the index:
@@ -372,7 +372,8 @@ stack grows a component.
 > `GF_SERVER_ROOT_URL`. Anything that cannot be told its prefix does not belong behind the proxy —
 > give it its own port-forward instead.
 
-Service names follow the release names; `kubectl -n monitoring get svc` lists what is actually there. Reaching any of
+Service names are fixed by the `fullnameOverride`s in the chart's values rather than following the release name.
+Reaching any of
 this still requires cluster credentials, the bar `kubectl logs` sets today — the proxy changes how many commands are
 involved, not who may run them.
 
