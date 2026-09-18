@@ -50,6 +50,20 @@ but generates public URLs pointing at `localhost:9000`, since that is the host t
 browser can reach. Both are configured through `S3_*` environment variables in
 `docker-compose.yml`.
 
+#### Using the RustFS console
+
+To browse the bucket by hand, open http://localhost:9001 and log in with the
+`uitslagenportaal` / `password` credentials above. This is RustFS's own web UI, so it
+speaks RustFS's XML natively.
+
+A generic S3 GUI client (e.g. Cyberduck) can be pointed at http://localhost:9000
+instead, but RustFS omits the `<Owner>` element that older S3 libraries expect on
+listing responses. Cyberduck's built-in "Amazon S3" profile uses such a library and
+fails with `Failed to parse XML document ... ListBucketHandler`, so the RustFS console
+is the more reliable option for local dev.
+
+When uploading files such as election_config.json files, it is advised to use an S3 GUI client. Credentials are maintained by the development team.
+
 ### First-time database setup
 
 After the stack is running:
@@ -77,6 +91,40 @@ uv run manage.py build_ingress_repo --source .data/AB23 --dest ../../uitslagenpo
 ```
 Then push the branches to the remote, and configure the repo in the `.env` file to start importing its data using
 the Celery task `import_next_eml_commits`. 
+
+### Importing election configs from object storage
+
+In production, election configs are not seeded: they are placed by hand as JSON files in the
+bucket under `election_configs/`, e.g. `election_configs/AB2023.json`. A Celery beat task
+(`election.tasks.import_election_configs`) polls that folder every 5 minutes and imports any file
+that is new or has changed since it was last imported.
+
+To trigger it by hand instead of waiting for the schedule:
+
+```bash
+docker compose run --rm backend-scripts python manage.py import_election_configs
+```
+
+To write a new election config, start from the template command, which prints the expected shape
+(type/description/example per field) to stdout:
+
+```bash
+docker compose run --rm backend-scripts python manage.py generate_election_config_template
+```
+
+Pass `--output` to write it to a local file instead of printing it, e.g.
+`--output my_election.json`. This command is only meant to be run locally, to give an
+administrator or developer a starting point to fill in by hand; it writes to the local
+filesystem.
+
+After filling in the template with real values, validate it before uploading it to the bucket:
+
+```bash
+docker compose run --rm backend-scripts python manage.py validate_election_config my_election.json
+```
+
+This checks required fields, the `category` enum, ISO 8601 datetimes and the timeline entry shape,
+and reports every problem it finds rather than stopping at the first one.
 
 ### One-off commands
 
@@ -200,6 +248,9 @@ Run these from `backend/` with `uv run manage.py <command>`, or against the runn
 | `import_election` | Imports all EML files in the `.data` folder |
 | `reset_and_import` | Wipe, seed & import in one |
 | `import_next_github_commits [election identifier]` | Runs the GitHub importer for the next batch of commits |
+| `import_election_configs` | Imports new/changed election_config JSON files from object storage (`election_configs/*.json`) |
+| `generate_election_config_template [--output PATH]` | Prints a descriptive election_config.json template; writes to a file instead of stdout if `--output` is given |
+| `validate_election_config <path>` | Validates a filled-in election_config JSON file against the shape the importer expects |
 | `ensure_bucket` | (Re)creates the object storage bucket |
 | `delete_expired_elections [--confirm]` | Removes elections past their retention window |
 
@@ -230,6 +281,12 @@ S3_PUBLIC_DOMAIN=<bucket>.s3.nl-ams.scw.cloud
 S3_URL_PROTOCOL=https:
 S3_ADDRESSING_STYLE=auto
 ```
+
+Scaleway's S3 API is standards-compliant, so any generic S3 GUI client works (unlike RustFS, see above) — for example [Cyberduck](https://cyberduck.io/)
+(macOS/Windows, free) or [S3 Browser](https://s3browser.com/) (Windows). Connect using
+the "Amazon S3" protocol with server `s3.nl-ams.scw.cloud`, virtual-hosted-style
+addressing, and the access/secret key from the Kubernetes secret or the
+Scaleway console.
 
 ## Internationalisation
 

@@ -1,9 +1,8 @@
-from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from election.models import ElectionConfig, ElectionDocument
-from election.utils import deletion_cutoff
+from election.utils import delete_stored_documents, deletion_cutoff, folder_prefixes
 
 
 class Command(BaseCommand):
@@ -38,7 +37,7 @@ class Command(BaseCommand):
                 region__election__election_config__in=expired,
             ).values_list("storage_key", flat=True)
         )
-        prefixes = self._folder_prefixes(storage_keys)
+        prefixes = folder_prefixes(storage_keys)
 
         if not options["confirm"]:
             self.stdout.write(
@@ -61,7 +60,7 @@ class Command(BaseCommand):
             if count:
                 self.stdout.write(f"  {label}: {count}")
 
-        deleted, failed = self._delete_stored_documents(storage_keys, prefixes)
+        deleted, failed = delete_stored_documents(storage_keys, prefixes)
         self.stdout.write(self.style.SUCCESS(f"Deleted {deleted} object(s) from storage."))
         if failed:
             self.stdout.write(
@@ -69,56 +68,3 @@ class Command(BaseCommand):
             )
             for key, error in failed:
                 self.stdout.write(f"  {key}: {error}")
-
-    @staticmethod
-    def _folder_prefixes(storage_keys):
-        """Reduce the keys to the set of top-level folders holding them.
-
-        The keys are relative paths of the form "<identifier>/<body>/<file>",
-        so the first segment is the per-election folder. It is read back from
-        the keys rather than taken from ElectionConfig.identifier.
-        """
-        prefixes = set()
-        for key in storage_keys:
-            head, separator, _ = key.partition("/")
-            if separator and head:
-                prefixes.add(head)
-        return prefixes
-
-    def _delete_stored_documents(self, storage_keys, prefixes):
-        """Remove the elections' objects from storage."""
-        bucket = getattr(default_storage, "bucket", None)
-        if bucket is None:
-            return self._delete_keys(storage_keys)
-
-        deleted = 0
-        failed = []
-        for prefix in sorted(prefixes):
-            try:
-                responses = bucket.objects.filter(Prefix=f"{prefix}/").delete()
-            except Exception as exc:
-                failed.append((f"{prefix}/", exc))
-                continue
-
-            for response in responses:
-                deleted += len(response.get("Deleted", []))
-                for error in response.get("Errors", []):
-                    failed.append((error.get("Key", f"{prefix}/"), error.get("Message", "delete failed")))
-
-        # Anything that was not under a folder is still present.
-        loose_keys = [key for key in storage_keys if key.partition("/")[0] not in prefixes]
-        loose_deleted, loose_failed = self._delete_keys(loose_keys)
-        return deleted + loose_deleted, failed + loose_failed
-
-    @staticmethod
-    def _delete_keys(storage_keys):
-        deleted = 0
-        failed = []
-        for key in storage_keys:
-            try:
-                default_storage.delete(key)
-            except Exception as exc:
-                failed.append((key, exc))
-            else:
-                deleted += 1
-        return deleted, failed
