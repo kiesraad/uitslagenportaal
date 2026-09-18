@@ -41,6 +41,10 @@ accessLog:
 # read by kube-prometheus-stack in the monitoring namespace.
 metrics:
   prometheus:
+    # A ClusterIP Service for the metrics port, so the ServiceMonitor scrapes a port a
+    # Service actually exposes instead of one it only finds on the pod.
+    service:
+      enabled: true
     serviceMonitor:
       enabled: true
 
