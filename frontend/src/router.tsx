@@ -63,10 +63,10 @@ export const routes: RouteObject[] = [
                   path: "fout-melden",
                   id: "ReportIssuePage",
                   lazy: lazyPage(
-                     () => import("./pages/ReportIssuePage"),
-                     (m) => ({
-                        Component: m.ReportIssuePage,
-                        loader: m.reportIssueLoader(queryClient),
+                     () => Promise.all([import("./pages/ReportIssuePage"), import("./pages/ReportIssuePage.loader")]),
+                     ([page, loader]) => ({
+                        Component: page.ReportIssuePage,
+                        loader: loader.reportIssueLoader(queryClient),
                      }),
                   ),
                },

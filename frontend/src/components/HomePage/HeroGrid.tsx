@@ -1,8 +1,12 @@
 export function HeroGrid() {
    return (
-      <div className={"home-page-hero-right"}>
-         <div className={"home-page-hero-img-container"}>
-            <img src="/images/homepage_img.webp" alt="Home hero" className={"home-page-hero-img"} />
+      <div className="-order-1 flex flex-col justify-center lg:order-0">
+         <div className="flex justify-center pb-10 lg:pb-0 xl:pr-20">
+            <img
+               src="/images/homepage_img.webp"
+               alt="Home hero"
+               className="relative z-10 aspect-video max-h-80 w-full object-cover lg:aspect-11/12 lg:max-h-140 lg:max-w-2xl"
+            />
          </div>
          <div className={"hero-grid-container"}>
             <div className={"hero-grid-left"}>
