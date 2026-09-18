@@ -21,8 +21,3 @@
 .idea/
 *.tmproj
 .vscode/
-# The service accounts are their own chart, installed once per environment.
-service-accounts/
-# So is monitoring, once per cluster; its downloaded subcharts alone exceed the 1 MiB
-# limit on the Secret Helm stores a release in.
-monitoring/

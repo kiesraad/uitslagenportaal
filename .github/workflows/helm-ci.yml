@@ -42,7 +42,7 @@ jobs:
           helm repo add grafana https://grafana.github.io/helm-charts
           helm dependency build k8s-config/monitoring
 
-      - run: helm lint k8s-config --namespace uitslagenportaal
+      - run: helm lint k8s-config/application --namespace uitslagenportaal
       - run: helm lint k8s-config/service-accounts --namespace uitslagenportaal
       - run: helm lint k8s-config/monitoring --namespace monitoring
 
@@ -52,7 +52,7 @@ jobs:
       - name: Validate rendered manifests
         run: |
           {
-            helm template uitslagenportaal k8s-config --namespace uitslagenportaal
+            helm template uitslagenportaal k8s-config/application --namespace uitslagenportaal
             helm template uitslagenportaal-service-accounts k8s-config/service-accounts \
               --namespace uitslagenportaal
             helm template monitoring k8s-config/monitoring --namespace monitoring
