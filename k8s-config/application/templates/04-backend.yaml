@@ -68,10 +68,7 @@ spec:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
-          # Liveness stays a TCP check deliberately. Restarting a pod cannot mend an
-          # unreachable database, so pointing this at /healthz/ would turn a database
-          # outage into every backend restarting at once, each then stuck in
-          # wait-for-migrations until the database returns.
+          # TCP, not /healthz/: a restart cannot fix a lost database, and would restart every pod at once.
           livenessProbe:
             tcpSocket:
               port: http

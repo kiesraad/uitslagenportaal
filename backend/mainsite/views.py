@@ -4,26 +4,16 @@ from django.http import JsonResponse
 
 def healthz(request):
     """
-    Readiness for the backend pods. Liveness is a TCP check instead, because restarting
-    a pod cannot mend a database that is down.
+    Readiness probe for the backend pods; checks the database only.
 
-    Only the database is checked. Granian accepting a connection says nothing about
-    whether a request can be served, and the database is the dependency without which
-    none can be. Redis and object storage are deliberately left out: failing here
-    withdraws the pod from the Service, so including them would pull the whole site out
-    of rotation over an outage most pages would survive.
-
-    The query is what makes this honest. Persistent connections are held for
-    CONN_MAX_AGE, and merely asking for the connection object sends nothing over it, so
-    a pod would keep reporting healthy for up to a minute after the database went away.
+    Redis and object storage are left out: failing here pulls the pod from the Service,
+    which is too drastic for an outage most pages survive. The query is needed because
+    persistent connections (CONN_MAX_AGE) would otherwise hide a lost database.
     """
     try:
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
-    # Error rather than DatabaseError: InterfaceError sits beside DatabaseError rather
-    # than beneath it, and it is what gets raised for a connection that has already been
-    # closed — the state a dropped persistent connection leaves behind, which is the very
-    # case this checks for.
+    # Not DatabaseError: a closed connection raises InterfaceError, which is not a subclass.
     except Error:
         return JsonResponse({"status": "unhealthy"}, status=503)
 

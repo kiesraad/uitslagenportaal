@@ -96,9 +96,10 @@ kube-prometheus-stack:
         root_url: http://localhost:9090/grafana
         serve_from_sub_path: true
 
-    # The sub-path applies to Grafana's own metrics too; /metrics redirects to root_url.
+    # Grafana's own metrics are about 5k series that no rule reads, only the Grafana
+    # Overview dashboard, which the chart still ships and which now stays empty.
     serviceMonitor:
-      path: /grafana/metrics
+      enabled: false
 
     # The chart provisions Prometheus and Alertmanager and nothing else, so without this
     # Grafana has no way to reach Loki and the logs are unqueryable.
@@ -132,6 +133,41 @@ kube-prometheus-stack:
     enabled: false
   kubeProxy:
     enabled: false
+
+  # CoreDNS is run by the cluster provider, so its metrics feed one dashboard and no
+  # alert anyone here could act on.
+  coreDns:
+    enabled: false
+
+  # The managed API server exports about 26k series, of which only these few feed the
+  # default rules and the API server dashboard. They stay because an unhealthy control
+  # plane explains a deploy or every other alert failing at once, even if only the
+  # provider can fix it. The dashboard's workqueue panels stay empty.
+  kubeApiServer:
+    serviceMonitor:
+      metricRelabelings:
+        # One name per line: the escaped line breaks join them without spaces.
+        - action: keep
+          sourceLabels: [ __name__ ]
+          regex: "\
+            aggregator_unavailable_apiservice|\
+            aggregator_unavailable_apiservice_total|\
+            apiserver_client_certificate_expiration_seconds_bucket|\
+            apiserver_client_certificate_expiration_seconds_count|\
+            apiserver_request_sli_duration_seconds_bucket|\
+            apiserver_request_sli_duration_seconds_count|\
+            apiserver_request_terminations_total|\
+            apiserver_request_total|\
+            go_goroutines|\
+            kubernetes_build_info|\
+            process_cpu_seconds_total|\
+            process_resident_memory_bytes|\
+            rest_client_requests_total"
+        # The chart's default bucket pruning, narrowed to the one latency histogram kept
+        # above. The SLO rules read only its 1s, 5s and 30s buckets.
+        - action: drop
+          sourceLabels: [ __name__, le ]
+          regex: apiserver_request_sli_duration_seconds_bucket;(0\.15|0\.2|0\.3|0\.35|0\.4|0\.45|0\.6|0\.7|0\.8|0\.9|1\.25|1\.5|1\.75|2|3|3\.5|4|4\.5|6|7|8|9|15|20|40|45|50)(\.0)?
 
   nodeExporter:
     enabled: true
