@@ -60,13 +60,15 @@ data:
         # Each backend serves under the same prefix it is reached by, so the original URI
         # is forwarded unchanged and the backend's own links keep working.
         #
-        # The upstream goes through a variable so the lookup happens per request. Written
-        # as a literal, nginx resolves it at startup and refuses to start at all if the
-        # service is missing — one absent component would take the healthy UIs down with
-        # it. A variable also switches off nginx's prefix substitution, which is why
-        # $request_uri is spelled out rather than left implicit.
+        # The upstream goes through a variable so it is looked up at request time, through
+        # the resolver above and its 30s cache. Written as a literal, nginx resolves it at
+        # startup and refuses to start at all if the service is missing — one absent
+        # component would take the healthy UIs down with it. A variable also switches off
+        # nginx's prefix substitution, which is why $request_uri is spelled out rather
+        # than left implicit. The names are fully qualified because nginx's own resolver
+        # ignores the search domains in /etc/resolv.conf.
         location /grafana/ {
-          set $grafana kube-prometheus-stack-grafana;
+          set $grafana kube-prometheus-stack-grafana.monitoring.svc.cluster.local;
           proxy_pass http://$grafana:80$request_uri;
           # Grafana's live channels are websockets.
           proxy_http_version 1.1;
@@ -75,12 +77,12 @@ data:
         }
 
         location /prometheus/ {
-          set $prometheus kube-prometheus-stack-prometheus;
+          set $prometheus kube-prometheus-stack-prometheus.monitoring.svc.cluster.local;
           proxy_pass http://$prometheus:9090$request_uri;
         }
 
         location /alertmanager/ {
-          set $alertmanager kube-prometheus-stack-alertmanager;
+          set $alertmanager kube-prometheus-stack-alertmanager.monitoring.svc.cluster.local;
           proxy_pass http://$alertmanager:9093$request_uri;
         }
 
