@@ -33,4 +33,4 @@ COPY --chown=backend:backend . .
 USER backend
 
 EXPOSE 8000
-CMD ["granian", "mainsite.wsgi:application", "--interface", "wsgi", "--host", "0.0.0.0"]
+CMD ["granian", "mainsite.wsgi:application", "--interface", "wsgi", "--host", "0.0.0.0", "--access-log"]

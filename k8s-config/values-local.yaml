@@ -22,11 +22,6 @@ redis:
   # The in-cluster Redis speaks plain TCP, unlike the managed cache.
   tls: false
 
-# A local cluster has no prometheus-operator CRDs, and an unknown kind fails the whole
-# install rather than being skipped.
-monitoring:
-  enabled: false
-
 # In-cluster stand-ins for the managed database, cache and object storage.
 services:
   enabled: true
