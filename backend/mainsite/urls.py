@@ -18,9 +18,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from mainsite import views
+
 urlpatterns = [
     path("api/", include("election.urls")),
     path("api/", include("region.urls")),
     path("api/", include("party.urls")),
     path("admin/", admin.site.urls),
+    # Neither of these is reachable from the internet: the Gateway routes only /api to
+    # the backend and everything else to the frontend. Probes and metric scrapes come
+    # from inside the cluster and address the pod directly.
+    path("healthz/", views.healthz, name="healthz"),
+    path("", include("django_prometheus.urls")),
 ]

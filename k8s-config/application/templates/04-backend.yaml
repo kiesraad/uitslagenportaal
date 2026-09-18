@@ -48,19 +48,30 @@ spec:
           image: {{ .Values.backend.image }}
           imagePullPolicy: {{ .Values.backend.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.backend.port }}
+            - name: http
+              containerPort: {{ .Values.backend.port }}
           envFrom:
             {{- include "uitslagenportaal.backendEnvFrom" . | nindent 12 }}
-          # The API exposes no health endpoint, so readiness can only say that
-          # granian is accepting connections, not that the database answers.
+          env:
+            # The probes below and the metrics scrape both address the pod by its IP,
+            # which cannot be listed in ALLOWED_HOSTS ahead of time. settings.py appends
+            # this; without it Django answers both with 400 and the pod never starts.
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          # /healthz checks the database, so readiness means the pod can actually
+          # serve a request.
           readinessProbe:
-            tcpSocket:
-              port: {{ .Values.backend.port }}
+            httpGet:
+              path: /healthz/
+              port: http
             initialDelaySeconds: 5
             periodSeconds: 10
+          # TCP, not /healthz/: a restart cannot fix a lost database, and would restart every pod at once.
           livenessProbe:
             tcpSocket:
-              port: {{ .Values.backend.port }}
+              port: http
             initialDelaySeconds: 15
             periodSeconds: 20
           resources:
@@ -77,9 +88,14 @@ kind: Service
 metadata:
   name: {{ .Release.Name }}-backend
   namespace: {{ .Release.Namespace }}
+  # A ServiceMonitor matches the Service on its labels
+  labels:
+    app: {{ .Release.Name }}-backend
 spec:
   selector:
     app: {{ .Release.Name }}-backend
   ports:
-    - port: {{ .Values.backend.port }}
-      targetPort: {{ .Values.backend.port }}
+    # Named because a ServiceMonitor names the port it scrapes rather than numbering it.
+    - name: http
+      port: {{ .Values.backend.port }}
+      targetPort: http

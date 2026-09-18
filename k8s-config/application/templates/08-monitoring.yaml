@@ -1,0 +1,286 @@
+{{- if .Values.monitoring.enabled }}
+{{- /*
+Scrape configuration and alert rules for this release. Both are monitoring.coreos.com
+kinds served by the prometheus-operator CRDs that kube-prometheus-stack installs.
+
+One Prometheus serves every namespace in the cluster and this file is rendered once per
+release, so each expression is scoped to its own namespace. Without that, every
+environment's rules would also match every other environment's series and each alert
+would arrive once per release.
+*/}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-backend
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-backend
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.monitoring.scrapeInterval }}
+{{- if .Values.monitoring.exporters.postgres.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-postgres-exporter
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-postgres-exporter
+  endpoints:
+    - port: metrics
+      interval: {{ .Values.monitoring.scrapeInterval }}
+{{- end }}
+{{- if .Values.monitoring.exporters.redis.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-redis-exporter
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-redis-exporter
+  endpoints:
+    - port: metrics
+      interval: {{ .Values.monitoring.scrapeInterval }}
+{{- end }}
+{{- if .Values.monitoring.exporters.celery.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-celery-exporter
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-celery-exporter
+  endpoints:
+    - port: metrics
+      interval: {{ .Values.monitoring.scrapeInterval }}
+{{- end }}
+---
+{{- /*
+severity routes the alert and area groups it; both are read directly by Alertmanager's
+route tree, so neither is decoration. Alertmanager currently has no receiver configured,
+so these are visible in its UI and delivered nowhere.
+*/}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  groups:
+    - name: uitslagenportaal.platform
+      rules:
+        - alert: PodRestartLoop
+          expr: increase(kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}"}[15m]) > 3
+          for: 5m
+          labels:
+            severity: critical
+            area: Platform
+          annotations:
+            summary: "{{ `{{ $labels.container }}` }} is restarting repeatedly"
+            description: "{{ `{{ $labels.pod }}` }} in {{ `{{ $labels.namespace }}` }} has restarted more than three times in fifteen minutes."
+
+        # Both limits are sized by hand against measured peaks — 512Mi for the backend,
+        # 2Gi for a worker holding an EML batch — so an OOM here means the measurement
+        # has stopped holding, not that a limit was guessed.
+        # Paired with a restart because last_terminated_reason keeps reporting the last
+        # kill for as long as the container runs: on its own it would hold this alert
+        # open for days after a single OOM.
+        - alert: ContainerOOMKilled
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}"}[10m]) > 0
+              and on (namespace, pod, container)
+              kube_pod_container_status_last_terminated_reason{namespace="{{ .Release.Namespace }}", reason="OOMKilled"} == 1
+          for: 1m
+          labels:
+            severity: critical
+            area: Platform
+          annotations:
+            summary: "{{ `{{ $labels.container }}` }} was OOMKilled"
+            description: "{{ `{{ $labels.pod }}` }} in {{ `{{ $labels.namespace }}` }} exceeded its memory limit and was killed."
+
+        # The condition matcher is not optional: kube_job_failed carries a series per
+        # condition state, so a bare > 0 matches condition="false" — a job reporting that
+        # it has not failed — just as readily as a real failure.
+        - alert: MigrationJobFailed
+          expr: kube_job_failed{namespace="{{ .Release.Namespace }}", condition="true"} == 1
+          for: 1m
+          labels:
+            severity: critical
+            area: Platform
+          annotations:
+            summary: "A job failed in {{ `{{ $labels.namespace }}` }}"
+            description: "{{ `{{ $labels.job_name }}` }} failed. A failed migration leaves the release partly applied; helm cannot undo it."
+
+        # What an HTTPRoute with no healthy backend looks like from the other side.
+        - alert: DeploymentHasNoReadyReplicas
+          expr: kube_deployment_status_replicas_ready{namespace="{{ .Release.Namespace }}"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            area: Gateway
+          annotations:
+            summary: "{{ `{{ $labels.deployment }}` }} has no ready replicas"
+            description: "Nothing in {{ `{{ $labels.namespace }}` }} is serving {{ `{{ $labels.deployment }}` }}."
+
+    - name: uitslagenportaal.http
+      rules:
+        - alert: BackendErrorRate
+          expr: |
+            sum by (namespace) (rate(django_http_responses_total_by_status_total{namespace="{{ .Release.Namespace }}", status=~"5.."}[5m]))
+              / sum by (namespace) (rate(django_http_responses_total_by_status_total{namespace="{{ .Release.Namespace }}"}[5m])) > 0.01
+          for: 5m
+          labels:
+            severity: critical
+            area: Backend
+          annotations:
+            summary: "Backend is returning 5xx"
+            description: "More than 1% of responses in {{ `{{ $labels.namespace }}` }} have been server errors for five minutes."
+
+        - alert: BackendLatencyHigh
+          expr: |
+            histogram_quantile(0.95, sum by (namespace, le) (
+              rate(django_http_requests_latency_seconds_by_view_method_bucket{namespace="{{ .Release.Namespace }}"}[10m])
+            )) > 2
+          for: 10m
+          labels:
+            severity: warning
+            area: Backend
+          annotations:
+            summary: "Backend p95 latency above 2s"
+            description: "The slowest 5% of requests in {{ `{{ $labels.namespace }}` }} have taken over two seconds for ten minutes."
+
+{{- if .Values.monitoring.exporters.celery.enabled }}
+    - name: uitslagenportaal.imports
+      rules:
+        # A stalled import is invisible from the outside: the worker looks idle and the
+        # site keeps serving the results it already has, which are simply out of date.
+        #
+        # A queue that is merely busy also never reaches zero, so a backlog alone would
+        # page while the pipeline works perfectly. What distinguishes a stall is that
+        # nothing completes while the queue stays occupied. vector(0) covers the case
+        # where nothing has ever succeeded, when the rate is empty rather than zero.
+        - alert: CeleryQueueNotDraining
+          expr: |
+            min_over_time(celery_queue_length{namespace="{{ .Release.Namespace }}"}[15m]) > 0
+              and on ()
+              ((sum(rate(celery_task_succeeded_total{namespace="{{ .Release.Namespace }}"}[15m])) or vector(0)) == 0)
+          for: 5m
+          labels:
+            severity: critical
+            area: Imports
+          annotations:
+            summary: "{{ `{{ $labels.queue_name }}` }} is queued but nothing is completing"
+            description: "Work has sat in the queue in {{ `{{ $labels.namespace }}` }} for fifteen minutes with no task finishing."
+
+        - alert: CeleryTaskFailureRate
+          expr: |
+            sum by (namespace) (rate(celery_task_failed_total{namespace="{{ .Release.Namespace }}"}[10m]))
+              / sum by (namespace) (rate(celery_task_received_total{namespace="{{ .Release.Namespace }}"}[10m])) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+            area: Imports
+          annotations:
+            summary: "Celery tasks are failing"
+            description: "Over 5% of tasks in {{ `{{ $labels.namespace }}` }} have failed over ten minutes."
+
+        # celery_worker_up carries a series per worker, so no workers means no series at
+        # all and a bare == 0 would match nothing — silent in exactly the case this
+        # exists to catch.
+        - alert: CeleryWorkerAbsent
+          expr: |
+            sum by (namespace) (celery_worker_up{namespace="{{ .Release.Namespace }}"}) == 0
+              or absent(celery_worker_up{namespace="{{ .Release.Namespace }}"})
+          for: 5m
+          labels:
+            severity: critical
+            area: Imports
+          annotations:
+            summary: "No Celery worker is reporting"
+            description: "Nothing in {{ `{{ $labels.namespace }}` }} is consuming the queue."
+
+        # One beat replica under a Recreate strategy: if it dies quietly, periodic
+        # imports simply stop and nothing else notices. Widen the window if the
+        # schedule in tasks.py ever runs less often than hourly.
+        - alert: CeleryBeatNotEnqueuing
+          expr: |
+            sum by (namespace) (increase(celery_task_sent_total{namespace="{{ .Release.Namespace }}"}[1h])) == 0
+              or absent(celery_task_sent_total{namespace="{{ .Release.Namespace }}"})
+          for: 15m
+          labels:
+            severity: critical
+            area: Imports
+          annotations:
+            summary: "Beat has enqueued nothing for an hour"
+            description: "No task has been sent in {{ `{{ $labels.namespace }}` }} for an hour; the scheduler is likely dead."
+{{- end }}
+
+{{- if or .Values.monitoring.exporters.postgres.enabled .Values.monitoring.exporters.redis.enabled }}
+    - name: uitslagenportaal.datastores
+      rules:
+{{- if .Values.monitoring.exporters.postgres.enabled }}
+        - alert: PostgresUnreachable
+          expr: pg_up{namespace="{{ .Release.Namespace }}"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            area: Backend
+          annotations:
+            summary: "The exporter cannot reach Postgres"
+            description: "The managed database for {{ `{{ $labels.namespace }}` }} has been unreachable for five minutes."
+
+        # Every serving thread holds a persistent connection: DB_CONN_MAX_AGE is 60 with
+        # blockingThreads 16 across two replicas. This alert says when that sum, kept by
+        # hand in the ConfigMap comments, has stopped holding.
+        - alert: PostgresConnectionSaturation
+          expr: |
+            sum by (namespace) (pg_stat_database_numbackends{namespace="{{ .Release.Namespace }}"})
+              / max by (namespace) (pg_settings_max_connections{namespace="{{ .Release.Namespace }}"}) > 0.8
+          for: 10m
+          labels:
+            severity: warning
+            area: Backend
+          annotations:
+            summary: "Postgres connections above 80% of the cap"
+            description: "The database for {{ `{{ $labels.namespace }}` }} is close to refusing new connections."
+{{- end }}
+{{- if .Values.monitoring.exporters.redis.enabled }}
+        - alert: RedisUnreachable
+          expr: redis_up{namespace="{{ .Release.Namespace }}"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            area: Backend
+          annotations:
+            summary: "The exporter cannot reach Redis"
+            description: "The managed cache for {{ `{{ $labels.namespace }}` }} has been unreachable for five minutes; it is the Celery broker as well as the cache."
+
+        # Guarded on maxmemory being set at all: without it the metric is zero and the
+        # ratio would be infinite rather than undefined.
+        - alert: RedisMemoryHigh
+          expr: |
+            redis_memory_used_bytes{namespace="{{ .Release.Namespace }}"}
+              / redis_memory_max_bytes{namespace="{{ .Release.Namespace }}"} > 0.85
+              and redis_memory_max_bytes{namespace="{{ .Release.Namespace }}"} > 0
+          for: 10m
+          labels:
+            severity: warning
+            area: Backend
+          annotations:
+            summary: "Redis is near its memory limit"
+            description: "The cache for {{ `{{ $labels.namespace }}` }} is above 85% of maxmemory; eviction will start dropping broker state."
+{{- end }}
+{{- end }}
+{{- end }}

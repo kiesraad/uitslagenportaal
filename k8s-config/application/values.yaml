@@ -5,7 +5,7 @@ app:
   site_name: "Uitslagenportaal"
 
 db:
-  # verify-full would fail: the RDB cert CN is an IP, not the private endpoint.
+  # verify-full would fail: the RDB cert CN is the public endpoint, not the private one we're using.
   sslmode: "verify-ca"
   # Created outside the chart: see the Secrets section in ./docs/deployments.md.
   credSecret: "db-creds"
@@ -15,6 +15,10 @@ redis:
   credSecret: "redis-creds"
   # The managed cache only accepts TLS, unlike the in-cluster stand-in.
   tls: true
+  # Database multiplier. The application takes four consecutive databases starting at
+  # db * 4 (cache, broker, results), so the Celery broker is db * 4 + 1. celery-exporter
+  # has to watch that same database, and this is the one place the sum is written down.
+  db: 0
 
 objectStorage:
   # Created outside the chart: see the Secrets section in ./docs/deployments.md.
@@ -103,3 +107,53 @@ celery:
 
 services:
   enabled: false
+
+# Scrape configuration and alert rules, plus the exporters for the managed services.
+# These are monitoring.coreos.com kinds, so they need the prometheus-operator CRDs that
+# kube-prometheus-stack installs as one-time infra; a cluster without them cannot render
+# this at all, which is why local deploys switch the whole block off.
+monitoring:
+  enabled: true
+  scrapeInterval: "30s"
+  # The exporters run here rather than in the monitoring namespace because this is where
+  # the database and cache credentials already are, and they differ per environment.
+  exporters:
+    postgres:
+      enabled: true
+      image: "quay.io/prometheuscommunity/postgres-exporter:v0.20.1"
+      # Connects as the application's own role, from the db credentials secret. A role
+      # holding pg_monitor is what would unlock pg_stat_statements and replication
+      # metrics, and can be swapped in here if those are ever wanted.
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 64Mi
+    redis:
+      enabled: true
+      image: "oliver006/redis_exporter:v1.91.1"
+      # The certificate is IP-based: its only SAN is the private endpoint dialled here,
+      # and its CN names a different address that modern TLS ignores. Go matches an IP
+      # literal against IP SANs when no server name is set, so verification needs no
+      # workaround at all, which is the same position the application's own client takes.
+      #
+      # tlsServerName is for the day this is reached by a name instead, and takes
+      # precedence over skipping.
+      tlsServerName: ""
+      skipTlsVerification: false
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 64Mi
+    celery:
+      enabled: true
+      image: "danihodovic/celery-exporter:0.12.2"
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          memory: 128Mi
