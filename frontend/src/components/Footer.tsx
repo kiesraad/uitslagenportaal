@@ -5,6 +5,7 @@ import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRevalidator } from "react-router";
 import Button from "@/elements/Button.tsx";
+import KiesraadGridHexagon from "@/elements/KiesraadGridHexagon.tsx";
 import { type Locale, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
 import { electionConfigQuery, useElectionConfigs } from "../hooks/queries.ts";
 
@@ -68,13 +69,13 @@ export function Footer() {
          <div className="footer-navy">
             <div className="footer-top">
                <div className="footer-logo">
-                  <div className="footer-logo-left">
+                  <div className="footer-logo-left text-gray-500">
                      <div className="f-logo-grid-v-container">
                         <img src="/footer_logo.png" alt="Kiesraad" className="footer-logo-img" />
                         <div className="f-logo-grid-v">
                            <div className="f-logo-grid-item">
-                              <div className="f-logo-grid-item-bullet"></div>
-                              <div className="f-logo-grid-item-bullet"></div>
+                              <KiesraadGridHexagon className="f-logo-grid-item-bullet" />
+                              <KiesraadGridHexagon className="f-logo-grid-item-bullet" />
                            </div>
                            <div className="f-logo-grid-item"></div>
                         </div>
@@ -83,8 +84,8 @@ export function Footer() {
                         {Array.from({ length: 5 }).map((_, index) => (
                            // biome-ignore lint/suspicious/noArrayIndexKey: order is fixed
                            <div key={index} className="f-logo-grid-item">
-                              <div className="f-logo-grid-item-bullet"></div>
-                              <div className="f-logo-grid-item-bullet"></div>
+                              <KiesraadGridHexagon className="f-logo-grid-item-bullet" />
+                              <KiesraadGridHexagon className="f-logo-grid-item-bullet" />
                            </div>
                         ))}
                      </div>

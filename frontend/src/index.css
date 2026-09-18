@@ -66,12 +66,12 @@
 
 /* Palette and fontnames */
 :root {
-   --c-navy: #102e53;
-   --c-blue: #00619c;
+   --c-navy: var(--color-blue-900);
+   --c-blue: var(--color-blue-500);
    --c-blue-hov: #0f52a0;
    --c-row-alt: var(--color-blue-50);
    --c-text: var(--color-gray-900);
-   --c-muted: #696f78;
+   --c-muted: var(--color-gray-500);
    --c-border: #d0d7de;
    --c-info-bg: #dce8f8;
    --c-box-bg: #f4f7fa;
@@ -974,13 +974,6 @@ h4,
    bottom: -5px;
 }
 
-.f-logo-grid-item-bullet {
-   width: 8px;
-   height: 8px;
-   border-radius: 50%;
-   background: var(--c-muted);
-}
-
 .footer-right {
    display: flex;
    gap: 64px;
@@ -1213,13 +1206,6 @@ h4,
    position: absolute;
    right: -4px;
    top: -4px;
-}
-
-.hero-grid-item-bullet {
-   width: 8px;
-   height: 8px;
-   border-radius: 50%;
-   background: var(--c-blue);
 }
 
 /* Responsive – Tablet (≤ 1024px) */
