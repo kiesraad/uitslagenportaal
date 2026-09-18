@@ -52,6 +52,31 @@ the grain of everything around it.
 Reach for Cockpit as a `remote_write` destination once retention becomes a question: long-term storage becomes somebody
 else's problem while the alerting rules stay on the cluster.
 
+## What hosting it elsewhere would cost
+
+List prices from the vendors' pages in September 2026, per month and excluding VAT. Volumes are measured on a local
+single-node cluster: about 20k series once Grafana's own metrics, CoreDNS and cert-manager's webhook and cainjector are
+left unscraped and the API server is cut to the metrics its rules read, and about 3GB of logs a month. The kubelet and
+node-exporter account for 7.6k of those per node. Production is taken as three nodes, two environments and 10GB (40M
+lines) of logs, at the 30s scrape the application chart sets. *As configured* is the roughly 38k series that gives.
+*Curated* keeps about 10k: the same, with every job also cut to the metrics a rule or dashboard reads.
+
+| Option                                                                    | Billed on                                                                          | Curated  | As configured        | Notes                                                                                                                                                                                       |
+|---------------------------------------------------------------------------|------------------------------------------------------------------------------------|----------|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Self-hosted (this chart)                                                  | Cluster capacity                                                                   | €25–40   | €25–40               | About half a PRO2-XXS node (€40.95) plus 70Gi of block storage at €0.095/GB. Upkeep of three charts and their CRDs is the real cost and outweighs every figure here                         |
+| [Scaleway Cockpit](https://www.scaleway.com/en/pricing/managed-services/) | €0.15 per million samples, €0.35/GB logs, €0.015 per alert rule per day            | ~€135    | ~€500                | €65 when curated at a 60s scrape. Scaleway's own metrics are free, which covers managed Postgres, Redis and object storage without the exporters. 31 days of metrics and 7 of logs included |
+| [Grafana Cloud](https://grafana.com/pricing/)                             | Free up to 10k series and 50GB logs; Pro $19 plus $6.50 per 1k series              | $0–85    | ~$200                | Carries over the Alloy config, PromQL, LogQL and dashboards unchanged. Pro keeps metrics 13 months and logs 30 days. EU regions on AWS (Frankfurt, Ireland, Stockholm, Zurich)              |
+| [Elastic Cloud](https://www.elastic.co/pricing/serverless-observability)  | Serverless: ~$0.09/GB logs, $0.023/GB metrics ingest; hosted from $99              | $5–20    | a little more        | Serverless adds 5–15% for support. Hosted starts at 120GB across two zones, far more than needed. Dashboards and alerts rebuilt in Kibana                                                   |
+| [New Relic](https://newrelic.com/pricing)                                 | 100GB free, then $0.40/GB (+$0.05/GB in the EU); users $49 core, $99 full platform | $10–210  | likely above 100GB   | Cost follows the number of full users, capped at five on Standard. Bytes per data point vary too much to predict ingest reliably                                                            |
+| [Datadog](https://www.datadoghq.com/pricing/)                             | $15 per host; logs $0.10/GB plus $1.70 per million lines indexed                   | $150–400 | $150–400             | Prometheus series count as custom metrics: 100 per host are included and the overage rate is no longer published. Proprietary agent and query language                                      |
+
+Two conclusions hold whichever option is chosen. The scrape set moves the bill more than the vendor does: left at
+kube-prometheus-stack's defaults, production would be about 70k series and every volume-priced figure nearly double.
+What remains is dominated by the kubelet and node-exporter, which grow with every node. And Cockpit, cheap for logs, is
+the dearest option per metric sample, so it only makes sense at a 60s scrape with its free Scaleway metrics standing in
+for the exporters. Grafana
+Labs, Elastic, New Relic and Datadog are all subject to US jurisdiction, EU region or not.
+
 ## Where it lives
 
 The `k8s-config/monitoring` chart: its `values.yaml` holds the configuration of every component, `values-local.yaml`

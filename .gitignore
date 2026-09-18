@@ -112,6 +112,5 @@ claude.md
 *.bat
 
 # k8s
-**/charts/*.tgz
-k8s-config/monitoring/charts/*.tgz
+k8s-config/*/charts/*.tgz
 k8s-config/*.pem
