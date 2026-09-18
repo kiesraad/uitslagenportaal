@@ -2,14 +2,14 @@
 
 This file gives an overview on how to deploy the application to a Kubernetes (k8s) cluster, either locally or a managed one.
 
-The directory ./k8s-config/ contains all the configuration necessary: the application Helm chart, the
+The directory ./k8s-config/ contains all the configuration necessary: the `application` Helm chart, the
 `service-accounts` chart, the `monitoring` chart, and values files for the one-time infra setup.
 
 Commands in this file have to be run from ./k8s-config/.
 
 ### Helm chart
 
-The Helm chart is divided into several yaml files, see ./k8s-config/templates.
+The application chart is divided into several yaml files, see ./k8s-config/application/templates.
 
 - `00-config.yaml`: The `ConfigMap` with generic configuration values.
 - `01-gateway.yaml`: The Gateway config incl. which ports to use and the cert-manager `Issuer` configuration.
@@ -263,7 +263,7 @@ On a managed Kubernetes cluster at a hosting provider.
 2. Make sure the secrets are set, see the Secrets section above.
 3. Install the helm chart:
    ```bash
-   helm upgrade --install uitslagenportaal . -n uitslagenportaal-[env] -f values-[env].yaml
+   helm upgrade --install uitslagenportaal application -n uitslagenportaal-[env] -f application/values-[env].yaml
    ```
 
 Note this reverts the cluster to whatever `:dev` points at, because it passes none of the
@@ -287,5 +287,5 @@ E.g. on a Kubernetes cluster from Docker Desktop or kind
 3. Set the importer secrets (services secrets are created by `06-services.yaml`).
 4. Install the helm chart:
    ```bash
-   helm upgrade --install uitslagenportaal . -n uitslagenportaal-local --create-namespace -f values-local.yaml
+   helm upgrade --install uitslagenportaal application -n uitslagenportaal-local --create-namespace -f application/values-local.yaml
    ```
