@@ -1,7 +1,10 @@
 import { faArrowRight, faMaximize } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
+import { electionConfigQuery } from "@/hooks/queries.ts";
+import { useFormatters } from "@/utils/format.ts";
 import { appRoutes } from "@/utils/routes.ts";
 import { InfoBox } from "../InfoBox";
 
@@ -11,7 +14,9 @@ const STUB_PV_HREF = "/images/results_image.png";
 export default function ResultsSourceBox() {
    const { t } = useLingui();
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
-   const deadline = "14 december 10:00";
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(electionConfigSlug));
+   const { formatTimelineDate } = useFormatters();
+   const deadline = formatTimelineDate(electionConfig.issue_report_deadline);
 
    return (
       <div className="counting-results-infobox">
