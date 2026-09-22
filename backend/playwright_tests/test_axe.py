@@ -1,10 +1,4 @@
-"""
-Axe-core scans of one of each page kind.
-
-Local only, against the throwaway Playwright stack:
-
-    uv run pytest playwright_tests -m axe -v
-"""
+"""Axe-core scans of one of each page kind."""
 
 import re
 
