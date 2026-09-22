@@ -4,7 +4,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { Link, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { BreadcrumbItem, Breadcrumbs } from "@/components/Breadcrumbs.tsx";
 import Button from "@/elements/Button.tsx";
 import PageSection from "@/elements/PageSection.tsx";
 import { InfoBox } from "../components/InfoBox.tsx";
@@ -56,25 +57,17 @@ export function ReportIssuePage() {
       <LayoutMain title={t`Een fout melden`}>
          <PageSection className="max-w-5xl">
             <div>
-               <nav className="breadcrumb" aria-label="Breadcrumb">
-                  <span className="breadcrumb-item">
-                     <Link to={appRoutes.home()}>
-                        <Trans>Home</Trans>
-                     </Link>
-                     <span className="breadcrumb-sep">{">"}</span>
-                  </span>
-                  <span className="breadcrumb-item">
-                     <Link to={appRoutes.electionConfigMunicipalityList(electionConfigSlug)}>
-                        {electionConfig.label}
-                     </Link>
-                     <span className="breadcrumb-sep">{">"}</span>
-                  </span>
-                  <span className="breadcrumb-item">
-                     <Link to={appRoutes.reportIssue(electionConfigSlug)}>
-                        <Trans>Fout melden</Trans>
-                     </Link>
-                  </span>
-               </nav>
+               <Breadcrumbs>
+                  <BreadcrumbItem
+                     key="election-config"
+                     to={appRoutes.electionConfigMunicipalityList(electionConfigSlug)}
+                  >
+                     {electionConfig.label}
+                  </BreadcrumbItem>
+                  <BreadcrumbItem key="report-issue" to={appRoutes.reportIssue(electionConfigSlug)}>
+                     <Trans>Fout melden</Trans>
+                  </BreadcrumbItem>
+               </Breadcrumbs>
                <h1>
                   <Trans>Een fout melden</Trans>
                </h1>

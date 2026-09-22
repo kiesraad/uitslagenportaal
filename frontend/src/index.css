@@ -62,24 +62,38 @@
 
    --color-black: #000;
    --color-white: #fff;
+
+   --color-navy: var(--color-blue-900);
+   --color-blue: var(--color-blue-500);
+   --color-blue-hov: #0f52a0;
+   --color-row-alt: var(--color-blue-50);
+   --color-text: var(--color-gray-900);
+   --color-muted: var(--color-gray-500);
+   --color-border: #d0d7de;
+   --color-info-bg: #dce8f8;
+   --color-box-bg: #f4f7fa;
+   --color-info-bdr: #1569c5;
+   --color-faq-bg: #f3f7fa;
+   --color-done: #24763a;
+   --color-footer-bg: #1f3165;
 }
 
 /* Palette and fontnames */
 :root {
-   --c-navy: var(--color-blue-900);
-   --c-blue: var(--color-blue-500);
-   --c-blue-hov: #0f52a0;
-   --c-row-alt: var(--color-blue-50);
-   --c-text: var(--color-gray-900);
-   --c-muted: var(--color-gray-500);
-   --c-border: #d0d7de;
-   --c-info-bg: #dce8f8;
-   --c-box-bg: #f4f7fa;
-   --c-info-bdr: #1569c5;
-   --c-faq-bg: #f3f7fa;
-   --c-done: #24763a;
-   --c-white: #ffffff;
-   --c-footer-bg: #1f3165;
+   --c-navy: var(--color-navy);
+   --c-blue: var(--color-blue);
+   --c-blue-hov: var(--color-blue-hov);
+   --c-row-alt: var(--color-row-alt);
+   --c-text: var(--color-text);
+   --c-muted: var(--color-muted);
+   --c-border: var(--color-border);
+   --c-info-bg: var(--color-info-bg);
+   --c-box-bg: var(--color-box-bg);
+   --c-info-bdr: var(--color-info-bdr);
+   --c-faq-bg: var(--color-faq-bg);
+   --c-done: var(--color-done);
+   --c-footer-bg: var(--color-footer-bg);
+   --c-white: var(--color-white);
 
    --f-body: var(--font-sans);
    --f-title: var(--font-title);
@@ -205,52 +219,6 @@ h4,
    line-height: 1;
    color: var(--c-blue);
    flex-shrink: 0;
-}
-
-/* breadcrumbs */
-.breadcrumb {
-   display: flex;
-   align-items: center;
-   gap: 5px;
-   margin-top: 14px;
-   margin-bottom: 38px;
-}
-
-.breadcrumb-item {
-   display: flex;
-   align-items: center;
-   gap: 5px;
-}
-
-.breadcrumb a {
-   color: var(--c-blue);
-}
-
-.breadcrumb-sep {
-   color: var(--c-muted);
-   font-size: 0.75rem;
-}
-
-.platform-breadcrumb {
-   display: flex;
-   flex-wrap: wrap;
-   align-items: center;
-   gap: 5px;
-}
-
-.platform-breadcrumb-item {
-   display: flex;
-   align-items: center;
-   gap: 5px;
-}
-
-.platform-breadcrumb a {
-   color: var(--c-blue);
-}
-
-.platform-breadcrumb-sep {
-   color: var(--c-muted);
-   font-size: 0.75rem;
 }
 
 .platform-page-title {
@@ -1285,10 +1253,6 @@ h4,
    /* Title */
    .platform-page-title {
       font-size: 1.35rem;
-   }
-
-   .breadcrumb {
-      margin-bottom: 20px;
    }
 
    /* Tabs: horizontal scroll if needed */

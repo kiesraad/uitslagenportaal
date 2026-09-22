@@ -168,10 +168,6 @@ msgid "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
 msgstr "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
 
 #: src/pages/HomePage.tsx
-msgid "De telresultaten van alle <0/> stembureaus in Nederland."
-msgstr "De telresultaten van alle <0/> stembureaus in Nederland."
-
-#: src/pages/HomePage.tsx
 msgid "De telresultaten van alle stembureaus in Nederland."
 msgstr "De telresultaten van alle stembureaus in Nederland."
 
