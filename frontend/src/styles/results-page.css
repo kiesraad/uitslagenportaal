@@ -163,14 +163,13 @@
    color: white;
 }
 
-/* Stretches with the results column so the inner box can stick while scrolling. */
+/* Short grid item: sticks while scrolling, then docks to the bottom of the
+   results column so it lines up with the issue notice. */
 .counting-results-column {
-   padding-top: 8.5rem;
-}
-
-.counting-results-infobox {
    position: sticky;
    top: 1.5rem;
+   align-self: start;
+   margin-top: 8.5rem;
 }
 
 .party-level-title {
@@ -344,6 +343,6 @@
 
 @media (max-width: 1024px) {
    .counting-results-column {
-      padding-top: 0;
+      margin-top: 0;
    }
 }
