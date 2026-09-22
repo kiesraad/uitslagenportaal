@@ -28,13 +28,18 @@ responsibility for every line that lands. Ask first if you think a commit is nee
 
 ## Comments
 
-Keep comments short and to the point, and write them from the perspective of the
-application as a whole rather than the change that introduced them. Never restate what the
-code obviously does; a comment earns its place only by adding what cannot be derived from
-the code itself — an EML quirk, a domain rule, a non-obvious trade-off, a reason for doing
-it the awkward way. Do not narrate the session that produced it: no "changed to…", "used
-to be…", "as requested", or references to a review remark or an earlier implementation. If
-a comment would read as stale a month from now, leave it out.
+Comments are short and functional: aim for a single line, and keep docstrings to a summary
+line plus at most one short paragraph. State the conclusion, not the argument behind it. A
+comment earns its place only by adding what the code cannot say itself — an EML quirk, a
+domain rule, a non-obvious trade-off, a reason for doing it the awkward way.
+
+- Keep a note next to the code it explains, not in a related file that merely mentions it.
+- When changing code, reassess its existing comments as a whole and rewrite them to fit,
+  rather than appending to them. Comments that only ever grow stop being read.
+- Write from the perspective of the application as a whole. Do not narrate the session that
+  produced it: no "changed to…", "used to be…", "as requested", or references to a review
+  remark or an earlier implementation. If a comment would read as stale a month from now,
+  leave it out.
 
 ## Layout
 
