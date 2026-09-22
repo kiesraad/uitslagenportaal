@@ -137,7 +137,7 @@ export function RegionList({
 
          <SearchBar regionCategory={regionCategory} options={regionOptions} onSelect={navigateToRegion} />
 
-         {!isPollingStationList && <h2 className="mb-4">{t`Vind een ${regionInline} van A tot Z`}</h2>}
+         {!isPollingStationList && <h2 className="mb-4 max-sm:max-w-70">{t`Vind een ${regionInline} van A tot Z`}</h2>}
 
          {isPollingStationList ? (
             <SearchList>
@@ -152,7 +152,7 @@ export function RegionList({
          ) : (
             regionsByLetter.map(([letter, municipalities]) => (
                <div key={letter} className="mb-6">
-                  <div className="my-2 font-bold text-xl">{letter}</div>
+                  <div className="py-2 font-bold text-xl max-sm:sticky max-sm:top-0 max-sm:bg-white/75">{letter}</div>
                   <SearchList>
                      {municipalities.map((municipality) => (
                         <ListOptionLink
