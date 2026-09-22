@@ -933,6 +933,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-playwright-axe"
+version = "4.13.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest-playwright" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/21/56/ecd9dde66ebaed15d236292ea9157bb86e3332bb6ba8f87eb4263839e0c6/pytest_playwright_axe-4.13.0.tar.gz", hash = "sha256:f7acdf66f511735e3d8ec15412f5804704cdda8aab8d99af2266e74453d070f7", size = 804158, upload-time = "2026-08-07T10:50:48.457Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6b/6d/387d66753fb6abb829e60ed74fa5f09ee88a5dba38b4b038b51cd2fec632/pytest_playwright_axe-4.13.0-py3-none-any.whl", hash = "sha256:ca760c38709e31a2d4fda6608cacc70e2b191a92fbd034a7d1ddc4b8d92452c0", size = 413766, upload-time = "2026-08-07T10:50:47.156Z" },
+]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -1122,6 +1134,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-django" },
     { name = "pytest-playwright" },
+    { name = "pytest-playwright-axe" },
     { name = "ruff" },
     { name = "watchfiles" },
 ]
@@ -1153,6 +1166,7 @@ dev = [
     { name = "pytest", specifier = ">=8.4.0" },
     { name = "pytest-django", specifier = ">=4.13.0" },
     { name = "pytest-playwright", specifier = ">=0.9.0" },
+    { name = "pytest-playwright-axe", specifier = ">=4.13.0" },
     { name = "ruff", specifier = ">=0.16.3" },
     { name = "watchfiles", specifier = ">=1.2.0" },
 ]

@@ -160,7 +160,7 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
                   onBlur={() => setTimeout(() => setOpen(false), 150)}
                   onFocus={() => suggestions.length > 0 && setOpen(true)}
                   aria-autocomplete="list"
-                  aria-controls={suggestionsId}
+                  aria-controls={isOpen ? suggestionsId : undefined}
                   aria-activedescendant={activeIndex >= 0 ? `${suggestionsId}-${activeIndex}` : undefined}
                />
                {isOpen && (
