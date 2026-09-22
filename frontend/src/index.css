@@ -1142,6 +1142,9 @@ h4,
 
    .footer-meta {
       margin: 0 2.5rem;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
    }
 
    .footer-lang-inner {
@@ -1299,9 +1302,6 @@ h4,
    .footer-meta {
       margin: 0 1.25rem;
       padding: 24px 0 32px;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 16px;
    }
 
    .footer-copy {
