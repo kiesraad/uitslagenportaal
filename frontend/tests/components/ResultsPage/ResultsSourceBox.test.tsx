@@ -41,11 +41,11 @@ describe("ResultsSourceBox", () => {
       expect(screen.getByRole("heading", { name: "Waar komen deze telresultaten vandaan?" })).toBeInTheDocument();
       expect(screen.getByRole("img", { name: "Voorbeeld van een proces-verbaal" })).toHaveAttribute(
          "src",
-         "/images/results_image.png",
+         "/images/stub_pv_sb.png",
       );
       expect(screen.getByRole("link", { name: /Bekijk het proces-verbaal/ })).toHaveAttribute(
          "href",
-         "/images/results_image.png",
+         "/images/stub_pv_sb.png",
       );
       expect(screen.getByRole("link", { name: /Meld een fout of iets dat niet klopt/ })).toHaveAttribute(
          "href",

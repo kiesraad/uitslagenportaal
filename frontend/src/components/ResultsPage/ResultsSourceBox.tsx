@@ -9,7 +9,7 @@ import { appRoutes } from "@/utils/routes.ts";
 import { InfoBox } from "../InfoBox";
 
 /** Placeholder scan until proces-verbaal documents are served from the API. */
-const STUB_PV_HREF = "/images/results_image.png";
+const STUB_PV_HREF = "/images/stub_pv_sb.png";
 
 export default function ResultsSourceBox() {
    const { t } = useLingui();

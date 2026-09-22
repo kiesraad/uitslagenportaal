@@ -140,13 +140,17 @@
 .results-image-container {
    position: relative;
    max-width: 15rem;
-   aspect-ratio: 1 / 0.65;
+   aspect-ratio: 210 / 297;
    overflow: hidden;
+   background: white;
    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 }
 
 .results-image {
-   max-width: 15rem;
+   width: 100%;
+   height: 100%;
+   object-fit: contain;
+   display: block;
 }
 
 .results-image-resize {
