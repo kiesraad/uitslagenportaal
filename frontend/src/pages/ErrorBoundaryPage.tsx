@@ -51,8 +51,8 @@ export default function ErrorBoundaryPage() {
    return (
       <BaseLayout>
          <LayoutMain title={title} description={description}>
-            <div className="page-top flex-1 flex flex-col gap-3">
-               <h1 className="text-3xl sm:text-4xl font-title font-bold whitespace-pre-line">{title}</h1>
+            <div className="page-top flex flex-1 flex-col gap-3">
+               <h1 className="whitespace-pre-line font-bold font-title text-3xl sm:text-4xl">{title}</h1>
                <p>{description}</p>
                <Button onClick={reloadPage} className="w-fit">
                   <FontAwesomeIcon icon={faArrowRotateRight} /> <Trans>Probeer opnieuw</Trans>
@@ -60,7 +60,7 @@ export default function ErrorBoundaryPage() {
                <span>
                   <Trans>Details:</Trans>
                </span>
-               <code className="text-xs whitespace-pre-line">
+               <code className="whitespace-pre-line text-xs">
                   {heading} - {detail}
                </code>
             </div>

@@ -2,6 +2,7 @@ import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useLingui } from "@lingui/react/macro";
 import { type ChangeEvent, type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { twMerge } from "tailwind-merge";
 
 import type { RegionCategory } from "../api/types";
 import { getRegionLabels } from "../utils/region";
@@ -170,7 +171,7 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
                         <li
                            key={`${option.id}-${option.csbSlug ?? ""}`}
                            id={`${suggestionsId}-${index}`}
-                           className={`search-suggestion-item${index === activeIndex ? " active" : ""}`}
+                           className={twMerge("search-suggestion-item", index === activeIndex && "active")}
                            onMouseDown={() => selectOption(option)}
                            onMouseEnter={() => setActiveIndex(index)}
                         >

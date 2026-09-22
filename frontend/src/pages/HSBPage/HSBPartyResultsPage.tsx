@@ -68,7 +68,7 @@ export function HSBPartyResultsPage() {
       <>
          <ResultsPageIndex />
          <section id="telresultaten" className="party-vote-matrix-section">
-            <h2 className="text-lg mb-4.5 font-medium">
+            <h2 className="mb-4.5 font-medium text-lg">
                <Trans>Telresultaten lijst {listNumber}</Trans>
             </h2>
             <h3 className="party-level-title mb-2">{partyName}</h3>
@@ -101,7 +101,7 @@ export function HSBPartyResultsPage() {
             ]}
          />
          <div className="page-main">
-            <div className="flex flex-col gap-4 sm:gap-12 party-vote-matrix-page">
+            <div className="party-vote-matrix-page flex flex-col gap-4 sm:gap-12">
                {!hasResults ? <ResultsNotPublished regionLabel={region.region_name} /> : resultsPageContent}
                <ResultsTimeline variant={region.timeline_variant} entries={electionConfig.timeline_entries ?? []} />
                <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />

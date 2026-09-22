@@ -19,14 +19,14 @@ export function NavigationProgressBar() {
    return (
       <div
          className={twMerge(
-            "sticky top-0 z-100 h-0.75 -mb-0.75 shrink-0 pointer-events-none opacity-0 transition-opacity duration-200",
+            "pointer-events-none sticky top-0 z-100 -mb-0.75 h-0.75 shrink-0 opacity-0 transition-opacity duration-200",
             isVisible && "opacity-100",
          )}
          aria-hidden="true"
       >
          <div
             className={twMerge(
-               "h-full origin-left bg-blue-400 shadow-blue-700/50 shadow-md rounded-full",
+               "h-full origin-left rounded-full bg-blue-400 shadow-blue-700/50 shadow-md",
                // Only animate transforms when visible
                isVisible && "transition-transform duration-300 ease-in-out will-change-transform",
                "motion-reduce:transition-none",
