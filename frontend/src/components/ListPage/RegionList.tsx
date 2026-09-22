@@ -152,7 +152,7 @@ export function RegionList({
          ) : (
             regionsByLetter.map(([letter, municipalities]) => (
                <div key={letter} className="mb-6">
-                  <div className="font-bold my-2 text-xl">{letter}</div>
+                  <div className="my-2 font-bold text-xl">{letter}</div>
                   <SearchList>
                      {municipalities.map((municipality) => (
                         <ListOptionLink
@@ -170,16 +170,16 @@ export function RegionList({
 }
 
 function SearchList({ children }: PropsWithChildren) {
-   return <div className="mb-5 max-w-2xl grid grid-cols-[max-content_auto_max-content]">{children}</div>;
+   return <div className="mb-5 grid max-w-2xl grid-cols-[max-content_auto_max-content]">{children}</div>;
 }
 
 function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: string }) {
    return (
       <Link
          to={to}
-         className="items-center hover:no-underline! odd:bg-blue-50 hover:bg-blue-100 h-18 px-6 grid col-span-3 grid-cols-subgrid"
+         className="hover:no-underline! col-span-3 grid h-18 grid-cols-subgrid items-center px-6 odd:bg-blue-50 hover:bg-blue-100"
       >
-         <span className={twMerge(listOption.stationNumber && "font-light text-gray-700 pr-2")}>
+         <span className={twMerge(listOption.stationNumber && "pr-2 font-light text-gray-700")}>
             {listOption.stationNumber}
          </span>
          <span className="underline">{listOption.label}</span>

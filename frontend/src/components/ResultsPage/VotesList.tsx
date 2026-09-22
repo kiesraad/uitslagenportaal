@@ -20,9 +20,9 @@ export default function VotesList({ total, indexColumn, children }: PropsWithChi
    // Use `overflow-visible w-1 text-nowrap` to ignore the width of the spanned rows for the max-content col size
    return (
       <div className="votes-cast-list-container">
-         <div className="grid grid-cols-[max-content_auto_max-content_max-content] gap-x-4">
-            <div className="flex justify-between font-semibold pl-4.5 py-3 col-span-3">
-               <span className="overflow-visible w-1 text-nowrap">{indexColumn}</span>
+         <div className="grid grid-cols-[max-content_auto_max-content_max-content] gap-x-2 sm:gap-x-4">
+            <div className="col-span-3 flex justify-between py-3 pl-4.5 font-semibold">
+               <span className="w-1 overflow-visible text-nowrap">{indexColumn}</span>
                <span>
                   <Trans>Aantal stemmen</Trans>
                </span>
@@ -30,8 +30,8 @@ export default function VotesList({ total, indexColumn, children }: PropsWithChi
             {children}
 
             {total && (
-               <div className="flex items-center justify-between font-semibold h-18 pl-6 py-3 col-span-3">
-                  <span className="overflow-visible w-1 text-nowrap">{total.label}</span>
+               <div className="col-span-3 flex h-18 items-center justify-between py-3 pl-6 font-semibold">
+                  <span className="w-1 overflow-visible text-nowrap">{total.label}</span>
                   <span>{formatNumber(total.value)}</span>
                </div>
             )}
@@ -52,7 +52,7 @@ export function VotesListItem({ number, title, voteCount, href }: VotesListItemP
    const { formatNumber } = useFormatters();
 
    const className = twMerge(
-      "items-center hover:no-underline! even:bg-blue-50 h-18 pl-6 pr-4 grid col-span-4 grid-cols-subgrid",
+      "hover:no-underline! col-span-4 grid h-18 grid-cols-subgrid items-center pr-4 pl-6 even:bg-blue-50",
       isClickable && "hover:bg-blue-100",
    );
 

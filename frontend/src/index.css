@@ -295,22 +295,6 @@ h4,
    color: var(--c-navy);
 }
 
-.page-space-1 {
-   display: flex;
-   flex-direction: column;
-   gap: 1rem;
-}
-.page-space-2 {
-   display: flex;
-   flex-direction: column;
-   gap: 2rem;
-}
-.page-space-3 {
-   display: flex;
-   flex-direction: column;
-   gap: 3rem;
-}
-
 /* SearchField */
 .search-label {
    display: block;

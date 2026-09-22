@@ -21,8 +21,8 @@ export function hsbPartyResultsLoader(queryClient: QueryClient) {
       const regionQueryOptions = regionQuery(params, "hsb");
 
       const [electionConfig, region] = await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionQueryOptions),
       ]);
 
       if (!electionConfig.has_hsb) {
@@ -34,7 +34,7 @@ export function hsbPartyResultsLoader(queryClient: QueryClient) {
          params.regionSlug,
          params.partySlug,
       );
-      await queryClient.ensureQueryData(partyVoteMatrixQueryOptions);
+      await queryClient.query(partyVoteMatrixQueryOptions);
 
       return {
          electionConfigQuery: electionConfigQueryOptions,
@@ -101,7 +101,7 @@ export function HSBPartyResultsPage() {
             ]}
          />
          <div className="page-main">
-            <div className="page-space-3 party-vote-matrix-page">
+            <div className="flex flex-col gap-4 sm:gap-12 party-vote-matrix-page">
                {!hasResults ? <ResultsNotPublished regionLabel={region.region_name} /> : resultsPageContent}
                <ResultsTimeline variant={region.timeline_variant} entries={electionConfig.timeline_entries ?? []} />
                <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />

@@ -18,9 +18,9 @@ export function hsbMunicipalityListLoader(queryClient: QueryClient) {
       const regionsQueryOptions = regionsQuery(params, "GEMEENTE");
 
       const [electionConfig] = await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
-         queryClient.ensureQueryData(regionsQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionQueryOptions),
+         queryClient.query(regionsQueryOptions),
       ]);
 
       if (!electionConfig.has_hsb) {

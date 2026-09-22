@@ -12,8 +12,8 @@ export function municipalityResultsLoader(queryClient: QueryClient) {
       const regionQueryOptions = regionQuery(params, "gsb");
 
       await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionQueryOptions),
       ]);
 
       return {
@@ -39,7 +39,7 @@ export function MunicipalityResultsPage() {
       <MunicipalityPageLayout electionConfig={electionConfig} region={region} municipalityTitle={municipalityTitle}>
          <HtmlHead title={t`Resultaten ${municipalityTitle}`} />
          <div className="page-main page-main-two-columns">
-            <div className="page-space-3">
+            <div className="flex flex-col gap-4 sm:gap-12">
                <RegionResultsContent
                   intro={
                      <Trans>

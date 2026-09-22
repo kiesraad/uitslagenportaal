@@ -26,9 +26,9 @@ export function pollingStationLoader(queryClient: QueryClient) {
       );
 
       await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
-         queryClient.ensureQueryData(pollingStationQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionQueryOptions),
+         queryClient.query(pollingStationQueryOptions),
       ]);
 
       return {
@@ -84,7 +84,7 @@ export default function PollingStationResultsPage() {
             ]}
          />
          <div className="page-main page-main-two-columns">
-            <div className="page-space-3">
+            <div className="flex flex-col gap-4 sm:gap-12">
                <RegionResultsContent
                   intro={t`De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware.`}
                   voteCounts={pollingStation.vote_counts}

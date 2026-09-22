@@ -16,8 +16,8 @@ export function electionConfigMunicipalityListLoader(queryClient: QueryClient) {
       const regionsQueryOptions = regionsQuery(params, "GEMEENTE");
 
       await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionsQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionsQueryOptions),
       ]);
 
       return {

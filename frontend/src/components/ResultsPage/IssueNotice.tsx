@@ -17,7 +17,7 @@ export default function IssueNotice({ issueReportDeadline }: IssueNoticeProps) {
 
    return (
       <section id="fout-melden">
-         <InfoBox>
+         <InfoBox disableMargin>
             <h4>
                <Trans>Klopt er iets niet?</Trans>
             </h4>

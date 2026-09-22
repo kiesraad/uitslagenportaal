@@ -14,9 +14,9 @@ export function municipalityPollingstationListLoader(queryClient: QueryClient) {
       const pollingStationsQueryOptions = regionsQuery(params, "STEMBUREAU");
 
       await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
-         queryClient.ensureQueryData(pollingStationsQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionQueryOptions),
+         queryClient.query(pollingStationsQueryOptions),
       ]);
 
       return {

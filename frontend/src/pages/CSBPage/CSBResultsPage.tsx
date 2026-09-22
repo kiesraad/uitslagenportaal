@@ -15,10 +15,7 @@ export function csbResultsLoader(queryClient: QueryClient) {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
       const regionQueryOptions = regionQuery(params, "csb");
 
-      await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
-      ]);
+      await Promise.all([queryClient.query(electionConfigQueryOptions), queryClient.query(regionQueryOptions)]);
 
       return {
          electionConfigQuery: electionConfigQueryOptions,
@@ -80,7 +77,7 @@ export function CSBResultsPage() {
             }
          />
          <div className="page-main page-main-two-columns">
-            <div className="page-space-3">
+            <div className="flex flex-col gap-4 sm:gap-12">
                <RegionResultsContent
                   intro={
                      <Trans>
