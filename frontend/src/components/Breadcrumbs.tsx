@@ -9,7 +9,7 @@ export function Breadcrumbs({ children }: PropsWithChildren) {
    );
 
    return (
-      <nav className="mb-2 flex items-center gap-1 overflow-x-auto py-3 sm:mb-9" aria-label="Breadcrumb">
+      <nav className="mb-2 flex flex-wrap items-center gap-1 py-3 sm:mb-9" aria-label="Breadcrumb">
          {!hasHome && (
             <BreadcrumbItem key="home" to={appRoutes.home()}>
                <Trans>Home</Trans>
