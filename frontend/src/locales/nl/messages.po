@@ -336,6 +336,7 @@ msgstr "Hoe u een fout kunt melden"
 msgid "Hoe zijn de resultaten tot stand gekomen?"
 msgstr "Hoe zijn de resultaten tot stand gekomen?"
 
+#: src/components/Breadcrumbs.tsx
 #: src/pages/CSBPage/CSBMunicipalityListPage.tsx
 #: src/pages/CSBPage/CSBPartyResultsPage.tsx
 #: src/pages/CSBPage/CSBResultsPage.tsx
@@ -350,7 +351,6 @@ msgstr "Hoe zijn de resultaten tot stand gekomen?"
 #: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
 #: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
-#: src/pages/ReportIssuePage.tsx
 msgid "Home"
 msgstr "Home"
 
