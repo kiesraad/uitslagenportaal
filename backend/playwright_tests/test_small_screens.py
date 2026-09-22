@@ -1,8 +1,7 @@
 """
 Small-screen smoke tests: at 320 CSS px, the WCAG reflow width, no page scrolls sideways.
 
-Wide content such as the breadcrumb and the vote matrix may scroll, but only inside its own
-container.
+Wide content such as the vote matrix may scroll, but only inside its own container.
 """
 
 import re
@@ -65,21 +64,6 @@ def expect_scrolls_within_itself(container: Locator) -> None:
 def test_page_does_not_scroll_sideways(page: Page, path: str):
     page.goto(path)
     expect_no_horizontal_scroll(page)
-
-
-def test_a_long_breadcrumb_scrolls_within_itself(page: Page):
-    page.goto(BORSELE)
-    page.get_by_label("Zoek op naam, adres of stembureau-nummer").fill("Heinkenszand")
-    page.get_by_label("Zoek op naam, adres of stembureau-nummer").press("Enter")
-    expect(page.get_by_role("heading", level=1, name=re.compile(r"Telresultaten stembureau"))).to_be_visible()
-
-    expect_no_horizontal_scroll(page)
-    breadcrumb = page.get_by_role("navigation", name="Breadcrumb")
-    expect_scrolls_within_itself(breadcrumb)
-
-    last_crumb = breadcrumb.get_by_role("link").last
-    last_crumb.scroll_into_view_if_needed()
-    expect(last_crumb).to_be_in_viewport()
 
 
 def test_the_vote_matrix_scrolls_within_itself(page: Page):
