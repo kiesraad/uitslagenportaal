@@ -16,6 +16,14 @@ The portal is then available at http://localhost:8080.
 
 Install plugins for `ruff` and `biome` in your IDE to use the required formatting/linting.
 
+Tailwind classes outside a `className` attribute go in `twMerge(…)` or a `` tw`…` `` template
+(`frontend/src/utils/tw.ts`). Biome sorts those already; for IDE autocompletion, tell the Tailwind CSS
+plugin about both functions:
+
+- JetBrains: *Settings › Languages & Frameworks › Style Sheets › Tailwind CSS*, add
+  `"classFunctions": ["twMerge", "tw"]` to the configuration JSON.
+- VS Code (Tailwind CSS IntelliSense): add `"tailwindCSS.classFunctions": ["twMerge", "tw"]` to your settings.
+
 De backend (`backend/`) is gemaakt met Django 6 + DRF in Python 3.13, managed met uv; the frontend
 (`frontend/`) is React 19 + TypeScript + Vite + Tailwind 4. See [AGENTS.md](AGENTS.md) for the
 repository layout and conventions, and [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.

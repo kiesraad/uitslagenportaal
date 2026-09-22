@@ -168,10 +168,6 @@ msgid "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
 msgstr "The counting results for {regionLabel} have not been published yet"
 
 #: src/pages/HomePage.tsx
-msgid "De telresultaten van alle <0/> stembureaus in Nederland."
-msgstr "The counting results of every <0/> polling station in the Netherlands."
-
-#: src/pages/HomePage.tsx
 msgid "De telresultaten van alle stembureaus in Nederland."
 msgstr "The counting results of every polling station in the Netherlands."
 
@@ -340,6 +336,7 @@ msgstr "How to report a mistake"
 msgid "Hoe zijn de resultaten tot stand gekomen?"
 msgstr "How were these results produced?"
 
+#: src/components/Breadcrumbs.tsx
 #: src/pages/CSBPage/CSBMunicipalityListPage.tsx
 #: src/pages/CSBPage/CSBPartyResultsPage.tsx
 #: src/pages/CSBPage/CSBResultsPage.tsx
@@ -354,7 +351,6 @@ msgstr "How were these results produced?"
 #: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
 #: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
-#: src/pages/ReportIssuePage.tsx
 msgid "Home"
 msgstr "Home"
 

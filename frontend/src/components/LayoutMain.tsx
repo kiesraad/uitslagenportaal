@@ -11,7 +11,7 @@ export function LayoutMain({ children, title, description }: LayoutMainProps) {
    return (
       <>
          <HtmlHead title={title} description={description} />
-         <main className="layout-main">{children}</main>
+         <main className="flex w-full flex-1 flex-col">{children}</main>
       </>
    );
 }
