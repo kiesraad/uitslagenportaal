@@ -1,13 +1,11 @@
 import hashlib
 import json
 import logging
-from datetime import datetime
 
 from django.db import transaction
-from django.utils import timezone
 
 from election.models import ElectionConfig, ElectionDocument, TimelineEntry, TimelineVariant
-from election.utils import delete_stored_documents, folder_prefixes
+from election.utils import delete_stored_documents, folder_prefixes, tz_aware_from_isoformat
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +17,6 @@ _TIMELINE_VARIANTS = {
 
 # Changing either of these invalidates everything already imported for the election.
 _BRANCH_FIELDS = ("gh_exchange_branch", "gh_counting_results_branch")
-
-
-def _aware(value: str):
-    return timezone.make_aware(datetime.fromisoformat(value))
 
 
 def hash_election_config_data(data: dict) -> str:
@@ -100,9 +94,9 @@ def _save_election_config(
 
     election_config.category = election_data["category"]
     election_config.label = election_data["label"]
-    election_config.date = _aware(election_data["date"])
-    election_config.issue_report_opens_at = _aware(election_data["issue_report_opens_at"])
-    election_config.issue_report_deadline = _aware(election_data["issue_report_deadline"])
+    election_config.date = tz_aware_from_isoformat(election_data["date"])
+    election_config.issue_report_opens_at = tz_aware_from_isoformat(election_data["issue_report_opens_at"])
+    election_config.issue_report_deadline = tz_aware_from_isoformat(election_data["issue_report_deadline"])
     election_config.report_error_url = election_data.get("report_error_url", "")
     election_config.counting_info_url = election_data.get("counting_info_url", "")
     election_config.voting_url = election_data.get("voting_url", "")
@@ -119,7 +113,7 @@ def _save_election_config(
                 variant=variant,
                 title_nl=entry_data["title"]["nl"],
                 title_en=entry_data["title"]["en"],
-                date=_aware(entry_data["date"]),
+                date=tz_aware_from_isoformat(entry_data["date"]),
                 body_nl=entry_data["body"]["nl"],
                 body_en=entry_data["body"]["en"],
             )

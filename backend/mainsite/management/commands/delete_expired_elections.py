@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from election.election_config_storage import remove_expired_election_configs
 from election.models import ElectionConfig, ElectionDocument
 from election.utils import delete_stored_documents, deletion_cutoff, folder_prefixes
 
@@ -48,6 +49,13 @@ class Command(BaseCommand):
             )
             self.stdout.write("Re-run with --confirm to apply.")
             return
+
+        # Remove the expired config files in the object storage before removing the DB rows,
+        # so import_new_election_configs won't import it during deletion
+        removed_config_files = remove_expired_election_configs([config.identifier for config in expired])
+        self.stdout.write(self.style.SUCCESS("Deleted config files from object storage:"))
+        for file in removed_config_files:
+            self.stdout.write(f"  {file}")
 
         # Delete the database rows first. If that fails the transaction rolls
         # back and the stored objects are still referenced; the reverse order
