@@ -16,7 +16,7 @@ export default function SharedTabs({ tabs }: Props) {
    const { t } = useLingui();
 
    return (
-      <nav className="tabs" aria-label={t`Weergave`}>
+      <nav className="tabs" aria-label={t`Subnavigatie`}>
          {tabs.map((tab) => {
             const patterns = tab.activePatterns ?? [tab.value];
             const isActive = patterns.some((pattern) =>

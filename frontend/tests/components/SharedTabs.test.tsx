@@ -15,7 +15,7 @@ describe("SharedTabs", () => {
          { initialEntries: ["/gemeente/resultaten"] },
       );
 
-      expect(screen.getByRole("navigation", { name: "Weergave" })).toBeInTheDocument();
+      expect(screen.getByRole("navigation", { name: "Subnavigatie" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Hele gemeente" })).toHaveAttribute("aria-current", "page");
       expect(screen.getByRole("link", { name: "Per stembureau" })).not.toHaveAttribute("aria-current");
    });
