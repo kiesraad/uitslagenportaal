@@ -2,7 +2,7 @@ from django.db.models import Prefetch
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
-from election.models import ElectionCategory, ElectionConfig, ElectionDocument, VoteCount, VoterTurnoutCount
+from election.models import ElectionConfig, ElectionDocument, VoteCount, VoterTurnoutCount
 from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, EmlType, ReportingLevel
@@ -82,16 +82,19 @@ class RegionDetailView(RetrieveAPIView):
         parent_region_slug = self.request.query_params.get("parent_region")
 
         if level not in ReportingLevel.values:
-            raise ValidationError({"level": "This query parameter is required and must be gsb, hsb, or csb."})
+            raise ValidationError({"level": "This query parameter is required and must be sb, gsb, hsb, or csb."})
 
         eml_type = EML_TYPE_BY_REPORTING_LEVEL[level]
         document_file_type = [_DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL[level], ElectionDocument.FileType.CSV_OSV43]
 
+        election_config = ElectionConfig.objects.filter(slug=election_config_slug).first()
+        if election_config is None:
+            raise NotFound({"detail": "Election config not found."})
+
         region_category = None
         match level:
             case ReportingLevel.CSB.value:
-                election_config = ElectionConfig.objects.get(identifier__iexact=election_config_slug)
-                region_category = ElectionCategory(election_config.category).config.csb
+                region_category = election_config.csb_type
             case ReportingLevel.HSB.value:
                 region_category = RegionCategory.KIESKRING
             case ReportingLevel.GSB.value:
