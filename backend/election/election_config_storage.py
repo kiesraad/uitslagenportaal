@@ -114,4 +114,3 @@ def remove_expired_election_configs(identifiers: list[str]) -> list[str]:
             logger.info("Skipped deleting election config from %s, not expired", path)
 
     return deleted
-
