@@ -316,6 +316,10 @@ msgstr "Het hoofdstembureau heeft de telresultaten van alle gemeenten in de kies
 msgid "Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
 msgstr "Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
 
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Het proces-verbaal is nog niet ontvangen"
+msgstr "Het proces-verbaal is nog niet ontvangen"
+
 #: src/utils/region.ts
 msgid "het stembureau"
 msgstr "het stembureau"
@@ -327,6 +331,10 @@ msgstr "Het stembureau doet een sneltelling per partij. Het gemeentelijk stembur
 #: src/components/ResultsPage/ResultsTimeline.tsx
 msgid "Het stembureau doet een uitgebreide telling op het stembureau. Het gemeentelijk stembureau telt de volgende dag de uitkomsten bij elkaar op. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
 msgstr "Het stembureau doet een uitgebreide telling op het stembureau. Het gemeentelijk stembureau telt de volgende dag de uitkomsten bij elkaar op. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
+
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Het verschijnt hier zodra het is binnengekomen."
+msgstr "Het verschijnt hier zodra het is binnengekomen."
 
 #: src/utils/region.ts
 msgid "het waterschap"
@@ -490,6 +498,10 @@ msgstr "Per gemeente"
 #: src/pages/ErrorBoundaryPage.tsx
 msgid "Probeer opnieuw"
 msgstr "Probeer opnieuw"
+
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Proces-verbaal"
+msgstr "Proces-verbaal"
 
 #: src/utils/region.ts
 msgid "Provincie"
@@ -669,10 +681,6 @@ msgstr "Vind een {regionInline} van A tot Z"
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Volmachtbewijzen"
 msgstr "Volmachtbewijzen"
-
-#: src/components/ResultsPage/ResultsSourceBox.tsx
-msgid "Voorbeeld van een proces-verbaal"
-msgstr "Voorbeeld van een proces-verbaal"
 
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Waar komen deze telresultaten vandaan?"

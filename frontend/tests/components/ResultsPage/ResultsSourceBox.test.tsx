@@ -35,18 +35,14 @@ function renderBox(locale: "nl" | "en" = "nl", previewUrl?: string | null) {
 }
 
 describe("ResultsSourceBox", () => {
-   it("Shows the stub proces-verbaal preview and view link", () => {
+   it("Says the proces-verbaal has not arrived yet when the region has none", () => {
       renderBox();
 
       expect(screen.getByRole("heading", { name: "Waar komen deze telresultaten vandaan?" })).toBeInTheDocument();
-      expect(screen.getByRole("img", { name: "Voorbeeld van een proces-verbaal" })).toHaveAttribute(
-         "src",
-         "/images/stub_pv_sb.png",
-      );
-      expect(screen.getByRole("link", { name: /Bekijk het proces-verbaal/ })).toHaveAttribute(
-         "href",
-         "/images/stub_pv_sb.png",
-      );
+      expect(screen.getByText("Het proces-verbaal is nog niet ontvangen")).toBeInTheDocument();
+      expect(screen.getByText("Het verschijnt hier zodra het is binnengekomen.")).toBeInTheDocument();
+      expect(screen.queryByRole("img", { name: "Proces-verbaal" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: /Bekijk het proces-verbaal/ })).not.toBeInTheDocument();
       expect(screen.getByRole("link", { name: /Meld een fout of iets dat niet klopt/ })).toHaveAttribute(
          "href",
          "/ws2023/fout-melden",
@@ -58,7 +54,7 @@ describe("ResultsSourceBox", () => {
       const previewUrl = "/api/certified-documents/7/preview/";
       renderBox("nl", previewUrl);
 
-      expect(screen.getByRole("img", { name: "Voorbeeld van een proces-verbaal" })).toHaveAttribute("src", previewUrl);
+      expect(screen.getByRole("img", { name: "Proces-verbaal" })).toHaveAttribute("src", previewUrl);
       expect(screen.getByRole("link", { name: /Bekijk het proces-verbaal/ })).toHaveAttribute("href", previewUrl);
    });
 
@@ -66,7 +62,9 @@ describe("ResultsSourceBox", () => {
       renderBox("en");
 
       expect(screen.getByRole("heading", { name: "Where do these counting results come from?" })).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /View the certified election results/ })).toBeInTheDocument();
+      expect(screen.getByText("The certified election results have not arrived yet")).toBeInTheDocument();
+      expect(screen.getByText("They will appear here once they have been received.")).toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: /View the certified election results/ })).not.toBeInTheDocument();
       expect(screen.getByText(/14 December at 10:00/)).toBeInTheDocument();
    });
 });

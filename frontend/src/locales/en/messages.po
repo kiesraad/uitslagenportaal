@@ -316,6 +316,10 @@ msgstr "The district electoral committee has checked, transcribed and added up t
 msgid "Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
 msgstr "The district electoral committee has checked, transcribed and added up the counting results of every municipality in {regionName}. Below you can see the counting results as recorded in the certified election results of the district electoral committee."
 
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Het proces-verbaal is nog niet ontvangen"
+msgstr "The certified election results have not arrived yet"
+
 #: src/utils/region.ts
 msgid "het stembureau"
 msgstr "the polling station"
@@ -327,6 +331,10 @@ msgstr "The polling station carries out a rapid count per party. The next day th
 #: src/components/ResultsPage/ResultsTimeline.tsx
 msgid "Het stembureau doet een uitgebreide telling op het stembureau. Het gemeentelijk stembureau telt de volgende dag de uitkomsten bij elkaar op. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
 msgstr "The polling station carries out a full count at the polling station. The next day the municipal electoral committee adds up the outcomes. Those counting results are recorded in the report of the municipal electoral committee / public entity electoral committee."
+
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Het verschijnt hier zodra het is binnengekomen."
+msgstr "They will appear here once they have been received."
 
 #: src/utils/region.ts
 msgid "het waterschap"
@@ -490,6 +498,10 @@ msgstr "By municipality"
 #: src/pages/ErrorBoundaryPage.tsx
 msgid "Probeer opnieuw"
 msgstr "Try again"
+
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Proces-verbaal"
+msgstr "Certified election results"
 
 #: src/utils/region.ts
 msgid "Provincie"
@@ -669,10 +681,6 @@ msgstr "Find a {regionInline} from A to Z"
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Volmachtbewijzen"
 msgstr "Proxy certificates"
-
-#: src/components/ResultsPage/ResultsSourceBox.tsx
-msgid "Voorbeeld van een proces-verbaal"
-msgstr "Example of the certified election results"
 
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Waar komen deze telresultaten vandaan?"
