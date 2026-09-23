@@ -1,4 +1,5 @@
 import { Link, matchPath, useLocation } from "react-router";
+import { twMerge } from "tailwind-merge";
 
 type Props = {
    tabs: {
@@ -20,7 +21,7 @@ export default function SharedTabs({ tabs }: Props) {
             );
 
             return (
-               <Link key={tab.value} to={tab.value} className={`tab${isActive ? " active" : ""} text-lg`}>
+               <Link key={tab.value} to={tab.value} className={twMerge("tab text-lg", isActive && "active")}>
                   {tab.label}
                </Link>
             );

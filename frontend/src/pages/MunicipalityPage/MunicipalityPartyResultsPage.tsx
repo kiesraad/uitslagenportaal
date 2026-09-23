@@ -57,7 +57,7 @@ export function MunicipalityPartyResultsPage() {
             ]}
          />
          <div className="page-main page-main-two-columns">
-            <div className="page-space-3">
+            <div className="flex flex-col gap-4 sm:gap-12">
                <PartyCandidatesResultsContent
                   voteCounts={region.vote_counts}
                   partySlug={partySlug}
