@@ -20,7 +20,7 @@ const electionConfig: ElectionConfig = {
 };
 
 describe("ResultsPageColumns", () => {
-   it("Shows the proces-verbaal stub on the Vite dev server", () => {
+   it("Shows the proces-verbaal source box", () => {
       const queryClient = new QueryClient({
          defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
       });
