@@ -36,7 +36,9 @@ class CSVOsv43Importer(BaseImporter):
         def read_header(f: IO) -> dict[str, str]:
             headers = {}
             for row in islice(csv.reader(f, delimiter=";"), 10):
-                if not row:
+                # Filter out empty cells
+                row = [c for c in row if c]
+                if len(row) < 2:
                     # Header block ends with empty row
                     break
                 headers[row[0]] = row[-1]
