@@ -178,7 +178,7 @@ function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: 
       <li className="col-span-3 grid grid-cols-subgrid odd:bg-blue-50">
          <Link
             to={to}
-            className="hover:no-underline! col-span-3 grid h-18 grid-cols-subgrid items-center px-6 hover:bg-blue-100"
+            className="hover:no-underline! col-span-3 grid min-h-18 grid-cols-subgrid items-center px-6 hover:bg-blue-100"
          >
             <span className={twMerge(listOption.stationNumber && "pr-2 font-light text-gray-700")}>
                {listOption.stationNumber}

@@ -6,7 +6,7 @@ export function HeroGrid() {
          <div className="flex justify-center pb-10 lg:pb-0 xl:pr-20">
             <img
                src="/images/homepage_img.webp"
-               alt="Home hero"
+               alt=""
                className="relative z-10 aspect-video max-h-80 w-full object-cover lg:aspect-11/12 lg:max-h-140 lg:max-w-2xl"
             />
          </div>

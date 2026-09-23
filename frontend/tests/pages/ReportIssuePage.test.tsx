@@ -70,14 +70,15 @@ describe("ReportIssuePage", () => {
    it("disables the report button when the deadline passes", () => {
       renderReportIssuePage({ ...electionConfig, issue_report_deadline: "2026-12-10T12:00:30+01:00" });
 
-      expect(screen.getByText("Meld een fout")).not.toHaveAttribute("aria-disabled", "true");
+      expect(screen.getByRole("link", { name: "Meld een fout (opent in nieuw venster)" })).toBeInTheDocument();
 
       act(() => {
          vi.advanceTimersByTime(30_000);
       });
 
       expect(screen.getByRole("heading", { name: "U kunt geen fout meer melden" })).toBeInTheDocument();
-      expect(screen.getByText("Meld een fout")).toHaveAttribute("aria-disabled", "true");
+      expect(screen.getByRole("button", { name: "Meld een fout" })).toBeDisabled();
+      expect(screen.queryByRole("link", { name: /Meld een fout/ })).not.toBeInTheDocument();
    });
 
    it("renders the deadline heading in English when that locale is active", () => {

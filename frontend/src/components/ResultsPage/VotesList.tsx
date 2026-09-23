@@ -30,7 +30,7 @@ export default function VotesList({ total, indexColumn, children }: PropsWithChi
             <ul className="col-span-4 grid grid-cols-subgrid">{children}</ul>
 
             {total && (
-               <div className="col-span-3 flex h-18 items-center justify-between py-3 pl-6 font-semibold">
+               <div className="col-span-3 flex min-h-18 items-center justify-between py-3 pl-6 font-semibold">
                   <span className="w-1 overflow-visible text-nowrap">{total.label}</span>
                   <span>{formatNumber(total.value)}</span>
                </div>
@@ -52,7 +52,7 @@ export function VotesListItem({ number, title, voteCount, href }: VotesListItemP
    const { formatNumber } = useFormatters();
 
    const className = twMerge(
-      "hover:no-underline! col-span-4 grid h-18 grid-cols-subgrid items-center pr-4 pl-6",
+      "hover:no-underline! col-span-4 grid min-h-18 grid-cols-subgrid items-center pr-4 pl-6",
       isClickable && "hover:bg-blue-100",
    );
 

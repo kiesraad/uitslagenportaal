@@ -25,7 +25,9 @@ export function NotFoundPage() {
                   </h2>
                   <ul className="m-0 flex list-none flex-col gap-2 p-0">
                      <li className="flex items-center gap-2">
-                        <span className="not-found-chevron">›</span>
+                        <span className="not-found-chevron" aria-hidden="true">
+                           ›
+                        </span>
                         <Link to={appRoutes.home()}>
                            <Trans>Homepage</Trans>
                         </Link>

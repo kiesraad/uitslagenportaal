@@ -5,6 +5,7 @@ import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRevalidator } from "react-router";
 import Button from "@/elements/Button.tsx";
+import { NewWindowHint } from "@/elements/ExternalLinkIcon.tsx";
 import KiesraadGridHexagon from "@/elements/KiesraadGridHexagon.tsx";
 import { type Locale, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
 import { electionConfigQuery, useElectionConfigs } from "../hooks/queries.ts";
@@ -99,6 +100,7 @@ export function Footer() {
                      <a href={REPORT_ERROR_URL} target="_blank" rel="noopener noreferrer">
                         <FontAwesomeIcon icon={faChevronRight} />
                         <Trans>Melding maken</Trans>
+                        <NewWindowHint />
                      </a>
                   </div>
                   <div className="footer-col">
@@ -107,17 +109,20 @@ export function Footer() {
                         <a href={countingInfoUrl} target="_blank" rel="noopener noreferrer">
                            <ExternalLinkIcon />
                            <Trans>Uitleg over telproces</Trans>
+                           <NewWindowHint />
                         </a>
                      )}
                      {votingUrl && (
                         <a href={votingUrl} target="_blank" rel="noopener noreferrer">
                            <ExternalLinkIcon />
                            <Trans>Stemmen</Trans>
+                           <NewWindowHint />
                         </a>
                      )}
                      <a href={KIESRAAD_URL} target="_blank" rel="noopener noreferrer">
                         <ExternalLinkIcon />
                         Kiesraad.nl
+                        <NewWindowHint />
                      </a>
                   </div>
                </div>

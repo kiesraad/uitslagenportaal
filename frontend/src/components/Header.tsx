@@ -14,8 +14,8 @@ export function Header() {
          </a>
          <header className="header">
             <div className="header-inner flex flex-row items-end">
-               <Link to="/" className="header-logo" aria-label={t`Naar homepage`}>
-                  <img src="/kiesraad_logo.png" alt="Kiesraad, naar home" className="header-logo-img" />
+               <Link to="/" className="header-logo">
+                  <img src="/kiesraad_logo.png" alt={t`Kiesraad, naar home`} className="header-logo-img" />
                </Link>
             </div>
          </header>

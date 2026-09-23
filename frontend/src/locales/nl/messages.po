@@ -13,6 +13,10 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/elements/ExternalLinkIcon.tsx
+msgid "(opent in nieuw venster)"
+msgstr "(opent in nieuw venster)"
+
 #. placeholder {0}: suggestions.length
 #: src/components/SearchBar.tsx
 msgid "{0, plural, =0 {Geen resultaten} one {# resultaat} other {# resultaten}}"
@@ -392,6 +396,10 @@ msgstr "Kieskring"
 msgid "Kieskringen"
 msgstr "Kieskringen"
 
+#: src/components/Header.tsx
+msgid "Kiesraad, naar home"
+msgstr "Kiesraad, naar home"
+
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Kiezerspassen"
 msgstr "Kiezerspassen"
@@ -434,10 +442,6 @@ msgstr "Meld een fout of iets dat niet klopt"
 #: src/components/Footer.tsx
 msgid "Melding maken"
 msgstr "Melding maken"
-
-#: src/components/Header.tsx
-msgid "Naar homepage"
-msgstr "Naar homepage"
 
 #: src/components/Header.tsx
 msgid "Naar hoofdinhoud"
