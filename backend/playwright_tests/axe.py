@@ -1,12 +1,37 @@
 """Run axe-core against the current Playwright page."""
 
+import json
+
 from playwright.sync_api import Page
 from pytest_playwright_axe import Axe
 
-# pytest-playwright-axe passes this through to axe.run() as JavaScript.
 # WCAG 2.1 AA is the legal bar; 2.2 A/AA tags come along in the same run.
-# "best-practice" is left out so the report maps to success criteria, not taste.
-_WCAG_RUN_ONLY = "{runOnly: {type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa']}}"
+_WCAG_TAGS = ("wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa")
+
+# "best-practice" as a whole is left out so the report maps to success criteria, not taste.
+# These single rules from it back a criterion or guard the page structure screen readers rely on;
+# "region" is left out as too noisy for new sections outside the landmarks.
+_BEST_PRACTICE_RULES = (
+    "heading-order",
+    "page-has-heading-one",
+    "empty-heading",
+    "landmark-one-main",
+    "skip-link",
+    "landmark-unique",
+    "scope-attr-valid",
+    "empty-table-header",
+    "aria-allowed-role",
+    "presentation-role-conflict",
+    "tabindex",
+)
+
+# pytest-playwright-axe passes this through to axe.run() as JavaScript, which JSON is.
+_AXE_OPTIONS = json.dumps(
+    {
+        "runOnly": {"type": "tag", "values": list(_WCAG_TAGS)},
+        "rules": {rule: {"enabled": True} for rule in _BEST_PRACTICE_RULES},
+    }
+)
 
 _MAX_NODES = 5
 
@@ -16,7 +41,7 @@ _axe = Axe(use_minified_file=True)
 def scan(page: Page) -> dict:
     return _axe.run(
         page,
-        options=_WCAG_RUN_ONLY,
+        options=_AXE_OPTIONS,
         html_report_generated=False,
         json_report_generated=False,
     )
