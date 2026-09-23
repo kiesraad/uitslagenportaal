@@ -153,11 +153,11 @@ def fake_osv43_csv(
 ) -> NamedBytesIO:
     """An OSV4-3 CSV shaped like the real exports: BOM, quoted, CRLF, header block ending in an empty row."""
     rows = [
-        f'"Verkiezing";;"{verkiezing}"',
-        '"Datum";;"2023-03-15"',
-        f'"Gebied";;"{gebied}"',
-        f'"Nummer";;"{nummer}"',
-        "",
+        f'"Verkiezing";;"{verkiezing}";;',
+        '"Datum";;"2023-03-15";;',
+        f'"Gebied";;"{gebied}";;',
+        f'"Nummer";;"{nummer}";;',
+        ";;",
         body,
     ]
     return NamedBytesIO("\r\n".join(rows).encode("utf-8-sig"), filename)

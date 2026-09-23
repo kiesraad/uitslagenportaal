@@ -30,8 +30,7 @@ export function getRegions(
       );
    }
 
-   const url = new URL("/api/regions/", window.location.origin);
-   url.searchParams.append("election_config", electionConfigSlug);
+   const url = new URL(`/api/${electionConfigSlug}/regions/`, window.location.origin);
    if (parentRegionSlug) {
       url.searchParams.append("parent_region", parentRegionSlug);
    }
@@ -58,9 +57,7 @@ export function getRegion(
       throw new Error("getRegion: electionConfigSlug, regionSlug and level are required.");
    }
 
-   const url = new URL("/api/region/", window.location.origin);
-   url.searchParams.append("election_config", electionConfigSlug);
-   url.searchParams.append("region", regionSlug);
+   const url = new URL(`/api/${electionConfigSlug}/regions/${regionSlug}`, window.location.origin);
    url.searchParams.append("level", level);
    if (csbSlug) {
       url.searchParams.append("csb", csbSlug);

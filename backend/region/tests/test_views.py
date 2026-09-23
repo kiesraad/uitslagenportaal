@@ -4,7 +4,7 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 
-from election.models import VoteCount, VoterTurnoutCount
+from election.models import ElectionCategory, VoteCount, VoterTurnoutCount
 from election.tests.factories import ContestFactory, ElectionFactory
 from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
@@ -16,24 +16,28 @@ from region.views import RegionDetailView, RegionListView
 factory = APIRequestFactory()
 
 
-@pytest.mark.django_db
-def test_region_list_requires_election_config_query_param():
-    request = factory.get("/api/regions/")
+def list_regions(election, params):
+    slug = election.election_config.slug
+    request = factory.get(f"/api/{slug}/regions/", params)
+    return RegionListView.as_view()(request, election_config=slug)
 
-    response = RegionListView.as_view()(request)
+
+def get_region(election, region_slug, params):
+    slug = election.election_config.slug
+    request = factory.get(f"/api/{slug}/regions/{region_slug}", params)
+    return RegionDetailView.as_view()(request, election_config=slug, region=region_slug)
+
+
+@pytest.mark.django_db
+def test_region_list_requires_a_filter():
+    response = list_regions(ElectionFactory(), {})
 
     assert response.status_code == 400
 
 
 @pytest.mark.django_db
 def test_region_list_rejects_unknown_region_category():
-    election = ElectionFactory()
-    request = factory.get(
-        "/api/regions/",
-        {"election_config": election.election_config.slug, "region_category": "NOT_A_CATEGORY"},
-    )
-
-    response = RegionListView.as_view()(request)
+    response = list_regions(ElectionFactory(), {"region_category": "NOT_A_CATEGORY"})
 
     assert response.status_code == 400
 
@@ -45,12 +49,7 @@ def test_region_list_filters_by_election_config_and_region_category():
     RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Alpha")
     RegionFactory(election=election, region_category=RegionCategory.WATERSCHAP)
 
-    request = factory.get(
-        "/api/regions/",
-        {"election_config": election.election_config.slug, "region_category": RegionCategory.GEMEENTE},
-    )
-
-    response = RegionListView.as_view()(request)
+    response = list_regions(election, {"region_category": RegionCategory.GEMEENTE})
 
     assert response.status_code == 200
     names = [region["region_name"] for region in response.data]
@@ -108,15 +107,7 @@ def test_region_list_filters_gemeentes_by_csb():
         region_name="Breda",
     )
 
-    request = factory.get(
-        "/api/regions/",
-        {
-            "election_config": election.election_config.slug,
-            "region_category": RegionCategory.GEMEENTE,
-            "csb": waterschap_a.slug,
-        },
-    )
-    response = RegionListView.as_view()(request)
+    response = list_regions(election, {"region_category": RegionCategory.GEMEENTE, "csb": waterschap_a.slug})
 
     assert response.status_code == 200
     names = [region["region_name"] for region in response.data]
@@ -124,23 +115,8 @@ def test_region_list_filters_gemeentes_by_csb():
 
 
 @pytest.mark.django_db
-def test_region_detail_requires_query_params():
-    request = factory.get("/api/region/")
-
-    response = RegionDetailView.as_view()(request)
-
-    assert response.status_code == 400
-
-
-@pytest.mark.django_db
 def test_region_detail_requires_reporting_level():
-    election = ElectionFactory()
-    request = factory.get(
-        "/api/region/",
-        {"election_config": election.election_config.slug, "region": "anywhere"},
-    )
-
-    response = RegionDetailView.as_view()(request)
+    response = get_region(ElectionFactory(), "anywhere", {})
 
     assert response.status_code == 400
     assert "level" in response.data
@@ -148,35 +124,31 @@ def test_region_detail_requires_reporting_level():
 
 @pytest.mark.django_db
 def test_region_detail_returns_404_for_nonexistent_region():
-    election = ElectionFactory()
-    request = factory.get(
-        "/api/region/",
-        {"election_config": election.election_config.slug, "region": "does-not-exist", "level": "gsb"},
-    )
-
-    response = RegionDetailView.as_view()(request)
+    response = get_region(ElectionFactory(), "does-not-exist", {"level": "gsb"})
 
     assert response.status_code == 404
     assert response.data["detail"] == "Region not found for this election."
 
 
+@pytest.mark.django_db
+def test_csb_region_detail_returns_404_for_unknown_election_config():
+    request = factory.get("/api/unknown/regions/anywhere", {"level": "csb"})
+
+    response = RegionDetailView.as_view()(request, election_config="unknown", region="anywhere")
+
+    assert response.status_code == 404
+
+
 def region_detail(region, level):
-    request = factory.get(
-        "/api/region/",
-        {
-            "election_config": region.election.election_config.slug,
-            "region": region.slug,
-            "level": level,
-        },
-    )
-    response = RegionDetailView.as_view()(request)
+    response = get_region(region.election, region.slug, {"level": level})
     assert response.status_code == 200
     return response.data
 
 
 @pytest.mark.django_db
 def test_gsb_returns_510b_and_csb_returns_510d_for_the_same_region():
-    contest = ContestFactory()
+    # A gemeente is only the CSB in a gemeenteraadsverkiezing.
+    contest = ContestFactory(election__election_config__category=ElectionCategory.GR.value)
     party = PartyFactory(election=contest.election)
     region = RegionFactory(election=contest.election, region_category=RegionCategory.GEMEENTE)
     VoteCount.objects.create(
@@ -322,23 +294,10 @@ def test_region_detail_disambiguates_by_parent_region():
         slug="SB1-basisschool",
     )
 
-    ambiguous_request = factory.get(
-        "/api/region/",
-        {"election_config": election.election_config.slug, "region": "SB1-basisschool", "level": "gsb"},
-    )
-    ambiguous_response = RegionDetailView.as_view()(ambiguous_request)
+    ambiguous_response = get_region(election, "SB1-basisschool", {"level": "sb"})
     assert ambiguous_response.status_code == 400
 
-    request = factory.get(
-        "/api/region/",
-        {
-            "election_config": election.election_config.slug,
-            "region": "SB1-basisschool",
-            "parent_region": "bergen",
-            "level": "gsb",
-        },
-    )
-    response = RegionDetailView.as_view()(request)
+    response = get_region(election, "SB1-basisschool", {"parent_region": "bergen", "level": "sb"})
 
     assert response.status_code == 200
     assert response.data["region_name"] == "School Bergen"
@@ -385,17 +344,9 @@ def test_region_detail_disambiguates_waterschap_polling_station_by_csb_and_paren
         slug="SB1-soosgebouw-dn-dissel",
     )
 
-    request = factory.get(
-        "/api/region/",
-        {
-            "election_config": election.election_config.slug,
-            "region": stembureau.slug,
-            "parent_region": gemeente.slug,
-            "csb": waterschap.slug,
-            "level": "gsb",
-        },
+    response = get_region(
+        election, stembureau.slug, {"parent_region": gemeente.slug, "csb": waterschap.slug, "level": "sb"}
     )
-    response = RegionDetailView.as_view()(request)
 
     assert response.status_code == 200
     assert response.data["region_name"] == stembureau.region_name
@@ -412,11 +363,7 @@ def test_region_list_is_empty_for_an_expired_election():
     election = ElectionFactory(election_config__identifier="GR2026", election_config__date=started)
     RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Amstelveen")
 
-    request = factory.get(
-        "/api/regions/",
-        {"election_config": election.election_config.slug, "region_category": RegionCategory.GEMEENTE},
-    )
-    response = RegionListView.as_view()(request)
+    response = list_regions(election, {"region_category": RegionCategory.GEMEENTE})
 
     assert response.status_code == 200
     assert list(response.data) == []
@@ -449,15 +396,7 @@ def test_region_list_has_own_results_excludes_kieskring_without_its_own_totaalte
         eml_type=EmlType.EML_510d,
     )
 
-    request = factory.get(
-        "/api/regions/",
-        {
-            "election_config": election.election_config.slug,
-            "region_category": RegionCategory.KIESKRING,
-            "has_own_results": "true",
-        },
-    )
-    response = RegionListView.as_view()(request)
+    response = list_regions(election, {"region_category": RegionCategory.KIESKRING, "has_own_results": "true"})
 
     assert response.status_code == 200
     assert [region["region_name"] for region in response.data] == ["Amsterdam"]
@@ -465,16 +404,8 @@ def test_region_list_has_own_results_excludes_kieskring_without_its_own_totaalte
 
 @pytest.mark.django_db
 def test_region_list_has_own_results_requires_a_supported_region_category():
-    election = ElectionFactory()
-
-    request = factory.get(
-        "/api/regions/",
-        {
-            "election_config": election.election_config.slug,
-            "region_category": RegionCategory.STEMBUREAU,
-            "has_own_results": "true",
-        },
+    response = list_regions(
+        ElectionFactory(), {"region_category": RegionCategory.STEMBUREAU, "has_own_results": "true"}
     )
-    response = RegionListView.as_view()(request)
 
     assert response.status_code == 400
