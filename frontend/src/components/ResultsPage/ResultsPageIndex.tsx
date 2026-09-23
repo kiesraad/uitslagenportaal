@@ -13,7 +13,7 @@ export default function ResultsPageIndex({ variant = "full" }: Props) {
    const telresultatenLink = {
       label: (
          <Trans>
-            <span className="font-semibold">Telresultaten</span> zoals ze meetellen in de officiele uitslag
+            <span className="font-semibold">Telresultaten</span> zoals ze meetellen in de officiële uitslag
          </Trans>
       ),
       url: "#telresultaten",

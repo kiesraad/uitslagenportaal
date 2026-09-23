@@ -156,6 +156,11 @@ h4,
    height: 32px;
 }
 
+/* RouteFocus focuses the h1 after navigation; it is not an interactive element. */
+main h1:focus {
+   outline: none;
+}
+
 /* Wrapper */
 .platform-layout-main {
    flex: 1;
@@ -333,8 +338,9 @@ h4,
    color: #adb5bd;
 }
 
-.search-input:focus {
-   border-color: var(--c-blue);
+.search-input:focus-visible {
+   outline: 2px solid var(--c-blue);
+   outline-offset: 2px;
 }
 
 .search-box {

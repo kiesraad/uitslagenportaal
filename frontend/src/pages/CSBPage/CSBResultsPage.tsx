@@ -47,7 +47,7 @@ export function CSBResultsPage() {
    const regionWithArticle = t(regionLabels.withArticle);
 
    return (
-      <LayoutMain title={t`Resultaten`}>
+      <LayoutMain title={t`Telresultaten ${regionType} ${regionName}`}>
          <PageTop
             title={t`${regionType} - ${regionName}`}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}

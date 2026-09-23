@@ -41,8 +41,8 @@ msgid "{regionType} - {regionName}"
 msgstr "{regionType} - {regionName}"
 
 #: src/components/ResultsPage/ResultsPageIndex.tsx
-msgid "<0>Telresultaten</0> zoals ze meetellen in de officiele uitslag"
-msgstr "<0>Telresultaten</0> zoals ze meetellen in de officiele uitslag"
+msgid "<0>Telresultaten</0> zoals ze meetellen in de officiële uitslag"
+msgstr "<0>Telresultaten</0> zoals ze meetellen in de officiële uitslag"
 
 #: src/components/ResultsPage/ResultsPageIndex.tsx
 msgid "<0>Uitleg</0> hoe deze resultaten tot stand zijn gekomen"
@@ -418,6 +418,14 @@ msgstr "Meld een fout of iets dat niet klopt"
 msgid "Melding maken"
 msgstr "Melding maken"
 
+#: src/components/Header.tsx
+msgid "Naar homepage"
+msgstr "Naar homepage"
+
+#: src/components/Header.tsx
+msgid "Naar hoofdinhoud"
+msgstr "Naar hoofdinhoud"
+
 #: src/pages/ReportIssuePage.tsx
 msgid "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is. Als dat nodig is, nemen we contact op met de gemeente of het stembureau. In sommige gevallen kan er een hertelling plaatsvinden. Als blijkt dat er inderdaad een fout is gemaakt, bijvoorbeeld bij het tellen van de stemmen, dan wordt die fout hersteld. De correctie wordt vastgelegd in een corrigendum en openbaar gemaakt door dit te publiceren. Je ontvangt geen persoonlijk bericht over wat er met je melding is gedaan."
 msgstr "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is. Als dat nodig is, nemen we contact op met de gemeente of het stembureau. In sommige gevallen kan er een hertelling plaatsvinden. Als blijkt dat er inderdaad een fout is gemaakt, bijvoorbeeld bij het tellen van de stemmen, dan wordt die fout hersteld. De correctie wordt vastgelegd in een corrigendum en openbaar gemaakt door dit te publiceren. Je ontvangt geen persoonlijk bericht over wat er met je melding is gedaan."
@@ -506,13 +514,6 @@ msgstr "Regio"
 msgid "Regio's"
 msgstr "Regio's"
 
-#: src/pages/CSBPage/CSBPartyResultsPage.tsx
-#: src/pages/CSBPage/CSBResultsPage.tsx
-#: src/pages/HSBPage/HSBPartyResultsPage.tsx
-#: src/pages/HSBPage/HSBResultsPage.tsx
-msgid "Resultaten"
-msgstr "Resultaten"
-
 #: src/pages/MunicipalityPage/MunicipalityResultsPage.tsx
 msgid "Resultaten {municipalityTitle}"
 msgstr "Resultaten {municipalityTitle}"
@@ -549,6 +550,14 @@ msgstr "Stembureaus"
 msgid "Stemmen"
 msgstr "Stemmen"
 
+#: src/pages/HSBPage/HSBPartyResultsPage.tsx
+msgid "Stemmen per kandidaat per gemeente"
+msgstr "Stemmen per kandidaat per gemeente"
+
+#: src/pages/CSBPage/CSBPartyResultsPage.tsx
+msgid "Stemmen per kandidaat per kieskring"
+msgstr "Stemmen per kandidaat per kieskring"
+
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Stempassen"
 msgstr "Stempassen"
@@ -567,16 +576,27 @@ msgstr "Telresultaten {electionLabel}"
 
 #: src/pages/CSBPage/CSBPartyResultsPage.tsx
 #: src/pages/HSBPage/HSBPartyResultsPage.tsx
+msgid "Telresultaten {partyName} – {regionType} {regionName}"
+msgstr "Telresultaten {partyName} – {regionType} {regionName}"
+
+#: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
+msgid "Telresultaten {partyName} – gemeente {regionName}"
+msgstr "Telresultaten {partyName} – gemeente {regionName}"
+
+#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
+msgid "Telresultaten {partyName} – stembureau {stationName}"
+msgstr "Telresultaten {partyName} – stembureau {stationName}"
+
+#: src/pages/CSBPage/CSBPartyResultsPage.tsx
+#: src/pages/CSBPage/CSBResultsPage.tsx
+#: src/pages/HSBPage/HSBPartyResultsPage.tsx
+#: src/pages/HSBPage/HSBResultsPage.tsx
 msgid "Telresultaten {regionType} {regionName}"
 msgstr "Telresultaten {regionType} {regionName}"
 
 #: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
 msgid "Telresultaten gemeente"
 msgstr "Telresultaten gemeente"
-
-#: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
-msgid "Telresultaten gemeente – {regionName}"
-msgstr "Telresultaten gemeente – {regionName}"
 
 #: src/components/ResultsPage/PartyCandidatesResultsContent.tsx
 #: src/pages/CSBPage/CSBPartyResultsPage.tsx
@@ -589,7 +609,6 @@ msgstr "Telresultaten lijst {listNumber}"
 msgid "Telresultaten stembureau"
 msgstr "Telresultaten stembureau"
 
-#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
 msgid "Telresultaten stembureau – {stationName}"
 msgstr "Telresultaten stembureau – {stationName}"

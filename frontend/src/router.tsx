@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { createBrowserRouter, type LazyRouteFunction, Outlet, type RouteObject, ScrollRestoration } from "react-router";
 import { BaseLayout } from "@/components/BaseLayout.tsx";
+import { RouteFocus } from "@/components/RouteFocus.tsx";
 import ErrorBoundaryPage from "@/pages/ErrorBoundaryPage.tsx";
 import LoadingPage from "@/pages/LoadingPage.tsx";
 import { localeLoader } from "./i18n";
@@ -13,6 +14,7 @@ function RootLayout() {
    return (
       <>
          <ScrollRestoration />
+         <RouteFocus />
          <Suspense fallback={<LoadingPage />}>
             <BaseLayout>
                <Outlet />
