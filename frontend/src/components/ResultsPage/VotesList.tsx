@@ -27,7 +27,7 @@ export default function VotesList({ total, indexColumn, children }: PropsWithChi
                   <Trans>Aantal stemmen</Trans>
                </span>
             </div>
-            {children}
+            <ul className="col-span-4 grid grid-cols-subgrid">{children}</ul>
 
             {total && (
                <div className="col-span-3 flex h-18 items-center justify-between py-3 pl-6 font-semibold">
@@ -52,13 +52,17 @@ export function VotesListItem({ number, title, voteCount, href }: VotesListItemP
    const { formatNumber } = useFormatters();
 
    const className = twMerge(
-      "hover:no-underline! col-span-4 grid h-18 grid-cols-subgrid items-center pr-4 pl-6 even:bg-blue-50",
+      "hover:no-underline! col-span-4 grid h-18 grid-cols-subgrid items-center pr-4 pl-6",
       isClickable && "hover:bg-blue-100",
    );
 
    const content = (
       <>
-         <span className="font-light text-gray-700">{number ?? "-"}</span>
+         <span className="font-light text-gray-700">
+            {number ?? "-"}
+            {/* Grid items have no whitespace between them, so screen readers would glue the number to the name. */}
+            <span className="sr-only">&nbsp;</span>
+         </span>
          <span className="in-[a]:text-blue-500 in-[a]:underline">{title}</span>
          <span className={twMerge("text-right font-number", voteCount && "font-semibold text-gray-700")}>
             {voteCount ? formatNumber(voteCount) : "–"}
@@ -67,11 +71,15 @@ export function VotesListItem({ number, title, voteCount, href }: VotesListItemP
       </>
    );
 
-   return isClickable ? (
-      <Link to={href} className={className}>
-         {content}
-      </Link>
-   ) : (
-      <div className={className}>{content}</div>
+   return (
+      <li className="col-span-4 grid grid-cols-subgrid odd:bg-blue-50">
+         {isClickable ? (
+            <Link to={href} className={className}>
+               {content}
+            </Link>
+         ) : (
+            <div className={className}>{content}</div>
+         )}
+      </li>
    );
 }

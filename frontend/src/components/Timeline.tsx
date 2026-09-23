@@ -1,5 +1,7 @@
 import { faCheck, faFile } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import ReactMarkdown from "react-markdown";
 import type { LocalizedText } from "../api/types";
@@ -24,26 +26,37 @@ export interface TimelineEntry {
 type Props = {
    entries: TimelineEntry[];
 };
+
+// The marker shows the status visually; this is the text screen readers get instead.
+const STATUS_LABELS: Record<TimelineEntryStatus, MessageDescriptor> = (() => ({
+   done: msg`afgerond`,
+   "in-progress": msg`bezig`,
+   pending: msg`nog niet gestart`,
+}))();
 export default function Timeline({ entries }: Props) {
    const { formatTimelineDate } = useFormatters();
    const { i18n } = useLingui();
    const locale = resolveLocale(i18n.locale);
 
    return (
-      <div className="timeline">
+      <ol className="timeline">
          {entries.map((entry, i) => (
-            <div key={entry.title[locale]} className={`timeline-item`}>
+            <li key={entry.title[locale]} className={`timeline-item`}>
                <div
+                  aria-hidden="true"
                   className={`timeline-line ${entry.status} ${entry.status === "done" ? "border-solid" : "border-dashed"} ${entries.length === i + 1 ? "last" : ""}`}
                ></div>
-               <div className={"tl-marker-container"}>
+               <div className={"tl-marker-container"} aria-hidden="true">
                   <div className={`tl-marker ${entry.status}`}>
                      <div className={`${entry.status}-layer-1`}></div>
                      {entry.status === "done" ? <FontAwesomeIcon icon={faCheck} /> : null}
                   </div>
                </div>
                <div className="tl-body">
-                  <div className="tl-title">{entry.title[locale]}</div>
+                  <h3 className="tl-title">
+                     {entry.title[locale]}
+                     <span className="sr-only">, {i18n._(STATUS_LABELS[entry.status])}</span>
+                  </h3>
                   <div className="tl-date">{formatTimelineDate(entry.date)}</div>
                   <div className="tl-desc">
                      <ReactMarkdown>{entry.body[locale]}</ReactMarkdown>
@@ -69,8 +82,8 @@ export default function Timeline({ entries }: Props) {
                      </div>
                   ) : null}
                </div>
-            </div>
+            </li>
          ))}
-      </div>
+      </ol>
    );
 }

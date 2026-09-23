@@ -93,16 +93,16 @@ export function Footer() {
                </div>
                <div className="footer-right">
                   <div className="footer-col">
-                     <h4>
+                     <h2 className="h4">
                         <Trans>Zie je een fout op de pagina?</Trans>
-                     </h4>
+                     </h2>
                      <a href={REPORT_ERROR_URL} target="_blank" rel="noopener noreferrer">
                         <FontAwesomeIcon icon={faChevronRight} />
                         <Trans>Melding maken</Trans>
                      </a>
                   </div>
                   <div className="footer-col">
-                     {label && <h4>{label}</h4>}
+                     {label && <h2 className="h4">{label}</h2>}
                      {countingInfoUrl && (
                         <a href={countingInfoUrl} target="_blank" rel="noopener noreferrer">
                            <ExternalLinkIcon />

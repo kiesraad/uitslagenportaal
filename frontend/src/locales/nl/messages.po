@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: suggestions.length
+#: src/components/SearchBar.tsx
+msgid "{0, plural, =0 {Geen resultaten} one {# resultaat} other {# resultaten}}"
+msgstr "{0, plural, =0 {Geen resultaten} one {# resultaat} other {# resultaten}}"
+
 #. placeholder {0}: sortedPollingStations.length
 #: src/components/ListPage/RegionList.tsx
 msgid "{0, plural, one {# stembureau in {regionTitle}} other {# stembureaus in {regionTitle}}}"
@@ -52,6 +57,10 @@ msgstr "<0>Uitleg</0> hoe deze resultaten tot stand zijn gekomen"
 msgid "Aantal stemmen"
 msgstr "Aantal stemmen"
 
+#: src/components/Timeline.tsx
+msgid "afgerond"
+msgstr "afgerond"
+
 #: src/pages/HomePage.tsx
 msgid "Bekijk de tellingen per stembureau voor {electionLabel}"
 msgstr "Bekijk de tellingen per stembureau voor {electionLabel}"
@@ -74,6 +83,10 @@ msgstr "Bekijk de telresultaten per kieskring van de {electionLabel}."
 #: src/pages/HomePage.tsx
 msgid "Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?"
 msgstr "Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?"
+
+#: src/components/Timeline.tsx
+msgid "bezig"
+msgstr "bezig"
 
 #: src/components/SearchBar.tsx
 msgid "Bijv. {regionSingular}"
@@ -391,6 +404,10 @@ msgstr "Klik op een lijst om de stemmen per kandidaat te zien"
 msgid "Klopt er iets niet?"
 msgstr "Klopt er iets niet?"
 
+#: src/components/Breadcrumbs.tsx
+msgid "Kruimelpad"
+msgstr "Kruimelpad"
+
 #: src/components/ResultsPage/ResultsTimeline.tsx
 msgid "Laatste stap bovenaan"
 msgstr "Laatste stap bovenaan"
@@ -429,6 +446,10 @@ msgstr "Naar hoofdinhoud"
 #: src/pages/ReportIssuePage.tsx
 msgid "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is. Als dat nodig is, nemen we contact op met de gemeente of het stembureau. In sommige gevallen kan er een hertelling plaatsvinden. Als blijkt dat er inderdaad een fout is gemaakt, bijvoorbeeld bij het tellen van de stemmen, dan wordt die fout hersteld. De correctie wordt vastgelegd in een corrigendum en openbaar gemaakt door dit te publiceren. Je ontvangt geen persoonlijk bericht over wat er met je melding is gedaan."
 msgstr "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is. Als dat nodig is, nemen we contact op met de gemeente of het stembureau. In sommige gevallen kan er een hertelling plaatsvinden. Als blijkt dat er inderdaad een fout is gemaakt, bijvoorbeeld bij het tellen van de stemmen, dan wordt die fout hersteld. De correctie wordt vastgelegd in een corrigendum en openbaar gemaakt door dit te publiceren. Je ontvangt geen persoonlijk bericht over wat er met je melding is gedaan."
+
+#: src/components/Timeline.tsx
+msgid "nog niet gestart"
+msgstr "nog niet gestart"
 
 #: src/pages/CSBPage/CSBResultsPage.tsx
 #: src/pages/HSBPage/HSBResultsPage.tsx
@@ -679,6 +700,10 @@ msgstr "Vermeld geen persoonsgegevens in uw melding; dat is niet nodig."
 msgid "Vind een {regionInline} van A tot Z"
 msgstr "Vind een {regionInline} van A tot Z"
 
+#: src/components/ResultsPage/ResultsTimeline.tsx
+msgid "Volgorde omdraaien, nu:"
+msgstr "Volgorde omdraaien, nu:"
+
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Volmachtbewijzen"
 msgstr "Volmachtbewijzen"
@@ -698,6 +723,10 @@ msgstr "Waterschap"
 #: src/utils/region.ts
 msgid "Waterschappen"
 msgstr "Waterschappen"
+
+#: src/components/SharedTabs.tsx
+msgid "Weergave"
+msgstr "Weergave"
 
 #: src/components/Footer.tsx
 msgid "Zie je een fout op de pagina?"

@@ -53,7 +53,9 @@ export default function PartyVoteMatrixTable({ matrix, caption }: Props) {
                         className="border-gray-200 border-r bg-inherit text-left font-normal sm:sticky sm:left-0"
                      >
                         <div className="flex items-center sm:gap-3.5">
-                           <span className="min-w-6 text-gray-500">{candidate.position}</span>
+                           <span className="min-w-6 text-gray-500" aria-hidden="true">
+                              {candidate.position}
+                           </span>
                            <span>{formatCandidateName(candidate)}</span>
                         </div>
                      </th>

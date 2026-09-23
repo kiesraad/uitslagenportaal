@@ -1,6 +1,6 @@
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useLingui } from "@lingui/react/macro";
+import { Plural, useLingui } from "@lingui/react/macro";
 import { type ChangeEvent, type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 
@@ -69,8 +69,9 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
    const [query, setQuery] = useState("");
    const [activeIndex, setActiveIndex] = useState(-1);
    const [open, setOpen] = useState(false);
-   const listRef = useRef<HTMLUListElement>(null);
+   const listRef = useRef<HTMLDivElement>(null);
    const suggestionsId = `${inputId}-suggestions`;
+   const labelId = `${inputId}-label`;
 
    const suggestions = useMemo(() => {
       const normalizedQuery = query.trim().toLowerCase();
@@ -144,7 +145,7 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
 
    return (
       <>
-         <label className="search-label" htmlFor={inputId}>
+         <label id={labelId} className="search-label" htmlFor={inputId}>
             {label}
          </label>
          <div className="search-row">
@@ -160,30 +161,46 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
                   onKeyDown={handleKeyDown}
                   onBlur={() => setTimeout(() => setOpen(false), 150)}
                   onFocus={() => suggestions.length > 0 && setOpen(true)}
+                  role="combobox"
+                  aria-expanded={isOpen}
                   aria-autocomplete="list"
                   aria-controls={isOpen ? suggestionsId : undefined}
                   aria-activedescendant={activeIndex >= 0 ? `${suggestionsId}-${activeIndex}` : undefined}
                />
                {isOpen && (
-                  <ul id={suggestionsId} ref={listRef} className="search-suggestions">
+                  <div
+                     id={suggestionsId}
+                     ref={listRef}
+                     role="listbox"
+                     aria-labelledby={labelId}
+                     className="search-suggestions"
+                  >
                      {suggestions.map((option, index) => (
-                        // biome-ignore lint/a11y/noNoninteractiveElementInteractions: Will be fixed in #205
-                        <li
+                        <div
                            key={`${option.id}-${option.csbSlug ?? ""}`}
                            id={`${suggestionsId}-${index}`}
+                           role="option"
+                           aria-selected={index === activeIndex}
+                           tabIndex={-1}
                            className={twMerge("search-suggestion-item", index === activeIndex && "active")}
                            onMouseDown={() => selectOption(option)}
                            onMouseEnter={() => setActiveIndex(index)}
                         >
                            {option.content ?? option.label}
-                        </li>
+                        </div>
                      ))}
-                  </ul>
+                  </div>
                )}
             </div>
             <button className="search-btn" type="button" aria-label={t`Zoeken`} onClick={handleSubmit}>
-               <FontAwesomeIcon icon={faMagnifyingGlass} style={{}} />
+               <FontAwesomeIcon icon={faMagnifyingGlass} />
             </button>
+            {/* Rendered always, so screen readers pick up changes to its text. */}
+            <div role="status" className="sr-only">
+               {open && query.trim().length > 0 && (
+                  <Plural value={suggestions.length} _0="Geen resultaten" one="# resultaat" other="# resultaten" />
+               )}
+            </div>
             {children}
          </div>
       </>

@@ -617,7 +617,9 @@ main h1:focus {
 }
 
 .tl-title {
+   font-family: var(--f-body);
    font-size: 1.1rem;
+   line-height: 1.5;
    font-weight: 700;
    color: var(--c-text);
    margin-bottom: 2px;
@@ -915,7 +917,7 @@ main h1:focus {
    min-height: 148px;
 }
 
-.footer-col h4 {
+.footer-col h2 {
    font-size: 1rem;
    font-weight: 700;
    color: var(--c-white);

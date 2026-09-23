@@ -81,7 +81,7 @@ export function ReportIssuePage() {
             </p>
 
             <InfoBox>
-               <h4 className="font-bold">{heading}</h4>
+               <h2 className="h4 font-bold">{heading}</h2>
                <p>
                   <Trans>
                      Een melding aan het centraal stembureau kan van {opensAt} tot {closesAt} (uiterlijk 48 uur voor de

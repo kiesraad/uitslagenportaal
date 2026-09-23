@@ -93,7 +93,7 @@ def test_unpublished_gemeente_has_no_axe_violations(page: Page):
 def test_gemeente_search_suggestions_have_no_axe_violations(page: Page):
     page.goto("/ab2023/gsb")
     page.get_by_label("Zoek gemeente").fill("Borsele")
-    expect(page.get_by_role("listitem").filter(has_text="Borsele")).to_be_visible()
+    expect(page.get_by_role("option", name="Borsele")).to_be_visible()
     assert_no_axe_violations(page)
 
 

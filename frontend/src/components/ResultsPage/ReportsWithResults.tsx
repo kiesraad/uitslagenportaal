@@ -80,7 +80,7 @@ export default function ReportsWithResults({ title, subtitle, description, docum
    return (
       <div className={"results-reports"}>
          <h3 className={"results-reports-title mb-2"}>{title}</h3>
-         {subtitle && <h5 className={"results-reports-subtitle mb-3"}>{subtitle}</h5>}
+         {subtitle && <p className={"results-reports-subtitle mb-3"}>{subtitle}</p>}
          <p className={"results-reports-description mb-3"}>{description}</p>
          <div className={"results-reports-files"}>
             {files.map((file) => {
