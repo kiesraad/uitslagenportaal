@@ -11,7 +11,20 @@ from eml_import.utils.folder_pdf_file_handler import FolderPDFFileHanlder
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
 
-PDF_BYTES = b"%PDF-1.7 barneveld"
+
+def one_page_pdf(mark: bytes = b"a") -> bytes:
+    """A one-page PDF pdfium can open. `mark` only changes the bytes."""
+    return (
+        b"%PDF-1.4\n%"
+        + mark
+        + b"\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+        + b"2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n"
+        + b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\n"
+        + b"trailer<</Root 1 0 R>>\n%%EOF\n"
+    )
+
+
+PDF_BYTES = one_page_pdf()
 
 
 def write_pdf(folder: Path, name: str, content: bytes = PDF_BYTES) -> Path:
@@ -40,6 +53,8 @@ def test_imports_a_municipal_proces_verbaal_onto_the_gemeente(tmp_path):
     assert document.content_type == "application/pdf"
     assert document.size == len(PDF_BYTES)
     assert default_storage.open(document.storage_key).read() == PDF_BYTES
+    preview_key = Path(document.storage_key).with_suffix(".png").as_posix()
+    assert default_storage.open(preview_key).read().startswith(b"\x89PNG\r\n\x1a\n")
 
 
 @pytest.mark.django_db
@@ -52,10 +67,10 @@ def test_rejects_a_second_proces_verbaal_for_the_same_region_and_type(tmp_path):
         region_name="Barneveld",
         region_number="203",
     )
-    first = b"%PDF-1.7 first"
+    first = one_page_pdf(b"first")
     write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf", first)
     FolderPDFFileHanlder(tmp_path).run()
-    write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf", b"%PDF-1.7 replaced")
+    write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf", one_page_pdf(b"replaced"))
 
     with pytest.raises(IntegrityError):
         FolderPDFFileHanlder(tmp_path).run()

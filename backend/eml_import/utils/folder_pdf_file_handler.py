@@ -1,7 +1,10 @@
 import logging
+from io import BytesIO
 from pathlib import Path
 
+import pypdfium2 as pdfium
 from django.core.files import File
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import transaction
 
@@ -11,6 +14,9 @@ from mainsite.models import RegionCategory
 from region.models import Region
 
 logger = logging.getLogger(__name__)
+
+# The results box shows one page. Twice the PDF point size stays sharp at that width.
+_PREVIEW_SCALE = 2
 
 # P22 is the centraal stembureau; that region's category comes from the election.
 _REGION_CATEGORY_BY_FILE_TYPE = {
@@ -80,12 +86,31 @@ class FolderPDFFileHanlder:
                 f"Several {category} regions match {region_token!r} for election {config.identifier}"
             ) from None
 
+    def _preview_png(self, file: Path) -> bytes:
+        document = pdfium.PdfDocument(file)
+        try:
+            page = document[0]
+            bitmap = page.render(scale=_PREVIEW_SCALE)
+            try:
+                image = bitmap.to_pil()
+            finally:
+                bitmap.close()
+                page.close()
+        finally:
+            document.close()
+
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+        return buffer.getvalue()
+
     @transaction.atomic
     def _store(self, file: Path, election_id: str, region: Region, file_type: str) -> None:
+        preview = self._preview_png(file)
         storage_key = f"{election_id}/{file.name}"
 
         with file.open("rb") as handle:
             stored_key = default_storage.save(storage_key, File(handle))
+        default_storage.save(Path(stored_key).with_suffix(".png").as_posix(), ContentFile(preview))
 
         CertifiedElectionDocument.objects.create(
             region=region,
