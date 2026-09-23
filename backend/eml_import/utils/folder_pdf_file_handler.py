@@ -1,4 +1,27 @@
+import logging
 from pathlib import Path
+
+from django.core.files import File
+from django.core.files.storage import default_storage
+from django.db import transaction
+
+from election.models import CertifiedElectionDocument, ElectionCategory, ElectionConfig
+from eml_import.exceptions import EMLImporterException
+from mainsite.models import RegionCategory
+from region.models import Region
+
+logger = logging.getLogger(__name__)
+
+# P22 is the centraal stembureau; that region's category comes from the election.
+_REGION_CATEGORY_BY_FILE_TYPE = {
+    CertifiedElectionDocument.FileType.N10_1: RegionCategory.STEMBUREAU,
+    CertifiedElectionDocument.FileType.N10_2: RegionCategory.STEMBUREAU,
+    CertifiedElectionDocument.FileType.NA14_1: RegionCategory.STEMBUREAU,
+    CertifiedElectionDocument.FileType.NA31_1: RegionCategory.GEMEENTE,
+    CertifiedElectionDocument.FileType.NA31_2: RegionCategory.GEMEENTE,
+    CertifiedElectionDocument.FileType.NA14_2: RegionCategory.GEMEENTE,
+    CertifiedElectionDocument.FileType.O7: RegionCategory.KIESKRING,
+}
 
 
 class FolderPDFFileHanlder:
@@ -6,10 +29,68 @@ class FolderPDFFileHanlder:
         super().__init__()
         self.folder = folder
 
-    def _import_pv(self, file):
-        int
-
     def run(self):
         files = sorted(self.folder.rglob("*.pdf"))
         for file in files:
             self._import_pv(file)
+
+    def _import_pv(self, file: Path) -> None:
+        election_id, file_type, region_token = self._parse_filename(file)
+        config = self._election_config(election_id)
+        region = self._region(config, file_type, region_token)
+        self._store(file, config.identifier, region, file_type)
+        logger.info("Imported %s onto %s %s", file.name, region.region_category, region.region_name)
+
+    def _parse_filename(self, file: Path) -> tuple[str, str, str]:
+        parts = file.stem.split("_", 2)
+        if len(parts) != 3 or not all(parts):
+            raise EMLImporterException(f"{file.name} does not match {{election}}_{{file_type}}_{{region}}.pdf")
+        election_id, file_type, region_token = parts
+        if file_type not in CertifiedElectionDocument.FileType.values:
+            raise EMLImporterException(f"Unknown proces-verbaal type {file_type} in {file.name}")
+        return election_id, file_type, region_token
+
+    def _election_config(self, election_id: str) -> ElectionConfig:
+        try:
+            return ElectionConfig.with_expired.get(identifier=election_id)
+        except ElectionConfig.DoesNotExist:
+            raise EMLImporterException(f"Election {election_id} is not configured") from None
+
+    def _region_category(self, config: ElectionConfig, file_type: str) -> str:
+        if file_type in (CertifiedElectionDocument.FileType.P22_1, CertifiedElectionDocument.FileType.P22_2):
+            return ElectionCategory(config.category).config.csb
+        return _REGION_CATEGORY_BY_FILE_TYPE[file_type]
+
+    def _region(self, config: ElectionConfig, file_type: str, region_token: str) -> Region:
+        category = self._region_category(config, file_type)
+        # A stembureau number repeats in every gemeente; the stored id carries the gemeente (0203::SB1).
+        lookup = (
+            {"region_number": region_token} if category == RegionCategory.STEMBUREAU else {"region_name": region_token}
+        )
+        try:
+            return Region.objects.get(
+                election__election_config=config,
+                region_category=category,
+                **lookup,
+            )
+        except Region.DoesNotExist:
+            raise EMLImporterException(f"No {category} {region_token!r} for election {config.identifier}") from None
+        except Region.MultipleObjectsReturned:
+            raise EMLImporterException(
+                f"Several {category} regions match {region_token!r} for election {config.identifier}"
+            ) from None
+
+    @transaction.atomic
+    def _store(self, file: Path, election_id: str, region: Region, file_type: str) -> None:
+        storage_key = f"{election_id}/{file.name}"
+
+        with file.open("rb") as handle:
+            stored_key = default_storage.save(storage_key, File(handle))
+
+        CertifiedElectionDocument.objects.create(
+            region=region,
+            file_type=file_type,
+            storage_key=stored_key,
+            content_type="application/pdf",
+            size=file.stat().st_size,
+        )
