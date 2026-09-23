@@ -39,7 +39,7 @@ export type ElectionDocument = {
    file_type: string;
 };
 
-export type ReportingLevel = "gsb" | "hsb" | "csb";
+export type ReportingLevel = "gsb" | "hsb" | "csb" | "sb";
 
 export type RegionCategory = "STAAT" | "WATERSCHAP" | "KIESKRING" | "GEMEENTE" | "PROVINCIE" | "STEMBUREAU";
 

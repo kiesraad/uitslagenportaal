@@ -22,7 +22,7 @@ export function pollingStationLoader(queryClient: QueryClient) {
             csbSlug: params.csbSlug,
             parentRegionSlug: params.regionSlug,
          },
-         "gsb",
+         "sb",
       );
 
       await Promise.all([

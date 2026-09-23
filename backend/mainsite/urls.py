@@ -20,7 +20,7 @@ from django.urls import include, path
 
 urlpatterns = [
     path("api/", include("election.urls")),
-    path("api/", include("region.urls")),
+    path("api/<str:election_config>/regions/", include("region.urls")),
     path("api/", include("party.urls")),
     path("admin/", admin.site.urls),
 ]

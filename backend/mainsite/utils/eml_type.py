@@ -28,11 +28,13 @@ class ReportingLevel(TextChoices):
     GSB = "gsb"
     HSB = "hsb"
     CSB = "csb"
+    SB = "sb"
 
 
 # The reporting body, not the region's geography, decides which telling to show.
 # A GR gemeente is GSB on /gsb/ and CSB on /csb/; same row, different file.
 EML_TYPE_BY_REPORTING_LEVEL = {
+    ReportingLevel.SB: EmlType.EML_510b,
     ReportingLevel.GSB: EmlType.EML_510b,
     ReportingLevel.HSB: EmlType.EML_510c,
     ReportingLevel.CSB: EmlType.EML_510d,
