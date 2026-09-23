@@ -1,0 +1,78 @@
+# The Deployment and Service for monitoring-proxy; its nginx configuration and index page
+# are in monitoring-proxy-config.yaml.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitoring-proxy
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monitoring-proxy
+  template:
+    metadata:
+      labels:
+        app: monitoring-proxy
+      # The config is mounted with subPath, which a running pod never sees change, so a
+      # config edit has to roll the pod instead.
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/monitoring-proxy-config.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: nginx
+          # Unprivileged: nothing here needs root to bind a port, so it listens on 8080
+          # and the Service maps 80 onto it.
+          image: nginxinc/nginx-unprivileged:1.29-alpine
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ ALL ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+            - name: config
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: monitoring-proxy
+        # nginx writes its pid and request buffers here, and the root filesystem is
+        # read-only.
+        - name: tmp
+          emptyDir: { }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitoring-proxy
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: monitoring-proxy
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

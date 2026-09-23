@@ -1,0 +1,188 @@
+# monitoring-proxy: one entry point for everything in the monitoring namespace, so a
+# single port-forward reaches every UI:
+#
+#   kubectl -n monitoring port-forward svc/monitoring-proxy 9090:80
+#
+# Adding a service is one edit in this file — a location block and a line in the index.
+# Anything that cannot be told which path prefix it is served under issues root-relative
+# URLs that escape the prefix, and belongs on its own port-forward instead.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitoring-proxy
+  namespace: {{ .Release.Namespace }}
+data:
+  nginx.conf: |
+    worker_processes 1;
+    error_log /dev/stderr warn;
+    pid /tmp/nginx.pid;
+
+    events {
+      worker_connections 1024;
+    }
+
+    http {
+      include       /etc/nginx/mime.types;
+      access_log    /dev/stdout;
+
+      # The unprivileged image cannot write to /var/cache/nginx.
+      client_body_temp_path /tmp/client_temp;
+      proxy_temp_path       /tmp/proxy_temp;
+      fastcgi_temp_path     /tmp/fastcgi_temp;
+      uwsgi_temp_path       /tmp/uwsgi_temp;
+      scgi_temp_path        /tmp/scgi_temp;
+
+      # Named rather than given as an address, so nothing here is pinned to one cluster's
+      # DNS IP. This moves the startup dependency rather than removing it: nginx resolves
+      # this name once when it starts, but a cluster without DNS has already broken the
+      # pod, whereas any one of the services below may legitimately be absent.
+      resolver kube-dns.kube-system.svc.cluster.local valid=30s ipv6=off;
+
+      # Grafana's live channels are websockets. Upgrading only when the client asks
+      # keeps ordinary requests on a plain connection.
+      map $http_upgrade $connection_upgrade {
+        default upgrade;
+        ''      close;
+      }
+
+      server {
+        listen 8080;
+        server_name _;
+
+        # Grafana's live tail and Prometheus' longer queries both outlast the default.
+        proxy_read_timeout 300s;
+
+        # Set here only: a location with any proxy_set_header of its own inherits none of
+        # these. Host keeps the port the browser used, because Grafana rejects a POST whose
+        # Origin does not match it with "origin not allowed".
+        proxy_http_version 1.1;
+        proxy_set_header Host              $http_host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Connection        $connection_upgrade;
+
+        location = / {
+          root /usr/share/nginx/html;
+          try_files /index.html =404;
+        }
+
+        # Each backend serves under the same prefix it is reached by, so the original URI
+        # is forwarded unchanged and the backend's own links keep working.
+        #
+        # The upstream goes through a variable so it is looked up at request time, through
+        # the resolver above and its 30s cache. Written as a literal, nginx resolves it at
+        # startup and refuses to start at all if the service is missing — one absent
+        # component would take the healthy UIs down with it. A variable also switches off
+        # nginx's prefix substitution, which is why $request_uri is spelled out rather
+        # than left implicit. The names are fully qualified because nginx's own resolver
+        # ignores the search domains in /etc/resolv.conf.
+        location /grafana/ {
+          set $grafana kube-prometheus-stack-grafana.{{ .Release.Namespace }}.svc.cluster.local;
+          proxy_pass http://$grafana:80$request_uri;
+        }
+
+        location /prometheus/ {
+          set $prometheus kube-prometheus-stack-prometheus.{{ .Release.Namespace }}.svc.cluster.local;
+          proxy_pass http://$prometheus:9090$request_uri;
+        }
+
+        location /alertmanager/ {
+          set $alertmanager kube-prometheus-stack-alertmanager.{{ .Release.Namespace }}.svc.cluster.local;
+          proxy_pass http://$alertmanager:9093$request_uri;
+        }
+
+        # Reaching a service without its trailing slash is the common way to land on a
+        # page whose assets all resolve one level too high.
+        location = /grafana      { return 301 /grafana/; }
+        location = /prometheus   { return 301 /prometheus/; }
+        location = /alertmanager { return 301 /alertmanager/; }
+      }
+    }
+
+  index.html: |
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Uitslagenportaal monitoring</title>
+      <style>
+        :root {
+          color-scheme: light dark;
+        }
+
+        body {
+          font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+          line-height: 1.5;
+          margin: 0 auto;
+          max-width: 40rem;
+          padding: 3rem 1.5rem;
+        }
+
+        h1 {
+          font-size: 1.5rem;
+          margin-bottom: 0.25rem;
+        }
+
+        p.lede {
+          margin-top: 0;
+          opacity: 0.7;
+        }
+
+        ul {
+          list-style: none;
+          padding: 0;
+        }
+
+        li {
+          border-top: 1px solid rgba(128, 128, 128, 0.3);
+        }
+
+        a {
+          display: block;
+          padding: 0.9rem 0;
+          text-decoration: none;
+          color: #01689b;
+        }
+
+        a:hover {
+          text-decoration: underline;
+        }
+
+        strong {
+          display: block;
+        }
+
+        span {
+          opacity: 0.7;
+          font-size: 0.9rem;
+        }
+      </style>
+    </head>
+    <body>
+    <h1>Uitslagenportaal monitoring</h1>
+    <p class="lede">Everything in the monitoring namespace, behind one port-forward.</p>
+    <ul>
+      <li>
+        <a href="/grafana/">
+          <strong>Grafana</strong>
+          <span>Dashboards, and log search through Loki</span>
+        </a>
+      </li>
+      <li>
+        <a href="/prometheus/">
+          <strong>Prometheus</strong>
+          <span>Metrics, scrape targets and alert rules</span>
+        </a>
+      </li>
+      <li>
+        <a href="/alertmanager/">
+          <strong>Alertmanager</strong>
+          <span>Firing alerts and silences. Delivers nowhere yet.</span>
+        </a>
+      </li>
+    </ul>
+    </body>
+    </html>

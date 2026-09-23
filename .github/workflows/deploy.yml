@@ -98,7 +98,7 @@ jobs:
           BACKEND_IMAGE: ${{ inputs.backend-image }}
           FRONTEND_IMAGE: ${{ inputs.frontend-image }}
         run: |
-          helm upgrade --install uitslagenportaal ./k8s-config \
+          helm upgrade --install uitslagenportaal ./k8s-config/application \
             --namespace "$NAMESPACE" \
             -f "$VALUES_FILE" \
             --set-string backend.image="$BACKEND_IMAGE" \

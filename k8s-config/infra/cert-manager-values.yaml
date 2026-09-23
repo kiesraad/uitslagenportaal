@@ -16,6 +16,21 @@ config:
   gatewayAPI:
     enabled: true
 
+# certmanager_certificate_expiration_timestamp_seconds is the reason this is on: a
+# renewal that fails silently takes the whole portal down weeks later, and the metric
+# turns that into an alert with weeks of warning.
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: true
+    # The ServiceMonitor selects the webhook and cainjector too, which export only
+    # generic controller metrics that nothing reads.
+    endpointAdditionalProperties:
+      relabelings:
+        - action: keep
+          sourceLabels: [ __meta_kubernetes_service_label_app_kubernetes_io_component ]
+          regex: controller
+
 # Requests keep the pods off BestEffort, where the kubelet evicts them first
 # under node memory pressure. No CPU limits: throttling certificate issuance
 # only makes a renewal take longer to recover.

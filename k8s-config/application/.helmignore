@@ -21,5 +21,3 @@
 .idea/
 *.tmproj
 .vscode/
-# The service accounts are their own chart, installed once per environment.
-service-accounts/
