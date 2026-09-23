@@ -19,14 +19,14 @@ const electionConfig: ElectionConfig = {
    voting_url: "https://example.test/stemmen",
 };
 
-function renderBox(locale: "nl" | "en" = "nl") {
+function renderBox(locale: "nl" | "en" = "nl", previewUrl?: string | null) {
    const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
    });
    const query = electionConfigQuery(electionConfig.slug);
    queryClient.setQueryData(query.queryKey, electionConfig);
 
-   return renderWithProviders(<ResultsSourceBox />, {
+   return renderWithProviders(<ResultsSourceBox previewUrl={previewUrl} />, {
       locale,
       initialEntries: [`/${electionConfig.slug}/gsb/lisserdam`],
       path: "/:electionConfigSlug/*",
@@ -52,6 +52,14 @@ describe("ResultsSourceBox", () => {
          "/ws2023/fout-melden",
       );
       expect(screen.getByText(/14 december om 10:00/)).toBeInTheDocument();
+   });
+
+   it("Shows the imported proces-verbaal preview when the region has one", () => {
+      const previewUrl = "/api/certified-documents/7/preview/";
+      renderBox("nl", previewUrl);
+
+      expect(screen.getByRole("img", { name: "Voorbeeld van een proces-verbaal" })).toHaveAttribute("src", previewUrl);
+      expect(screen.getByRole("link", { name: /Bekijk het proces-verbaal/ })).toHaveAttribute("href", previewUrl);
    });
 
    it("Renders the source box in English when that locale is active", () => {

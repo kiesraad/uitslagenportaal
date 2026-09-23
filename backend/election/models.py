@@ -277,12 +277,7 @@ class ElectionDocument(BaseDocument):
 
 
 class CertifiedElectionDocument(BaseDocument):
-    """
-    Scanned proces-verbaal attached to one region.
-
-    ``code`` is the model number in the drop filename. A correction is its own
-    code, so it can be current next to the original on the same region.
-    """
+    """Scanned proces-verbaal attached to one region."""
 
     class FileType(models.TextChoices):
         N10_1 = "N10-1", "Proces-verbaal stembureau"

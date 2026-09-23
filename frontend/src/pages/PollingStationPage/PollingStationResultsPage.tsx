@@ -84,7 +84,7 @@ export default function PollingStationResultsPage() {
                { href: pollingStationResultsRoute, label: pollingStation.region_name },
             ]}
          />
-         <ResultsPageColumns>
+         <ResultsPageColumns previewUrl={pollingStation.certified_document_preview_url}>
             <RegionResultsContent
                intro={t`De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware.`}
                voteCounts={pollingStation.vote_counts}

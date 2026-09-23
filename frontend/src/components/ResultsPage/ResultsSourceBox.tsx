@@ -8,15 +8,20 @@ import { useFormatters } from "@/utils/format.ts";
 import { appRoutes } from "@/utils/routes.ts";
 import { InfoBox } from "../InfoBox";
 
-/** Placeholder scan until proces-verbaal documents are served from the API. */
+/** Shown when this region has no imported proces-verbaal preview. */
 const STUB_PV_HREF = "/images/stub_pv_sb.png";
 
-export default function ResultsSourceBox() {
+type Props = {
+   previewUrl?: string | null;
+};
+
+export default function ResultsSourceBox({ previewUrl }: Props) {
    const { t } = useLingui();
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(electionConfigSlug));
    const { formatTimelineDate } = useFormatters();
    const deadline = formatTimelineDate(electionConfig.issue_report_deadline);
+   const procesVerbaalHref = previewUrl || STUB_PV_HREF;
 
    return (
       <div className="counting-results-infobox">
@@ -34,10 +39,10 @@ export default function ResultsSourceBox() {
                <div className="results-image-resize" aria-hidden="true">
                   <FontAwesomeIcon icon={faMaximize} />
                </div>
-               <img src={STUB_PV_HREF} alt={t`Voorbeeld van een proces-verbaal`} className="results-image" />
+               <img src={procesVerbaalHref} alt={t`Voorbeeld van een proces-verbaal`} className="results-image" />
             </div>
             <p className="mb-3">
-               <a href={STUB_PV_HREF}>
+               <a href={procesVerbaalHref}>
                   <Trans>Bekijk het proces-verbaal</Trans>
                   <FontAwesomeIcon icon={faArrowRight} />
                </a>

@@ -1,11 +1,13 @@
 import datetime
 
 import pytest
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 
 from election.models import VoteCount, VoterTurnoutCount
-from election.tests.factories import ContestFactory, ElectionFactory
+from election.tests.factories import CertifiedElectionDocumentFactory, ContestFactory, ElectionFactory
 from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
@@ -158,6 +160,36 @@ def test_region_detail_returns_404_for_nonexistent_region():
 
     assert response.status_code == 404
     assert response.data["detail"] == "Region not found for this election."
+
+
+@pytest.mark.django_db
+def test_region_detail_has_no_proces_verbaal_preview_without_a_document():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+
+    data = region_detail(region, "gsb")
+
+    assert data["certified_document_preview_url"] is None
+
+
+@pytest.mark.django_db
+def test_region_detail_links_the_proces_verbaal_preview_when_one_is_imported():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    document = CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/pv.pdf")
+    default_storage.save("TK2025/pv.png", ContentFile(b"\x89PNG"))
+
+    data = region_detail(region, "gsb")
+
+    assert data["certified_document_preview_url"] == f"/api/certified-documents/{document.pk}/preview/"
+
+
+@pytest.mark.django_db
+def test_region_detail_has_no_preview_when_the_png_is_missing():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/missing.pdf")
+
+    data = region_detail(region, "gsb")
+
+    assert data["certified_document_preview_url"] is None
 
 
 def region_detail(region, level):

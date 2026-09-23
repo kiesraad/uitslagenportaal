@@ -1,10 +1,12 @@
+from pathlib import Path
+
 from django.core.files.storage import default_storage
 from django.db.models import Q
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 
-from election.models import Contest, ElectionConfig, ElectionDocument
+from election.models import CertifiedElectionDocument, Contest, ElectionConfig, ElectionDocument
 from election.serializers import (
     ContestDetailSerializer,
     ContestListSerializer,
@@ -54,3 +56,17 @@ def download_document(request, pk):
     return HttpResponseRedirect(
         default_storage.url(document.storage_key, parameters={"ResponseContentDisposition": "attachment"})
     )
+
+
+def certified_document_preview(request, pk):
+    document = get_object_or_404(
+        CertifiedElectionDocument.objects.filter(
+            region__election__election_config__date__gte=visibility_cutoff(),
+        ),
+        pk=pk,
+    )
+    preview_key = Path(document.storage_key).with_suffix(".png").as_posix()
+    if not default_storage.exists(preview_key):
+        raise Http404("Preview not found")
+
+    return HttpResponseRedirect(default_storage.url(preview_key, parameters={"ResponseContentType": "image/png"}))

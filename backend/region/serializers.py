@@ -1,3 +1,7 @@
+from pathlib import Path
+
+from django.core.files.storage import default_storage
+from django.urls import reverse
 from rest_framework import serializers
 
 from election.models import TimelineVariant
@@ -30,6 +34,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     voter_turnout_counts = VoterTurnoutCountSummarySerializer(read_only=True, many=True)
     vote_counts = VoteCountSummarySerializer(read_only=True, many=True)
     documents = ElectionDocumentSerializer(read_only=True, many=True)
+    certified_document_preview_url = serializers.SerializerMethodField()
     timeline_entries = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
     csb_name = serializers.CharField(source="csb.region_name", default=None, read_only=True)
@@ -44,6 +49,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "vote_counts",
             "slug",
             "documents",
+            "certified_document_preview_url",
             "timeline_entries",
             "timeline_variant",
             "region_category",
@@ -52,6 +58,15 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "csb_slug",
             "election_slug",
         )
+
+    def get_certified_document_preview_url(self, region) -> str | None:
+        document = next(iter(region.certified_election_documents.all()), None)
+        if document is None:
+            return None
+        preview_key = Path(document.storage_key).with_suffix(".png").as_posix()
+        if not default_storage.exists(preview_key):
+            return None
+        return reverse("certified-document-preview", kwargs={"pk": document.pk})
 
     def _effective_variant(self, region) -> str:
         counting_method = region.counting_method or (region.parent.counting_method if region.parent else None)
