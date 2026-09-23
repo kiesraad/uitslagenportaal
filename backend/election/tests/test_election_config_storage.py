@@ -176,23 +176,27 @@ def _store(filename, data):
     return key
 
 
-def test_remove_expired_election_configs_deletes_an_expired_listed_config():
-    key = _store("random-name.json", EXPIRED_DATA)
+def test_remove_expired_election_configs_deletes_expired_listed_configs():
+    first = _store("random-name.json", EXPIRED_DATA)
+    second = _store("CD2000.json", {**EXPIRED_DATA, "election": {**EXPIRED_DATA["election"], "id": "CD2000"}})
 
     # Keep if not listed
-    remove_expired_election_configs(["XY2000"])
-    assert default_storage.exists(key)
+    assert remove_expired_election_configs(["XY2000"]) == []
+    assert default_storage.exists(first)
+    assert default_storage.exists(second)
 
     # Remove if listed based on identifier in the data
-    remove_expired_election_configs(["AB2099"])
-    assert not default_storage.exists(key)
+    deleted = remove_expired_election_configs(["AB2099", "CD2000"])
+
+    assert sorted(deleted) == sorted([first, second])
+    assert not default_storage.exists(first)
+    assert not default_storage.exists(second)
 
 
 def test_remove_expired_election_configs_keeps_a_listed_config_that_is_not_expired():
     key = _store("AB2099.json", MINIMAL_DATA)
 
-    remove_expired_election_configs(["AB2099"])
-
+    assert remove_expired_election_configs(["AB2099"]) == []
     assert default_storage.exists(key)
 
 
@@ -203,12 +207,13 @@ def test_remove_expired_election_configs_skips_invalid_and_non_json_files_and_co
     default_storage.save(readme, ContentFile(b"not a config"))
     expired = _store("AB2099.json", EXPIRED_DATA)
 
-    remove_expired_election_configs(["AB2099"])
+    deleted = remove_expired_election_configs(["AB2099"])
 
+    assert deleted == [expired]
     assert default_storage.exists(broken)
     assert default_storage.exists(readme)
     assert not default_storage.exists(expired)
 
 
 def test_remove_expired_election_configs_is_a_noop_without_a_configs_folder():
-    remove_expired_election_configs(["AB2099"])
+    assert remove_expired_election_configs(["AB2099"]) == []

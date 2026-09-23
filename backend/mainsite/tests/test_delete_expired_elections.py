@@ -1,5 +1,6 @@
 import datetime
 import json
+from io import StringIO
 
 import pytest
 from django.core.files.base import ContentFile
@@ -31,10 +32,12 @@ def expired_and_current_configs():
 def test_confirm_removes_the_config_file_of_an_expired_election(expired_and_current_configs):
     expired_key, current_key = expired_and_current_configs
 
-    call_command("delete_expired_elections", "--confirm")
+    out = StringIO()
+    call_command("delete_expired_elections", "--confirm", stdout=out)
 
     assert not default_storage.exists(expired_key)
     assert default_storage.exists(current_key)
+    assert expired_key in out.getvalue()
 
 
 @pytest.mark.django_db

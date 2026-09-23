@@ -46,16 +46,16 @@ def test_deletion_cutoff_trails_visibility_cutoff_by_the_grace_period(frozen_now
 
 
 @pytest.mark.parametrize(
-    ("value", "expected_utc"),
+    ("time_zone", "value", "expected_utc"),
     [
         # Summer time: CEST, UTC+2.
-        ("2026-07-01T12:00:00", datetime.datetime(2026, 7, 1, 10, 0, tzinfo=datetime.timezone.utc)),
+        ("Europe/Amsterdam", "2026-07-01T12:00:00", datetime.datetime(2026, 7, 1, 10, 0)),
         # Winter time: CET, UTC+1.
-        ("2026-01-15T12:00:00", datetime.datetime(2026, 1, 15, 11, 0, tzinfo=datetime.timezone.utc)),
+        ("Europe/Amsterdam", "2026-01-15T12:00:00", datetime.datetime(2026, 1, 15, 11, 0)),
+        ("UTC", "2026-07-01T12:00:00", datetime.datetime(2026, 7, 1, 12, 0)),
     ],
 )
-def test_tz_aware_from_isoformat_reads_naive_values_as_tz_aware(settings, value, expected_utc):
-    # Independent of the project time zone.
-    settings.TIME_ZONE = "UTC"
+def test_tz_aware_from_isoformat_reads_naive_values_in_the_project_time_zone(settings, time_zone, value, expected_utc):
+    settings.TIME_ZONE = time_zone
 
-    assert tz_aware_from_isoformat(value) == expected_utc
+    assert tz_aware_from_isoformat(value) == expected_utc.replace(tzinfo=datetime.timezone.utc)

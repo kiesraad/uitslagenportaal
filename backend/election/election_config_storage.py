@@ -80,6 +80,7 @@ def import_new_election_configs() -> int:
 
     return imported
 
+
 def remove_expired_election_configs(identifiers: list[str]) -> list[str]:
     try:
         _, filenames = default_storage.listdir(ELECTION_CONFIGS_PREFIX)
@@ -112,8 +113,5 @@ def remove_expired_election_configs(identifiers: list[str]) -> list[str]:
         else:
             logger.info("Skipped deleting election config from %s, not expired", path)
 
-        return deleted
-
-
-
+    return deleted
 
