@@ -4,3 +4,7 @@ class EMLImporterException(Exception):
 
 class GithubImportException(Exception):
     """Exception raised for errors encountered during EML imports from GitHub."""
+
+
+class FileAlreadyImported(Exception):
+    """Exception raised for when an EML is already imported successfully."""
