@@ -277,7 +277,7 @@ class ElectionDocument(BaseDocument):
 
 
 class CertifiedElectionDocument(BaseDocument):
-    """Scanned proces-verbaal attached to one region."""
+    """Scanned certified election document attached to one region."""
 
     class FileType(models.TextChoices):
         N10_1 = "N10-1", "Proces-verbaal stembureau"
@@ -305,7 +305,7 @@ class CertifiedElectionDocument(BaseDocument):
         constraints = [
             models.UniqueConstraint(
                 fields=["region", "file_type"],
-                name="unique_current_proces_verbaal_per_region_and_code",
+                name="unique_current_certified_document_per_region_and_code",
             )
         ]
 

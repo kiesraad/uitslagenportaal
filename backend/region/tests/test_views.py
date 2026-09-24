@@ -163,7 +163,7 @@ def test_region_detail_returns_404_for_nonexistent_region():
 
 
 @pytest.mark.django_db
-def test_region_detail_has_no_proces_verbaal_preview_without_a_document():
+def test_region_detail_has_no_certified_document_preview_without_a_document():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)
 
     data = region_detail(region, "gsb")
@@ -173,7 +173,7 @@ def test_region_detail_has_no_proces_verbaal_preview_without_a_document():
 
 
 @pytest.mark.django_db
-def test_region_detail_links_the_proces_verbaal_when_one_is_imported():
+def test_region_detail_links_the_certified_document_when_one_is_imported():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)
     document = CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/pv.pdf")
     default_storage.save("TK2025/pv.pdf", ContentFile(b"%PDF"))

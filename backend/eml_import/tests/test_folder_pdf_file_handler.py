@@ -34,7 +34,7 @@ def write_pdf(folder: Path, name: str, content: bytes = PDF_BYTES) -> Path:
 
 
 @pytest.mark.django_db
-def test_imports_a_municipal_proces_verbaal_onto_the_gemeente(tmp_path):
+def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
     config = ElectionConfigFactory(identifier="TK2025", category=ElectionCategory.TK.value)
     election = ElectionFactory(election_config=config, subcategory="TK")
     barneveld = RegionFactory(
@@ -58,7 +58,7 @@ def test_imports_a_municipal_proces_verbaal_onto_the_gemeente(tmp_path):
 
 
 @pytest.mark.django_db
-def test_rejects_a_second_proces_verbaal_for_the_same_region_and_type(tmp_path):
+def test_rejects_a_second_certified_document_for_the_same_region_and_type(tmp_path):
     config = ElectionConfigFactory(identifier="TK2025", category=ElectionCategory.TK.value)
     election = ElectionFactory(election_config=config, subcategory="TK")
     RegionFactory(
@@ -81,7 +81,7 @@ def test_rejects_a_second_proces_verbaal_for_the_same_region_and_type(tmp_path):
 
 
 @pytest.mark.django_db
-def test_imports_a_polling_station_proces_verbaal_by_stembureau_id(tmp_path):
+def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path):
     config = ElectionConfigFactory(identifier="TK2025", category=ElectionCategory.TK.value)
     election = ElectionFactory(election_config=config, subcategory="TK")
     gemeente = RegionFactory(

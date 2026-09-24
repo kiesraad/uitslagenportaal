@@ -35,7 +35,7 @@ function renderBox(locale: "nl" | "en" = "nl", previewUrl?: string | null, docum
 }
 
 describe("ResultsSourceBox", () => {
-   it("Says the proces-verbaal has not arrived yet when the region has none", () => {
+   it("Says the certified election document has not arrived yet when the region has none", () => {
       renderBox();
 
       expect(screen.getByRole("heading", { name: "Waar komen deze telresultaten vandaan?" })).toBeInTheDocument();
@@ -50,7 +50,7 @@ describe("ResultsSourceBox", () => {
       expect(screen.getByText(/14 december om 10:00/)).toBeInTheDocument();
    });
 
-   it("Opens the full proces-verbaal from the picture and from the link", () => {
+   it("Opens the full certified election document from the picture and from the link", () => {
       const previewUrl = "/api/certified-documents/7/preview/";
       const documentUrl = "/api/certified-documents/7/";
       renderBox("nl", previewUrl, documentUrl);

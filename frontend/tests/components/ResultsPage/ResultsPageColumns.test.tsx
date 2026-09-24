@@ -20,7 +20,7 @@ const electionConfig: ElectionConfig = {
 };
 
 describe("ResultsPageColumns", () => {
-   it("Shows the proces-verbaal source box", () => {
+   it("Shows the certified election document source box", () => {
       const queryClient = new QueryClient({
          defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
       });

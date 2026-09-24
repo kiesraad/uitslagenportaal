@@ -53,7 +53,7 @@ class FolderPDFFileHanlder:
             raise EMLImporterException(f"{file.name} does not match {{election}}_{{file_type}}_{{region}}.pdf")
         election_id, file_type, region_token = parts
         if file_type not in CertifiedElectionDocument.FileType.values:
-            raise EMLImporterException(f"Unknown proces-verbaal type {file_type} in {file.name}")
+            raise EMLImporterException(f"Unknown certified election document type {file_type} in {file.name}")
         return election_id, file_type, region_token
 
     def _election_config(self, election_id: str) -> ElectionConfig:
