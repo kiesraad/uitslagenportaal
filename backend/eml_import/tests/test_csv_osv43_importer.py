@@ -138,7 +138,7 @@ def test_parse_stores_the_csv_as_a_current_document_of_the_region(ws_csb):
     assert document.storage_key.endswith(".csv")
     with default_storage.open(document.storage_key) as stored:
         assert stored.read() == csv.getvalue()
-    assert ImportedEmlHash.already_imported(csv)
+    assert ImportedEmlHash.objects.get().election == ws_csb.election
 
 
 @pytest.mark.django_db

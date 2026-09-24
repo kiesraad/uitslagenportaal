@@ -2,14 +2,17 @@ import json
 import threading
 
 import pytest
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db.models import QuerySet
 
-from election.election_config_importer import hash_election_config_data, import_election_config
+from election import election_config_importer
+from election.election_config_importer import ImportInProgressError, hash_election_config_data, import_election_config
 from election.models import ElectionConfig, ElectionDocument, TimelineVariant
 from election.tests.factories import ElectionConfigFactory, ElectionDocumentFactory, ElectionFactory
 from eml_import.models import BranchType, ImportedCommit
+from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
 from region.tests.factories import RegionFactory
 
 MINIMAL_DATA = {
@@ -172,3 +175,33 @@ def test_import_blanks_branches_before_wiping_so_a_concurrent_task_skips_the_con
     assert all(branches == (None, None) for branches in branches_seen_by_other_connection)
     assert config.gh_exchange_branch == "auto-tk2025-uit"
     assert config.gh_counting_results_branch == "auto-tk2025-tel"
+
+
+@pytest.mark.django_db
+def test_import_leaves_the_election_alone_while_its_commits_are_being_imported(monkeypatch):
+    monkeypatch.setattr(election_config_importer, "WIPE_LOCK_WAIT", 0.1)
+    existing = ElectionConfigFactory(
+        identifier="TK2025",
+        gh_exchange_branch="some-old-branch",
+        gh_counting_results_branch="auto-tk2025-tel",
+    )
+    election = ElectionFactory(election_config=existing)
+
+    # Stand in for a worker that is importing a commit for this election
+    with cache.lock(GithubEmlFileHandler.cache_lock_key("TK2025"), timeout=LOCK_TIMEOUT):
+        with pytest.raises(ImportInProgressError):
+            import_election_config(MINIMAL_DATA)
+
+    existing.refresh_from_db()
+    assert existing.elections.filter(pk=election.pk).exists()
+    assert existing.gh_exchange_branch == "some-old-branch"
+    assert existing.source_hash != hash_election_config_data(MINIMAL_DATA)
+
+
+@pytest.mark.django_db
+def test_import_releases_the_lock_after_wiping():
+    ElectionConfigFactory(identifier="TK2025", gh_exchange_branch="some-old-branch")
+
+    import_election_config(MINIMAL_DATA)
+
+    assert cache.lock(GithubEmlFileHandler.cache_lock_key("TK2025"), blocking=False).acquire() is True
