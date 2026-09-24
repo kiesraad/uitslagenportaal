@@ -1,5 +1,5 @@
 from calendar import monthrange
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.core.files.storage import default_storage
 from django.utils import timezone
@@ -21,6 +21,11 @@ def visibility_cutoff():
 
 def deletion_cutoff():
     return visibility_cutoff() - timedelta(days=DELETION_GRACE_DAYS)
+
+
+def tz_aware_from_isoformat(value: str):
+    """Make a timezone-aware date from an ISO date string, timezone is set in settings.TIME_ZONE."""
+    return timezone.make_aware(datetime.fromisoformat(value))
 
 
 def folder_prefixes(storage_keys):

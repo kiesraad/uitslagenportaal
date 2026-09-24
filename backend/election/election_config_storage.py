@@ -5,6 +5,7 @@ from django.core.files.storage import default_storage
 
 from election.election_config_importer import hash_election_config_data, import_election_config
 from election.models import ElectionConfig
+from election.utils import tz_aware_from_isoformat, visibility_cutoff
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,7 @@ def import_new_election_configs() -> int:
         try:
             data = json.loads(content)
             identifier = data["election"]["id"]
+            election_date = tz_aware_from_isoformat(data["election"]["date"])
         except Exception:
             logger.exception("Failed to parse election config from %s", key)
             continue
@@ -56,6 +58,11 @@ def import_new_election_configs() -> int:
                 key,
                 identifier,
             )
+
+        # Skip import if the election date is before the visibility cutoff
+        if election_date < visibility_cutoff():
+            logger.info("Skipping import of election config %s: election is expired", identifier)
+            continue
 
         # Keyed on the id the file itself declares, not the file name, so a mismatch
         # (logged above) still dedupes correctly on every later poll.
@@ -72,3 +79,38 @@ def import_new_election_configs() -> int:
         imported += 1
 
     return imported
+
+
+def remove_expired_election_configs(identifiers: list[str]) -> list[str]:
+    try:
+        _, filenames = default_storage.listdir(ELECTION_CONFIGS_PREFIX)
+    except FileNotFoundError:
+        # No election_configs/ folder yet, e.g. a fresh bucket or an in-memory test backend.
+        filenames = []
+
+    deleted = []
+    for filename in filenames:
+        if not filename.endswith(".json"):
+            continue
+
+        path = f"{ELECTION_CONFIGS_PREFIX}{filename}"
+        try:
+            with default_storage.open(path, "rb") as fh:
+                data = json.load(fh)
+        except Exception:
+            logger.exception("Failed to parse election config from %s", path)
+            continue
+
+        # Skip files not in the list
+        if data["election"]["id"] not in identifiers:
+            continue
+
+        election_date = tz_aware_from_isoformat(data["election"]["date"])
+        if election_date < visibility_cutoff():
+            default_storage.delete(path)
+            deleted += [path]
+            logger.info("Deleted expired election config from %s", path)
+        else:
+            logger.info("Skipped deleting election config from %s, not expired", path)
+
+    return deleted
