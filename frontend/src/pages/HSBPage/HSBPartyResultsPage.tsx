@@ -80,13 +80,16 @@ export function HSBPartyResultsPage() {
                   proces-verbaal van het hoofdstembureau.
                </Trans>
             </p>
-            <PartyVoteMatrixTable matrix={partyVoteMatrix} />
+            <PartyVoteMatrixTable
+               matrix={partyVoteMatrix}
+               caption={<Trans>Stemmen per kandidaat per gemeente</Trans>}
+            />
          </section>
       </>
    );
 
    return (
-      <LayoutMain title={t`Resultaten`}>
+      <LayoutMain title={t`Telresultaten ${partyName} – ${regionType} ${regionName}`}>
          <PageTop
             title={`${t`Telresultaten ${regionType} ${regionName}`}\n ${partyName}`}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}

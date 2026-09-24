@@ -1,9 +1,10 @@
 import { faHourglass } from "@fortawesome/free-regular-svg-icons";
-import { faArrowUpRightFromSquare, faCircleNotch, faRotateRight } from "@fortawesome/free-solid-svg-icons";
+import { faCircleNotch, faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Link } from "react-router";
 import Button from "@/elements/Button.tsx";
+import { ExternalLinkIcon } from "@/elements/ExternalLinkIcon.tsx";
 import PageSection from "@/elements/PageSection.tsx";
 import type { ElectionConfig } from "../api/types.ts";
 import { HeroGrid } from "../components/HomePage/HeroGrid.tsx";
@@ -52,8 +53,8 @@ export function HomePage() {
                      <h2>
                         <Trans>Bekijk de telresultaten</Trans>
                      </h2>
-                     <p>
-                        <FontAwesomeIcon icon={faCircleNotch} className="animate-spin" />
+                     <p role="status">
+                        <FontAwesomeIcon icon={faCircleNotch} className="animate-spin motion-reduce:animate-none" />
                         <Trans>Verkiezingen laden…</Trans>
                      </p>
                   </div>
@@ -62,7 +63,7 @@ export function HomePage() {
                      <h2>
                         <Trans>Bekijk de telresultaten</Trans>
                      </h2>
-                     <p>
+                     <p role="alert">
                         <Trans>Kan verkiezingen niet laden.</Trans>
                      </p>
                      <Button onClick={() => refetch()}>
@@ -77,7 +78,9 @@ export function HomePage() {
                      </h2>
                      {election_configs.map((election_config) => (
                         <div key={election_config.slug} className={"home-hero-card-link"}>
-                           <span className="gemeente-chevron mb-1">›</span>
+                           <span className="gemeente-chevron mb-1" aria-hidden="true">
+                              ›
+                           </span>
                            <Link
                               to={appRoutes.electionConfigMunicipalityList(election_config.slug)}
                               className="font-semibold"
@@ -137,7 +140,9 @@ export function HomePage() {
                            const electionLabel = election_config.label;
                            return (
                               <div key={election_config.slug} className={"home-hero-card-link"}>
-                                 <span className="gemeente-chevron">›</span>
+                                 <span className="gemeente-chevron" aria-hidden="true">
+                                    ›
+                                 </span>
                                  <Link to={appRoutes.electionConfigMunicipalityList(election_config.slug)}>
                                     <Trans>Bekijk de tellingen per stembureau voor {electionLabel}</Trans>
                                  </Link>
@@ -163,7 +168,7 @@ export function HomePage() {
                               rel="noopener noreferrer"
                            >
                               <Trans>Databank verkiezinguitslag</Trans>
-                              <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
+                              <ExternalLinkIcon />
                            </a>
                         </span>
                      </p>

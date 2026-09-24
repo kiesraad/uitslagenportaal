@@ -11,15 +11,20 @@ const disabledClasses = tw`cursor-default bg-gray-100 opacity-75 hover:bg-gray-1
 
 export default function Button(props: ButtonProps) {
    if (props.href !== undefined) {
-      const { className, disabled, href, ...anchorProps } = props;
-      // An <a> has no disabled state; without an href it is neither focusable nor clickable.
+      const { className, disabled, href, children, ...anchorProps } = props;
+      // An <a> has no disabled state, so a disabled link becomes a disabled button, which screen readers announce.
+      if (disabled) {
+         return (
+            <button type="button" className={twMerge(buttonClasses, disabledClasses, className)} disabled>
+               {children}
+            </button>
+         );
+      }
+
       return (
-         <a
-            className={twMerge(buttonClasses, disabled && disabledClasses, className)}
-            href={disabled ? undefined : href}
-            aria-disabled={disabled || undefined}
-            {...anchorProps}
-         />
+         <a className={twMerge(buttonClasses, className)} href={href} {...anchorProps}>
+            {children}
+         </a>
       );
    }
 

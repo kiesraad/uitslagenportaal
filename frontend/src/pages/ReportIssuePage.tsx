@@ -1,4 +1,4 @@
-import { faArrowUpRightFromSquare, faCheck } from "@fortawesome/free-solid-svg-icons";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useLoaderData } from "react-router";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/Breadcrumbs.tsx";
 import Button from "@/elements/Button.tsx";
+import { ExternalLinkIcon } from "@/elements/ExternalLinkIcon.tsx";
 import PageSection from "@/elements/PageSection.tsx";
 import { InfoBox } from "../components/InfoBox.tsx";
 import { LayoutMain } from "../components/LayoutMain.tsx";
@@ -81,7 +82,7 @@ export function ReportIssuePage() {
             </p>
 
             <InfoBox>
-               <h4 className="font-bold">{heading}</h4>
+               <h2 className="h4 font-bold">{heading}</h2>
                <p>
                   <Trans>
                      Een melding aan het centraal stembureau kan van {opensAt} tot {closesAt} (uiterlijk 48 uur voor de
@@ -155,7 +156,8 @@ export function ReportIssuePage() {
                      rel="noopener noreferrer"
                   >
                      <Trans>Meld een fout</Trans>
-                     <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
+                     {/* Only a link while reporting is open; the new-window hint would be wrong on the disabled button. */}
+                     <ExternalLinkIcon newWindowHint={reportingOpen} />
                   </Button>
                )}
             </section>

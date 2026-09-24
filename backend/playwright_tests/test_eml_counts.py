@@ -44,11 +44,16 @@ def party_link(page: Page, party: PartyCount):
 
 
 def expect_votes_beside(page: Page, label: str, formatted: str) -> None:
-    expect(page.get_by_text(label, exact=True).locator("xpath=following-sibling::span[1]")).to_have_text(formatted)
+    expect(page.get_by_text(label, exact=True).locator("xpath=following-sibling::*[1]")).to_have_text(formatted)
 
 
 def matrix_footer(page: Page):
     return page.get_by_role("row").filter(has_text="Totaal").last
+
+
+def matrix_cell(row, column: int):
+    """Cell of a matrix row by column index; the first column is a row header, not a cell."""
+    return row.get_by_role("cell").nth(column - 1)
 
 
 def expect_party_totals(page: Page, parties: list[PartyCount]) -> None:
@@ -63,10 +68,10 @@ def expect_candidate_totals(
     page: Page, party: PartyCount, candidates: list[CandidateCount], *, matrix: bool = False
 ) -> None:
     if matrix:
-        expect(matrix_footer(page).get_by_role("cell").nth(1)).to_have_text(format_nl(party.votes))
+        expect(matrix_cell(matrix_footer(page), 1)).to_have_text(format_nl(party.votes))
         for candidate in candidates:
             row = page.get_by_role("row").filter(has_text=candidate.label)
-            expect(row.get_by_role("cell").nth(1)).to_have_text(format_nl(candidate.votes))
+            expect(matrix_cell(row, 1)).to_have_text(format_nl(candidate.votes))
         return
 
     expect_votes_beside(page, f"Totaal stemmen lijst {party.list_number}", format_nl(party.votes))
@@ -139,6 +144,6 @@ def test_csb_matrix_totals_match_the_eml(page: Page, url, eml, gemeente):
     party_link(page, party).click()
 
     footer = matrix_footer(page)
-    expect(footer.get_by_role("cell").nth(1)).to_have_text(format_nl(party.votes))
+    expect(matrix_cell(footer, 1)).to_have_text(format_nl(party.votes))
     column = page.get_by_role("columnheader").all_inner_texts().index(gemeente)
-    expect(footer.get_by_role("cell").nth(column)).to_have_text(format_nl(unit.votes))
+    expect(matrix_cell(footer, column)).to_have_text(format_nl(unit.votes))

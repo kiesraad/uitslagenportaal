@@ -18,7 +18,7 @@ def test_searching_the_gemeente_list_navigates_to_the_gemeente(page: Page):
     page.goto("/ab2023/gsb")
 
     page.get_by_label("Zoek gemeente").fill("Borsele")
-    page.get_by_role("listitem").filter(has_text="Borsele").click()
+    page.get_by_role("option", name="Borsele").click()
 
     expect(page).to_have_url(re.compile(r"/gsb/654-borsele/csb/17-scheldestromen/?$"))
     expect(page.get_by_role("heading", level=1, name="Gemeente Borsele")).to_be_visible()
@@ -29,8 +29,9 @@ def test_searching_a_stembureau_submits_on_the_first_match(page: Page):
 
     # Unlike the region lists, the stembureau search takes the first suggestion on
     # Enter, so a fragment of the name is enough.
-    page.get_by_label("Zoek op naam, adres of stembureau-nummer").fill("Heinkenszand")
-    page.get_by_label("Zoek op naam, adres of stembureau-nummer").press("Enter")
+    search = page.get_by_role("combobox", name="Zoek op naam, adres of stembureau-nummer")
+    search.fill("Heinkenszand")
+    search.press("Enter")
 
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/[^/]+/?$"))
     expect(page.get_by_role("heading", level=1, name=re.compile(r"Telresultaten stembureau"))).to_be_visible()
@@ -49,6 +50,6 @@ def test_the_page_index_jumps_to_the_counting_results(page: Page):
     page.goto(BORSELE_RESULTS)
     expect(page.get_by_text("Op deze pagina:")).to_be_visible()
 
-    page.get_by_role("link", name=re.compile(r"zoals ze meetellen in de officiele uitslag")).click()
+    page.get_by_role("link", name=re.compile(r"zoals ze meetellen in de officiële uitslag")).click()
     expect(page).to_have_url(re.compile(r"#telresultaten$"))
     expect(page.get_by_role("heading", level=2, name="Telresultaten", exact=True)).to_be_visible()

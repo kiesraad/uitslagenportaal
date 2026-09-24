@@ -78,13 +78,16 @@ export function CSBPartyResultsPage() {
                   proces-verbaal van het centraal stembureau.
                </Trans>
             </p>
-            <PartyVoteMatrixTable matrix={partyVoteMatrix} />
+            <PartyVoteMatrixTable
+               matrix={partyVoteMatrix}
+               caption={<Trans>Stemmen per kandidaat per kieskring</Trans>}
+            />
          </section>
       </>
    );
 
    return (
-      <LayoutMain title={t`Resultaten`}>
+      <LayoutMain title={t`Telresultaten ${partyName} – ${regionType} ${regionName}`}>
          <PageTop
             title={`${t`Telresultaten ${regionType} ${regionName}`}\n ${partyName}`}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}

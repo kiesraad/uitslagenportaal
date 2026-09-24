@@ -86,7 +86,7 @@ def test_gemeente_search_works_on_a_small_screen(page: Page):
     page.goto("/ab2023/gsb")
 
     page.get_by_label("Zoek gemeente").fill("Borsele")
-    page.get_by_role("listitem").filter(has_text="Borsele").click()
+    page.get_by_role("option", name="Borsele").click()
 
     expect(page).to_have_url(re.compile(r"/gsb/654-borsele/csb/17-scheldestromen/?$"))
     expect(page.get_by_role("heading", level=1, name="Gemeente Borsele")).to_be_visible()

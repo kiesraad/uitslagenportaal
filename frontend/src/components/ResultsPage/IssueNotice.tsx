@@ -18,9 +18,9 @@ export default function IssueNotice({ issueReportDeadline }: IssueNoticeProps) {
    return (
       <section id="fout-melden">
          <InfoBox disableMargin>
-            <h4>
+            <h2 className="h4">
                <Trans>Klopt er iets niet?</Trans>
-            </h4>
+            </h2>
             <span>
                <Trans>
                   Soms gaat er iets mis bij het tellen, opschrijven of overtypen van de stemmen. Fouten die na{" "}
