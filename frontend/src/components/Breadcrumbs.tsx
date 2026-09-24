@@ -33,7 +33,7 @@ export function BreadcrumbItem({ to, children }: PropsWithChildren<{ to?: string
                {children}
             </Link>
          ) : (
-            <span>{children}</span>
+            <span aria-current="page">{children}</span>
          )}
          <span className="text-muted text-xs group-last:hidden">
             <FontAwesomeIcon icon={faChevronRight} />
