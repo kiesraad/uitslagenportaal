@@ -7,7 +7,7 @@ import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCan
 import { useFormatters } from "../../utils/format";
 import { getCsbCrumb } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
-import { getPartyVoteCount, hasParty } from "../../utils/voteCounts";
+import { hasParty } from "../../utils/voteCounts";
 import { NotFoundPage } from "../NotFoundPage";
 import type { PollingStationLoaderData } from "./PollingStationResultsPage.tsx";
 
@@ -34,15 +34,7 @@ export default function PollingStationPartyResultsPage() {
       pollingStation.slug,
       csbSlug,
    );
-   const pollingStationPartyResultsRoute = appRoutes.pollingStationPartyResults(
-      electionConfig.slug,
-      region.slug,
-      pollingStation.slug,
-      partySlug,
-      csbSlug,
-   );
 
-   const partyName = getPartyVoteCount(pollingStation.vote_counts, partySlug)?.party.registered_name ?? t`Lijst`;
    const stationName = pollingStation.region_name;
    // No publication date until the region's results have been imported; the line is then omitted.
    const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
@@ -66,7 +58,6 @@ export default function PollingStationPartyResultsPage() {
                getCsbCrumb(region, electionConfig.slug),
                { href: municipalityPollingstationListRoute, label: region.region_name },
                { href: pollingStationResultsRoute, label: pollingStation.region_name },
-               { href: pollingStationPartyResultsRoute, label: partyName },
             ]}
          />
          <div className="page-main page-main-two-columns">
