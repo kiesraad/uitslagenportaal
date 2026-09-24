@@ -6,7 +6,7 @@ from django.db import IntegrityError
 
 from election.models import CertifiedElectionDocument, ElectionCategory
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
-from eml_import.exceptions import EMLImporterException
+from eml_import.exceptions import PDFImporterException
 from eml_import.utils.folder_pdf_file_handler import FolderPDFFileHanlder
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
@@ -110,7 +110,7 @@ def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path)
 def test_rejects_a_filename_that_does_not_match_the_convention(tmp_path):
     write_pdf(tmp_path, "NA31-2_Barneveld.pdf")
 
-    with pytest.raises(EMLImporterException, match="does not match"):
+    with pytest.raises(PDFImporterException, match="does not match"):
         FolderPDFFileHanlder(tmp_path).run()
 
     assert CertifiedElectionDocument.objects.count() == 0

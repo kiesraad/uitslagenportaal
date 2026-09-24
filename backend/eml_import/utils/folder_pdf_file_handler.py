@@ -9,7 +9,7 @@ from django.core.files.storage import default_storage
 from django.db import transaction
 
 from election.models import CertifiedElectionDocument, ElectionCategory, ElectionConfig
-from eml_import.exceptions import EMLImporterException
+from eml_import.exceptions import PDFImporterException
 from mainsite.models import RegionCategory
 from region.models import Region
 
@@ -50,17 +50,17 @@ class FolderPDFFileHanlder:
     def _parse_filename(self, file: Path) -> tuple[str, str, str]:
         parts = file.stem.split("_", 2)
         if len(parts) != 3 or not all(parts):
-            raise EMLImporterException(f"{file.name} does not match {{election}}_{{file_type}}_{{region}}.pdf")
+            raise PDFImporterException(f"{file.name} does not match {{election}}_{{file_type}}_{{region}}.pdf")
         election_id, file_type, region_token = parts
         if file_type not in CertifiedElectionDocument.FileType.values:
-            raise EMLImporterException(f"Unknown certified election document type {file_type} in {file.name}")
+            raise PDFImporterException(f"Unknown certified election document type {file_type} in {file.name}")
         return election_id, file_type, region_token
 
     def _election_config(self, election_id: str) -> ElectionConfig:
         try:
             return ElectionConfig.with_expired.get(identifier=election_id)
         except ElectionConfig.DoesNotExist:
-            raise EMLImporterException(f"Election {election_id} is not configured") from None
+            raise PDFImporterException(f"Election {election_id} is not configured") from None
 
     def _region_category(self, config: ElectionConfig, file_type: str) -> str:
         if file_type in (CertifiedElectionDocument.FileType.P22_1, CertifiedElectionDocument.FileType.P22_2):
@@ -80,9 +80,9 @@ class FolderPDFFileHanlder:
                 **lookup,
             )
         except Region.DoesNotExist:
-            raise EMLImporterException(f"No {category} {region_token!r} for election {config.identifier}") from None
+            raise PDFImporterException(f"No {category} {region_token!r} for election {config.identifier}") from None
         except Region.MultipleObjectsReturned:
-            raise EMLImporterException(
+            raise PDFImporterException(
                 f"Several {category} regions match {region_token!r} for election {config.identifier}"
             ) from None
 
