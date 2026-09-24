@@ -7,7 +7,7 @@ import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCan
 import { useFormatters } from "../../utils/format";
 import { getCsbCrumb } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
-import { hasParty } from "../../utils/voteCounts";
+import { getPartyVoteCount, hasParty } from "../../utils/voteCounts";
 import { NotFoundPage } from "../NotFoundPage";
 import type { PollingStationLoaderData } from "./PollingStationResultsPage.tsx";
 
@@ -35,6 +35,7 @@ export default function PollingStationPartyResultsPage() {
       csbSlug,
    );
 
+   const partyName = getPartyVoteCount(pollingStation.vote_counts, partySlug)?.party.registered_name ?? t`Lijst`;
    const stationName = pollingStation.region_name;
    // No publication date until the region's results have been imported; the line is then omitted.
    const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;

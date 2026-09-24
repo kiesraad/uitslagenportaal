@@ -27,15 +27,15 @@ export function Breadcrumbs({ children }: PropsWithChildren) {
 
 export function BreadcrumbItem({ to, children }: PropsWithChildren<{ to?: string }>) {
    return (
-      <li className="group flex items-center gap-1">
+      <li className="group group flex items-center gap-1 text-nowrap max-sm:not-last:max-w-1/2">
          {to ? (
-            <Link key="home" to={to}>
+            <Link key="home" to={to} className="overflow-hidden text-ellipsis">
                {children}
             </Link>
          ) : (
             <span>{children}</span>
          )}
-         <span className="text-muted text-xs last:hidden">
+         <span className="text-muted text-xs group-last:hidden">
             <FontAwesomeIcon icon={faChevronRight} />
          </span>
       </li>
