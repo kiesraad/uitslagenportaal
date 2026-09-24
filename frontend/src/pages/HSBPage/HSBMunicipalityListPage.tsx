@@ -8,7 +8,7 @@ import PageTop from "../../components/PageTop.tsx";
 import SharedTabs from "../../components/SharedTabs.tsx";
 import { electionConfigQuery, regionQuery, regionsQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
-import { getRegionLabels } from "../../utils/region.ts";
+import { getCsbCrumb, getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 
 export function hsbMunicipalityListLoader(queryClient: QueryClient) {
@@ -70,7 +70,8 @@ export function HSBMunicipalityListPage() {
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               { href: hsbResultsRoute, label: region.region_name },
+               getCsbCrumb(region, electionConfig.slug),
+               { label: region.region_name },
             ]}
             tabs={
                <SharedTabs

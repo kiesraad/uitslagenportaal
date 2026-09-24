@@ -251,6 +251,11 @@ msgstr "Ga dan naar"
 msgid "Gemeente"
 msgstr "Gemeente"
 
+#. placeholder {0}: region.region_name
+#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
+msgid "Gemeente {0}"
+msgstr "Gemeente {0}"
+
 #: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
 #: src/pages/MunicipalityPage/MunicipalityPollingstationListPage.tsx
 #: src/pages/MunicipalityPage/MunicipalityResultsPage.tsx

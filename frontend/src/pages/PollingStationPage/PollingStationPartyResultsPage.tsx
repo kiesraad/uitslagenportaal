@@ -34,13 +34,6 @@ export default function PollingStationPartyResultsPage() {
       pollingStation.slug,
       csbSlug,
    );
-   const pollingStationPartyResultsRoute = appRoutes.pollingStationPartyResults(
-      electionConfig.slug,
-      region.slug,
-      pollingStation.slug,
-      partySlug,
-      csbSlug,
-   );
 
    const partyName = getPartyVoteCount(pollingStation.vote_counts, partySlug)?.party.registered_name ?? t`Lijst`;
    const stationName = pollingStation.region_name;
@@ -64,9 +57,8 @@ export default function PollingStationPartyResultsPage() {
                { href: appRoutes.home(), label: t`Home` },
                { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
                getCsbCrumb(region, electionConfig.slug),
-               { href: municipalityPollingstationListRoute, label: region.region_name },
+               { href: municipalityPollingstationListRoute, label: t`Gemeente ${region.region_name}` },
                { href: pollingStationResultsRoute, label: pollingStation.region_name },
-               { href: pollingStationPartyResultsRoute, label: partyName },
             ]}
          />
          <div className="page-main page-main-two-columns">

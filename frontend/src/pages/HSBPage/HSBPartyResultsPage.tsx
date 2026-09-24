@@ -11,7 +11,7 @@ import ResultsPageIndex from "../../components/ResultsPage/ResultsPageIndex";
 import ResultsTimeline from "../../components/ResultsPage/ResultsTimeline.tsx";
 import { electionConfigQuery, hsbPartyVoteMatrixQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
-import { getRegionLabels } from "../../utils/region.ts";
+import { getCsbCrumb, getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 import { getPartyVoteCount } from "../../utils/voteCounts.ts";
 
@@ -99,8 +99,9 @@ export function HSBPartyResultsPage() {
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
+               getCsbCrumb(region, electionConfig.slug),
                { href: appRoutes.hsbResults(electionConfig.slug, region.slug), label: region.region_name },
-               { href: appRoutes.hsbPartyResults(electionConfig.slug, region.slug, partySlug), label: partyName },
+               { label: partyName },
             ]}
          />
          <div className="page-main">

@@ -48,7 +48,6 @@ export function ElectionConfigMunicipalityListPage() {
             breadcrumb={[
                { href: "/", label: t`Home` },
                {
-                  href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
             ]}

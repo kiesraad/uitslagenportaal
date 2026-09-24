@@ -8,7 +8,7 @@ describe("Breadcrumbs", () => {
       renderWithProviders(
          <Breadcrumbs>
             <BreadcrumbItem to="/ab2023">Waterschapsverkiezingen 2023</BreadcrumbItem>
-            <BreadcrumbItem to="/ab2023/fout-melden">Fout melden</BreadcrumbItem>
+            <BreadcrumbItem>Fout melden</BreadcrumbItem>
          </Breadcrumbs>,
          { initialEntries: ["/ab2023/fout-melden"] },
       );
@@ -16,9 +16,9 @@ describe("Breadcrumbs", () => {
       const nav = screen.getByRole("navigation", { name: "Kruimelpad" });
       const items = within(nav).getAllByRole("listitem");
       expect(items).toHaveLength(3);
-      expect(within(nav).getByRole("link", { name: "Fout melden" })).toHaveAttribute("aria-current", "page");
+      expect(within(nav).queryByRole("link", { name: "Fout melden" })).not.toBeInTheDocument();
+      expect(within(items[2]).getByText("Fout melden")).toHaveAttribute("aria-current", "page");
       expect(within(nav).getByRole("link", { name: "Home" })).not.toHaveAttribute("aria-current");
-      expect(items[0]).toHaveTextContent(">");
-      expect(within(items[0]).getByText(">")).toHaveAttribute("aria-hidden", "true");
+      expect(items[0].querySelector("svg")).toHaveAttribute("aria-hidden", "true");
    });
 });
