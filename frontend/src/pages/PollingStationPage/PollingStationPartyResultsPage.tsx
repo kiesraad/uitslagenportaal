@@ -70,7 +70,10 @@ export default function PollingStationPartyResultsPage() {
                { href: pollingStationPartyResultsRoute, label: partyName },
             ]}
          />
-         <ResultsPageColumns previewUrl={pollingStation.certified_document_preview_url}>
+         <ResultsPageColumns
+            previewUrl={pollingStation.certified_document_preview_url}
+            documentUrl={pollingStation.certified_document_url}
+         >
             <PartyCandidatesResultsContent
                voteCounts={pollingStation.vote_counts}
                partySlug={partySlug}

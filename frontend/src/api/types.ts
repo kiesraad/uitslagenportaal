@@ -59,6 +59,7 @@ export type Region = {
    timeline_entries?: TimelineEntry[];
    timeline_variant?: TimelineVariant;
    documents?: ElectionDocument[];
+   certified_document_url?: string | null;
    certified_document_preview_url?: string | null;
    region_category: RegionCategory;
    results_available_at: string | null;

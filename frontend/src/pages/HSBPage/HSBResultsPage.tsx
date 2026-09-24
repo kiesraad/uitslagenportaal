@@ -83,7 +83,10 @@ export function HSBResultsPage() {
                />
             }
          />
-         <ResultsPageColumns previewUrl={region.certified_document_preview_url}>
+         <ResultsPageColumns
+            previewUrl={region.certified_document_preview_url}
+            documentUrl={region.certified_document_url}
+         >
             <RegionResultsContent
                intro={
                   <Trans>

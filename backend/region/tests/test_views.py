@@ -168,27 +168,32 @@ def test_region_detail_has_no_proces_verbaal_preview_without_a_document():
 
     data = region_detail(region, "gsb")
 
+    assert data["certified_document_url"] is None
     assert data["certified_document_preview_url"] is None
 
 
 @pytest.mark.django_db
-def test_region_detail_links_the_proces_verbaal_preview_when_one_is_imported():
+def test_region_detail_links_the_proces_verbaal_when_one_is_imported():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)
     document = CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/pv.pdf")
+    default_storage.save("TK2025/pv.pdf", ContentFile(b"%PDF"))
     default_storage.save("TK2025/pv.png", ContentFile(b"\x89PNG"))
 
     data = region_detail(region, "gsb")
 
+    assert data["certified_document_url"] == f"/api/certified-documents/{document.pk}/"
     assert data["certified_document_preview_url"] == f"/api/certified-documents/{document.pk}/preview/"
 
 
 @pytest.mark.django_db
 def test_region_detail_has_no_preview_when_the_png_is_missing():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)
-    CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/missing.pdf")
+    document = CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/missing.pdf")
+    default_storage.save("TK2025/missing.pdf", ContentFile(b"%PDF"))
 
     data = region_detail(region, "gsb")
 
+    assert data["certified_document_url"] == f"/api/certified-documents/{document.pk}/"
     assert data["certified_document_preview_url"] is None
 
 

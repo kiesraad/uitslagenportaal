@@ -57,7 +57,10 @@ export function MunicipalityPartyResultsPage() {
                { href: municipalityPartyResultsRoute, label: partyName },
             ]}
          />
-         <ResultsPageColumns previewUrl={region.certified_document_preview_url}>
+         <ResultsPageColumns
+            previewUrl={region.certified_document_preview_url}
+            documentUrl={region.certified_document_url}
+         >
             <PartyCandidatesResultsContent
                voteCounts={region.vote_counts}
                partySlug={partySlug}

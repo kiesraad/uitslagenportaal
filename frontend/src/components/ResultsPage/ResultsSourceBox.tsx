@@ -11,9 +11,10 @@ import { InfoBox } from "../InfoBox";
 
 type Props = {
    previewUrl?: string | null;
+   documentUrl?: string | null;
 };
 
-export default function ResultsSourceBox({ previewUrl }: Props) {
+export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
    const { t } = useLingui();
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(electionConfigSlug));
@@ -34,18 +35,34 @@ export default function ResultsSourceBox({ previewUrl }: Props) {
             </span>
             {previewUrl ? (
                <>
-                  <div className="results-image-container mb-2">
-                     <div className="results-image-resize" aria-hidden="true">
-                        <FontAwesomeIcon icon={faMaximize} />
-                     </div>
-                     <img src={previewUrl} alt={t`Proces-verbaal`} className="results-image" />
-                  </div>
-                  <p className="mb-3">
-                     <a href={previewUrl}>
-                        <Trans>Bekijk het proces-verbaal</Trans>
-                        <FontAwesomeIcon icon={faArrowRight} />
+                  {documentUrl ? (
+                     <a
+                        href={documentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="results-image-container mb-2"
+                     >
+                        <div className="results-image-resize" aria-hidden="true">
+                           <FontAwesomeIcon icon={faMaximize} />
+                        </div>
+                        <img src={previewUrl} alt={t`Proces-verbaal`} className="results-image" />
                      </a>
-                  </p>
+                  ) : (
+                     <div className="results-image-container mb-2">
+                        <div className="results-image-resize" aria-hidden="true">
+                           <FontAwesomeIcon icon={faMaximize} />
+                        </div>
+                        <img src={previewUrl} alt={t`Proces-verbaal`} className="results-image" />
+                     </div>
+                  )}
+                  {documentUrl ? (
+                     <p className="mb-3">
+                        <a href={documentUrl} target="_blank" rel="noopener noreferrer">
+                           <Trans>Bekijk het proces-verbaal</Trans>
+                           <FontAwesomeIcon icon={faArrowRight} />
+                        </a>
+                     </p>
+                  ) : null}
                </>
             ) : (
                <div className="results-image-container results-image-pending mb-2">

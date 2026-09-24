@@ -34,6 +34,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     voter_turnout_counts = VoterTurnoutCountSummarySerializer(read_only=True, many=True)
     vote_counts = VoteCountSummarySerializer(read_only=True, many=True)
     documents = ElectionDocumentSerializer(read_only=True, many=True)
+    certified_document_url = serializers.SerializerMethodField()
     certified_document_preview_url = serializers.SerializerMethodField()
     timeline_entries = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
@@ -49,6 +50,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "vote_counts",
             "slug",
             "documents",
+            "certified_document_url",
             "certified_document_preview_url",
             "timeline_entries",
             "timeline_variant",
@@ -59,8 +61,17 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "election_slug",
         )
 
+    def _certified_document(self, region):
+        return next(iter(region.certified_election_documents.all()), None)
+
+    def get_certified_document_url(self, region) -> str | None:
+        document = self._certified_document(region)
+        if document is None or not default_storage.exists(document.storage_key):
+            return None
+        return reverse("certified-document", kwargs={"pk": document.pk})
+
     def get_certified_document_preview_url(self, region) -> str | None:
-        document = next(iter(region.certified_election_documents.all()), None)
+        document = self._certified_document(region)
         if document is None:
             return None
         preview_key = Path(document.storage_key).with_suffix(".png").as_posix()

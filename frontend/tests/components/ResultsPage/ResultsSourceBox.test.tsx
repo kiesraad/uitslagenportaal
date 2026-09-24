@@ -19,14 +19,14 @@ const electionConfig: ElectionConfig = {
    voting_url: "https://example.test/stemmen",
 };
 
-function renderBox(locale: "nl" | "en" = "nl", previewUrl?: string | null) {
+function renderBox(locale: "nl" | "en" = "nl", previewUrl?: string | null, documentUrl?: string | null) {
    const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
    });
    const query = electionConfigQuery(electionConfig.slug);
    queryClient.setQueryData(query.queryKey, electionConfig);
 
-   return renderWithProviders(<ResultsSourceBox previewUrl={previewUrl} />, {
+   return renderWithProviders(<ResultsSourceBox previewUrl={previewUrl} documentUrl={documentUrl} />, {
       locale,
       initialEntries: [`/${electionConfig.slug}/gsb/lisserdam`],
       path: "/:electionConfigSlug/*",
@@ -50,12 +50,18 @@ describe("ResultsSourceBox", () => {
       expect(screen.getByText(/14 december om 10:00/)).toBeInTheDocument();
    });
 
-   it("Shows the imported proces-verbaal preview when the region has one", () => {
+   it("Opens the full proces-verbaal from the picture and from the link", () => {
       const previewUrl = "/api/certified-documents/7/preview/";
-      renderBox("nl", previewUrl);
+      const documentUrl = "/api/certified-documents/7/";
+      renderBox("nl", previewUrl, documentUrl);
 
       expect(screen.getByRole("img", { name: "Proces-verbaal" })).toHaveAttribute("src", previewUrl);
-      expect(screen.getByRole("link", { name: /Bekijk het proces-verbaal/ })).toHaveAttribute("href", previewUrl);
+      const links = screen.getAllByRole("link", { name: /proces-verbaal/i });
+      expect(links).toHaveLength(2);
+      for (const link of links) {
+         expect(link).toHaveAttribute("href", documentUrl);
+         expect(link).toHaveAttribute("target", "_blank");
+      }
    });
 
    it("Renders the source box in English when that locale is active", () => {

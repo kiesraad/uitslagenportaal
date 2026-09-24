@@ -39,7 +39,10 @@ export function MunicipalityResultsPage() {
    return (
       <MunicipalityPageLayout electionConfig={electionConfig} region={region} municipalityTitle={municipalityTitle}>
          <HtmlHead title={t`Resultaten ${municipalityTitle}`} />
-         <ResultsPageColumns previewUrl={region.certified_document_preview_url}>
+         <ResultsPageColumns
+            previewUrl={region.certified_document_preview_url}
+            documentUrl={region.certified_document_url}
+         >
             <RegionResultsContent
                intro={
                   <Trans>
