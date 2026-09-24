@@ -71,7 +71,7 @@ export function HSBMunicipalityListPage() {
                   label: electionConfig.label,
                },
                getCsbCrumb(region, electionConfig.slug),
-               { href: hsbResultsRoute, label: region.region_name },
+               { label: region.region_name },
             ]}
             tabs={
                <SharedTabs

@@ -64,7 +64,7 @@ export function HSBResultsPage() {
                   label: electionConfig.label,
                },
                getCsbCrumb(region, electionConfig.slug),
-               { href: hsbResultsRoute, label: region.region_name },
+               { label: region.region_name },
             ]}
             tabs={
                <SharedTabs

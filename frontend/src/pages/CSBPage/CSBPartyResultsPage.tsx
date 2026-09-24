@@ -98,7 +98,7 @@ export function CSBPartyResultsPage() {
                   label: electionConfig.label,
                },
                { href: appRoutes.csbResults(electionConfig.slug, region.slug), label: region.region_name },
-               { href: appRoutes.csbPartyResults(electionConfig.slug, region.slug, partySlug), label: partyName },
+               { label: partyName },
             ]}
          />
          <div className="page-main">

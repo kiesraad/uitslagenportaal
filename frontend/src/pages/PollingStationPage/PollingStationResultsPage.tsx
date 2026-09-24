@@ -56,12 +56,6 @@ export default function PollingStationResultsPage() {
       region.slug,
       csbSlug,
    );
-   const pollingStationResultsRoute = appRoutes.pollingStationResults(
-      electionConfig.slug,
-      region.slug,
-      pollingStation.slug,
-      csbSlug,
-   );
 
    const stationName = pollingStation.region_name;
    const regionName = region.region_name;
@@ -80,7 +74,7 @@ export default function PollingStationResultsPage() {
                { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
                getCsbCrumb(region, electionConfig.slug),
                { href: municipalityPollingstationListRoute, label: t`Gemeente ${regionName}` },
-               { href: pollingStationResultsRoute, label: pollingStation.region_name },
+               { label: pollingStation.region_name },
             ]}
          />
          <div className="page-main page-main-two-columns">

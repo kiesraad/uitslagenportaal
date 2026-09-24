@@ -101,7 +101,7 @@ export function HSBPartyResultsPage() {
                },
                getCsbCrumb(region, electionConfig.slug),
                { href: appRoutes.hsbResults(electionConfig.slug, region.slug), label: region.region_name },
-               { href: appRoutes.hsbPartyResults(electionConfig.slug, region.slug, partySlug), label: partyName },
+               { label: partyName },
             ]}
          />
          <div className="page-main">

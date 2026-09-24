@@ -56,7 +56,7 @@ export default function PollingStationPartyResultsPage() {
                { href: appRoutes.home(), label: t`Home` },
                { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
                getCsbCrumb(region, electionConfig.slug),
-               { href: municipalityPollingstationListRoute, label: region.region_name },
+               { href: municipalityPollingstationListRoute, label: t`Gemeente ${region.region_name}` },
                { href: pollingStationResultsRoute, label: pollingStation.region_name },
             ]}
          />
