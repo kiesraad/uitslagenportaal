@@ -167,6 +167,7 @@ def test_region_detail_has_no_preview_when_the_png_is_missing():
     assert data["certified_document_preview_url"] is None
 
 
+@pytest.mark.django_db
 def test_csb_region_detail_returns_404_for_unknown_election_config():
     request = factory.get("/api/unknown/regions/anywhere", {"level": "csb"})
 
