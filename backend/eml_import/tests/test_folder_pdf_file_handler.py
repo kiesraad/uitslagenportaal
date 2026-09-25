@@ -107,6 +107,84 @@ def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path)
 
 
 @pytest.mark.django_db
+def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies(tmp_path):
+    config = ElectionConfigFactory(identifier="GEN", category=ElectionCategory.TK.value)
+    election = ElectionFactory(election_config=config, subcategory="TK")
+    kieskring = RegionFactory(
+        election=election,
+        region_category=RegionCategory.KIESKRING,
+        region_name="North",
+        region_number="1",
+    )
+    gemeente = RegionFactory(
+        election=election,
+        parent=kieskring,
+        region_category=RegionCategory.GEMEENTE,
+        region_name="Alpha",
+        region_number="0001",
+    )
+    station = RegionFactory(
+        election=election,
+        parent=gemeente,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name="Desk",
+        region_number="0001::SB1",
+    )
+    for name in (
+        "GEN_N10-1_0001::SB1.pdf",
+        "GEN_N10-2_0001::SB1.pdf",
+        "GEN_NA14-1_0001::SB1.pdf",
+        "GEN_NA31-1_Alpha.pdf",
+        "GEN_NA31-2_Alpha.pdf",
+        "GEN_NA14-2_Alpha.pdf",
+        "GEN_O7_North.pdf",
+    ):
+        write_pdf(tmp_path, name)
+
+    FolderPDFFileHanlder(tmp_path).run()
+
+    file_type = CertifiedElectionDocument.FileType
+    attached = {(document.region_id, document.file_type) for document in CertifiedElectionDocument.objects.all()}
+    assert attached == {
+        (station.id, file_type.N10_1),
+        (station.id, file_type.N10_2),
+        (station.id, file_type.NA14_1),
+        (gemeente.id, file_type.NA31_1),
+        (gemeente.id, file_type.NA31_2),
+        (gemeente.id, file_type.NA14_2),
+        (kieskring.id, file_type.O7),
+    }
+
+
+@pytest.mark.django_db
+def test_imports_p22_onto_the_csb_of_that_election(tmp_path):
+    file_type = CertifiedElectionDocument.FileType
+    cases = (
+        (ElectionCategory.TK, "Country", file_type.P22_1),
+        (ElectionCategory.PS, "Province", file_type.P22_1),
+        (ElectionCategory.WS, "Board", file_type.P22_2),
+        (ElectionCategory.GR, "Town", file_type.P22_2),
+    )
+    expected = set()
+    for category, region_name, document_type in cases:
+        config = ElectionConfigFactory(identifier=category.value, category=category.value)
+        election = ElectionFactory(election_config=config, subcategory=category.value)
+        csb = RegionFactory(
+            election=election,
+            region_category=category.config.csb,
+            region_name=region_name,
+            region_number="1",
+        )
+        write_pdf(tmp_path, f"{category.value}_{document_type}_{region_name}.pdf")
+        expected.add((csb.id, document_type))
+
+    FolderPDFFileHanlder(tmp_path).run()
+
+    attached = {(document.region_id, document.file_type) for document in CertifiedElectionDocument.objects.all()}
+    assert attached == expected
+
+
+@pytest.mark.django_db
 def test_rejects_a_filename_that_does_not_match_the_convention(tmp_path):
     write_pdf(tmp_path, "NA31-2_Barneveld.pdf")
 
