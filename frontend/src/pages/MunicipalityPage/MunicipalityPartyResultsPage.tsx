@@ -42,7 +42,7 @@ export function MunicipalityPartyResultsPage() {
    // No publication date until the region's results have been imported; the line is then omitted.
    const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
    const pageTitle = `${t`Telresultaten gemeente`}\n${regionName}`;
-   const documentTitle = t`Telresultaten gemeente – ${regionName}`;
+   const documentTitle = t`Telresultaten ${partyName} – gemeente ${regionName}`;
 
    return (
       <LayoutMain title={documentTitle} description={documentTitle}>

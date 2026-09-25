@@ -2,7 +2,7 @@ from django.db.models import Prefetch
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
-from election.models import CertifiedElectionDocument, ElectionDocument, VoteCount, VoterTurnoutCount
+from election.models import CertifiedElectionDocument, ElectionConfig, ElectionDocument, VoteCount, VoterTurnoutCount
 from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, EmlType, ReportingLevel
@@ -16,6 +16,7 @@ _OWN_RESULTS_EML_TYPE = {
 
 # FileType values are EML510b, not the EmlType strings 510b used on vote counts.
 _DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL = {
+    ReportingLevel.SB: ElectionDocument.FileType.EML_510B,
     ReportingLevel.GSB: ElectionDocument.FileType.EML_510B,
     ReportingLevel.HSB: ElectionDocument.FileType.EML_510C,
     ReportingLevel.CSB: ElectionDocument.FileType.EML_510D,
@@ -26,9 +27,7 @@ class RegionListView(ListAPIView):
     serializer_class = RegionListSerializer
 
     def get_queryset(self):
-        election_config_slug = self.request.query_params.get("election_config")
-        if not election_config_slug:
-            raise ValidationError({"election_config": "This query parameter is required."})
+        election_config_slug = self.kwargs.get("election_config")
 
         # optional
         region_category = self.request.query_params.get("region_category")
@@ -75,22 +74,34 @@ class RegionDetailView(RetrieveAPIView):
     serializer_class = RegionDetailSerializer
 
     def get_object(self):
-        election_config_slug = self.request.query_params.get("election_config")
-        region_slug = self.request.query_params.get("region")
+        election_config_slug = self.kwargs.get("election_config")
+        region_slug = self.kwargs.get("region")
         level = self.request.query_params.get("level")
         # optional
         csb_slug = self.request.query_params.get("csb")
         parent_region_slug = self.request.query_params.get("parent_region")
 
-        if not election_config_slug:
-            raise ValidationError({"election_config": "This query parameter is required."})
-        if not region_slug:
-            raise ValidationError({"region": "This query parameter is required."})
         if level not in ReportingLevel.values:
-            raise ValidationError({"level": "This query parameter is required and must be gsb, hsb, or csb."})
+            raise ValidationError({"level": "This query parameter is required and must be sb, gsb, hsb, or csb."})
 
         eml_type = EML_TYPE_BY_REPORTING_LEVEL[level]
-        document_file_type = _DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL[level]
+        document_file_type = [_DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL[level], ElectionDocument.FileType.CSV_OSV43]
+
+        election_config = ElectionConfig.objects.filter(slug=election_config_slug).first()
+        if election_config is None:
+            raise NotFound({"detail": "Election config not found."})
+
+        region_category = None
+        match level:
+            case ReportingLevel.CSB.value:
+                region_category = election_config.csb_type
+            case ReportingLevel.HSB.value:
+                region_category = RegionCategory.KIESKRING
+            case ReportingLevel.GSB.value:
+                region_category = RegionCategory.GEMEENTE
+            case ReportingLevel.SB.value:
+                region_category = RegionCategory.STEMBUREAU
+
         queryset = (
             Region.objects.select_related(
                 "csb",
@@ -107,7 +118,7 @@ class RegionDetailView(RetrieveAPIView):
                 ),
                 # ElectionDocument uses CurrentManager; explicit Prefetch ensures prefetched
                 # rows match obj.documents.all(), not all_objects.
-                Prefetch("documents", queryset=ElectionDocument.objects.filter(file_type=document_file_type)),
+                Prefetch("documents", queryset=ElectionDocument.objects.filter(file_type__in=document_file_type)),
                 Prefetch("certified_election_documents", queryset=CertifiedElectionDocument.objects.all()),
                 "election__election_config__timeline_entries",
             )
@@ -115,6 +126,7 @@ class RegionDetailView(RetrieveAPIView):
                 election__election_config__slug=election_config_slug,
                 election__election_config__date__gte=visibility_cutoff(),
                 slug=region_slug,
+                region_category=region_category,
             )
         )
         if parent_region_slug:

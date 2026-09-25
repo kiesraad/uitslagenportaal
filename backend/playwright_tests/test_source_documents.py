@@ -11,7 +11,7 @@ from playwright.sync_api import Page, expect
 
 from playwright_tests.conftest import EML_FIXTURES
 
-pytestmark = pytest.mark.playwright
+pytestmark = [pytest.mark.playwright, pytest.mark.usefixtures("seeded_database")]
 
 
 @pytest.mark.parametrize(

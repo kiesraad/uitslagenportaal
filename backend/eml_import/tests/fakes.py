@@ -142,3 +142,22 @@ def fake_eml_file(filename: str = "test.eml.xml") -> NamedBytesIO:
     correction import as a duplicate of an earlier one in the same test.
     """
     return NamedBytesIO(f'<eml n="{next(_fake_eml_seq)}"/>'.encode(), filename)
+
+
+def fake_osv43_csv(
+    verkiezing: str,
+    nummer: str,
+    gebied: str,
+    filename: str = "osv4-3_telling.csv",
+    body: str = '"Lijstnummer";"Aanduiding";"Totaal"',
+) -> NamedBytesIO:
+    """An OSV4-3 CSV shaped like the real exports: BOM, quoted, CRLF, header block ending in an empty row."""
+    rows = [
+        f'"Verkiezing";;"{verkiezing}";;',
+        '"Datum";;"2023-03-15";;',
+        f'"Gebied";;"{gebied}";;',
+        f'"Nummer";;"{nummer}";;',
+        ";;",
+        body,
+    ]
+    return NamedBytesIO("\r\n".join(rows).encode("utf-8-sig"), filename)

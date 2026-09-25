@@ -5,7 +5,7 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
-pytestmark = pytest.mark.playwright
+pytestmark = [pytest.mark.playwright, pytest.mark.usefixtures("seeded_database")]
 
 BORSELE_RESULTS = "/ab2023/gsb/654-borsele/csb/17-scheldestromen/resultaten"
 
@@ -34,7 +34,7 @@ def test_report_issue_page_states_the_reporting_window(page: Page):
     page.goto("/ab2023/fout-melden")
 
     expect(page.get_by_text(re.compile(r"Een melding aan het centraal stembureau kan van"))).to_be_visible()
-    # The button loses its href once the deadline has passed, so it is not a link then;
+    # The button is a link until the deadline and a disabled button after it;
     # the countdown heading above it moves with the clock too. Both are left unasserted
     # so the test fails on a regression rather than on a date.
-    expect(page.get_by_text("Meld een fout", exact=True)).to_be_visible()
+    expect(page.get_by_text(re.compile(r"^Meld een fout"))).to_be_visible()

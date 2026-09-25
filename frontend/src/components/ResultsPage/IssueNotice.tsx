@@ -17,10 +17,10 @@ export default function IssueNotice({ issueReportDeadline }: IssueNoticeProps) {
 
    return (
       <section id="fout-melden">
-         <InfoBox>
-            <h4>
+         <InfoBox disableMargin>
+            <h2 className="h4">
                <Trans>Klopt er iets niet?</Trans>
-            </h4>
+            </h2>
             <span>
                <Trans>
                   Soms gaat er iets mis bij het tellen, opschrijven of overtypen van de stemmen. Fouten die na{" "}
@@ -28,10 +28,10 @@ export default function IssueNotice({ issueReportDeadline }: IssueNoticeProps) {
                   de officiele uitslag.
                </Trans>
             </span>
-            <p>
+            <p className="max-sm:max-w-50">
                <Link to={appRoutes.reportIssue(electionConfigSlug ?? "")}>
                   <Trans>Meld een fout of iets dat niet klopt</Trans>
-                  <FontAwesomeIcon icon={faArrowRight} />
+                  <FontAwesomeIcon icon={faArrowRight} className="ml-1" />
                </Link>
             </p>
          </InfoBox>

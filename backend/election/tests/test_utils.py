@@ -3,7 +3,7 @@ import datetime
 import pytest
 
 from election import utils
-from election.utils import DELETION_GRACE_DAYS, deletion_cutoff, visibility_cutoff
+from election.utils import DELETION_GRACE_DAYS, deletion_cutoff, tz_aware_from_isoformat, visibility_cutoff
 
 
 @pytest.fixture
@@ -43,3 +43,19 @@ def test_deletion_cutoff_trails_visibility_cutoff_by_the_grace_period(frozen_now
     delta = visibility_cutoff() - deletion_cutoff()
 
     assert delta == datetime.timedelta(days=DELETION_GRACE_DAYS)
+
+
+@pytest.mark.parametrize(
+    ("time_zone", "value", "expected_utc"),
+    [
+        # Summer time: CEST, UTC+2.
+        ("Europe/Amsterdam", "2026-07-01T12:00:00", datetime.datetime(2026, 7, 1, 10, 0)),
+        # Winter time: CET, UTC+1.
+        ("Europe/Amsterdam", "2026-01-15T12:00:00", datetime.datetime(2026, 1, 15, 11, 0)),
+        ("UTC", "2026-07-01T12:00:00", datetime.datetime(2026, 7, 1, 12, 0)),
+    ],
+)
+def test_tz_aware_from_isoformat_reads_naive_values_in_the_project_time_zone(settings, time_zone, value, expected_utc):
+    settings.TIME_ZONE = time_zone
+
+    assert tz_aware_from_isoformat(value) == expected_utc.replace(tzinfo=datetime.timezone.utc)

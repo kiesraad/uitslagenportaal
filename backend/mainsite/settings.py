@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import ssl
 from pathlib import Path
@@ -33,6 +34,10 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
 ]
+
+# Dev-only: runserver reloads on file-change events instead of polling every module each second.
+if importlib.util.find_spec("django_watchfiles"):
+    INSTALLED_APPS.append("django_watchfiles")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

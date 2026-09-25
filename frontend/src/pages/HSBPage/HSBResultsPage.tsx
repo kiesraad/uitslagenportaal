@@ -18,8 +18,8 @@ export function hsbResultsLoader(queryClient: QueryClient) {
       const regionQueryOptions = regionQuery(params, "hsb");
 
       const [electionConfig] = await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionQueryOptions),
       ]);
 
       if (!electionConfig.has_hsb) {
@@ -54,7 +54,7 @@ export function HSBResultsPage() {
    const regionWithArticle = t(regionLabels.withArticle);
 
    return (
-      <LayoutMain title={t`Resultaten`}>
+      <LayoutMain title={t`Telresultaten ${regionType} ${regionName}`}>
          <PageTop
             title={t`${regionType} - ${regionName}`}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}

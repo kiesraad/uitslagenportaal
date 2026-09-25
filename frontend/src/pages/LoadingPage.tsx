@@ -10,9 +10,9 @@ export default function LoadingPage() {
    return (
       <BaseLayout>
          <LayoutMain title={t`Laden…`}>
-            <div className="flex items-center justify-center w-full flex-1">
-               <div className="flex items-center text-lg gap-2 text-gray-700">
-                  <FontAwesomeIcon icon={faCircleNotch} className="animate-spin" />
+            <div className="flex w-full flex-1 items-center justify-center">
+               <div role="status" className="flex items-center gap-2 text-gray-700 text-lg">
+                  <FontAwesomeIcon icon={faCircleNotch} className="animate-spin motion-reduce:animate-none" />
                   <Trans>Laden…</Trans>
                </div>
             </div>

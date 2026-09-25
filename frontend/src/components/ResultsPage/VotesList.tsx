@@ -20,18 +20,18 @@ export default function VotesList({ total, indexColumn, children }: PropsWithChi
    // Use `overflow-visible w-1 text-nowrap` to ignore the width of the spanned rows for the max-content col size
    return (
       <div className="votes-cast-list-container">
-         <div className="grid grid-cols-[max-content_auto_max-content_max-content] gap-x-4">
-            <div className="flex justify-between font-semibold pl-4.5 py-3 col-span-3">
-               <span className="overflow-visible w-1 text-nowrap">{indexColumn}</span>
+         <div className="grid grid-cols-[max-content_auto_max-content_max-content] gap-x-2 sm:gap-x-4">
+            <div className="col-span-3 flex justify-between py-3 pl-4.5 font-semibold">
+               <span className="w-1 overflow-visible text-nowrap">{indexColumn}</span>
                <span>
                   <Trans>Aantal stemmen</Trans>
                </span>
             </div>
-            {children}
+            <ul className="col-span-4 grid grid-cols-subgrid">{children}</ul>
 
             {total && (
-               <div className="flex items-center justify-between font-semibold h-18 pl-6 py-3 col-span-3">
-                  <span className="overflow-visible w-1 text-nowrap">{total.label}</span>
+               <div className="col-span-3 flex min-h-18 items-center justify-between py-3 pl-6 font-semibold">
+                  <span className="w-1 overflow-visible text-nowrap">{total.label}</span>
                   <span>{formatNumber(total.value)}</span>
                </div>
             )}
@@ -52,13 +52,17 @@ export function VotesListItem({ number, title, voteCount, href }: VotesListItemP
    const { formatNumber } = useFormatters();
 
    const className = twMerge(
-      "items-center hover:no-underline! even:bg-blue-50 h-18 pl-6 pr-4 grid col-span-4 grid-cols-subgrid",
+      "hover:no-underline! col-span-4 grid min-h-18 grid-cols-subgrid items-center pr-4 pl-6",
       isClickable && "hover:bg-blue-100",
    );
 
    const content = (
       <>
-         <span className="font-light text-gray-700">{number ?? "-"}</span>
+         <span className="font-light text-gray-700">
+            {number ?? "-"}
+            {/* Grid items have no whitespace between them, so screen readers would glue the number to the name. */}
+            <span className="sr-only">&nbsp;</span>
+         </span>
          <span className="in-[a]:text-blue-500 in-[a]:underline">{title}</span>
          <span className={twMerge("text-right font-number", voteCount && "font-semibold text-gray-700")}>
             {voteCount ? formatNumber(voteCount) : "–"}
@@ -67,11 +71,15 @@ export function VotesListItem({ number, title, voteCount, href }: VotesListItemP
       </>
    );
 
-   return isClickable ? (
-      <Link to={href} className={className}>
-         {content}
-      </Link>
-   ) : (
-      <div className={className}>{content}</div>
+   return (
+      <li className="col-span-4 grid grid-cols-subgrid odd:bg-blue-50">
+         {isClickable ? (
+            <Link to={href} className={className}>
+               {content}
+            </Link>
+         ) : (
+            <div className={className}>{content}</div>
+         )}
+      </li>
    );
 }

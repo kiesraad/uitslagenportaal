@@ -4,7 +4,7 @@ returns the EML type that belongs at that reporting level:
 
 - Waterschap (CSB) → 510d
 - Gemeente (GSB) → 510b only (both types are stored)
-- Stembureau (GSB) → 510b
+- Stembureau (SB) → 510b
 - Party result matrix → 510d GSB + CSB counts
 """
 
@@ -66,9 +66,8 @@ def ws_election(ab2023_config, ws_import_folder):
 
 
 def _region_detail(election_config_slug: str, region_slug: str, level: str, **extra):
-    params = {"election_config": election_config_slug, "region": region_slug, "level": level, **extra}
-    request = factory.get("/api/region/", params)
-    response = RegionDetailView.as_view()(request)
+    request = factory.get(f"/api/{election_config_slug}/regions/{region_slug}", {"level": level, **extra})
+    response = RegionDetailView.as_view()(request, election_config=election_config_slug, region=region_slug)
     assert response.status_code == 200, response.data
     return response.data
 
@@ -124,7 +123,7 @@ def test_stembureau_region_detail_returns_510b(ws_election):
     payload = _region_detail(
         ws_election.election_config.slug,
         stembureau.slug,
-        "gsb",
+        "sb",
         parent_region=borsele.slug,
     )
     _assert_only_eml_type(payload, EmlType.EML_510b)

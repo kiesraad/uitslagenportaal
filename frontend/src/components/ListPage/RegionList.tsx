@@ -137,7 +137,7 @@ export function RegionList({
 
          <SearchBar regionCategory={regionCategory} options={regionOptions} onSelect={navigateToRegion} />
 
-         {!isPollingStationList && <h2 className="mb-4">{t`Vind een ${regionInline} van A tot Z`}</h2>}
+         {!isPollingStationList && <h2 className="mb-4 max-sm:max-w-70">{t`Vind een ${regionInline} van A tot Z`}</h2>}
 
          {isPollingStationList ? (
             <SearchList>
@@ -152,7 +152,7 @@ export function RegionList({
          ) : (
             regionsByLetter.map(([letter, municipalities]) => (
                <div key={letter} className="mb-6">
-                  <div className="font-bold my-2 text-xl">{letter}</div>
+                  <h3 className="py-2 font-sans! max-sm:sticky max-sm:top-0 max-sm:bg-white/75">{letter}</h3>
                   <SearchList>
                      {municipalities.map((municipality) => (
                         <ListOptionLink
@@ -170,22 +170,26 @@ export function RegionList({
 }
 
 function SearchList({ children }: PropsWithChildren) {
-   return <div className="mb-5 max-w-2xl grid grid-cols-[max-content_auto_max-content]">{children}</div>;
+   return <ul className="mb-5 grid max-w-2xl grid-cols-[max-content_auto_max-content]">{children}</ul>;
 }
 
 function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: string }) {
    return (
-      <Link
-         to={to}
-         className="items-center hover:no-underline! odd:bg-blue-50 hover:bg-blue-100 h-18 px-6 grid col-span-3 grid-cols-subgrid"
-      >
-         <span className={twMerge(listOption.stationNumber && "font-light text-gray-700 pr-2")}>
-            {listOption.stationNumber}
-         </span>
-         <span className="underline">{listOption.label}</span>
-         <span>
-            <FontAwesomeIcon icon={faChevronRight} />
-         </span>
-      </Link>
+      <li className="col-span-3 grid grid-cols-subgrid odd:bg-blue-50">
+         <Link
+            to={to}
+            className="hover:no-underline! col-span-3 grid min-h-18 grid-cols-subgrid items-center px-6 hover:bg-blue-100"
+         >
+            <span className={twMerge(listOption.stationNumber && "pr-2 font-light text-gray-700")}>
+               {listOption.stationNumber}
+               {/* Grid items have no whitespace between them, so screen readers would glue the number to the name. */}
+               {listOption.stationNumber !== undefined && <span className="sr-only">&nbsp;</span>}
+            </span>
+            <span className="underline">{listOption.label}</span>
+            <span>
+               <FontAwesomeIcon icon={faChevronRight} />
+            </span>
+         </Link>
+      </li>
    );
 }

@@ -62,24 +62,38 @@
 
    --color-black: #000;
    --color-white: #fff;
+
+   --color-navy: var(--color-blue-900);
+   --color-blue: var(--color-blue-500);
+   --color-blue-hov: #0f52a0;
+   --color-row-alt: var(--color-blue-50);
+   --color-text: var(--color-gray-900);
+   --color-muted: var(--color-gray-500);
+   --color-border: #d0d7de;
+   --color-info-bg: #dce8f8;
+   --color-box-bg: #f4f7fa;
+   --color-info-bdr: #1569c5;
+   --color-faq-bg: #f3f7fa;
+   --color-done: #24763a;
+   --color-footer-bg: #1f3165;
 }
 
 /* Palette and fontnames */
 :root {
-   --c-navy: #102e53;
-   --c-blue: #00619c;
-   --c-blue-hov: #0f52a0;
-   --c-row-alt: var(--color-blue-50);
-   --c-text: var(--color-gray-900);
-   --c-muted: #696f78;
-   --c-border: #d0d7de;
-   --c-info-bg: #dce8f8;
-   --c-box-bg: #f4f7fa;
-   --c-info-bdr: #1569c5;
-   --c-faq-bg: #f3f7fa;
-   --c-done: #24763a;
-   --c-white: #ffffff;
-   --c-footer-bg: #1f3165;
+   --c-navy: var(--color-navy);
+   --c-blue: var(--color-blue);
+   --c-blue-hov: var(--color-blue-hov);
+   --c-row-alt: var(--color-row-alt);
+   --c-text: var(--color-text);
+   --c-muted: var(--color-muted);
+   --c-border: var(--color-border);
+   --c-info-bg: var(--color-info-bg);
+   --c-box-bg: var(--color-box-bg);
+   --c-info-bdr: var(--color-info-bdr);
+   --c-faq-bg: var(--color-faq-bg);
+   --c-done: var(--color-done);
+   --c-footer-bg: var(--color-footer-bg);
+   --c-white: var(--color-white);
 
    --f-body: var(--font-sans);
    --f-title: var(--font-title);
@@ -106,6 +120,10 @@ a:hover {
 }
 
 /* Base heading styles (as defined in Figma) */
+h1,
+.h1 {
+   @apply font-bold text-3xl font-title;
+}
 h2,
 .h2 {
    @apply font-bold text-2xl font-title;
@@ -138,14 +156,12 @@ h4,
    height: 32px;
 }
 
-/* Wrapper */
-.layout-main {
-   display: flex;
-   flex-direction: column;
-   flex: 1;
-   width: 100%;
+/* RouteFocus focuses the h1 after navigation; it is not an interactive element. */
+main h1:focus {
+   outline: none;
 }
 
+/* Wrapper */
 .platform-layout-main {
    flex: 1;
    width: 100%;
@@ -208,52 +224,6 @@ h4,
    line-height: 1;
    color: var(--c-blue);
    flex-shrink: 0;
-}
-
-/* breadcrumbs */
-.breadcrumb {
-   display: flex;
-   align-items: center;
-   gap: 5px;
-   margin-top: 14px;
-   margin-bottom: 38px;
-}
-
-.breadcrumb-item {
-   display: flex;
-   align-items: center;
-   gap: 5px;
-}
-
-.breadcrumb a {
-   color: var(--c-blue);
-}
-
-.breadcrumb-sep {
-   color: var(--c-muted);
-   font-size: 0.75rem;
-}
-
-.platform-breadcrumb {
-   display: flex;
-   flex-wrap: wrap;
-   align-items: center;
-   gap: 5px;
-}
-
-.platform-breadcrumb-item {
-   display: flex;
-   align-items: center;
-   gap: 5px;
-}
-
-.platform-breadcrumb a {
-   color: var(--c-blue);
-}
-
-.platform-breadcrumb-sep {
-   color: var(--c-muted);
-   font-size: 0.75rem;
 }
 
 .platform-page-title {
@@ -330,22 +300,6 @@ h4,
    color: var(--c-navy);
 }
 
-.page-space-1 {
-   display: flex;
-   flex-direction: column;
-   gap: 1rem;
-}
-.page-space-2 {
-   display: flex;
-   flex-direction: column;
-   gap: 2rem;
-}
-.page-space-3 {
-   display: flex;
-   flex-direction: column;
-   gap: 3rem;
-}
-
 /* SearchField */
 .search-label {
    display: block;
@@ -384,8 +338,9 @@ h4,
    color: #adb5bd;
 }
 
-.search-input:focus {
-   border-color: var(--c-blue);
+.search-input:focus-visible {
+   outline: 2px solid var(--c-blue);
+   outline-offset: 2px;
 }
 
 .search-box {
@@ -662,7 +617,9 @@ h4,
 }
 
 .tl-title {
+   font-family: var(--f-body);
    font-size: 1.1rem;
+   line-height: 1.5;
    font-weight: 700;
    color: var(--c-text);
    margin-bottom: 2px;
@@ -809,31 +766,6 @@ h4,
    min-height: 300px;
 }
 
-/* Process steps */
-.home-process-title {
-   font-size: 1.35rem;
-   font-weight: 700;
-   color: var(--c-text);
-   margin-bottom: 0.6rem;
-}
-
-.home-process-intro {
-   line-height: 1.65;
-   color: var(--c-text);
-   margin-bottom: 2rem;
-}
-
-/* Bottom info section */
-.home-bottom-info {
-   padding: 2rem 6rem;
-   padding-right: 0;
-}
-
-.home-bottom-info .result-info-box {
-   margin-top: 0;
-   margin-bottom: 1.5rem;
-}
-
 .home-external-links {
    line-height: 1.6;
    color: var(--c-text);
@@ -974,13 +906,6 @@ h4,
    bottom: -5px;
 }
 
-.f-logo-grid-item-bullet {
-   width: 8px;
-   height: 8px;
-   border-radius: 50%;
-   background: var(--c-muted);
-}
-
 .footer-right {
    display: flex;
    gap: 64px;
@@ -992,7 +917,7 @@ h4,
    min-height: 148px;
 }
 
-.footer-col h4 {
+.footer-col h2 {
    font-size: 1rem;
    font-weight: 700;
    color: var(--c-white);
@@ -1073,32 +998,6 @@ h4,
    margin-bottom: 8px;
 }
 
-.home-page-hero {
-   display: grid;
-   grid-template-columns: repeat(2, 1fr);
-   gap: 90px;
-   padding-bottom: 2.5rem;
-   position: relative;
-   overflow: hidden;
-}
-.home-page-hero-right {
-   display: flex;
-   flex-direction: column;
-   justify-content: center;
-}
-.home-page-hero-left {
-   display: flex;
-   flex-direction: column;
-   justify-content: center;
-   gap: 26px;
-}
-.home-page-hero-left h1,
-.home-page-hero-left p {
-   margin-bottom: 0;
-}
-.home-page-hero p {
-   color: var(--c-text);
-}
 .home-hero-card {
    background: white;
    padding: 28px;
@@ -1115,21 +1014,6 @@ h4,
    align-items: center;
    gap: 8px;
    font-size: 0.925rem;
-}
-.home-page-hero-img-container {
-   padding-right: 5rem;
-}
-@media (max-width: 1300px) {
-   .home-page-hero-img-container {
-      padding-right: 0;
-   }
-}
-.home-page-hero-img {
-   position: relative;
-   aspect-ratio: 11 / 12;
-   width: 100%;
-   background: #d0d0d0;
-   z-index: 10;
 }
 
 /* hero grid */
@@ -1215,13 +1099,6 @@ h4,
    top: -4px;
 }
 
-.hero-grid-item-bullet {
-   width: 8px;
-   height: 8px;
-   border-radius: 50%;
-   background: var(--c-blue);
-}
-
 /* Responsive – Tablet (≤ 1024px) */
 @media (max-width: 1024px) {
    .header-inner {
@@ -1261,10 +1138,6 @@ h4,
       gap: 2rem;
    }
 
-   .page-main-w-half {
-      width: 100%;
-   }
-
    /* Footer */
    .footer-top {
       flex-direction: column;
@@ -1277,6 +1150,9 @@ h4,
 
    .footer-meta {
       margin: 0 2.5rem;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
    }
 
    .footer-lang-inner {
@@ -1300,36 +1176,12 @@ h4,
    }
 
    /* Home page */
-   .home-page-hero {
-      grid-template-columns: 1fr;
-      gap: 0;
-      padding-bottom: 2rem;
-   }
-
-   .home-page-hero-right {
-      order: -1;
-   }
-
-   .home-page-hero-img-container {
-      padding-bottom: 40px;
-      padding-right: 0;
-   }
-
-   .home-page-hero-img {
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-   }
-
    .hero-grid-container {
       display: none;
    }
 
    .home-hero-card {
       padding: 22px;
-   }
-
-   .home-bottom-info {
-      padding: 1.5rem 2.5rem;
    }
 
    .home-info-box {
@@ -1393,17 +1245,9 @@ h4,
       gap: 1.5rem;
    }
 
-   .page-main-w-half {
-      width: 100%;
-   }
-
    /* Title */
    .platform-page-title {
       font-size: 1.35rem;
-   }
-
-   .breadcrumb {
-      margin-bottom: 20px;
    }
 
    /* Tabs: horizontal scroll if needed */
@@ -1466,9 +1310,6 @@ h4,
    .footer-meta {
       margin: 0 1.25rem;
       padding: 24px 0 32px;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 16px;
    }
 
    .footer-copy {
@@ -1498,29 +1339,6 @@ h4,
    }
 
    /* Home page */
-   .home-page-hero {
-      grid-template-columns: 1fr;
-      gap: 0;
-      padding-bottom: 1.25rem;
-   }
-
-   .home-page-hero-right {
-      order: -1;
-   }
-
-   .home-page-hero-left {
-      gap: 14px;
-   }
-
-   .home-page-hero-img-container {
-      padding-right: 0;
-   }
-
-   .home-page-hero-img {
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-   }
-
    .hero-grid-container {
       display: none;
    }
@@ -1534,10 +1352,6 @@ h4,
       font-size: 1.1rem;
    }
 
-   .home-bottom-info {
-      padding: 1.25rem;
-   }
-
    .home-info-box {
       padding: 14px 16px;
       margin-bottom: 20px;
@@ -1545,10 +1359,6 @@ h4,
 
    .home-info-body h3 {
       font-size: 1rem;
-   }
-
-   .home-process-title {
-      font-size: 1.15rem;
    }
 
    .home-external-links p {

@@ -101,7 +101,7 @@ def election_config(db):
 @pytest.fixture
 def election(election_config):
     """The Election created by importing the default document."""
-    EML110aImporter(make_eml(), fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=make_eml()).parse()
     return Election.objects.get(election_config=election_config)
 
 
@@ -112,7 +112,7 @@ def regions(election):
 
 
 def test_creates_election_from_identifier(election_config):
-    EML110aImporter(make_eml(), fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=make_eml()).parse()
 
     election = Election.objects.get(election_config=election_config)
     assert election.name == ELECTION_NAME
@@ -143,7 +143,7 @@ def test_csb_is_the_election_tree_root(regions):
 
 
 def test_creates_registered_parties(election_config):
-    EML110aImporter(make_eml(parties=("Partij voor Zeeland", "CDA")), fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=make_eml(parties=("Partij voor Zeeland", "CDA"))).parse()
 
     election = Election.objects.get(election_config=election_config)
     names = Party.objects.filter(election=election).values_list("registered_name", flat=True)
@@ -151,7 +151,7 @@ def test_creates_registered_parties(election_config):
 
 
 def test_creates_top_level_contest(election_config):
-    EML110aImporter(make_eml(contest_id="alle"), fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=make_eml(contest_id="alle")).parse()
 
     election = Election.objects.get(election_config=election_config)
     contest = Contest.objects.get(election=election)
@@ -160,11 +160,11 @@ def test_creates_top_level_contest(election_config):
 
 
 def test_correction_replaces_prior_contest(election_config):
-    EML110aImporter(make_eml(), fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=make_eml()).parse()
     election = Election.objects.get(election_config=election_config)
     original_contest_id = Contest.objects.get(election=election).pk
 
-    EML110aImporter(make_eml(), fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=make_eml()).parse()
 
     contest = Contest.objects.get(election=election)
     assert contest.pk != original_contest_id
@@ -174,12 +174,12 @@ def test_correction_replaces_prior_contest(election_config):
 def test_correction_deletes_prior_regions_and_parties(election_config):
     eml = make_eml(parties=("Partij voor Zeeland", "CDA"))
 
-    EML110aImporter(eml, fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=eml).parse()
     election = Election.objects.get(election_config=election_config)
     original_region_ids = set(Region.objects.filter(election=election).values_list("pk", flat=True))
     original_party_ids = set(Party.objects.filter(election=election).values_list("pk", flat=True))
 
-    EML110aImporter(eml, fake_eml_file()).parse()
+    EML110aImporter(fake_eml_file(), eml=eml).parse()
 
     assert Region.objects.filter(election=election).count() == 3
     assert Party.objects.filter(election=election).count() == 2

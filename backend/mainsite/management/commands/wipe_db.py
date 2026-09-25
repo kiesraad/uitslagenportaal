@@ -1,3 +1,4 @@
+from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -18,3 +19,8 @@ class Command(BaseCommand):
         for label, count in sorted(summary.items()):
             if count:
                 self.stdout.write(f"  {label}: {count}")
+
+        bucket = getattr(default_storage, "bucket", None)
+        if bucket:
+            bucket.objects.all().delete()
+            self.stdout.write(self.style.SUCCESS("Object storage bucket emptied."))

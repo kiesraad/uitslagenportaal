@@ -1,8 +1,11 @@
 import { faHourglass } from "@fortawesome/free-regular-svg-icons";
-import { faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
+import { faCircleNotch, faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Link } from "react-router";
+import Button from "@/elements/Button.tsx";
+import { ExternalLinkIcon } from "@/elements/ExternalLinkIcon.tsx";
+import PageSection from "@/elements/PageSection.tsx";
 import type { ElectionConfig } from "../api/types.ts";
 import { HeroGrid } from "../components/HomePage/HeroGrid.tsx";
 import { LayoutMain } from "../components/LayoutMain.tsx";
@@ -32,12 +35,10 @@ export function HomePage() {
 
    return (
       <LayoutMain title={t`Home`} description={t`De telresultaten van alle stembureaus in Nederland.`}>
-         <section className={"page-top home-page-hero flex-1"}>
-            <div className={"home-page-hero-left"}>
-               <h1 className="text-3xl sm:text-4xl font-title font-bold">
-                  <Trans>
-                     De telresultaten van alle <br /> stembureaus in Nederland.
-                  </Trans>
+         <PageSection className="relative grid flex-1 grid-cols-1 overflow-hidden bg-blue-100 lg:grid-cols-2 lg:gap-20">
+            <div className="flex flex-col justify-center gap-3.5 sm:gap-6.5">
+               <h1 className="max-w-xl font-bold font-title text-3xl sm:text-4xl">
+                  <Trans>De telresultaten van alle stembureaus in Nederland.</Trans>
                </h1>
                <p>
                   <Trans>
@@ -52,7 +53,8 @@ export function HomePage() {
                      <h2>
                         <Trans>Bekijk de telresultaten</Trans>
                      </h2>
-                     <p>
+                     <p role="status">
+                        <FontAwesomeIcon icon={faCircleNotch} className="animate-spin motion-reduce:animate-none" />
                         <Trans>Verkiezingen laden…</Trans>
                      </p>
                   </div>
@@ -61,12 +63,13 @@ export function HomePage() {
                      <h2>
                         <Trans>Bekijk de telresultaten</Trans>
                      </h2>
-                     <p>
+                     <p role="alert">
                         <Trans>Kan verkiezingen niet laden.</Trans>
                      </p>
-                     <button type="button" onClick={() => refetch()}>
+                     <Button onClick={() => refetch()}>
+                        <FontAwesomeIcon icon={faRotateRight} />
                         <Trans>Opnieuw proberen</Trans>
-                     </button>
+                     </Button>
                   </div>
                ) : hasResult ? (
                   <div className={"home-hero-card"}>
@@ -75,7 +78,9 @@ export function HomePage() {
                      </h2>
                      {election_configs.map((election_config) => (
                         <div key={election_config.slug} className={"home-hero-card-link"}>
-                           <span className="gemeente-chevron mb-1">›</span>
+                           <span className="gemeente-chevron mb-1" aria-hidden="true">
+                              ›
+                           </span>
                            <Link
                               to={appRoutes.electionConfigMunicipalityList(election_config.slug)}
                               className="font-semibold"
@@ -87,7 +92,7 @@ export function HomePage() {
                   </div>
                ) : (
                   <div className={"home-hero-card"}>
-                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                     <div className="flex items-center gap-2">
                         <FontAwesomeIcon icon={faHourglass} />
                         <h2>
                            <Trans>Telresultaten volgen binnenkort</Trans>
@@ -106,15 +111,15 @@ export function HomePage() {
             </div>
 
             <HeroGrid />
-         </section>
+         </PageSection>
 
          {election_configs.length === 1 && (
             <>
-               <section className="page-main page-main-w-half">
-                  <h2 className="home-process-title">
+               <PageSection className="flex max-w-5xl flex-col gap-4">
+                  <h2>
                      <Trans>Hoe komt de uitslag tot stand?</Trans>
                   </h2>
-                  <p className="home-process-intro">
+                  <p>
                      <Trans>
                         Hieronder wordt stap voor stap uitgelegd hoe het resultaat van de verkiezing tot stand komt. Het
                         begint bij het stembureau en eindigt bij de definitieve uitslag die de Kiesraad publiceert. Bij
@@ -123,9 +128,9 @@ export function HomePage() {
                   </p>
 
                   <Timeline entries={timelineEntries} />
-               </section>
+               </PageSection>
 
-               <section className="home-bottom-info page-main-w-half">
+               <PageSection className="max-w-5xl pt-0!">
                   <div className="home-info-box">
                      <div className="home-info-body">
                         <h3>
@@ -135,7 +140,9 @@ export function HomePage() {
                            const electionLabel = election_config.label;
                            return (
                               <div key={election_config.slug} className={"home-hero-card-link"}>
-                                 <span className="gemeente-chevron">›</span>
+                                 <span className="gemeente-chevron" aria-hidden="true">
+                                    ›
+                                 </span>
                                  <Link to={appRoutes.electionConfigMunicipalityList(election_config.slug)}>
                                     <Trans>Bekijk de tellingen per stembureau voor {electionLabel}</Trans>
                                  </Link>
@@ -161,12 +168,12 @@ export function HomePage() {
                               rel="noopener noreferrer"
                            >
                               <Trans>Databank verkiezinguitslag</Trans>
-                              <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
+                              <ExternalLinkIcon />
                            </a>
                         </span>
                      </p>
                   </div>
-               </section>
+               </PageSection>
             </>
          )}
       </LayoutMain>

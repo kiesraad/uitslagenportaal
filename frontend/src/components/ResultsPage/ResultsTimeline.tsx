@@ -50,6 +50,10 @@ export default function ResultsTimeline({ description, variant, entries }: Props
                <FontAwesomeIcon icon={faArrowDown} color={direction === "asc" ? "Black" : "Grey"} />
             </span>
             <span className="text-blue-500">
+               {/* The visible text is the current order; this says what pressing the button does. */}
+               <span className="sr-only">
+                  <Trans>Volgorde omdraaien, nu:</Trans>{" "}
+               </span>
                {direction === "desc" ? t`Laatste stap bovenaan` : t`Eerste stap bovenaan`}
             </span>
          </button>

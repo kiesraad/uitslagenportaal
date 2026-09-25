@@ -418,6 +418,19 @@ s3 = [
 ]
 
 [[package]]
+name = "django-watchfiles"
+version = "1.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+  { name = "django" },
+  { name = "watchfiles" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1a/89/51b82766a1c937dea9fb92f0fb7666919d120379fc26dc84ab504e35f37e/django_watchfiles-1.4.0.tar.gz", hash = "sha256:88e253e8e8427834eac467923d334c35010279b3e9ceb5bb91014be83975b11b", size = 8647, upload-time = "2025-09-22T16:34:04.634Z" }
+wheels = [
+  { url = "https://files.pythonhosted.org/packages/c7/85/3d31f347e1a3eef9be381792df1994ff25e4db4659ab40a5cc3f814e3a1a/django_watchfiles-1.4.0-py3-none-any.whl", hash = "sha256:40cb3180987c63629b0681ab228b65afd68e0f783388cc72a45620378213bb48", size = 6766, upload-time = "2025-09-22T16:34:03.193Z" },
+]
+
+[[package]]
 name = "djangorestframework"
 version = "3.18.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1024,6 +1037,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-playwright-axe"
+version = "4.13.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest-playwright" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/21/56/ecd9dde66ebaed15d236292ea9157bb86e3332bb6ba8f87eb4263839e0c6/pytest_playwright_axe-4.13.0.tar.gz", hash = "sha256:f7acdf66f511735e3d8ec15412f5804704cdda8aab8d99af2266e74453d070f7", size = 804158, upload-time = "2026-08-07T10:50:48.457Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6b/6d/387d66753fb6abb829e60ed74fa5f09ee88a5dba38b4b038b51cd2fec632/pytest_playwright_axe-4.13.0-py3-none-any.whl", hash = "sha256:ca760c38709e31a2d4fda6608cacc70e2b191a92fbd034a7d1ddc4b8d92452c0", size = 413766, upload-time = "2026-08-07T10:50:47.156Z" },
+]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -1210,11 +1235,13 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "debugpy" },
+  { name = "django-watchfiles" },
     { name = "factory-boy" },
     { name = "fakeredis", extra = ["lua"] },
     { name = "pytest" },
     { name = "pytest-django" },
     { name = "pytest-playwright" },
+    { name = "pytest-playwright-axe" },
     { name = "ruff" },
     { name = "watchfiles" },
 ]
@@ -1243,11 +1270,13 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "debugpy", specifier = ">=1.8.0" },
+  { name = "django-watchfiles", specifier = ">=1.4.0" },
     { name = "factory-boy", specifier = ">=3.3.3" },
     { name = "fakeredis", extras = ["lua"], specifier = ">=2.37.0" },
     { name = "pytest", specifier = ">=8.4.0" },
     { name = "pytest-django", specifier = ">=4.13.0" },
     { name = "pytest-playwright", specifier = ">=0.9.0" },
+    { name = "pytest-playwright-axe", specifier = ">=4.13.0" },
     { name = "ruff", specifier = ">=0.16.3" },
     { name = "watchfiles", specifier = ">=1.2.0" },
 ]

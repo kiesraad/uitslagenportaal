@@ -10,7 +10,7 @@ type Props = {
 export default function ResultsPageColumns({ children, previewUrl, documentUrl }: Props) {
    return (
       <div className="page-main page-main-two-columns">
-         <div className="page-space-3">{children}</div>
+         <div className="flex flex-col gap-4 sm:gap-12">{children}</div>
          <div className="counting-results-column">
             <ResultsSourceBox previewUrl={previewUrl} documentUrl={documentUrl} />
          </div>

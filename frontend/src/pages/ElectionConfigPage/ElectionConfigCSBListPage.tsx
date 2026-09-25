@@ -13,10 +13,10 @@ import { appRoutes } from "@/utils/routes.ts";
 export function electionConfigCSBListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const electionConfig = await queryClient.ensureQueryData(electionConfigQueryOptions);
+      const electionConfig = await queryClient.query(electionConfigQueryOptions);
 
       const regionsQueryOptions = regionsQuery(params, electionConfig?.csb_type);
-      await queryClient.ensureQueryData(regionsQueryOptions);
+      await queryClient.query(regionsQueryOptions);
 
       return {
          electionConfigQuery: electionConfigQueryOptions,

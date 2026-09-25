@@ -6,6 +6,7 @@ from pyeml_bindings import (
 
 from election.models import (
     Contest,
+    ElectionDocument,
 )
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from mainsite.utils.eml_type import EmlType
@@ -16,6 +17,7 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
     """Kandidatenlijst"""
 
     eml_type = EmlType.EML_230b
+    file_type = ElectionDocument.FileType.EML_230B
 
     def _get_election_identifier_data(self):
         return self.eml.candidate_list.election.election_identifier

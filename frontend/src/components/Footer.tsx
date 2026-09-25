@@ -5,6 +5,8 @@ import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRevalidator } from "react-router";
 import Button from "@/elements/Button.tsx";
+import { NewWindowHint } from "@/elements/ExternalLinkIcon.tsx";
+import KiesraadGridHexagon from "@/elements/KiesraadGridHexagon.tsx";
 import { type Locale, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
 import { electionConfigQuery, useElectionConfigs } from "../hooks/queries.ts";
 
@@ -68,13 +70,13 @@ export function Footer() {
          <div className="footer-navy">
             <div className="footer-top">
                <div className="footer-logo">
-                  <div className="footer-logo-left">
+                  <div className="footer-logo-left text-gray-500">
                      <div className="f-logo-grid-v-container">
                         <img src="/footer_logo.png" alt="Kiesraad" className="footer-logo-img" />
                         <div className="f-logo-grid-v">
                            <div className="f-logo-grid-item">
-                              <div className="f-logo-grid-item-bullet"></div>
-                              <div className="f-logo-grid-item-bullet"></div>
+                              <KiesraadGridHexagon className="f-logo-grid-item-bullet" />
+                              <KiesraadGridHexagon className="f-logo-grid-item-bullet" />
                            </div>
                            <div className="f-logo-grid-item"></div>
                         </div>
@@ -83,8 +85,8 @@ export function Footer() {
                         {Array.from({ length: 5 }).map((_, index) => (
                            // biome-ignore lint/suspicious/noArrayIndexKey: order is fixed
                            <div key={index} className="f-logo-grid-item">
-                              <div className="f-logo-grid-item-bullet"></div>
-                              <div className="f-logo-grid-item-bullet"></div>
+                              <KiesraadGridHexagon className="f-logo-grid-item-bullet" />
+                              <KiesraadGridHexagon className="f-logo-grid-item-bullet" />
                            </div>
                         ))}
                      </div>
@@ -92,31 +94,35 @@ export function Footer() {
                </div>
                <div className="footer-right">
                   <div className="footer-col">
-                     <h4>
+                     <h2 className="h4">
                         <Trans>Zie je een fout op de pagina?</Trans>
-                     </h4>
+                     </h2>
                      <a href={REPORT_ERROR_URL} target="_blank" rel="noopener noreferrer">
                         <FontAwesomeIcon icon={faChevronRight} />
                         <Trans>Melding maken</Trans>
+                        <NewWindowHint />
                      </a>
                   </div>
                   <div className="footer-col">
-                     {label && <h4>{label}</h4>}
+                     {label && <h2 className="h4">{label}</h2>}
                      {countingInfoUrl && (
                         <a href={countingInfoUrl} target="_blank" rel="noopener noreferrer">
                            <ExternalLinkIcon />
                            <Trans>Uitleg over telproces</Trans>
+                           <NewWindowHint />
                         </a>
                      )}
                      {votingUrl && (
                         <a href={votingUrl} target="_blank" rel="noopener noreferrer">
                            <ExternalLinkIcon />
                            <Trans>Stemmen</Trans>
+                           <NewWindowHint />
                         </a>
                      )}
                      <a href={KIESRAAD_URL} target="_blank" rel="noopener noreferrer">
                         <ExternalLinkIcon />
                         Kiesraad.nl
+                        <NewWindowHint />
                      </a>
                   </div>
                </div>

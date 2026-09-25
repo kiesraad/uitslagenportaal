@@ -60,6 +60,6 @@ def import_election_eml_commits(election_config_id: int) -> tuple[int, bool]:
     # Schedule the next task in a few seconds if there are unprocessed commits
     if commits_remaining:
         logger.info("Scheduling next task for election config id=%d...", election_config_id)
-        import_election_eml_commits.apply_async(args=[election_config_id], countdown=2)
+        import_election_eml_commits.apply_async(args=[election_config_id], countdown=5)
 
     return files_processed, commits_remaining

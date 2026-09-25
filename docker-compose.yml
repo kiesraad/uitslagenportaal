@@ -31,6 +31,8 @@ services:
     volumes:
       - ./backend:/app
       - ./backend/.data:/app/.data
+      # Hides the host's .venv so its churn cannot trigger the autoreloader; the image installs into system Python.
+      - /app/.venv
     depends_on:
       db:
         condition: service_healthy

@@ -9,7 +9,7 @@ rather than duplicating those suites in English.
 import pytest
 from playwright.sync_api import Page, expect
 
-pytestmark = pytest.mark.playwright
+pytestmark = [pytest.mark.playwright, pytest.mark.usefixtures("seeded_database")]
 
 
 def test_switching_to_english_changes_the_interface_and_survives_a_reload(page: Page):

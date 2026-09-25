@@ -1,6 +1,6 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faFolder } from "@fortawesome/free-regular-svg-icons";
-import { faFile } from "@fortawesome/free-solid-svg-icons";
+import { faFile, faTable } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -42,6 +42,12 @@ const FILE_TYPE_MAPPINGS: Record<
       icon: faFolder,
       description: msg`Output van de optelsoftware, bevat de resultaten van alle onderliggende regio's en de totaaltellingen.`,
    },
+   "CSV_OSV4-3": {
+      name: msg`OSV4-3 tellingbestand`,
+      fileType: "csv",
+      icon: faTable,
+      description: msg`Output van de optelsoftware, bevat alle resultaten voor de regio en onderliggende regio's.`,
+   },
 }))();
 
 function toReportFiles(documents: ElectionDocument[] | undefined): ReportFile[] {
@@ -74,7 +80,7 @@ export default function ReportsWithResults({ title, subtitle, description, docum
    return (
       <div className={"results-reports"}>
          <h3 className={"results-reports-title mb-2"}>{title}</h3>
-         {subtitle && <h5 className={"results-reports-subtitle mb-3"}>{subtitle}</h5>}
+         {subtitle && <p className={"results-reports-subtitle mb-3"}>{subtitle}</p>}
          <p className={"results-reports-description mb-3"}>{description}</p>
          <div className={"results-reports-files"}>
             {files.map((file) => {

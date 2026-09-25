@@ -48,7 +48,7 @@ export default function PollingStationPartyResultsPage() {
    // No publication date until the region's results have been imported; the line is then omitted.
    const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
    const pageTitle = `${t`Telresultaten stembureau`}\n${stationName}`;
-   const documentTitle = t`Telresultaten stembureau – ${stationName}`;
+   const documentTitle = t`Telresultaten ${partyName} – stembureau ${stationName}`;
 
    // Only an unknown party slug is a 404; empty results mean "not published yet"
    const hasAnyResults = (pollingStation.vote_counts?.length ?? 0) > 0;

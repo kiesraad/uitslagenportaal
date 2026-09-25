@@ -1,20 +1,39 @@
-import type { ButtonHTMLAttributes, PropsWithChildren } from "react";
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
 import { twMerge } from "tailwind-merge";
+import { tw } from "@/utils/tw.ts";
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-   className?: string;
-};
+type ButtonProps =
+   | (ButtonHTMLAttributes<HTMLButtonElement> & { href?: never })
+   | (AnchorHTMLAttributes<HTMLAnchorElement> & { href: string; disabled?: boolean });
 
-export default function Button({ className, children, ...props }: PropsWithChildren<ButtonProps>) {
+const buttonClasses = tw`hover:no-underline! flex w-fit cursor-pointer flex-row items-center gap-2 rounded-sm border border-blue-700 bg-white px-4 py-3 text-blue-700! hover:bg-blue-700 hover:text-white!`;
+const disabledClasses = tw`cursor-default bg-gray-100 opacity-75 hover:bg-gray-100 hover:text-blue-700`;
+
+export default function Button(props: ButtonProps) {
+   if (props.href !== undefined) {
+      const { className, disabled, href, children, ...anchorProps } = props;
+      // An <a> has no disabled state, so a disabled link becomes a disabled button, which screen readers announce.
+      if (disabled) {
+         return (
+            <button type="button" className={twMerge(buttonClasses, disabledClasses, className)} disabled>
+               {children}
+            </button>
+         );
+      }
+
+      return (
+         <a className={twMerge(buttonClasses, className)} href={href} {...anchorProps}>
+            {children}
+         </a>
+      );
+   }
+
+   const { className, disabled, ...buttonProps } = props;
    return (
       <button
-         className={twMerge(
-            "rounded-sm bg-white hover:bg-blue-500 text-blue-500 hover:text-white border border-blue-500 py-3 px-4 flex flex-row gap-2 items-center",
-            className,
-         )}
-         {...props}
-      >
-         {children}
-      </button>
+         className={twMerge(buttonClasses, disabled && disabledClasses, className)}
+         disabled={disabled}
+         {...buttonProps}
+      />
    );
 }

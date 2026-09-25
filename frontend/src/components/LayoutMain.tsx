@@ -10,8 +10,12 @@ interface LayoutMainProps {
 export function LayoutMain({ children, title, description }: LayoutMainProps) {
    return (
       <>
-         <HtmlHead title={title} description={description} />
-         <main className="layout-main">{children}</main>
+         {/* Without a title the page renders its own HtmlHead; a second <title> would be empty. */}
+         {title && <HtmlHead title={title} description={description} />}
+         {/* Focusable as the skip link's target. */}
+         <main id="main-content" tabIndex={-1} className="flex w-full flex-1 flex-col focus:outline-none">
+            {children}
+         </main>
       </>
    );
 }

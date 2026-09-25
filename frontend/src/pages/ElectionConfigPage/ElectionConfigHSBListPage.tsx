@@ -17,8 +17,8 @@ export function electionConfigHSBListLoader(queryClient: QueryClient) {
       const regionsQueryOptions = regionsQuery(params, "KIESKRING", true);
 
       const [electionConfig] = await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionsQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionsQueryOptions),
       ]);
 
       if (!electionConfig.has_hsb) {

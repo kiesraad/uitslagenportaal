@@ -21,9 +21,9 @@ export function csbMunicipalityListLoader(queryClient: QueryClient) {
       );
 
       await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
-         queryClient.ensureQueryData(regionsQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionQueryOptions),
+         queryClient.query(regionsQueryOptions),
       ]);
 
       return {

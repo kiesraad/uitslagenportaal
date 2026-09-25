@@ -221,8 +221,9 @@ def test_slugs_fold_punctuation_into_the_separator(name, expected_folder, expect
 
 
 def test_every_document_type_the_importer_reads_is_placed_on_a_branch():
-    """Anything ElectionImporter would import must end up in the replica, whatever the election."""
-    assert set(BaseFileHandler._DOCUMENT_TYPES) <= set(EXCHANGE_LEVELS) | set(COUNTING_LEVELS)
+    """Any EML document ElectionImporter would import must end up in the replica, whatever the election."""
+    eml_types = {doc_type for doc_type in BaseFileHandler._DOCUMENT_TYPES if isinstance(doc_type, EmlType)}
+    assert eml_types <= set(EXCHANGE_LEVELS) | set(COUNTING_LEVELS)
 
 
 def test_exchange_documents_are_zipped_under_their_own_name(replica):

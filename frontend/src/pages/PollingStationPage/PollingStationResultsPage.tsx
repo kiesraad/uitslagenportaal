@@ -23,13 +23,13 @@ export function pollingStationLoader(queryClient: QueryClient) {
             csbSlug: params.csbSlug,
             parentRegionSlug: params.regionSlug,
          },
-         "gsb",
+         "sb",
       );
 
       await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
-         queryClient.ensureQueryData(pollingStationQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionQueryOptions),
+         queryClient.query(pollingStationQueryOptions),
       ]);
 
       return {
