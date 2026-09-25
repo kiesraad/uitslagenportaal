@@ -9,10 +9,11 @@ from django.test import RequestFactory
 from django.utils import timezone
 
 from election.models import ElectionCategory
-from election.tests.factories import ElectionConfigFactory, ElectionDocumentFactory
+from election.tests.factories import CertifiedElectionDocumentFactory, ElectionConfigFactory, ElectionDocumentFactory
 from election.utils import VISIBILITY_MONTHS
-from election.views import download_document
+from election.views import certified_document, certified_document_preview, download_document
 from mainsite.models import RegionCategory
+from region.tests.factories import RegionFactory
 
 
 @pytest.fixture
@@ -89,3 +90,50 @@ def test_download_document_returns_file_for_valid_storage_key():
 def test_download_document_returns_404_for_missing_document():
     with pytest.raises(Http404):
         download_document(RequestFactory().get("/"), 999999)
+
+
+@pytest.mark.django_db
+def test_certified_document_streams_the_pdf_inline():
+    default_storage.save("TK2025/TK2025_NA31-2_Barneveld.pdf", ContentFile(b"%PDF-1.4"))
+    document = CertifiedElectionDocumentFactory(
+        storage_key="TK2025/TK2025_NA31-2_Barneveld.pdf",
+        region=RegionFactory(),
+    )
+
+    response = certified_document(RequestFactory().get("/"), document.pk)
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/pdf"
+    assert response["Content-Disposition"] == 'inline; filename="TK2025_NA31-2_Barneveld.pdf"'
+    assert b"".join(response.streaming_content) == b"%PDF-1.4"
+
+
+@pytest.mark.django_db
+def test_certified_document_returns_404_when_the_pdf_is_missing():
+    document = CertifiedElectionDocumentFactory(storage_key="TK2025/missing.pdf", region=RegionFactory())
+
+    with pytest.raises(Http404):
+        certified_document(RequestFactory().get("/"), document.pk)
+
+
+@pytest.mark.django_db
+def test_certified_document_preview_redirects_to_the_png():
+    default_storage.save("TK2025/pv.png", ContentFile(b"\x89PNG"))
+    document = CertifiedElectionDocumentFactory(
+        storage_key="TK2025/pv.pdf",
+        region=RegionFactory(),
+    )
+
+    response = certified_document_preview(RequestFactory().get("/"), document.pk)
+
+    assert response.status_code == 302
+    assert response.url == f"{settings.MEDIA_URL}TK2025/pv.png"
+    assert default_storage.url_parameters["TK2025/pv.png"] == {"ResponseContentType": "image/png"}
+
+
+@pytest.mark.django_db
+def test_certified_document_preview_returns_404_when_the_png_is_missing():
+    document = CertifiedElectionDocumentFactory(storage_key="TK2025/missing.pdf", region=RegionFactory())
+
+    with pytest.raises(Http404):
+        certified_document_preview(RequestFactory().get("/"), document.pk)

@@ -139,14 +139,24 @@
 
 .results-image-container {
    position: relative;
+   display: block;
    max-width: 15rem;
-   aspect-ratio: 1 / 0.65;
+   aspect-ratio: 210 / 297;
    overflow: hidden;
+   background: white;
    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 }
 
+a.results-image-container,
+a.results-image-container:hover {
+   text-decoration: none;
+}
+
 .results-image {
-   max-width: 15rem;
+   width: 100%;
+   height: 100%;
+   object-fit: contain;
+   display: block;
 }
 
 .results-image-resize {
@@ -163,7 +173,42 @@
    color: white;
 }
 
-.counting-results-infobox {
+.results-image-pending {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+   gap: 0.75rem;
+   padding: 1.25rem;
+   text-align: center;
+}
+
+.results-image-pending-icon {
+   color: var(--c-blue);
+   font-size: 1.75rem;
+}
+
+.results-image-pending-title {
+   margin: 0;
+   font-weight: 700;
+   font-size: 0.95rem;
+   line-height: 1.35;
+   color: var(--c-text);
+}
+
+.results-image-pending-text {
+   margin: 0;
+   font-size: 0.875rem;
+   line-height: 1.45;
+   color: var(--c-muted);
+}
+
+/* Short grid item: sticks while scrolling, then docks to the bottom of the
+   results column so it lines up with the issue notice. */
+.counting-results-column {
+   position: sticky;
+   top: 1.5rem;
+   align-self: start;
    margin-top: 8.5rem;
 }
 
@@ -305,7 +350,7 @@
 }
 
 @media (max-width: 1024px) {
-   .counting-results-infobox {
+   .counting-results-column {
       margin-top: 0;
    }
 }

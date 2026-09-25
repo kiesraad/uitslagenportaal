@@ -4,6 +4,7 @@ import { type LoaderFunctionArgs, useLoaderData } from "react-router";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent.tsx";
+import ResultsPageColumns from "../../components/ResultsPage/ResultsPageColumns.tsx";
 import SharedTabs from "../../components/SharedTabs.tsx";
 import { electionConfigQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
@@ -76,29 +77,30 @@ export function CSBResultsPage() {
                />
             }
          />
-         <div className="page-main page-main-two-columns">
-            <div className="flex flex-col gap-4 sm:gap-12">
-               <RegionResultsContent
-                  intro={
-                     <Trans>
-                        Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd,
-                        overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in
-                        het proces-verbaal van het hoofdstembureau.
-                     </Trans>
-                  }
-                  voteCounts={region.vote_counts}
-                  turnoutVotes={region.voter_turnout_counts}
-                  reports={{
-                     description: t`Onderstaande documenten bevatten de laatste telresultaten van ${regionWithArticle}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`,
-                     documents: region.documents,
-                  }}
-                  timelineVariant={region.timeline_variant}
-                  timelineEntries={electionConfig.timeline_entries ?? []}
-                  issueReportDeadline={electionConfig.issue_report_deadline}
-                  notPublishedRegionLabel={region.region_name}
-               />
-            </div>
-         </div>
+         <ResultsPageColumns
+            previewUrl={region.certified_document_preview_url}
+            documentUrl={region.certified_document_url}
+         >
+            <RegionResultsContent
+               intro={
+                  <Trans>
+                     Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd,
+                     overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in
+                     het proces-verbaal van het hoofdstembureau.
+                  </Trans>
+               }
+               voteCounts={region.vote_counts}
+               turnoutVotes={region.voter_turnout_counts}
+               reports={{
+                  description: t`Onderstaande documenten bevatten de laatste telresultaten van ${regionWithArticle}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`,
+                  documents: region.documents,
+               }}
+               timelineVariant={region.timeline_variant}
+               timelineEntries={electionConfig.timeline_entries ?? []}
+               issueReportDeadline={electionConfig.issue_report_deadline}
+               notPublishedRegionLabel={region.region_name}
+            />
+         </ResultsPageColumns>
       </LayoutMain>
    );
 }

@@ -5,6 +5,7 @@ import type { MunicipalityLoaderData } from "@/pages/MunicipalityPage/Municipali
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCandidatesResultsContent.tsx";
+import ResultsPageColumns from "../../components/ResultsPage/ResultsPageColumns.tsx";
 import { useFormatters } from "../../utils/format.ts";
 import { getCsbCrumb } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
@@ -56,15 +57,16 @@ export function MunicipalityPartyResultsPage() {
                { href: municipalityPartyResultsRoute, label: partyName },
             ]}
          />
-         <div className="page-main page-main-two-columns">
-            <div className="flex flex-col gap-4 sm:gap-12">
-               <PartyCandidatesResultsContent
-                  voteCounts={region.vote_counts}
-                  partySlug={partySlug}
-                  issueReportDeadline={electionConfig.issue_report_deadline}
-               />
-            </div>
-         </div>
+         <ResultsPageColumns
+            previewUrl={region.certified_document_preview_url}
+            documentUrl={region.certified_document_url}
+         >
+            <PartyCandidatesResultsContent
+               voteCounts={region.vote_counts}
+               partySlug={partySlug}
+               issueReportDeadline={electionConfig.issue_report_deadline}
+            />
+         </ResultsPageColumns>
       </LayoutMain>
    );
 }

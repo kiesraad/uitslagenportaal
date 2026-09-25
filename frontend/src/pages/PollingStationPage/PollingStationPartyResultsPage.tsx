@@ -4,6 +4,7 @@ import { useLoaderData, useParams } from "react-router";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop";
 import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCandidatesResultsContent";
+import ResultsPageColumns from "../../components/ResultsPage/ResultsPageColumns";
 import { useFormatters } from "../../utils/format";
 import { getCsbCrumb } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
@@ -69,15 +70,16 @@ export default function PollingStationPartyResultsPage() {
                { href: pollingStationPartyResultsRoute, label: partyName },
             ]}
          />
-         <div className="page-main page-main-two-columns">
-            <div className="flex flex-col gap-4 sm:gap-12">
-               <PartyCandidatesResultsContent
-                  voteCounts={pollingStation.vote_counts}
-                  partySlug={partySlug}
-                  issueReportDeadline={electionConfig.issue_report_deadline}
-               />
-            </div>
-         </div>
+         <ResultsPageColumns
+            previewUrl={pollingStation.certified_document_preview_url}
+            documentUrl={pollingStation.certified_document_url}
+         >
+            <PartyCandidatesResultsContent
+               voteCounts={pollingStation.vote_counts}
+               partySlug={partySlug}
+               issueReportDeadline={electionConfig.issue_report_deadline}
+            />
+         </ResultsPageColumns>
       </LayoutMain>
    );
 }
