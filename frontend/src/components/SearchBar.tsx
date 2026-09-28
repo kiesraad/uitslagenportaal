@@ -2,21 +2,12 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Plural, useLingui } from "@lingui/react/macro";
 import { type FocusEvent, type ReactNode, type SubmitEvent, useMemo, useState } from "react";
+import { useFilter } from "react-aria-components";
 import Button from "@/elements/Button.tsx";
 import type { RegionCategory } from "../api/types";
 import { getRegionLabels } from "../utils/region";
 import { lowercaseFirst } from "../utils/text";
-import SearchAutocomplete from "./SearchAutocomplete.tsx";
-
-export type SearchListOption = {
-   id: string;
-   label: string;
-   searchText?: string;
-   content?: ReactNode;
-   csbSlug?: string;
-   sortName?: string;
-   stationNumber?: number;
-};
+import SearchAutocomplete, { type SearchListOption } from "./SearchAutocomplete.tsx";
 
 type Props = {
    regionCategory: RegionCategory;
@@ -28,6 +19,7 @@ type Props = {
 
 export default function SearchBar({ regionCategory, options, onSelect, maxSuggestions = 8, children }: Props) {
    const { t } = useLingui();
+   const { contains } = useFilter({ sensitivity: "base" });
 
    const SEARCH_CONFIG = {
       STEMBUREAU: {
@@ -39,6 +31,10 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
          label: t`Zoek gemeente`,
          placeholder: t`Bijv. Zoetermeer`,
          submitBehavior: "exact-match" as const,
+         aliases: {
+            "'s-Gravenhage": ["Den Haag"],
+            "'s-Hertogenbosch": ["Den Bosch"],
+         },
       },
       WATERSCHAP: {
          label: t`Zoek waterschap`,
@@ -52,6 +48,17 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
       },
    } as const;
 
+   const ALIASES: Record<string, string> = {
+      "'s-Gravenhage": "Den Haag",
+      "'s-Hertogenbosch": "Den Bosch",
+      // Frisian official names, found by their Dutch counterparts
+      Dantumadiel: "Dantumadeel",
+      "De Fryske Marren": "De Friese Meren",
+      "Noardeast-Fryslân": "Noordoost-Friesland",
+      "Súdwest-Fryslân": "Zuidwest-Friesland",
+      Tytsjerksteradiel: "Tietjerksteradeel",
+   } as const;
+
    const labels = getRegionLabels(regionCategory);
    const regionSingular = t(labels.singular);
    const regionInline = lowercaseFirst(regionSingular);
@@ -63,22 +70,24 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
    const { label, placeholder, submitBehavior } = config;
    const [query, setQuery] = useState("");
    const [open, setOpen] = useState(false);
+   const searchOptions = useMemo(() => {
+      return options.map((option) => {
+         option.searchText = [option?.searchText, ALIASES?.[option.label]].filter((option) => option).join(" ");
+         return option;
+      });
+   }, [ALIASES, options]);
 
    const suggestions = useMemo(() => {
-      const normalizedQuery = query.trim().toLowerCase();
+      const normalizedQuery = query.trim();
 
       if (normalizedQuery.length === 0) {
          return [];
       }
 
-      return options
-         .filter((option) => {
-            const searchable = `${option.label} ${option.searchText ?? ""}`.toLowerCase();
-
-            return searchable.includes(normalizedQuery);
-         })
+      return searchOptions
+         .filter((option) => contains(`${option.label} ${option.searchText ?? ""}`, normalizedQuery))
          .slice(0, maxSuggestions);
-   }, [maxSuggestions, options, query]);
+   }, [maxSuggestions, searchOptions, query, contains]);
    const isOpen = open && suggestions.length > 0;
 
    function selectOption(option: SearchListOption) {

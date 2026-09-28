@@ -1,5 +1,15 @@
+import type { ReactNode } from "react";
 import { Autocomplete, Input, Label, ListBox, ListBoxItem, SearchField } from "react-aria-components";
-import type { SearchListOption } from "./SearchBar";
+
+export type SearchListOption = {
+   id: string;
+   label: string;
+   searchText?: string;
+   content?: ReactNode;
+   csbSlug?: string;
+   sortName?: string;
+   stationNumber?: number;
+};
 
 type Props = {
    label: string;

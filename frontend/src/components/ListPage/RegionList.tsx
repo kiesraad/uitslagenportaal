@@ -9,7 +9,7 @@ import { useFormatters } from "../../utils/format";
 import { getRegionLabels } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
 import { lowercaseFirst } from "../../utils/text";
-import type { SearchListOption } from "../SearchBar";
+import type { SearchListOption } from "../SearchAutocomplete";
 import SearchBar from "../SearchBar";
 import { RegionListNotAvailable } from "./RegionListNotAvailable";
 
