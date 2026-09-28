@@ -251,6 +251,11 @@ msgstr "Then go to"
 msgid "Gemeente"
 msgstr "Municipality"
 
+#. placeholder {0}: region.region_name
+#: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
+msgid "Gemeente {0}"
+msgstr "Municipality {0}"
+
 #: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
 #: src/pages/MunicipalityPage/MunicipalityPollingstationListPage.tsx
 #: src/pages/MunicipalityPage/MunicipalityResultsPage.tsx

@@ -5,7 +5,7 @@ type Props = {
    title: string;
    subtitle?: string;
    breadcrumb?: ({
-      href: string;
+      href?: string;
       label: string;
    } | null)[];
    tabs?: ReactNode;

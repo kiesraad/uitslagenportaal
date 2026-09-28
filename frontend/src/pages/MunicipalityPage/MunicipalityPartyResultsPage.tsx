@@ -23,12 +23,6 @@ export function MunicipalityPartyResultsPage() {
 
    const csbSlug = region.csb_slug ?? undefined;
    const municipalityResultsRoute = appRoutes.municipalityResults(electionConfig.slug, region.slug, csbSlug);
-   const municipalityPartyResultsRoute = appRoutes.municipalityPartyResults(
-      electionConfig.slug,
-      region.slug,
-      partySlug,
-      csbSlug,
-   );
 
    // Only an unknown party slug is a 404; empty results mean "not published yet"
    const hasAnyResults = (region.vote_counts?.length ?? 0) > 0;
@@ -53,7 +47,7 @@ export function MunicipalityPartyResultsPage() {
                { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
                getCsbCrumb(region, electionConfig.slug),
                { href: municipalityResultsRoute, label: t`Gemeente ${regionName}` },
-               { href: municipalityPartyResultsRoute, label: partyName },
+               { label: partyName },
             ]}
          />
          <div className="page-main page-main-two-columns">

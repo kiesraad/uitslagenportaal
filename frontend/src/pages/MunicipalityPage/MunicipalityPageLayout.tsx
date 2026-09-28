@@ -47,7 +47,7 @@ export default function MunicipalityPageLayout({
                   label: electionConfig.label,
                },
                getCsbCrumb(region, electionConfig.slug),
-               { href: municipalityPollingstationListRoute, label: municipalityTitle },
+               { label: municipalityTitle },
             ]}
             tabs={
                hasResults && (
