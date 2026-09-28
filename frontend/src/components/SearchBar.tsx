@@ -2,11 +2,11 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Plural, useLingui } from "@lingui/react/macro";
 import { type FocusEvent, type ReactNode, type SubmitEvent, useMemo, useState } from "react";
-import { Autocomplete, Input, Label, ListBox, ListBoxItem, SearchField } from "react-aria-components";
 import Button from "@/elements/Button.tsx";
 import type { RegionCategory } from "../api/types";
 import { getRegionLabels } from "../utils/region";
 import { lowercaseFirst } from "../utils/text";
+import SearchAutocomplete from "./SearchAutocomplete.tsx";
 
 export type SearchListOption = {
    id: string;
@@ -116,36 +116,15 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
       // biome-ignore lint/a11y/noNoninteractiveElementInteractions: onBlur only tracks focus leaving the controls inside.
       <form className="mb-6 max-w-150" onSubmit={handleSubmit} onBlur={handleBlur}>
          <div className="flex flex-row flex-wrap gap-x-2">
-            {/* Filtering happens above, so the collection gets no filter; Enter only picks what the user highlighted. */}
-            <Autocomplete inputValue={query} onInputChange={handleChange} disableAutoFocusFirst>
-               <SearchField className="contents">
-                  <Label className="mb-1 basis-full font-bold">{label}</Label>
-                  <div className="relative min-w-0 flex-1">
-                     <Input
-                        placeholder={placeholder}
-                        className="w-full rounded-xs border border-blue-500 bg-white px-3 py-2.5 font-sans placeholder:text-gray-300 focus-visible:outline-blue-400 data-focused:outline-2 data-focused:outline-blue-400 sm:px-4 sm:py-3 [&::-webkit-search-cancel-button]:appearance-none"
-                     />
-                     {isOpen && (
-                        <ListBox
-                           aria-label={label}
-                           items={suggestions}
-                           className="absolute inset-x-0 top-full z-10 mt-1 max-h-75 divide-y divide-gray-200 overflow-y-auto rounded-xs border border-blue-500 bg-white"
-                        >
-                           {(option) => (
-                              <ListBoxItem
-                                 id={`${option.id}-${option.csbSlug ?? ""}`}
-                                 textValue={option.label}
-                                 onAction={() => selectOption(option)}
-                                 className="flex min-h-12 cursor-pointer select-none items-center p-3 data-focused:bg-blue-50 data-hovered:bg-blue-50"
-                              >
-                                 {option.content ?? option.label}
-                              </ListBoxItem>
-                           )}
-                        </ListBox>
-                     )}
-                  </div>
-               </SearchField>
-            </Autocomplete>
+            <SearchAutocomplete
+               label={label}
+               placeholder={placeholder}
+               value={query}
+               onChange={handleChange}
+               options={suggestions}
+               isOpen={isOpen}
+               onSelect={selectOption}
+            />
             <Button type="submit" aria-label={t`Zoeken`} variant="inverted">
                <FontAwesomeIcon icon={faSearch} />
             </Button>
