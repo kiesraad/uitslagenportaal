@@ -123,8 +123,7 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
                   <div className="relative min-w-0 flex-1">
                      <Input
                         placeholder={placeholder}
-                        type="text"
-                        className="w-full rounded-xs border border-blue bg-white px-3 py-2.5 font-sans text-text placeholder:text-gray-300 focus-visible:outline-blue-400 data-focused:outline-2 data-focused:outline-blue-400 sm:px-4 sm:py-3"
+                        className="w-full rounded-xs border border-blue-500 bg-white px-3 py-2.5 font-sans placeholder:text-gray-300 focus-visible:outline-blue-400 data-focused:outline-2 data-focused:outline-blue-400 sm:px-4 sm:py-3 [&::-webkit-search-cancel-button]:appearance-none"
                      />
                      {isOpen && (
                         <ListBox
@@ -147,7 +146,7 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
                   </div>
                </SearchField>
             </Autocomplete>
-            <Button type="submit" aria-label={t`Zoeken`}>
+            <Button type="submit" aria-label={t`Zoeken`} variant="inverted">
                <FontAwesomeIcon icon={faSearch} />
             </Button>
             {children}
