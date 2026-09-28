@@ -79,6 +79,18 @@ describe("SearchBar", () => {
       expect(onSelect).toHaveBeenCalledExactlyOnceWith(options[0]);
    });
 
+   it("finds a gemeente by its alias without changing the options passed in", () => {
+      const gemeenten = [{ id: "den-haag", label: "'s-Gravenhage" }];
+      renderWithProviders(<SearchBar regionCategory="GEMEENTE" options={gemeenten} onSelect={vi.fn()} />);
+      const input = screen.getByRole("searchbox");
+
+      fireEvent.change(input, { target: { value: "den" } });
+      fireEvent.change(input, { target: { value: "den haag" } });
+
+      expect(screen.getByRole("option", { name: "'s-Gravenhage" })).toBeInTheDocument();
+      expect(gemeenten[0]).toEqual({ id: "den-haag", label: "'s-Gravenhage" });
+   });
+
    it("submits the first match for a stembureau", () => {
       const { input, onSelect } = renderSearchBar("STEMBUREAU");
       fireEvent.change(input, { target: { value: "zoeter" } });

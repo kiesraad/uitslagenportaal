@@ -1,13 +1,12 @@
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Plural, useLingui } from "@lingui/react/macro";
-import { type FocusEvent, type ReactNode, type SubmitEvent, useMemo, useState } from "react";
-import { useFilter } from "react-aria-components";
+import { useLingui } from "@lingui/react/macro";
+import { type ReactNode, type SubmitEvent, useMemo, useState } from "react";
 import Button from "@/elements/Button.tsx";
 import type { RegionCategory } from "../api/types";
 import { getRegionLabels } from "../utils/region";
 import { lowercaseFirst } from "../utils/text";
-import SearchAutocomplete, { type SearchListOption } from "./SearchAutocomplete.tsx";
+import SearchAutocomplete, { type SearchListOption, useOptionMatcher } from "./SearchAutocomplete.tsx";
 
 type Props = {
    regionCategory: RegionCategory;
@@ -17,9 +16,19 @@ type Props = {
    children?: ReactNode;
 };
 
+const ALIASES: Record<string, string> = {
+   "'s-Gravenhage": "Den Haag",
+   "'s-Hertogenbosch": "Den Bosch",
+   // Frisian official names, found by their Dutch counterparts
+   Dantumadiel: "Dantumadeel",
+   "De Fryske Marren": "De Friese Meren",
+   "Noardeast-Fryslân": "Noordoost-Friesland",
+   "Súdwest-Fryslân": "Zuidwest-Friesland",
+   Tytsjerksteradiel: "Tietjerksteradeel",
+};
+
 export default function SearchBar({ regionCategory, options, onSelect, maxSuggestions = 8, children }: Props) {
    const { t } = useLingui();
-   const { contains } = useFilter({ sensitivity: "base" });
 
    const SEARCH_CONFIG = {
       STEMBUREAU: {
@@ -31,10 +40,6 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
          label: t`Zoek gemeente`,
          placeholder: t`Bijv. Zoetermeer`,
          submitBehavior: "exact-match" as const,
-         aliases: {
-            "'s-Gravenhage": ["Den Haag"],
-            "'s-Hertogenbosch": ["Den Bosch"],
-         },
       },
       WATERSCHAP: {
          label: t`Zoek waterschap`,
@@ -48,17 +53,6 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
       },
    } as const;
 
-   const ALIASES: Record<string, string> = {
-      "'s-Gravenhage": "Den Haag",
-      "'s-Hertogenbosch": "Den Bosch",
-      // Frisian official names, found by their Dutch counterparts
-      Dantumadiel: "Dantumadeel",
-      "De Fryske Marren": "De Friese Meren",
-      "Noardeast-Fryslân": "Noordoost-Friesland",
-      "Súdwest-Fryslân": "Zuidwest-Friesland",
-      Tytsjerksteradiel: "Tietjerksteradeel",
-   } as const;
-
    const labels = getRegionLabels(regionCategory);
    const regionSingular = t(labels.singular);
    const regionInline = lowercaseFirst(regionSingular);
@@ -69,36 +63,20 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
    };
    const { label, placeholder, submitBehavior } = config;
    const [query, setQuery] = useState("");
-   const [open, setOpen] = useState(false);
-   const searchOptions = useMemo(() => {
-      return options.map((option) => {
-         option.searchText = [option?.searchText, ALIASES?.[option.label]].filter((option) => option).join(" ");
-         return option;
-      });
-   }, [ALIASES, options]);
+   const searchOptions = useMemo(
+      () =>
+         options.map((option) => {
+            const alias = ALIASES[option.label];
+            return alias ? { ...option, searchText: [option.searchText, alias].filter(Boolean).join(" ") } : option;
+         }),
+      [options],
+   );
 
-   const suggestions = useMemo(() => {
-      const normalizedQuery = query.trim();
-
-      if (normalizedQuery.length === 0) {
-         return [];
-      }
-
-      return searchOptions
-         .filter((option) => contains(`${option.label} ${option.searchText ?? ""}`, normalizedQuery))
-         .slice(0, maxSuggestions);
-   }, [maxSuggestions, searchOptions, query, contains]);
-   const isOpen = open && suggestions.length > 0;
+   const matches = useOptionMatcher();
 
    function selectOption(option: SearchListOption) {
       setQuery(option.label);
-      setOpen(false);
       onSelect(option);
-   }
-
-   function handleChange(value: string) {
-      setQuery(value);
-      setOpen(true);
    }
 
    // Reached by the button, or by Enter while no suggestion is highlighted; Enter on a highlighted one selects it.
@@ -107,43 +85,29 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
       const normalizedQuery = query.trim().toLowerCase();
       const option =
          options.find((option) => option.label.toLowerCase() === normalizedQuery) ??
-         (submitBehavior === "first-match" ? suggestions[0] : undefined);
+         (submitBehavior === "first-match" ? searchOptions.find((option) => matches(option, query)) : undefined);
 
       if (option) {
          selectOption(option);
       }
    }
 
-   // Clicking a suggestion focuses the listbox, so only close once focus leaves the form altogether.
-   function handleBlur(e: FocusEvent<HTMLFormElement>) {
-      if (!e.currentTarget.contains(e.relatedTarget)) {
-         setOpen(false);
-      }
-   }
-
    return (
-      // biome-ignore lint/a11y/noNoninteractiveElementInteractions: onBlur only tracks focus leaving the controls inside.
-      <form className="mb-6 max-w-150" onSubmit={handleSubmit} onBlur={handleBlur}>
+      <form className="mb-6 max-w-150" onSubmit={handleSubmit}>
          <div className="flex flex-row flex-wrap gap-x-2">
             <SearchAutocomplete
                label={label}
                placeholder={placeholder}
                value={query}
-               onChange={handleChange}
-               options={suggestions}
-               isOpen={isOpen}
+               onChange={setQuery}
+               options={searchOptions}
                onSelect={selectOption}
+               maxSuggestions={maxSuggestions}
             />
             <Button type="submit" aria-label={t`Zoeken`} variant="inverted">
                <FontAwesomeIcon icon={faSearch} />
             </Button>
             {children}
-         </div>
-         {/* Rendered always, so screen readers pick up changes to its text. */}
-         <div role="status" className="sr-only">
-            {open && query.trim().length > 0 && (
-               <Plural value={suggestions.length} _0="Geen resultaten" one="# resultaat" other="# resultaten" />
-            )}
          </div>
       </form>
    );
