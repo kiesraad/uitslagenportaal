@@ -3,7 +3,11 @@ import logging
 
 from django.core.files.storage import default_storage
 
-from election.election_config_importer import hash_election_config_data, import_election_config
+from election.election_config_importer import (
+    ImportInProgressError,
+    hash_election_config_data,
+    import_election_config,
+)
 from election.models import ElectionConfig
 from election.utils import tz_aware_from_isoformat, visibility_cutoff
 
@@ -72,6 +76,10 @@ def import_new_election_configs() -> int:
         logger.info("Importing election config %s from %s", identifier, key)
         try:
             import_election_config(data)
+        except ImportInProgressError:
+            # The hash is not saved, so the next poll tries again
+            logger.warning("Skipping election config %s for now: its commits are still being imported", identifier)
+            continue
         except Exception:
             logger.exception("Failed to import election config from %s", key)
             continue

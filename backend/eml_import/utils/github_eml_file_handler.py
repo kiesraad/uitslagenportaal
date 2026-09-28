@@ -39,9 +39,10 @@ class GithubEmlFileHandler(BaseFileHandler):
         self.repo: Repository | None = None
         self.logger = logging.getLogger(f"{self.__class__.__name__}[{self.election_config.identifier}]")
 
-    @property
-    def cache_lock_key(self):
-        return f"github-eml-importer:{self.election_config.identifier.lower()}"
+    @staticmethod
+    def cache_lock_key(identifier: str) -> str:
+        """The cache key of the lock held while an election's commits are imported."""
+        return f"github-eml-importer:{identifier.lower()}"
 
     def run(self) -> tuple[int, bool]:
         self.logger.info(
@@ -56,7 +57,7 @@ class GithubEmlFileHandler(BaseFileHandler):
         self.repo = self.gh.get_repo(settings.GITHUB_INGRESS_REPO)
 
         # One import per election at a time, so two workers cannot import the same commits twice
-        lock = cache.lock(self.cache_lock_key, timeout=LOCK_TIMEOUT, blocking=False)
+        lock = cache.lock(self.cache_lock_key(self.election_config.identifier), timeout=LOCK_TIMEOUT, blocking=False)
         if not lock.acquire():
             self.logger.warning(
                 "Could not acquire lock, GithubEmlFileHandler is already running for %s",
@@ -66,6 +67,8 @@ class GithubEmlFileHandler(BaseFileHandler):
             return 0, False
 
         try:
+            # The config may have been rewritten while the lock was held elsewhere, e.g. by a branch change
+            self.election_config.refresh_from_db()
             return self._run_import()
         finally:
             try:

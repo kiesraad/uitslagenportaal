@@ -103,7 +103,7 @@ def test_records_hash_after_successful_import_and_skips_duplicate():
     content = b"<eml identical bytes/>"
 
     EML110aImporter(NamedBytesIO(content, "definitie.eml.xml"), eml=make_110a_eml()).parse()
-    assert ImportedEmlHash.objects.count() == 1
+    assert ImportedEmlHash.objects.get().election == Election.objects.get()
     region_ids = list(Region.objects.values_list("pk", flat=True))
 
     EML110aImporter(NamedBytesIO(content, "other-name.eml.xml"), eml=make_110a_eml()).parse()
@@ -111,6 +111,50 @@ def test_records_hash_after_successful_import_and_skips_duplicate():
     assert ImportedEmlHash.objects.count() == 1
     # Duplicate short-circuits before correction; current regions are untouched
     assert list(Region.objects.values_list("pk", flat=True)) == region_ids
+
+
+@pytest.mark.django_db
+def test_deleting_the_election_allows_its_files_to_be_imported_again():
+    ElectionConfigFactory(identifier=CONFIG_IDENTIFIER)
+    content = b"<eml identical bytes/>"
+    EML110aImporter(NamedBytesIO(content, "definitie.eml.xml"), eml=make_110a_eml()).parse()
+
+    # As when a branch change wipes the election
+    Election.objects.all().delete()
+    assert not ImportedEmlHash.objects.exists()
+
+    EML110aImporter(NamedBytesIO(content, "definitie.eml.xml"), eml=make_110a_eml()).parse()
+
+    assert Region.objects.filter(election=Election.objects.get()).exists()
+    assert ImportedEmlHash.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_parse_raises_when_no_election_is_loaded():
+    ElectionConfigFactory(identifier=CONFIG_IDENTIFIER)
+    importer = EML110aImporter(fake_eml_file(), eml=make_110a_eml())
+    importer.election = None
+
+    with pytest.raises(EMLImporterException, match="Election not loaded"):
+        importer.parse()
+
+    assert not ImportedEmlHash.objects.exists()
+
+
+@pytest.mark.django_db
+def test_parse_skips_the_file_when_the_election_config_is_gone(monkeypatch, caplog):
+    ElectionConfigFactory(identifier=CONFIG_IDENTIFIER)
+    importer = EML110aImporter(fake_eml_file(), eml=make_110a_eml())
+
+    def config_deleted(self):
+        raise ElectionConfig.DoesNotExist
+
+    monkeypatch.setattr(EML110aImporter, "_parse_data", config_deleted)
+
+    importer.parse()
+
+    assert "Election is not configured" in caplog.text
+    assert not ImportedEmlHash.objects.exists()
 
 
 @pytest.mark.django_db

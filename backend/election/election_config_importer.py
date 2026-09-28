@@ -2,10 +2,13 @@ import hashlib
 import json
 import logging
 
+from django.core.cache import cache
 from django.db import transaction
+from redis.exceptions import LockError
 
 from election.models import ElectionConfig, ElectionDocument, TimelineEntry, TimelineVariant
 from election.utils import delete_stored_documents, folder_prefixes, tz_aware_from_isoformat
+from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +20,13 @@ _TIMELINE_VARIANTS = {
 
 # Changing either of these invalidates everything already imported for the election.
 _BRANCH_FIELDS = ("gh_exchange_branch", "gh_counting_results_branch")
+
+# Seconds to wait for a running commit import before leaving the config to the next poll.
+WIPE_LOCK_WAIT = 120
+
+
+class ImportInProgressError(Exception):
+    """A commit import for the election held its lock for longer than WIPE_LOCK_WAIT."""
 
 
 def hash_election_config_data(data: dict) -> str:
@@ -43,12 +53,26 @@ def import_election_config(data: dict) -> ElectionConfig:
     source_hash = hash_election_config_data(data)
 
     election_config = ElectionConfig.with_expired.filter(identifier=identifier).first()
-    if election_config is not None and any(
-        election_data.get(field) != getattr(election_config, field) for field in _BRANCH_FIELDS
+    if election_config is None or all(
+        election_data.get(field) == getattr(election_config, field) for field in _BRANCH_FIELDS
     ):
-        _wipe_election_data(election_config)
+        return _save_election_config(election_config, identifier, election_data, data, source_hash)
 
-    return _save_election_config(election_config, identifier, election_data, data, source_hash)
+    # Held until the new branches are saved, so no commit import runs against a half-wiped election
+    logger.info("Waiting until no import task is running (max %d s)...", WIPE_LOCK_WAIT)
+    lock_key = GithubEmlFileHandler.cache_lock_key(identifier)
+    lock = cache.lock(lock_key, timeout=LOCK_TIMEOUT, blocking_timeout=WIPE_LOCK_WAIT)
+    if not lock.acquire():
+        raise ImportInProgressError(f"Commits are still being imported for election config {identifier}")
+
+    try:
+        _wipe_election_data(election_config)
+        return _save_election_config(election_config, identifier, election_data, data, source_hash)
+    finally:
+        try:
+            lock.release()
+        except LockError:
+            logger.warning("Lock for %s expired while wiping election data", identifier)
 
 
 def _wipe_election_data(election_config: ElectionConfig) -> None:

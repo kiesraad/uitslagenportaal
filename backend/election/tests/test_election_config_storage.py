@@ -1,10 +1,11 @@
 import json
 
 import pytest
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 
-from election import election_config_storage
+from election import election_config_importer, election_config_storage
 from election.election_config_storage import (
     ELECTION_CONFIGS_PREFIX,
     import_new_election_configs,
@@ -13,6 +14,7 @@ from election.election_config_storage import (
 from election.models import ElectionConfig
 from election.tests.factories import ElectionConfigFactory
 from election.utils import tz_aware_from_isoformat
+from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
 
 MINIMAL_DATA = {
     "election": {
@@ -78,6 +80,21 @@ def test_import_new_election_configs_reimports_a_changed_file(uploaded_config):
 
     assert imported == 1
     assert ElectionConfig.with_expired.get(identifier="AB2099").label == "Updated label"
+
+
+@pytest.mark.django_db
+def test_import_new_election_configs_retries_a_branch_change_that_waited_on_a_commit_import(
+    uploaded_config, monkeypatch
+):
+    monkeypatch.setattr(election_config_importer, "WIPE_LOCK_WAIT", 0.1)
+    ElectionConfigFactory(identifier="AB2099", gh_exchange_branch="some-old-branch")
+    uploaded_config()
+
+    with cache.lock(GithubEmlFileHandler.cache_lock_key("AB2099"), timeout=LOCK_TIMEOUT):
+        assert import_new_election_configs() == 0
+
+    assert import_new_election_configs() == 1
+    assert ElectionConfig.with_expired.get(identifier="AB2099").gh_exchange_branch is None
 
 
 @pytest.mark.django_db
