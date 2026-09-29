@@ -43,7 +43,7 @@ def test_homepage_leads_through_the_waterschappen_list_to_the_party_matrix(page:
     page.get_by_role("link", name="Scheldestromen").click()
     expect(page).to_have_url(re.compile(r"/csb/[^/]+/resultaten/?$"))
     expect(page.get_by_role("link", name="Heel waterschap")).to_be_visible()
-    expect(page.get_by_role("heading", name="Telresultaten")).to_be_visible()
+    expect(page.get_by_role("heading", name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="Partij voor Zeeland")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
 
@@ -74,7 +74,7 @@ def test_gemeente_list_leads_to_borsele_and_its_party_results(page: Page):
 
     page.get_by_role("link", name="Hele gemeente").click()
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/resultaten/?$"))
-    expect(page.get_by_role("heading", name="Telresultaten")).to_be_visible()
+    expect(page.get_by_role("heading", name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="Partij voor Zeeland")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
 
