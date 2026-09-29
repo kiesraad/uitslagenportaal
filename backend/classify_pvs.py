@@ -4,7 +4,7 @@ A model counts as identified when its code and its title are both on the page, o
 
 Run from backend/ (Tesseract with Dutch language data is in the dev image):
 docker compose run --rm backend-scripts python classify_pvs.py [paths ...] \
-    [--limit N] [--sample N] [--show-text] [--jobs N]
+    [--glob PATTERN] [--limit N] [--sample N] [--show-text] [--jobs N]
 """
 
 import argparse
@@ -35,15 +35,13 @@ CROP_FRACTION = 0.4
 MODELS = {
     "N 10-1": "stembureau, decentrale stemopneming",
     "N 10-2": "stembureau, centrale stemopneming",
-    "N 11": "burgemeester, vaststelling aantal stemmen in gemeente (tot 2021)",
     "Na 14-1": "corrigendum stembureau, herteld door gemeentelijk stembureau",
     "Na 14-2": "corrigendum gemeentelijk stembureau",
     "Na 14-2 Bijlage 1": "corrigendum gemeentelijk stembureau, verslagen van hertelde stembureaus",
-    "Na 14-2 Bijlage 2": "corrigendum gemeentelijk stembureau, correctie van uitkomsten per stembureau",
     "Na 31-1": "gemeentelijk stembureau, decentrale stemopneming",
     "Na 31-2": "gemeentelijk stembureau, centrale stemopneming",
     "Na 31-2 Bijlage 1": "gemeentelijk stembureau, verslagen van tellingen van stembureaus",
-    "Na 31-2 Bijlage 2": "gemeentelijk stembureau, uitkomsten per stembureau",
+    "Na 31-2 Bijlage 2": "gemeentelijk stembureau, bezwaren van aanwezigen op stembureaus",
     "O 7": "hoofdstembureau",
     "P 1f-1": "corrigendum hoofdstembureau",
     "P 2a": "nieuwe zitting gemeentelijk stembureau, gecorrigeerde telresultaten",
@@ -53,27 +51,22 @@ MODELS = {
     "I 4": "centraal stembureau, kandidatenlijsten en nummering",
 }
 
-# Texts that appear on one model only, as printed on the Kiesraad forms and the OSV versions of them. OSV headers such
-# as "Verslag en telresultaten per lijst en kandidaat" and "Details van het stembureau" are shared by several models.
+# Texts that appear on one model only, from the forms the Kiesraad published on 27 November 2025 as OSV fills them in;
+# the I, O 7, P 1f-1 and P 22-1 forms have no newer version. Forms of earlier elections word and number things
+# differently, so they are left unidentified. OSV headers such as "Verslag en telresultaten per lijst en kandidaat"
+# and "Details van het stembureau" are shared by several models.
 TITLES = [
-    ("Proces-verbaal van een stembureau (decentrale stemopneming)", "N 10-1"),
     ("hoeveel stemmen elke lijst en elke kandidaat hebben gekregen", "N 10-1"),
-    ("Proces-verbaal van een stembureau (centrale stemopneming)", "N 10-2"),
     ("hoeveel stemmen elke lijst heeft gekregen", "N 10-2"),
-    ("Vaststelling aantal stemmen in gemeente", "N 11"),
-    ("Corrigendum bij het proces-verbaal van een stembureau", "Na 14-1"),
+    ("Corrigendum van een proces-verbaal van een stembureau", "Na 14-1"),
     ("Verslag van telling van een door het gemeentelijk stembureau herteld stembureau", "Na 14-1"),
-    ("Corrigendum bij het proces-verbaal van een gemeentelijk stembureau", "Na 14-2"),
     ("Corrigendum van een gemeentelijk stembureau", "Na 14-2"),
     ("Verslagen van tellingen van stembureaus die zijn herteld door het gemeentelijk stembureau", "Na 14-2 Bijlage 1"),
-    ("Bijlage 2: Correctie van fouten in het proces-verbaal van het gemeentelijk stembureau", "Na 14-2 Bijlage 2"),
     ("hoeveel stemmen elke lijst en elke kandidaat kreeg", "Na 31-1"),
-    ("Proces-verbaal van een gemeentelijk stembureau (centrale stemopneming)", "Na 31-2"),
-    ("gemeentelijk stembureau in een gemeente waar een centrale stemopneming wordt verricht", "Na 31-2"),
     ("Het gemeentelijk stembureau telt de stemmen per kandidaat", "Na 31-2"),
     ("Bijlage 1 - verslag telling stembureau", "Na 31-2 Bijlage 1"),
     ("Verslagen van tellingen van stembureaus", "Na 31-2 Bijlage 1"),
-    ("Bijlage 2: uitkomsten per stembureau", "Na 31-2 Bijlage 2"),
+    ("Bezwaren van aanwezigen op stembureaus", "Na 31-2 Bijlage 2"),
     ("Proces-verbaal van een hoofdstembureau", "O 7"),
     ("Corrigendum bij het proces-verbaal van een hoofdstembureau", "P 1f-1"),
     ("Verslag en gecorrigeerde telresultaten", "P 2a"),
@@ -208,11 +201,10 @@ def find_titles(text: str) -> list[str]:
             found.append(TitleMatch(model, 0, len(key), start, start + len(key)))
         elif match := pattern.search(page):
             found.append(TitleMatch(model, sum(match.fuzzy_counts), len(key), *match.span()))
-    # Similar titles match at the same place: "… stembureaus" inside "… stembureaus die zijn herteld", or "centrale"
-    # with two errors inside "decentrale". Only the best fit there counts.
+    # Similar titles match at the same place, like "… stembureaus" inside "… stembureaus die zijn herteld". Only the
+    # best fit there counts.
     found = [m for m in found if not any(m.beaten_by(other) for other in found)]
-    # A misread match for another PV than an exact one is text that merely resembles a title, like "bijlage 2 … (de
-    # uitkomsten per stembureau)" in the instructions of a Na 14-2 bijlage 2.
+    # A misread match for another PV than an exact one is text that merely resembles a title.
     exact = {pv_code(m.model) for m in found if not m.errors}
     return sorted({m.model for m in found if not m.errors or not exact or pv_code(m.model) in exact})
 
@@ -298,11 +290,12 @@ def classify_timed(path: Path) -> tuple[Result | None, str | None, float]:
     return result, error, time.perf_counter() - start
 
 
-def collect_pdfs(paths: list[Path]) -> list[Path]:
+def collect_pdfs(paths: list[Path], pattern: str) -> list[Path]:
+    """Files as given, and in each directory the files matching the glob pattern."""
     pdfs = []
     for path in paths:
         if path.is_dir():
-            pdfs.extend(p for p in sorted(path.rglob("*.pdf")) if "_tools" not in p.parts)
+            pdfs.extend(p for p in sorted(path.glob(pattern)) if "_tools" not in p.parts)
         else:
             pdfs.append(path)
     return pdfs
@@ -316,6 +309,11 @@ def display_name(path: Path) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("paths", nargs="*", type=Path, default=[PVS])
+    parser.add_argument(
+        "--glob",
+        default="**/*.pdf",
+        help='files to take from each directory, e.g. "*/GR2026/*.pdf" (default "**/*.pdf")',
+    )
     parser.add_argument("--limit", type=int, default=25, help="classify at most N files; 0 for all (default 25)")
     parser.add_argument("--sample", type=int, help="classify N randomly chosen files instead of the first ones")
     parser.add_argument("--show-text", action="store_true", help="print the OCR text of files not identified")
@@ -324,7 +322,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    pdfs = collect_pdfs(args.paths)
+    pdfs = collect_pdfs(args.paths, args.glob)
     if args.sample:
         pdfs = random.Random(0).sample(pdfs, min(args.sample, len(pdfs)))
     elif args.limit:
