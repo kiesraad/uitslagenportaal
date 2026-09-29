@@ -24,9 +24,9 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
    return (
       <div className="counting-results-infobox">
          <InfoBox>
-            <h4>
+            <h2 className="h4">
                <Trans>Waar komen deze telresultaten vandaan?</Trans>
-            </h4>
+            </h2>
             <span className="mb-2">
                <Trans>
                   De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het

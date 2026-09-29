@@ -39,6 +39,8 @@ describe("ResultsPageColumns", () => {
       );
 
       expect(screen.getByText("Results")).toBeInTheDocument();
-      expect(screen.getByRole("heading", { name: "Waar komen deze telresultaten vandaan?" })).toBeInTheDocument();
+      expect(
+         screen.getByRole("heading", { level: 2, name: "Waar komen deze telresultaten vandaan?" }),
+      ).toBeInTheDocument();
    });
 });

@@ -38,7 +38,9 @@ describe("ResultsSourceBox", () => {
    it("Says the certified election document has not arrived yet when the region has none", () => {
       renderBox();
 
-      expect(screen.getByRole("heading", { name: "Waar komen deze telresultaten vandaan?" })).toBeInTheDocument();
+      expect(
+         screen.getByRole("heading", { level: 2, name: "Waar komen deze telresultaten vandaan?" }),
+      ).toBeInTheDocument();
       expect(screen.getByText("Het proces-verbaal is nog niet ontvangen")).toBeInTheDocument();
       expect(screen.getByText("Het verschijnt hier zodra het is binnengekomen.")).toBeInTheDocument();
       expect(screen.queryByRole("img", { name: "Proces-verbaal" })).not.toBeInTheDocument();
@@ -67,7 +69,9 @@ describe("ResultsSourceBox", () => {
    it("Renders the source box in English when that locale is active", () => {
       renderBox("en");
 
-      expect(screen.getByRole("heading", { name: "Where do these counting results come from?" })).toBeInTheDocument();
+      expect(
+         screen.getByRole("heading", { level: 2, name: "Where do these counting results come from?" }),
+      ).toBeInTheDocument();
       expect(screen.getByText("The certified election results have not arrived yet")).toBeInTheDocument();
       expect(screen.getByText("They will appear here once they have been received.")).toBeInTheDocument();
       expect(screen.queryByRole("link", { name: /View the certified election results/ })).not.toBeInTheDocument();
