@@ -49,7 +49,6 @@ export function ElectionConfigCSBListPage() {
             breadcrumb={[
                { href: "/", label: t`Home` },
                {
-                  href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
             ]}

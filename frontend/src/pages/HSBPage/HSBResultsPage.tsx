@@ -9,7 +9,7 @@ import ResultsPageColumns from "../../components/ResultsPage/ResultsPageColumns.
 import SharedTabs from "../../components/SharedTabs.tsx";
 import { electionConfigQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
-import { getRegionLabels } from "../../utils/region.ts";
+import { getCsbCrumb, getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 
 export function hsbResultsLoader(queryClient: QueryClient) {
@@ -64,7 +64,8 @@ export function HSBResultsPage() {
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               { href: hsbResultsRoute, label: region.region_name },
+               getCsbCrumb(region, electionConfig.slug),
+               { label: region.region_name },
             ]}
             tabs={
                <SharedTabs

@@ -58,7 +58,7 @@ export function CSBResultsPage() {
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               { href: csbResultsRoute, label: region.region_name },
+               { label: region.region_name },
             ]}
             tabs={
                <SharedTabs

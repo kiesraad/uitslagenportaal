@@ -29,6 +29,15 @@ class CSVOsv43Importer(BaseImporter):
     csv_type: CsvType = CsvType.CSV_OSV43
     file_type = ElectionDocument.FileType.CSV_OSV43
 
+    def __init__(self, file_path: Path, *args, **kwargs):
+        super().__init__(file_path, *args, **kwargs)
+
+        self.csv_headers = self.read_csv_header(self.file_path)
+        if not {"Verkiezing", "Nummer", "Gebied"} <= self.csv_headers.keys():
+            raise EMLImporterException("Not a valid OSV4-3 CSV file")
+
+        self.election = self._find_election(self.csv_headers)
+
     @staticmethod
     def read_csv_header(file_path: Path | BytesIO) -> dict[str, str]:
         """Reads the header block from an OSV4-3 CSV."""
@@ -58,14 +67,9 @@ class CSVOsv43Importer(BaseImporter):
             file_path.seek(0)
 
     def _parse_data(self):
-        csv_headers = self.read_csv_header(self.file_path)
-        if not {"Verkiezing", "Nummer", "Gebied"} <= csv_headers.keys():
-            raise EMLImporterException("Not a valid OSV4-3 CSV file")
+        region = self._find_region(self.election, self.csv_headers)
 
-        election = self._find_election(csv_headers)
-        region = self._find_region(election, csv_headers)
-
-        self._store_csv(election.election_config, region)
+        self._store_csv(self.election.election_config, region)
 
     @staticmethod
     def _find_election(csv_headers: dict[str, str]) -> Election:

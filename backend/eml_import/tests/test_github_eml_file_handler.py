@@ -1,3 +1,4 @@
+import hashlib
 import io
 import logging
 import zipfile
@@ -8,7 +9,7 @@ from django.core.cache import cache
 from django.utils import timezone
 from pyeml_bindings import Eml230
 
-from election.models import Contest, Election
+from election.models import Contest, Election, ElectionConfig
 from election.tests.factories import ElectionConfigFactory
 from eml_import.exceptions import GithubImportException
 from eml_import.models import BranchType, ImportedCommit, ImportedEmlHash
@@ -366,9 +367,7 @@ def test_idempotency_within_one_commit_when_failing_halfway(monkeypatch):
     with pytest.raises(RuntimeError, match="hard failure mid-commit"):
         handler.import_file_objects(files)
 
-    assert ImportedEmlHash.objects.count() == 1
-    assert ImportedEmlHash.already_imported(file_110a)
-    assert not ImportedEmlHash.already_imported(file_230b)
+    assert ImportedEmlHash.objects.get().sha256 == hashlib.sha256(file_110a.getvalue()).hexdigest()
     region_ids = list(Region.objects.values_list("pk", flat=True))
     assert region_ids
     assert not Candidate.objects.exists()
@@ -560,7 +559,7 @@ def test_run_skips_the_import_while_another_worker_holds_the_lock(
     handler = GithubEmlFileHandler(stored_election_config)
 
     # Stand in for a second worker that is already importing this election
-    with cache.lock(handler.cache_lock_key, timeout=LOCK_TIMEOUT):
+    with cache.lock(handler.cache_lock_key(stored_election_config.identifier), timeout=LOCK_TIMEOUT):
         file_count, commits_remaining = handler.run()
 
     # It gives up rather than waiting, so the beat schedule cannot pile workers up on one election
@@ -578,15 +577,29 @@ def test_run_skips_the_import_while_another_worker_holds_the_lock(
 
 def test_run_locks_per_election_and_not_globally(fake_repo, imported_batches, stored_election_config, caplog):
     fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
-    other_election = GithubEmlFileHandler(ElectionConfigFactory.build(identifier="OTHER2026"))
 
     # An import running for a different election must not hold this one up
-    with cache.lock(other_election.cache_lock_key, timeout=LOCK_TIMEOUT):
+    with cache.lock(GithubEmlFileHandler.cache_lock_key("OTHER2026"), timeout=LOCK_TIMEOUT):
         file_count, commits_remaining = GithubEmlFileHandler(stored_election_config).run()
 
     assert file_count == 1
     assert as_pairs(imported_batches[0]) == [("telling.xml", XML_510B)]
     assert warnings_of(caplog) == []
+
+
+def test_run_reads_the_config_again_once_it_holds_the_lock(fake_repo, imported_batches, stored_election_config):
+    fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
+    handler = GithubEmlFileHandler(stored_election_config)
+
+    # A branch change saved after the task loaded its config
+    ElectionConfig.with_expired.filter(pk=stored_election_config.pk).update(
+        gh_exchange_branch=None, gh_counting_results_branch=None
+    )
+
+    file_count, commits_remaining = handler.run()
+
+    assert (file_count, commits_remaining) == (0, False)
+    assert imported_batches == []
 
 
 def test_run_releases_the_lock_when_it_finishes(fake_repo, imported_batches, stored_election_config):
@@ -595,7 +608,7 @@ def test_run_releases_the_lock_when_it_finishes(fake_repo, imported_batches, sto
 
     handler.run()
 
-    assert cache.lock(handler.cache_lock_key, blocking=False).acquire() is True
+    assert cache.lock(handler.cache_lock_key(stored_election_config.identifier), blocking=False).acquire() is True
 
 
 def test_run_holds_a_lock_that_expires_on_its_own(fake_repo, monkeypatch, stored_election_config):
@@ -605,7 +618,7 @@ def test_run_holds_a_lock_that_expires_on_its_own(fake_repo, monkeypatch, stored
     remaining = []
 
     def observe_ttl(self, files):
-        remaining.append(cache.ttl(handler.cache_lock_key))
+        remaining.append(cache.ttl(handler.cache_lock_key(stored_election_config.identifier)))
 
     monkeypatch.setattr(GithubEmlFileHandler, "import_file_objects", observe_ttl)
 
@@ -620,7 +633,7 @@ def test_run_keeps_its_result_when_the_lock_expires_mid_import(fake_repo, monkey
 
     def expire_lock(self, files):
         # As if LOCK_TIMEOUT elapsed while this import was still running
-        cache.delete(handler.cache_lock_key)
+        cache.delete(handler.cache_lock_key(stored_election_config.identifier))
 
     monkeypatch.setattr(GithubEmlFileHandler, "import_file_objects", expire_lock)
 
