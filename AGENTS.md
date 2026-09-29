@@ -26,6 +26,12 @@ work — not even when a change looks finished. Leave everything in the working 
 what changed; the developer reviews it and commits it themselves, because they carry
 responsibility for every line that lands. Ask first if you think a commit is needed.
 
+## Claude Code: auto mode
+
+If the auto mode classifier cannot be reached, don't skip the commands it blocks and carry on
+without them. Stop and ask the developer to switch to accept-edits mode (Shift+Tab), then
+continue there.
+
 ## Comments
 
 Comments are short and functional: aim for a single line, and keep docstrings to a summary
