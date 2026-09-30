@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "region.apps.RegionConfig",
     "party.apps.PartyConfig",
     "eml_import.apps.EmlImportConfig",
+    "pv_scraper.apps.PvScraperConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -266,5 +267,7 @@ LOGGING = {
         "celery": {"level": "INFO"},
         "kombu": {"level": "INFO"},
         "redis.connection": {"level": "INFO"},
+        "pytesseract": {"level": "INFO"},
+        "pypdfium2": {"level": "INFO"},
     },
 }
