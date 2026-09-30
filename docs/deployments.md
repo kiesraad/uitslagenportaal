@@ -7,6 +7,11 @@ The directory ./k8s-config/ contains all the configuration necessary: the `appli
 
 Commands in this file have to be run from ./k8s-config/.
 
+> [!WARNING]
+> Always check on which kubectl context you're running commands!
+> Use `kubectl config get-contexts` and check which one is marked as current.
+> Switch using `kubectl config use-context [context-name]`
+
 ### Helm chart
 
 The application chart is divided into several yaml files, see ./k8s-config/application/templates.
@@ -50,6 +55,7 @@ That's why the values-files are not part of the chart.
    Create the namespace and the Loki secret first (see the Secrets section below), then:
    ```bash
    helm dependency build monitoring
+   kubectl create namespace monitoring
    helm upgrade --install monitoring monitoring -n monitoring --wait --timeout 15m
    ```
    For local deploys, skip the Loki secret and add `-f monitoring/values-local.yaml`.
@@ -166,12 +172,13 @@ Loki's object storage credentials are created by hand, and not at all for a loca
 
 ```bash
 kubectl -n monitoring create secret generic loki-s3-creds \
+  --from-literal=LOKI_S3_BUCKET='' \
   --from-literal=AWS_ACCESS_KEY_ID='' \
   --from-literal=AWS_SECRET_ACCESS_KEY=''
 ```
 
 Loki needs a bucket of its own, separate from the application's: its retention differs and log chunks should not share a
-bucket with election documents.
+bucket with election documents. Create it before installing the chart; Loki does not create it.
 
 > [!NOTE]
 > Use `--from-literal` here, never `--from-file`. A file written by an editor carries a trailing

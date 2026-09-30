@@ -16,13 +16,18 @@ config:
   gatewayAPI:
     enabled: true
 
-# certmanager_certificate_expiration_timestamp_seconds is the reason this is on: a
+# certmanager_certificate_renewal_timestamp_seconds is the reason this is on: a
 # renewal that fails silently takes the whole portal down weeks later, and the metric
 # turns that into an alert with weeks of warning.
 prometheus:
   enabled: true
   servicemonitor:
     enabled: true
+    # The certificate metrics carry the Certificate's own namespace label. Without this it
+    # collides with the target's namespace, cert-manager, and is renamed to
+    # exported_namespace, where the per-namespace rules in the application chart would
+    # not find it.
+    honorLabels: true
     # The ServiceMonitor selects the webhook and cainjector too, which export only
     # generic controller metrics that nothing reads.
     endpointAdditionalProperties:

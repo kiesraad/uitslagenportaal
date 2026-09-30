@@ -53,7 +53,7 @@ kube-prometheus-stack:
       resources:
         requests:
           cpu: 200m
-          memory: 1Gi
+          memory: 512Mi
         limits:
           memory: 2Gi
 
@@ -75,7 +75,7 @@ kube-prometheus-stack:
       resources:
         requests:
           cpu: 10m
-          memory: 64Mi
+          memory: 32Mi
         limits:
           memory: 128Mi
 
@@ -114,10 +114,17 @@ kube-prometheus-stack:
       enabled: true
       size: 5Gi
 
+    # The volume attaches to one node at a time. A rolling update can start the new pod
+    # on another node, where it waits for a volume the old pod never releases.
+    deploymentStrategy:
+      type: Recreate
+
+    # Grafana's two sidecars request nothing and use about 150Mi between them, so this
+    # is set above Grafana's own use to cover them.
     resources:
       requests:
         cpu: 50m
-        memory: 128Mi
+        memory: 384Mi
       limits:
         memory: 512Mi
 
@@ -177,6 +184,18 @@ kube-prometheus-stack:
 
   kube-state-metrics:
     fullnameOverride: kube-prometheus-stack-kube-state-metrics
+    # The chart sets no requests, which leaves the pod first in line for eviction.
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+
+  prometheusOperator:
+    # As for kube-state-metrics: without requests the pod is evicted first.
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
 
   prometheus-node-exporter:
     fullnameOverride: kube-prometheus-stack-prometheus-node-exporter
@@ -209,13 +228,14 @@ loki:
     commonConfig:
       replication_factor: 1
 
-    # Credentials come from the loki-s3-creds secret through the environment, expanded by
-    # -config.expand-env below. Inlining the keys here would put a live credential in git.
+    # The bucket and its credentials come from the loki-s3-creds secret through the
+    # environment, expanded by -config.expand-env below: the bucket differs per cluster,
+    # and inlining the keys here would put a live credential in git.
     storage:
       type: s3
       bucketNames:
-        chunks: uitslagenportaal-loki
-        ruler: uitslagenportaal-loki
+        chunks: ${LOKI_S3_BUCKET}
+        ruler: ${LOKI_S3_BUCKET}
       s3:
         endpoint: https://s3.nl-ams.scw.cloud
         region: nl-ams
@@ -252,6 +272,11 @@ loki:
     extraArgs:
       - -config.expand-env=true
     extraEnv:
+      - name: LOKI_S3_BUCKET
+        valueFrom:
+          secretKeyRef:
+            name: loki-s3-creds
+            key: LOKI_S3_BUCKET
       - name: AWS_ACCESS_KEY_ID
         valueFrom:
           secretKeyRef:
@@ -380,9 +405,9 @@ alloy:
     resources:
       requests:
         cpu: 50m
-        memory: 128Mi
-      limits:
         memory: 256Mi
+      limits:
+        memory: 512Mi
 
   # One collector per node, each reading only the pods scheduled there.
   controller:

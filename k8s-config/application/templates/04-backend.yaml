@@ -4,8 +4,9 @@ metadata:
   name: {{ .Release.Name }}-backend-init-job-{{ .Release.Revision }}
   namespace: {{ .Release.Namespace }}
 spec:
-  # Keep job for an hour
-  ttlSecondsAfterFinished: 3600
+  # KubeJobFailed fires only while the Job exists, so a failed migration stays
+  # visible for twelve hours before it is cleaned up and the alert resolves.
+  ttlSecondsAfterFinished: 43200
   template:
     metadata:
       labels:

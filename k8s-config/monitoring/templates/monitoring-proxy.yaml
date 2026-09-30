@@ -24,6 +24,13 @@ spec:
           # Unprivileged: nothing here needs root to bind a port, so it listens on 8080
           # and the Service maps 80 onto it.
           image: nginxinc/nginx-unprivileged:1.29-alpine
+          # Renders resolver.conf.template with the nameservers from /etc/resolv.conf,
+          # into /tmp because the root filesystem is read-only.
+          env:
+            - name: NGINX_ENTRYPOINT_LOCAL_RESOLVERS
+              value: "1"
+            - name: NGINX_ENVSUBST_OUTPUT_DIR
+              value: /tmp
           ports:
             - name: http
               containerPort: 8080
@@ -48,6 +55,10 @@ spec:
             - name: config
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
+              readOnly: true
+            - name: config
+              mountPath: /etc/nginx/templates/resolver.conf.template
+              subPath: resolver.conf.template
               readOnly: true
             - name: config
               mountPath: /usr/share/nginx/html/index.html

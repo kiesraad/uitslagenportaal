@@ -32,11 +32,8 @@ data:
       uwsgi_temp_path       /tmp/uwsgi_temp;
       scgi_temp_path        /tmp/scgi_temp;
 
-      # Named rather than given as an address, so nothing here is pinned to one cluster's
-      # DNS IP. This moves the startup dependency rather than removing it: nginx resolves
-      # this name once when it starts, but a cluster without DNS has already broken the
-      # pod, whereas any one of the services below may legitimately be absent.
-      resolver kube-dns.kube-system.svc.cluster.local valid=30s ipv6=off;
+      # The resolver directive, rendered at startup from resolver.conf.template below.
+      include /tmp/resolver.conf;
 
       # Grafana's live channels are websockets. Upgrading only when the client asks
       # keeps ordinary requests on a plain connection.
@@ -100,6 +97,12 @@ data:
         location = /alertmanager { return 301 /alertmanager/; }
       }
     }
+
+  # The image's entrypoint fills in the pod's own nameservers from /etc/resolv.conf. The
+  # cluster DNS service is named differently per provider (kube-dns on Docker Desktop,
+  # coredns on Kapsule), so naming it here would tie the chart to one of them.
+  resolver.conf.template: |
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=30s ipv6=off;
 
   index.html: |
     <!doctype html>
