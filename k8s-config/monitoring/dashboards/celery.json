@@ -1,0 +1,228 @@
+{
+   "uid": "celery",
+   "title": "Celery",
+   "description": "Task runs, beat schedule and logs of the Celery worker and beat, from the fields Alloy stores as structured metadata.",
+   "tags": ["uitslagenportaal", "logs"],
+   "timezone": "browser",
+   "schemaVersion": 41,
+   "editable": true,
+   "refresh": "1m",
+   "time": { "from": "now-6h", "to": "now" },
+   "templating": {
+      "list": [
+         {
+            "name": "datasource",
+            "label": "Data source",
+            "type": "datasource",
+            "query": "loki",
+            "hide": 2
+         },
+         {
+            "name": "namespace",
+            "label": "Namespace",
+            "type": "query",
+            "datasource": { "type": "loki", "uid": "${datasource}" },
+            "query": {
+               "type": 1,
+               "label": "namespace",
+               "stream": "{container=~\"celery-worker|celery-beat\"}",
+               "refId": "LokiVariableQueryEditor-VariableQuery"
+            },
+            "refresh": 2,
+            "sort": 1
+         },
+         {
+            "name": "task",
+            "label": "Task contains",
+            "type": "textbox",
+            "query": ""
+         },
+         {
+            "name": "level",
+            "label": "Log level",
+            "type": "custom",
+            "query": "DEBUG,INFO,WARNING,ERROR,CRITICAL",
+            "multi": true,
+            "includeAll": true,
+            "allValue": ".*",
+            "current": { "text": "All", "value": "$__all" }
+         },
+         {
+            "name": "search",
+            "label": "Log contains",
+            "type": "textbox",
+            "query": ""
+         }
+      ]
+   },
+   "panels": [
+      {
+         "id": 1,
+         "type": "timeseries",
+         "title": "Task runs by outcome",
+         "description": "Finished task runs per task; ERROR is a task that raised.",
+         "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
+         "datasource": { "type": "loki", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum by (task, level) (count_over_time({namespace=\"$namespace\", container=\"celery-worker\"} | logger=\"celery.app.trace\" | task=~\".*$task.*\" [$__auto]))",
+               "legendFormat": "{{task}} {{level}}",
+               "queryType": "range"
+            }
+         ],
+         "fieldConfig": {
+            "defaults": {
+               "custom": { "drawStyle": "bars", "stacking": { "mode": "normal" }, "fillOpacity": 80 }
+            }
+         }
+      },
+      {
+         "id": 2,
+         "type": "timeseries",
+         "title": "Task runtime (p95)",
+         "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 },
+         "datasource": { "type": "loki", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "quantile_over_time(0.95, {namespace=\"$namespace\", container=\"celery-worker\"} | logger=\"celery.app.trace\" | runtime != \"\" | task=~\".*$task.*\" | unwrap runtime [$__auto]) by (task)",
+               "legendFormat": "{{task}}",
+               "queryType": "range"
+            }
+         ],
+         "fieldConfig": {
+            "defaults": { "unit": "s", "custom": { "drawStyle": "points", "pointSize": 6 } }
+         }
+      },
+      {
+         "id": 3,
+         "type": "timeseries",
+         "title": "Sent by beat",
+         "description": "Scheduled tasks beat sent to the queue. A gap means beat is not running.",
+         "gridPos": { "x": 16, "y": 0, "w": 8, "h": 8 },
+         "datasource": { "type": "loki", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum by (scheduled) (count_over_time({namespace=\"$namespace\", container=\"celery-beat\"} |= \"Sending due task\" | regexp `\\((?P<scheduled>[^()]+)\\)$` [$__auto]))",
+               "legendFormat": "{{scheduled}}",
+               "queryType": "range"
+            }
+         ],
+         "fieldConfig": {
+            "defaults": {
+               "custom": { "drawStyle": "bars", "stacking": { "mode": "normal" }, "fillOpacity": 80 }
+            }
+         }
+      },
+      {
+         "id": 4,
+         "type": "table",
+         "title": "Task runs",
+         "gridPos": { "x": 0, "y": 8, "w": 24, "h": 12 },
+         "datasource": { "type": "loki", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "{namespace=\"$namespace\", container=\"celery-worker\"} | logger=\"celery.app.trace\" | task=~\".*$task.*\"",
+               "queryType": "range",
+               "maxLines": 500
+            }
+         ],
+         "transformations": [
+            { "id": "extractFields", "options": { "source": "labels" } },
+            {
+               "id": "convertFieldType",
+               "options": { "conversions": [{ "targetField": "runtime", "destinationType": "number" }] }
+            },
+            {
+               "id": "organize",
+               "options": {
+                  "includeByName": {
+                     "Time": true,
+                     "task": true,
+                     "level": true,
+                     "runtime": true,
+                     "Line": true,
+                     "pod": true
+                  },
+                  "indexByName": { "Time": 0, "task": 1, "level": 2, "runtime": 3, "pod": 4, "Line": 5 },
+                  "renameByName": {
+                     "task": "Task",
+                     "level": "Level",
+                     "runtime": "Runtime",
+                     "Line": "Message",
+                     "pod": "Pod"
+                  }
+               }
+            }
+         ],
+         "options": {
+            "showHeader": true,
+            "sortBy": [{ "displayName": "Time", "desc": true }]
+         },
+         "fieldConfig": {
+            "defaults": {},
+            "overrides": [
+               {
+                  "matcher": { "id": "byName", "options": "Time" },
+                  "properties": [{ "id": "custom.width", "value": 190 }]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Task" },
+                  "properties": [{ "id": "custom.width", "value": 330 }]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Level" },
+                  "properties": [
+                     { "id": "custom.width", "value": 90 },
+                     { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "type": "value",
+                              "options": {
+                                 "WARNING": { "color": "orange", "index": 0 },
+                                 "ERROR": { "color": "red", "index": 1 },
+                                 "CRITICAL": { "color": "red", "index": 2 }
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Runtime" },
+                  "properties": [
+                     { "id": "unit", "value": "s" },
+                     { "id": "decimals", "value": 2 },
+                     { "id": "custom.width", "value": 100 }
+                  ]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Pod" },
+                  "properties": [{ "id": "custom.width", "value": 280 }]
+               }
+            ]
+         }
+      },
+      {
+         "id": 5,
+         "type": "logs",
+         "title": "Worker and beat logs",
+         "gridPos": { "x": 0, "y": 20, "w": 24, "h": 14 },
+         "datasource": { "type": "loki", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "{namespace=\"$namespace\", container=~\"celery-worker|celery-beat\"} | level=~\"$level\" |~ \"(?i)$search\"",
+               "queryType": "range",
+               "maxLines": 500
+            }
+         ],
+         "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending", "enableLogDetails": true }
+      }
+   ]
+}

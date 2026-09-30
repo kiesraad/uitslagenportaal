@@ -101,6 +101,31 @@ Grafana's login is `admin`, with a password the chart generates on first install
 kubectl -n monitoring get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d
 ```
 
+#### Logs
+
+The backend and Celery pods log one JSON object per line (`LOG_FORMAT=json`, set in `backend/prod.dockerfile`), and
+so does the frontend's nginx access log (`frontend/.docker/prod.nginx.conf`), with the same keys. Alloy turns each into
+a line holding just the message (and traceback), with the other fields (`level`, `logger`, `process`, and for requests
+`method`, `path`, `status`, `duration_ms`) as structured metadata. Successful probes are not logged: requests to
+`/healthz/` and `/metrics` on the backend, and the kubelet's on the frontend.
+
+Filter on those fields directly, without `| json`:
+
+```logql
+{app="uitslagenportaal-backend"} | status >= 500
+```
+
+For columns, switch Explore's result from Logs to Table and pick the fields to show, or open the **Requests**
+dashboard: backend and frontend requests by status, duration percentiles, one request table for both and the errors,
+filterable by namespace, container, status and path. The **Celery** dashboard shows task runs by outcome, their runtime,
+what beat sent (a gap means beat is down), a table of task runs and the worker and beat logs. Celery's task lines add
+`task`, `task_id` and `runtime` (seconds) to the fields above.
+
+Dashboards live in `monitoring/dashboards/` and are loaded by Grafana's sidecar; changes made in the Grafana UI are lost
+on the next upgrade, so export them back to that directory.
+
+For plain-text lines while reading `kubectl logs` by hand, set `LOG_FORMAT=simple` on the deployment.
+
 ### Secrets
 
 Several secrets are needed to configure the services in the Chart.
