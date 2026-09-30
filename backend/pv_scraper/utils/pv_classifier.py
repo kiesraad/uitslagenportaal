@@ -121,6 +121,7 @@ ELECTION_YEAR_WINDOW = 80
 ELECTION_CODE_TEXT_RE = re.compile(r"\b(GR|TK|PS|EP|WS)\s?(?:20)?(\d\d)\b")
 ELECTION_CODE_NAME_RE = re.compile(r"(gr|tk|ps|ep|ws)[-_ ]?(?:20)?(\d\d)(?!\d)", re.IGNORECASE)
 
+
 class ResultMatch(StrEnum):
     """Best match type first"""
 
@@ -135,6 +136,7 @@ class ResultMatch(StrEnum):
     def members(cls):
         return [m for m in cls]
 
+
 @dataclass
 class ClassificationResult:
     model: str | None = None
@@ -145,6 +147,7 @@ class ClassificationResult:
     text: str = ""
     region: dict[str, str] = field(default_factory=dict)
     election: tuple[str, str] = "", ""
+
 
 @dataclass
 class TitleMatch:
@@ -162,7 +165,6 @@ class TitleMatch:
 
 
 class PvClassifier:
-
     def __init__(self, path: Path):
         self.path = path
 
