@@ -5,7 +5,6 @@ from django.utils import timezone
 from factory.django import DjangoModelFactory
 
 from election.models import (
-    CertifiedElectionDocument,
     Contest,
     Election,
     ElectionCategory,
@@ -69,11 +68,7 @@ class ElectionDocumentFactory(DjangoModelFactory):
     size = factory.Faker("random_int", min=1, max=10_000)
 
 
-class CertifiedElectionDocumentFactory(DjangoModelFactory):
-    class Meta:
-        model = CertifiedElectionDocument
-
+class CertifiedElectionDocumentFactory(ElectionDocumentFactory):
     storage_key = factory.Sequence(lambda n: f"TK2025/document-{n}.pdf")
     content_type = "application/pdf"
-    size = factory.Faker("random_int", min=1, max=10_000)
-    file_type = CertifiedElectionDocument.FileType.NA31_2
+    file_type = ElectionDocument.FileType.PDF_NA31_2

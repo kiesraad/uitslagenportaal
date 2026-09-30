@@ -6,7 +6,7 @@ from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 
-from election.models import CertifiedElectionDocument, Contest, ElectionConfig, ElectionDocument
+from election.models import Contest, ElectionConfig, ElectionDocument
 from election.serializers import (
     ContestDetailSerializer,
     ContestListSerializer,
@@ -60,7 +60,8 @@ def download_document(request, pk):
 
 def _visible_certified_document(pk):
     return get_object_or_404(
-        CertifiedElectionDocument.objects.filter(
+        ElectionDocument.objects.filter(
+            file_type__in=ElectionDocument.CERTIFIED_FILE_TYPES,
             region__election__election_config__date__gte=visibility_cutoff(),
         ),
         pk=pk,

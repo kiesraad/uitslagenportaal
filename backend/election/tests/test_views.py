@@ -109,6 +109,15 @@ def test_certified_document_streams_the_pdf_inline():
 
 
 @pytest.mark.django_db
+def test_certified_document_rejects_a_source_file():
+    default_storage.save("TK2025/telling.xml", ContentFile(b"<eml/>"))
+    document = ElectionDocumentFactory(storage_key="TK2025/telling.xml", region=RegionFactory())
+
+    with pytest.raises(Http404):
+        certified_document(RequestFactory().get("/"), document.pk)
+
+
+@pytest.mark.django_db
 def test_certified_document_returns_404_when_the_pdf_is_missing():
     document = CertifiedElectionDocumentFactory(storage_key="TK2025/missing.pdf", region=RegionFactory())
 

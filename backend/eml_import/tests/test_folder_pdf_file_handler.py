@@ -4,7 +4,7 @@ import pytest
 from django.core.files.storage import default_storage
 from django.db import IntegrityError
 
-from election.models import CertifiedElectionDocument, ElectionCategory
+from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
 from eml_import.exceptions import PDFImporterException
 from eml_import.utils.folder_pdf_file_handler import FolderPDFFileHanlder
@@ -47,9 +47,9 @@ def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
 
     FolderPDFFileHanlder(tmp_path).run()
 
-    document = CertifiedElectionDocument.objects.get()
+    document = ElectionDocument.objects.get()
     assert document.region == barneveld
-    assert document.file_type == CertifiedElectionDocument.FileType.NA31_2
+    assert document.file_type == ElectionDocument.FileType.PDF_NA31_2
     assert document.content_type == "application/pdf"
     assert document.size == len(PDF_BYTES)
     assert default_storage.open(document.storage_key).read() == PDF_BYTES
@@ -75,7 +75,7 @@ def test_rejects_a_second_certified_document_for_the_same_region_and_type(tmp_pa
     with pytest.raises(IntegrityError):
         FolderPDFFileHanlder(tmp_path).run()
 
-    document = CertifiedElectionDocument.objects.get()
+    document = ElectionDocument.objects.get()
     assert document.size == len(first)
     assert default_storage.open(document.storage_key).read() == first
 
@@ -101,9 +101,9 @@ def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path)
 
     FolderPDFFileHanlder(tmp_path).run()
 
-    document = CertifiedElectionDocument.objects.get()
+    document = ElectionDocument.objects.get()
     assert document.region == station
-    assert document.file_type == CertifiedElectionDocument.FileType.N10_1
+    assert document.file_type == ElectionDocument.FileType.PDF_N10_1
 
 
 @pytest.mark.django_db
@@ -143,27 +143,27 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies(tmp_path):
 
     FolderPDFFileHanlder(tmp_path).run()
 
-    file_type = CertifiedElectionDocument.FileType
-    attached = {(document.region_id, document.file_type) for document in CertifiedElectionDocument.objects.all()}
+    file_type = ElectionDocument.FileType
+    attached = {(document.region_id, document.file_type) for document in ElectionDocument.objects.all()}
     assert attached == {
-        (station.id, file_type.N10_1),
-        (station.id, file_type.N10_2),
-        (station.id, file_type.NA14_1),
-        (gemeente.id, file_type.NA31_1),
-        (gemeente.id, file_type.NA31_2),
-        (gemeente.id, file_type.NA14_2),
-        (kieskring.id, file_type.O7),
+        (station.id, file_type.PDF_N10_1),
+        (station.id, file_type.PDF_N10_2),
+        (station.id, file_type.PDF_NA14_1),
+        (gemeente.id, file_type.PDF_NA31_1),
+        (gemeente.id, file_type.PDF_NA31_2),
+        (gemeente.id, file_type.PDF_NA14_2),
+        (kieskring.id, file_type.PDF_O7),
     }
 
 
 @pytest.mark.django_db
 def test_imports_p22_onto_the_csb_of_that_election(tmp_path):
-    file_type = CertifiedElectionDocument.FileType
+    file_type = ElectionDocument.FileType
     cases = (
-        (ElectionCategory.TK, "Country", file_type.P22_1),
-        (ElectionCategory.PS, "Province", file_type.P22_1),
-        (ElectionCategory.WS, "Board", file_type.P22_2),
-        (ElectionCategory.GR, "Town", file_type.P22_2),
+        (ElectionCategory.TK, "Country", file_type.PDF_P22_1),
+        (ElectionCategory.PS, "Province", file_type.PDF_P22_1),
+        (ElectionCategory.WS, "Board", file_type.PDF_P22_2),
+        (ElectionCategory.GR, "Town", file_type.PDF_P22_2),
     )
     expected = set()
     for category, region_name, document_type in cases:
@@ -175,12 +175,12 @@ def test_imports_p22_onto_the_csb_of_that_election(tmp_path):
             region_name=region_name,
             region_number="1",
         )
-        write_pdf(tmp_path, f"{category.value}_{document_type}_{region_name}.pdf")
+        write_pdf(tmp_path, f"{category.value}_{document_type.removeprefix('PDF_')}_{region_name}.pdf")
         expected.add((csb.id, document_type))
 
     FolderPDFFileHanlder(tmp_path).run()
 
-    attached = {(document.region_id, document.file_type) for document in CertifiedElectionDocument.objects.all()}
+    attached = {(document.region_id, document.file_type) for document in ElectionDocument.objects.all()}
     assert attached == expected
 
 
@@ -191,4 +191,4 @@ def test_rejects_a_filename_that_does_not_match_the_convention(tmp_path):
     with pytest.raises(PDFImporterException, match="does not match"):
         FolderPDFFileHanlder(tmp_path).run()
 
-    assert CertifiedElectionDocument.objects.count() == 0
+    assert ElectionDocument.objects.count() == 0

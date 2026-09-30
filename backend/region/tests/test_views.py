@@ -6,8 +6,13 @@ from django.core.files.storage import default_storage
 from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 
-from election.models import ElectionCategory, VoteCount, VoterTurnoutCount
-from election.tests.factories import CertifiedElectionDocumentFactory, ContestFactory, ElectionFactory
+from election.models import ElectionCategory, ElectionDocument, VoteCount, VoterTurnoutCount
+from election.tests.factories import (
+    CertifiedElectionDocumentFactory,
+    ContestFactory,
+    ElectionDocumentFactory,
+    ElectionFactory,
+)
 from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
@@ -146,11 +151,17 @@ def test_region_detail_has_no_certified_document_preview_without_a_document():
 def test_region_detail_links_the_certified_document_when_one_is_imported():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)
     document = CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/pv.pdf")
+    ElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/telling.xml",
+        file_type=ElectionDocument.FileType.EML_510B,
+    )
     default_storage.save("TK2025/pv.pdf", ContentFile(b"%PDF"))
     default_storage.save("TK2025/pv.png", ContentFile(b"\x89PNG"))
 
     data = region_detail(region, "gsb")
 
+    assert [item["file_type"] for item in data["documents"]] == [ElectionDocument.FileType.EML_510B]
     assert data["certified_document_url"] == f"/api/certified-documents/{document.pk}/"
     assert data["certified_document_preview_url"] == f"/api/certified-documents/{document.pk}/preview/"
 

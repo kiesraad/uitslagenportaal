@@ -4,7 +4,7 @@ from django.core.files.storage import default_storage
 from django.urls import reverse
 from rest_framework import serializers
 
-from election.models import TimelineVariant
+from election.models import ElectionDocument, TimelineVariant
 from election.serializers import ElectionDocumentSerializer, TimelineEntrySerializer
 from mainsite.models import RegionCategory
 from mainsite.serializers import (
@@ -62,7 +62,10 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         )
 
     def _certified_document(self, region):
-        return next(iter(region.certified_election_documents.all()), None)
+        return ElectionDocument.objects.filter(
+            region=region,
+            file_type__in=ElectionDocument.CERTIFIED_FILE_TYPES,
+        ).first()
 
     def get_certified_document_url(self, region) -> str | None:
         document = self._certified_document(region)

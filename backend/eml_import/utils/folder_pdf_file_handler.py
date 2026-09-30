@@ -8,7 +8,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import transaction
 
-from election.models import CertifiedElectionDocument, ElectionCategory, ElectionConfig
+from election.models import ElectionCategory, ElectionConfig, ElectionDocument
 from eml_import.exceptions import PDFImporterException
 from mainsite.models import RegionCategory
 from region.models import Region
@@ -20,13 +20,13 @@ _PREVIEW_SCALE = 2
 
 # P22 is the centraal stembureau; that region's category comes from the election.
 _REGION_CATEGORY_BY_FILE_TYPE = {
-    CertifiedElectionDocument.FileType.N10_1: RegionCategory.STEMBUREAU,
-    CertifiedElectionDocument.FileType.N10_2: RegionCategory.STEMBUREAU,
-    CertifiedElectionDocument.FileType.NA14_1: RegionCategory.STEMBUREAU,
-    CertifiedElectionDocument.FileType.NA31_1: RegionCategory.GEMEENTE,
-    CertifiedElectionDocument.FileType.NA31_2: RegionCategory.GEMEENTE,
-    CertifiedElectionDocument.FileType.NA14_2: RegionCategory.GEMEENTE,
-    CertifiedElectionDocument.FileType.O7: RegionCategory.KIESKRING,
+    ElectionDocument.FileType.PDF_N10_1: RegionCategory.STEMBUREAU,
+    ElectionDocument.FileType.PDF_N10_2: RegionCategory.STEMBUREAU,
+    ElectionDocument.FileType.PDF_NA14_1: RegionCategory.STEMBUREAU,
+    ElectionDocument.FileType.PDF_NA31_1: RegionCategory.GEMEENTE,
+    ElectionDocument.FileType.PDF_NA31_2: RegionCategory.GEMEENTE,
+    ElectionDocument.FileType.PDF_NA14_2: RegionCategory.GEMEENTE,
+    ElectionDocument.FileType.PDF_O7: RegionCategory.KIESKRING,
 }
 
 
@@ -51,9 +51,10 @@ class FolderPDFFileHanlder:
         parts = file.stem.split("_", 2)
         if len(parts) != 3 or not all(parts):
             raise PDFImporterException(f"{file.name} does not match {{election}}_{{file_type}}_{{region}}.pdf")
-        election_id, file_type, region_token = parts
-        if file_type not in CertifiedElectionDocument.FileType.values:
-            raise PDFImporterException(f"Unknown certified election document type {file_type} in {file.name}")
+        election_id, form_code, region_token = parts
+        file_type = ElectionDocument.FileType.from_form_code(form_code)
+        if file_type is None:
+            raise PDFImporterException(f"Unknown certified election document type {form_code} in {file.name}")
         return election_id, file_type, region_token
 
     def _election_config(self, election_id: str) -> ElectionConfig:
@@ -63,7 +64,7 @@ class FolderPDFFileHanlder:
             raise PDFImporterException(f"Election {election_id} is not configured") from None
 
     def _region_category(self, config: ElectionConfig, file_type: str) -> str:
-        if file_type in (CertifiedElectionDocument.FileType.P22_1, CertifiedElectionDocument.FileType.P22_2):
+        if file_type in (ElectionDocument.FileType.PDF_P22_1, ElectionDocument.FileType.PDF_P22_2):
             return ElectionCategory(config.category).config.csb
         return _REGION_CATEGORY_BY_FILE_TYPE[file_type]
 
@@ -112,7 +113,7 @@ class FolderPDFFileHanlder:
             stored_key = default_storage.save(storage_key, File(handle))
         default_storage.save(Path(stored_key).with_suffix(".png").as_posix(), ContentFile(preview))
 
-        CertifiedElectionDocument.objects.create(
+        ElectionDocument.objects.create(
             region=region,
             file_type=file_type,
             storage_key=stored_key,

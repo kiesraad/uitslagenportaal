@@ -240,8 +240,8 @@ class ElectionDocument(BaseDocument):
 
     class FileType(models.TextChoices):
         """
-        Available file types, prefixed with the extensions (i.e. EML, PDF).
-        Make sure to also update FILE_TYPE_MAPPINGS in the frontend code on change.
+        EML and CSV types are the source files in FILE_TYPE_MAPPINGS.
+        The form codes are scanned proces-verbaal documents.
         """
 
         EML_110A = "EML110a", "Verkiezingsdefinitie"
@@ -250,6 +250,42 @@ class ElectionDocument(BaseDocument):
         EML_510C = "EML510c", "Totaaltelling HSB"
         EML_510D = "EML510d", "Totaaltelling CSB"
         CSV_OSV43 = "CSV_OSV4-3", "OSV4-3 telling CSV"
+        PDF_N10_1 = "PDF_N10-1", "Proces-verbaal stembureau"
+        PDF_N10_2 = "PDF_N10-2", "Proces-verbaal stembureau in een gemeente die CSB is"
+        PDF_NA14_1 = "PDF_NA14-1", "Corrigendum proces-verbaal stembureau"
+        PDF_NA31_1 = "PDF_NA31-1", "Proces-verbaal gemeentelijk stembureau (DSO)"
+        PDF_NA31_2 = "PDF_NA31-2", "Proces-verbaal gemeentelijk stembureau (CSO)"
+        PDF_NA14_2 = "PDF_NA14-2", "Corrigendum proces-verbaal gemeentelijk stembureau"
+        PDF_O7 = "PDF_O7", "Proces-verbaal hoofdstembureau"
+        PDF_P22_1 = "PDF_P22-1", "Proces-verbaal centraal stembureau met meerdere kieskringen"
+        PDF_P22_2 = "PDF_P22-2", "Proces-verbaal centraal stembureau met één kieskring"
+
+        @classmethod
+        def from_form_code(cls, form_code: str) -> Self | None:
+            """Map a filename form code (N10-1) to its PDF_ file type."""
+            return next(
+                (
+                    file_type
+                    for file_type in cls
+                    if file_type.startswith("PDF_") and file_type.removeprefix("PDF_") == form_code
+                ),
+                None,
+            )
+
+    # Scanned forms. Kept out of the source-file list on a region.
+    CERTIFIED_FILE_TYPES = frozenset(
+        {
+            FileType.PDF_N10_1,
+            FileType.PDF_N10_2,
+            FileType.PDF_NA14_1,
+            FileType.PDF_NA31_1,
+            FileType.PDF_NA31_2,
+            FileType.PDF_NA14_2,
+            FileType.PDF_O7,
+            FileType.PDF_P22_1,
+            FileType.PDF_P22_2,
+        }
+    )
 
     region = models.ForeignKey(
         "region.Region",
@@ -279,40 +315,6 @@ class ElectionDocument(BaseDocument):
                 fields=["region", "file_type"],
                 condition=Q(is_current=True),
                 name="unique_current_document_per_region_and_file_type",
-            )
-        ]
-
-
-class CertifiedElectionDocument(BaseDocument):
-    """Scanned certified election document attached to one region."""
-
-    class FileType(models.TextChoices):
-        N10_1 = "N10-1", "Proces-verbaal stembureau"
-        N10_2 = "N10-2", "Proces-verbaal stembureau in een gemeente die CSB is"
-        NA14_1 = "NA14-1", "Corrigendum proces-verbaal stembureau"
-        NA31_1 = "NA31-1", "Proces-verbaal gemeentelijk stembureau (DSO)"
-        NA31_2 = "NA31-2", "Proces-verbaal gemeentelijk stembureau (CSO)"
-        NA14_2 = "NA14-2", "Corrigendum proces-verbaal gemeentelijk stembureau"
-        O7 = "O7", "Proces-verbaal hoofdstembureau"
-        P22_1 = "P22-1", "Proces-verbaal centraal stembureau met meerdere kieskringen"
-        P22_2 = "P22-2", "Proces-verbaal centraal stembureau met één kieskring"
-
-    region = models.ForeignKey(
-        "region.Region",
-        on_delete=models.CASCADE,
-        related_name="certified_election_documents",
-        null=True,
-        blank=True,
-    )
-    file_type = models.CharField(max_length=16, choices=FileType.choices)
-    storage_key = models.CharField(max_length=512, unique=True)
-    content_type = models.CharField(max_length=128, default="application/pdf")
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["region", "file_type"],
-                name="unique_current_certified_document_per_region_and_code",
             )
         ]
 
