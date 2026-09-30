@@ -1,0 +1,239 @@
+{
+   "uid": "requests",
+   "title": "Requests",
+   "description": "Access logs of the backend and the frontend's nginx, from the fields Alloy stores as structured metadata.",
+   "tags": ["uitslagenportaal", "logs"],
+   "timezone": "browser",
+   "schemaVersion": 41,
+   "editable": true,
+   "refresh": "1m",
+   "time": { "from": "now-1h", "to": "now" },
+   "templating": {
+      "list": [
+         {
+            "name": "datasource",
+            "label": "Data source",
+            "type": "datasource",
+            "query": "loki",
+            "hide": 2
+         },
+         {
+            "name": "namespace",
+            "label": "Namespace",
+            "type": "query",
+            "datasource": { "type": "loki", "uid": "${datasource}" },
+            "query": {
+               "type": 1,
+               "label": "namespace",
+               "stream": "{container=~\"backend|frontend\"}",
+               "refId": "LokiVariableQueryEditor-VariableQuery"
+            },
+            "refresh": 2,
+            "sort": 1
+         },
+         {
+            "name": "container",
+            "label": "Container",
+            "type": "custom",
+            "query": "backend,frontend",
+            "multi": true,
+            "includeAll": true,
+            "allValue": "backend|frontend",
+            "current": { "text": "All", "value": "$__all" }
+         },
+         {
+            "name": "min_status",
+            "label": "Status",
+            "type": "custom",
+            "query": "All : 0,4xx and 5xx : 400,5xx : 500",
+            "current": { "text": "All", "value": "0" }
+         },
+         {
+            "name": "path",
+            "label": "Path contains",
+            "type": "textbox",
+            "query": ""
+         }
+      ]
+   },
+   "panels": [
+      {
+         "id": 1,
+         "type": "timeseries",
+         "title": "Requests by status",
+         "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+         "datasource": { "type": "loki", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum by (container, status) (count_over_time({namespace=\"$namespace\", container=~\"$container\"} | logger=~\"mainsite.access|nginx.access\" | status >= $min_status | path=~\".*$path.*\" [$__auto]))",
+               "legendFormat": "{{container}} {{status}}",
+               "queryType": "range"
+            }
+         ],
+         "fieldConfig": {
+            "defaults": {
+               "custom": { "drawStyle": "bars", "stacking": { "mode": "normal" }, "fillOpacity": 80 }
+            }
+         }
+      },
+      {
+         "id": 2,
+         "type": "timeseries",
+         "title": "Duration (p50, p95)",
+         "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+         "datasource": { "type": "loki", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "quantile_over_time(0.5, {namespace=\"$namespace\", container=~\"$container\"} | logger=~\"mainsite.access|nginx.access\" | status >= $min_status | path=~\".*$path.*\" | unwrap duration_ms [$__auto]) by (container)",
+               "legendFormat": "{{container}} p50",
+               "queryType": "range"
+            },
+            {
+               "refId": "B",
+               "expr": "quantile_over_time(0.95, {namespace=\"$namespace\", container=~\"$container\"} | logger=~\"mainsite.access|nginx.access\" | status >= $min_status | path=~\".*$path.*\" | unwrap duration_ms [$__auto]) by (container)",
+               "legendFormat": "{{container}} p95",
+               "queryType": "range"
+            }
+         ],
+         "fieldConfig": { "defaults": { "unit": "ms" } }
+      },
+      {
+         "id": 3,
+         "type": "table",
+         "title": "Requests",
+         "gridPos": { "x": 0, "y": 8, "w": 24, "h": 14 },
+         "datasource": { "type": "loki", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "{namespace=\"$namespace\", container=~\"$container\"} | logger=~\"mainsite.access|nginx.access\" | status >= $min_status | path=~\".*$path.*\"",
+               "queryType": "range",
+               "maxLines": 500
+            }
+         ],
+         "transformations": [
+            { "id": "extractFields", "options": { "source": "labels" } },
+            {
+               "id": "convertFieldType",
+               "options": {
+                  "conversions": [
+                     { "targetField": "status", "destinationType": "number" },
+                     { "targetField": "duration_ms", "destinationType": "number" }
+                  ]
+               }
+            },
+            {
+               "id": "organize",
+               "options": {
+                  "includeByName": {
+                     "Time": true,
+                     "container": true,
+                     "method": true,
+                     "path": true,
+                     "status": true,
+                     "duration_ms": true,
+                     "pod": true
+                  },
+                  "indexByName": {
+                     "Time": 0,
+                     "container": 1,
+                     "method": 2,
+                     "path": 3,
+                     "status": 4,
+                     "duration_ms": 5,
+                     "pod": 6
+                  },
+                  "renameByName": {
+                     "container": "Container",
+                     "method": "Method",
+                     "path": "Path",
+                     "status": "Status",
+                     "duration_ms": "Duration",
+                     "pod": "Pod"
+                  }
+               }
+            }
+         ],
+         "options": {
+            "showHeader": true,
+            "sortBy": [{ "displayName": "Time", "desc": true }]
+         },
+         "fieldConfig": {
+            "defaults": {},
+            "overrides": [
+               {
+                  "matcher": { "id": "byName", "options": "Time" },
+                  "properties": [{ "id": "custom.width", "value": 190 }]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Container" },
+                  "properties": [{ "id": "custom.width", "value": 100 }]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Method" },
+                  "properties": [{ "id": "custom.width", "value": 90 }]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Status" },
+                  "properties": [
+                     { "id": "custom.width", "value": 90 },
+                     { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+                     {
+                        "id": "thresholds",
+                        "value": {
+                           "mode": "absolute",
+                           "steps": [
+                              { "color": "green", "value": null },
+                              { "color": "orange", "value": 400 },
+                              { "color": "red", "value": 500 }
+                           ]
+                        }
+                     }
+                  ]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Duration" },
+                  "properties": [
+                     { "id": "unit", "value": "ms" },
+                     { "id": "decimals", "value": 1 },
+                     { "id": "custom.width", "value": 110 },
+                     { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+                     {
+                        "id": "thresholds",
+                        "value": {
+                           "mode": "absolute",
+                           "steps": [
+                              { "color": "text", "value": null },
+                              { "color": "orange", "value": 500 },
+                              { "color": "red", "value": 2000 }
+                           ]
+                        }
+                     }
+                  ]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Pod" },
+                  "properties": [{ "id": "custom.width", "value": 300 }]
+               }
+            ]
+         }
+      },
+      {
+         "id": 4,
+         "type": "logs",
+         "title": "Errors (backend, Celery and frontend)",
+         "gridPos": { "x": 0, "y": 22, "w": 24, "h": 10 },
+         "datasource": { "type": "loki", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "{namespace=\"$namespace\", container=~\"backend|celery-worker|celery-beat|frontend\"} | level=~\"ERROR|CRITICAL\"",
+               "queryType": "range"
+            }
+         ],
+         "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending", "enableLogDetails": true }
+      }
+   ]
+}
