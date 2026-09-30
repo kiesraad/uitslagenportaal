@@ -2,7 +2,7 @@ from pathlib import Path
 
 from django.core.files.storage import default_storage
 from django.db.models import Q
-from django.http import FileResponse, Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 
@@ -73,12 +73,8 @@ def certified_document(request, pk):
     if not default_storage.exists(document.storage_key):
         raise Http404("Document not found")
 
-    # A redirect to object storage makes browsers save the PDF. Streaming it from this
-    # origin lets the browser show the file.
-    return FileResponse(
-        default_storage.open(document.storage_key, "rb"),
-        content_type="application/pdf",
-        filename=Path(document.storage_key).name,
+    return HttpResponseRedirect(
+        default_storage.url(document.storage_key, parameters={"ResponseContentType": "application/pdf"})
     )
 
 

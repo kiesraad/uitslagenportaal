@@ -93,7 +93,7 @@ def test_download_document_returns_404_for_missing_document():
 
 
 @pytest.mark.django_db
-def test_certified_document_streams_the_pdf_inline():
+def test_certified_document_redirects_to_the_pdf():
     default_storage.save("TK2025/TK2025_NA31-2_Barneveld.pdf", ContentFile(b"%PDF-1.4"))
     document = CertifiedElectionDocumentFactory(
         storage_key="TK2025/TK2025_NA31-2_Barneveld.pdf",
@@ -102,10 +102,11 @@ def test_certified_document_streams_the_pdf_inline():
 
     response = certified_document(RequestFactory().get("/"), document.pk)
 
-    assert response.status_code == 200
-    assert response["Content-Type"] == "application/pdf"
-    assert response["Content-Disposition"] == 'inline; filename="TK2025_NA31-2_Barneveld.pdf"'
-    assert b"".join(response.streaming_content) == b"%PDF-1.4"
+    assert response.status_code == 302
+    assert response.url == f"{settings.MEDIA_URL}TK2025/TK2025_NA31-2_Barneveld.pdf"
+    assert default_storage.url_parameters["TK2025/TK2025_NA31-2_Barneveld.pdf"] == {
+        "ResponseContentType": "application/pdf"
+    }
 
 
 @pytest.mark.django_db
