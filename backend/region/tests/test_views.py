@@ -161,9 +161,42 @@ def test_region_detail_links_the_certified_document_when_one_is_imported():
 
     data = region_detail(region, "gsb")
 
-    assert [item["file_type"] for item in data["documents"]] == [ElectionDocument.FileType.EML_510B]
+    by_type = {item["file_type"]: item for item in data["documents"]}
+    assert set(by_type) == {ElectionDocument.FileType.EML_510B, ElectionDocument.FileType.PDF_NA31_2}
+    assert by_type[ElectionDocument.FileType.PDF_NA31_2]["url"] == f"/api/documents/{document.pk}/download/"
     assert data["certified_document_url"] == f"/api/certified-documents/{document.pk}/"
     assert data["certified_document_preview_url"] == f"/api/certified-documents/{document.pk}/preview/"
+
+
+@pytest.mark.django_db
+def test_region_detail_lists_each_proces_verbaal_and_previews_the_earliest():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    original = CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/na31-2.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA31_2,
+    )
+    corrigendum = CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/na14-2.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA14_2,
+    )
+    default_storage.save("TK2025/na31-2.pdf", ContentFile(b"%PDF"))
+    default_storage.save("TK2025/na31-2.png", ContentFile(b"\x89PNG"))
+    default_storage.save("TK2025/na14-2.pdf", ContentFile(b"%PDF"))
+    default_storage.save("TK2025/na14-2.png", ContentFile(b"\x89PNG"))
+
+    data = region_detail(region, "gsb")
+
+    assert {item["file_type"] for item in data["documents"]} == {
+        ElectionDocument.FileType.PDF_NA31_2,
+        ElectionDocument.FileType.PDF_NA14_2,
+    }
+    assert {item["url"] for item in data["documents"]} == {
+        f"/api/documents/{original.pk}/download/",
+        f"/api/documents/{corrigendum.pk}/download/",
+    }
+    assert data["certified_document_preview_url"] == f"/api/certified-documents/{original.pk}/preview/"
 
 
 @pytest.mark.django_db

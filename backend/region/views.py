@@ -85,7 +85,11 @@ class RegionDetailView(RetrieveAPIView):
             raise ValidationError({"level": "This query parameter is required and must be sb, gsb, hsb, or csb."})
 
         eml_type = EML_TYPE_BY_REPORTING_LEVEL[level]
-        document_file_type = [_DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL[level], ElectionDocument.FileType.CSV_OSV43]
+        document_file_type = [
+            _DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL[level],
+            ElectionDocument.FileType.CSV_OSV43,
+            *ElectionDocument.CERTIFIED_FILE_TYPES,
+        ]
 
         election_config = ElectionConfig.objects.filter(slug=election_config_slug).first()
         if election_config is None:

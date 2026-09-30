@@ -231,10 +231,7 @@ class ElectionDocument(BaseModel):
     """
 
     class FileType(models.TextChoices):
-        """
-        EML and CSV types are the source files in FILE_TYPE_MAPPINGS.
-        The form codes are scanned proces-verbaal documents.
-        """
+        """Source files listed in FILE_TYPE_MAPPINGS, including the scanned proces-verbaal forms."""
 
         EML_110A = "EML110a", "Verkiezingsdefinitie"
         EML_230B = "EML230b", "Kandidatenlijst"

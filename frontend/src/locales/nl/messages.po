@@ -124,6 +124,22 @@ msgstr "Blanco stemmen"
 msgid "Brondocumenten"
 msgstr "Brondocumenten"
 
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Corrigendum op het proces-verbaal van het gemeentelijk stembureau."
+msgstr "Corrigendum op het proces-verbaal van het gemeentelijk stembureau."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Corrigendum op het proces-verbaal van het stembureau."
+msgstr "Corrigendum op het proces-verbaal van het stembureau."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Corrigendum proces-verbaal gemeentelijk stembureau"
+msgstr "Corrigendum proces-verbaal gemeentelijk stembureau"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Corrigendum proces-verbaal stembureau"
+msgstr "Corrigendum proces-verbaal stembureau"
+
 #: src/pages/HomePage.tsx
 msgid "Databank verkiezinguitslag"
 msgstr "Databank verkiezinguitslag"
@@ -333,6 +349,34 @@ msgstr "Het hoofdstembureau heeft de telresultaten van alle gemeenten in de kies
 #: src/pages/HSBPage/HSBResultsPage.tsx
 msgid "Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
 msgstr "Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Het ondertekende proces-verbaal van het centraal stembureau voor een verkiezing met één kieskring."
+msgstr "Het ondertekende proces-verbaal van het centraal stembureau voor een verkiezing met één kieskring."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Het ondertekende proces-verbaal van het centraal stembureau voor een verkiezing met meerdere kieskringen."
+msgstr "Het ondertekende proces-verbaal van het centraal stembureau voor een verkiezing met meerdere kieskringen."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Het ondertekende proces-verbaal van het gemeentelijk stembureau bij centrale stemopneming."
+msgstr "Het ondertekende proces-verbaal van het gemeentelijk stembureau bij centrale stemopneming."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Het ondertekende proces-verbaal van het gemeentelijk stembureau bij decentrale stemopneming."
+msgstr "Het ondertekende proces-verbaal van het gemeentelijk stembureau bij decentrale stemopneming."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Het ondertekende proces-verbaal van het hoofdstembureau."
+msgstr "Het ondertekende proces-verbaal van het hoofdstembureau."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Het ondertekende proces-verbaal van het stembureau in een gemeente die CSB is."
+msgstr "Het ondertekende proces-verbaal van het stembureau in een gemeente die CSB is."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Het ondertekende proces-verbaal van het stembureau."
+msgstr "Het ondertekende proces-verbaal van het stembureau."
 
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Het proces-verbaal is nog niet ontvangen"
@@ -544,6 +588,34 @@ msgstr "Probeer opnieuw"
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Proces-verbaal"
 msgstr "Proces-verbaal"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Proces-verbaal centraal stembureau met één kieskring"
+msgstr "Proces-verbaal centraal stembureau met één kieskring"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Proces-verbaal centraal stembureau met meerdere kieskringen"
+msgstr "Proces-verbaal centraal stembureau met meerdere kieskringen"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Proces-verbaal gemeentelijk stembureau (CSO)"
+msgstr "Proces-verbaal gemeentelijk stembureau (CSO)"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Proces-verbaal gemeentelijk stembureau (DSO)"
+msgstr "Proces-verbaal gemeentelijk stembureau (DSO)"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Proces-verbaal hoofdstembureau"
+msgstr "Proces-verbaal hoofdstembureau"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Proces-verbaal stembureau"
+msgstr "Proces-verbaal stembureau"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Proces-verbaal stembureau in een gemeente die CSB is"
+msgstr "Proces-verbaal stembureau in een gemeente die CSB is"
 
 #: src/utils/region.ts
 msgid "Provincie"
