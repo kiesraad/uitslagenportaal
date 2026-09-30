@@ -148,7 +148,9 @@ with NVDA (Dutch voice, automatic language switching on): Tab, `H` for headings,
   (`elements/ExternalLinkIcon.tsx`). `Button` with `disabled` renders a disabled `<button>`, also
   when it has an `href`; don't use `aria-disabled` on an anchor.
 - **Dynamic content.** Loading text is `role="status"`, errors are `role="alert"`. A status
-  region whose text updates is rendered from the start, or the update is not announced. `SearchBar` is the reference combobox.
+  region whose text updates is rendered from the start, or the update is not announced.
+  `SearchAutocomplete` is the reference: a searchbox with a suggestion listbox and a status
+  region announcing the result count.
 - **Focus and zoom.** Never remove an outline without a `:focus-visible` replacement. A
   horizontally scrollable region is focusable and named (`PartyVoteMatrixTable`). Rows with text
   use `min-h-*`, not a fixed height. Spinners get `motion-reduce:animate-none`.

@@ -1,22 +1,12 @@
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Plural, useLingui } from "@lingui/react/macro";
-import { type ChangeEvent, type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { twMerge } from "tailwind-merge";
-
+import { useLingui } from "@lingui/react/macro";
+import { type ReactNode, type SubmitEvent, useMemo, useState } from "react";
+import Button from "@/elements/Button.tsx";
 import type { RegionCategory } from "../api/types";
 import { getRegionLabels } from "../utils/region";
 import { lowercaseFirst } from "../utils/text";
-
-export type SearchListOption = {
-   id: string;
-   label: string;
-   searchText?: string;
-   content?: ReactNode;
-   csbSlug?: string;
-   sortName?: string;
-   stationNumber?: number;
-};
+import SearchAutocomplete, { type SearchListOption, useOptionMatcher } from "./SearchAutocomplete.tsx";
 
 type Props = {
    regionCategory: RegionCategory;
@@ -24,6 +14,17 @@ type Props = {
    onSelect: (option: SearchListOption) => void;
    maxSuggestions?: number;
    children?: ReactNode;
+};
+
+const ALIASES: Record<string, string> = {
+   "'s-Gravenhage": "Den Haag",
+   "'s-Hertogenbosch": "Den Bosch",
+   // Frisian official names, found by their Dutch counterparts
+   Dantumadiel: "Dantumadeel",
+   "De Fryske Marren": "De Friese Meren",
+   "Noardeast-Fryslân": "Noordoost-Friesland",
+   "Súdwest-Fryslân": "Zuidwest-Friesland",
+   Tytsjerksteradiel: "Tietjerksteradeel",
 };
 
 export default function SearchBar({ regionCategory, options, onSelect, maxSuggestions = 8, children }: Props) {
@@ -34,25 +35,21 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
          label: t`Zoek op naam, adres of stembureau-nummer`,
          placeholder: t`Bijv. Gymzaal de Boom`,
          submitBehavior: "first-match" as const,
-         inputId: "stembureau-search",
       },
       GEMEENTE: {
          label: t`Zoek gemeente`,
          placeholder: t`Bijv. Zoetermeer`,
          submitBehavior: "exact-match" as const,
-         inputId: "gemeente-search",
       },
       WATERSCHAP: {
          label: t`Zoek waterschap`,
          placeholder: t`Bijv. De Stichtse Rijnlanden`,
          submitBehavior: "exact-match" as const,
-         inputId: "waterschap-search",
       },
       KIESKRING: {
          label: t`Zoek kieskring`,
          placeholder: t`Bijv. Leiden`,
          submitBehavior: "exact-match" as const,
-         inputId: "kieskring-search",
       },
    } as const;
 
@@ -63,80 +60,32 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
       label: t`Zoek ${regionInline}`,
       placeholder: t`Bijv. ${regionSingular}`,
       submitBehavior: "exact-match" as const,
-      inputId: `${regionCategory.toLowerCase()}-search`,
    };
-   const { label, placeholder, submitBehavior, inputId } = config;
+   const { label, placeholder, submitBehavior } = config;
    const [query, setQuery] = useState("");
-   const [activeIndex, setActiveIndex] = useState(-1);
-   const [open, setOpen] = useState(false);
-   const listRef = useRef<HTMLDivElement>(null);
-   const suggestionsId = `${inputId}-suggestions`;
-   const labelId = `${inputId}-label`;
+   const searchOptions = useMemo(
+      () =>
+         options.map((option) => {
+            const alias = ALIASES[option.label];
+            return alias ? { ...option, searchText: [option.searchText, alias].filter(Boolean).join(" ") } : option;
+         }),
+      [options],
+   );
 
-   const suggestions = useMemo(() => {
-      const normalizedQuery = query.trim().toLowerCase();
-
-      if (normalizedQuery.length === 0) {
-         return [];
-      }
-
-      return options
-         .filter((option) => {
-            const searchable = `${option.label} ${option.searchText ?? ""}`.toLowerCase();
-
-            return searchable.includes(normalizedQuery);
-         })
-         .slice(0, maxSuggestions);
-   }, [maxSuggestions, options, query]);
-   const isOpen = open && query.trim().length > 0 && suggestions.length > 0;
-
-   useEffect(() => {
-      if (activeIndex < 0 || !listRef.current) {
-         return;
-      }
-
-      const item = listRef.current.children[activeIndex] as HTMLElement;
-      item?.scrollIntoView({ block: "nearest" });
-   }, [activeIndex]);
+   const matches = useOptionMatcher();
 
    function selectOption(option: SearchListOption) {
       setQuery(option.label);
-      setOpen(false);
       onSelect(option);
    }
 
-   function handleChange(e: ChangeEvent<HTMLInputElement>) {
-      setQuery(e.target.value);
-      setActiveIndex(-1);
-      setOpen(true);
-   }
-
-   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-      if (!isOpen) {
-         return;
-      }
-
-      if (e.key === "ArrowDown") {
-         e.preventDefault();
-         setActiveIndex((index) => Math.min(index + 1, suggestions.length - 1));
-      } else if (e.key === "ArrowUp") {
-         e.preventDefault();
-         setActiveIndex((index) => Math.max(index - 1, -1));
-      } else if (e.key === "Enter") {
-         e.preventDefault();
-         handleSubmit();
-      } else if (e.key === "Escape") {
-         setOpen(false);
-      }
-   }
-
-   function handleSubmit() {
+   // Reached by the button, or by Enter while no suggestion is highlighted; Enter on a highlighted one selects it.
+   function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
+      e.preventDefault();
       const normalizedQuery = query.trim().toLowerCase();
-      const exact = options.find((option) => option.label.toLowerCase() === normalizedQuery);
       const option =
-         (activeIndex >= 0 ? suggestions[activeIndex] : undefined) ??
-         exact ??
-         (submitBehavior === "first-match" ? suggestions[0] : undefined);
+         options.find((option) => option.label.toLowerCase() === normalizedQuery) ??
+         (submitBehavior === "first-match" ? searchOptions.find((option) => matches(option, query)) : undefined);
 
       if (option) {
          selectOption(option);
@@ -144,65 +93,22 @@ export default function SearchBar({ regionCategory, options, onSelect, maxSugges
    }
 
    return (
-      <>
-         <label id={labelId} className="search-label" htmlFor={inputId}>
-            {label}
-         </label>
-         <div className="search-row">
-            <div className="search-input-wrapper">
-               <input
-                  id={inputId}
-                  className="search-input"
-                  type="text"
-                  placeholder={placeholder}
-                  autoComplete="off"
-                  value={query}
-                  onChange={handleChange}
-                  onKeyDown={handleKeyDown}
-                  onBlur={() => setTimeout(() => setOpen(false), 150)}
-                  onFocus={() => suggestions.length > 0 && setOpen(true)}
-                  role="combobox"
-                  aria-expanded={isOpen}
-                  aria-autocomplete="list"
-                  aria-controls={isOpen ? suggestionsId : undefined}
-                  aria-activedescendant={activeIndex >= 0 ? `${suggestionsId}-${activeIndex}` : undefined}
-               />
-               {isOpen && (
-                  <div
-                     id={suggestionsId}
-                     ref={listRef}
-                     role="listbox"
-                     aria-labelledby={labelId}
-                     className="search-suggestions"
-                  >
-                     {suggestions.map((option, index) => (
-                        <div
-                           key={`${option.id}-${option.csbSlug ?? ""}`}
-                           id={`${suggestionsId}-${index}`}
-                           role="option"
-                           aria-selected={index === activeIndex}
-                           tabIndex={-1}
-                           className={twMerge("search-suggestion-item", index === activeIndex && "active")}
-                           onMouseDown={() => selectOption(option)}
-                           onMouseEnter={() => setActiveIndex(index)}
-                        >
-                           {option.content ?? option.label}
-                        </div>
-                     ))}
-                  </div>
-               )}
-            </div>
-            <button className="search-btn" type="button" aria-label={t`Zoeken`} onClick={handleSubmit}>
-               <FontAwesomeIcon icon={faMagnifyingGlass} />
-            </button>
-            {/* Rendered always, so screen readers pick up changes to its text. */}
-            <div role="status" className="sr-only">
-               {open && query.trim().length > 0 && (
-                  <Plural value={suggestions.length} _0="Geen resultaten" one="# resultaat" other="# resultaten" />
-               )}
-            </div>
+      <form className="mb-6 max-w-150" onSubmit={handleSubmit}>
+         <div className="flex flex-row flex-wrap gap-x-2">
+            <SearchAutocomplete
+               label={label}
+               placeholder={placeholder}
+               value={query}
+               onChange={setQuery}
+               options={searchOptions}
+               onSelect={selectOption}
+               maxSuggestions={maxSuggestions}
+            />
+            <Button type="submit" aria-label={t`Zoeken`} variant="inverted">
+               <FontAwesomeIcon icon={faSearch} />
+            </Button>
             {children}
          </div>
-      </>
+      </form>
    );
 }
