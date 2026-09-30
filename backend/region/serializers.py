@@ -62,10 +62,14 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         )
 
     def _certified_document(self, region):
-        return ElectionDocument.objects.filter(
-            region=region,
-            file_type__in=ElectionDocument.CERTIFIED_FILE_TYPES,
-        ).first()
+        return (
+            ElectionDocument.objects.filter(
+                region=region,
+                file_type__in=ElectionDocument.CERTIFIED_FILE_TYPES,
+            )
+            .order_by("-created_at", "-pk")
+            .first()
+        )
 
     def get_certified_document_url(self, region) -> str | None:
         document = self._certified_document(region)

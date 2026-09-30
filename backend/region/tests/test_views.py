@@ -169,7 +169,7 @@ def test_region_detail_links_the_certified_document_when_one_is_imported():
 
 
 @pytest.mark.django_db
-def test_region_detail_lists_each_proces_verbaal_and_previews_the_earliest():
+def test_region_detail_lists_each_proces_verbaal_and_previews_the_latest():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)
     original = CertifiedElectionDocumentFactory(
         region=region,
@@ -196,7 +196,8 @@ def test_region_detail_lists_each_proces_verbaal_and_previews_the_earliest():
         f"/api/documents/{original.pk}/download/",
         f"/api/documents/{corrigendum.pk}/download/",
     }
-    assert data["certified_document_preview_url"] == f"/api/certified-documents/{original.pk}/preview/"
+    assert data["certified_document_url"] == f"/api/certified-documents/{corrigendum.pk}/"
+    assert data["certified_document_preview_url"] == f"/api/certified-documents/{corrigendum.pk}/preview/"
 
 
 @pytest.mark.django_db
