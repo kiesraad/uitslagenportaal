@@ -23,6 +23,9 @@ The application chart is divided into several yaml files, see ./k8s-config/appli
 - `04-backend.yaml`: Backend deployment and service, incl. an init job which runs the migrations.
 - `05-celery.yaml`: Celery and Celery beat deployments.
 - `06-services.yaml`: Several `StatefulSet`s for PostgreSQL/Redis/Object storage services (local deployments only).
+- `07-exporters.yaml`: Prometheus exporters for PostgreSQL, Redis and Celery (only with `monitoring.enabled`).
+- `08-monitoring.yaml`: The `ServiceMonitor`s for the backend and the exporters, and the `PrometheusRule` with the
+  application's alerts (only with `monitoring.enabled`).
 
 There is one main `values.yaml` file, and a file per environment. Each environment file overrides certain values for the
 environment's deployments. Helm reads `values.yaml` itself as the chart's defaults, so only the environment file is
