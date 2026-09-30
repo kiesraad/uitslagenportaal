@@ -255,6 +255,7 @@ class ElectionDocument(BaseModel):
         @classmethod
         def from_form_code(cls, form_code: str) -> Self | None:
             """Map a filename form code (N10-1) to its PDF_ file type."""
+            form_code = form_code.upper()
             return next(
                 (
                     file_type
