@@ -225,15 +225,7 @@ class CurrentManager(models.Manager.from_queryset(CurrentQuerySet)):
         return super().get_queryset().filter(is_current=True)
 
 
-class BaseDocument(BaseModel):
-    class Meta:
-        abstract = True
-
-    storage_key = models.CharField(max_length=512, unique=True)
-    size = models.PositiveIntegerField()
-
-
-class ElectionDocument(BaseDocument):
+class ElectionDocument(BaseModel):
     """
     Archivable ElectionDoc
     """
@@ -286,6 +278,9 @@ class ElectionDocument(BaseDocument):
             FileType.PDF_P22_2,
         }
     )
+
+    storage_key = models.CharField(max_length=512, unique=True)
+    size = models.PositiveIntegerField()
 
     region = models.ForeignKey(
         "region.Region",
