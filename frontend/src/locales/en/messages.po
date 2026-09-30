@@ -18,7 +18,7 @@ msgid "(opent in nieuw venster)"
 msgstr "(opens in new window)"
 
 #. placeholder {0}: suggestions.length
-#: src/components/SearchBar.tsx
+#: src/components/SearchAutocomplete.tsx
 msgid "{0, plural, =0 {Geen resultaten} one {# resultaat} other {# resultaten}}"
 msgstr "{0, plural, =0 {No results} one {# result} other {# results}}"
 
