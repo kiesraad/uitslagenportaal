@@ -1,11 +1,18 @@
 import datetime
 
 import pytest
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 
-from election.models import ElectionCategory, VoteCount, VoterTurnoutCount
-from election.tests.factories import ContestFactory, ElectionFactory
+from election.models import ElectionCategory, ElectionDocument, VoteCount, VoterTurnoutCount
+from election.tests.factories import (
+    CertifiedElectionDocumentFactory,
+    ContestFactory,
+    ElectionDocumentFactory,
+    ElectionFactory,
+)
 from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
@@ -128,6 +135,81 @@ def test_region_detail_returns_404_for_nonexistent_region():
 
     assert response.status_code == 404
     assert response.data["detail"] == "Region not found for this election."
+
+
+@pytest.mark.django_db
+def test_region_detail_has_no_certified_document_preview_without_a_document():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+
+    data = region_detail(region, "gsb")
+
+    assert data["certified_document_url"] is None
+    assert data["certified_document_preview_url"] is None
+
+
+@pytest.mark.django_db
+def test_region_detail_links_the_certified_document_when_one_is_imported():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    document = CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/pv.pdf")
+    ElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/telling.xml",
+        file_type=ElectionDocument.FileType.EML_510B,
+    )
+    default_storage.save("TK2025/pv.pdf", ContentFile(b"%PDF"))
+    default_storage.save("TK2025/pv.png", ContentFile(b"\x89PNG"))
+
+    data = region_detail(region, "gsb")
+
+    by_type = {item["file_type"]: item for item in data["documents"]}
+    assert set(by_type) == {ElectionDocument.FileType.EML_510B, ElectionDocument.FileType.PDF_NA31_2}
+    assert by_type[ElectionDocument.FileType.PDF_NA31_2]["url"] == f"/api/documents/{document.pk}/download/"
+    assert data["certified_document_url"] == f"/api/certified-documents/{document.pk}/"
+    assert data["certified_document_preview_url"] == f"/api/certified-documents/{document.pk}/preview/"
+
+
+@pytest.mark.django_db
+def test_region_detail_lists_each_proces_verbaal_and_previews_the_latest():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    original = CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/na31-2.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA31_2,
+    )
+    corrigendum = CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/na14-2.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA14_2,
+    )
+    default_storage.save("TK2025/na31-2.pdf", ContentFile(b"%PDF"))
+    default_storage.save("TK2025/na31-2.png", ContentFile(b"\x89PNG"))
+    default_storage.save("TK2025/na14-2.pdf", ContentFile(b"%PDF"))
+    default_storage.save("TK2025/na14-2.png", ContentFile(b"\x89PNG"))
+
+    data = region_detail(region, "gsb")
+
+    assert {item["file_type"] for item in data["documents"]} == {
+        ElectionDocument.FileType.PDF_NA31_2,
+        ElectionDocument.FileType.PDF_NA14_2,
+    }
+    assert {item["url"] for item in data["documents"]} == {
+        f"/api/documents/{original.pk}/download/",
+        f"/api/documents/{corrigendum.pk}/download/",
+    }
+    assert data["certified_document_url"] == f"/api/certified-documents/{corrigendum.pk}/"
+    assert data["certified_document_preview_url"] == f"/api/certified-documents/{corrigendum.pk}/preview/"
+
+
+@pytest.mark.django_db
+def test_region_detail_has_no_preview_when_the_png_is_missing():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    document = CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/missing.pdf")
+    default_storage.save("TK2025/missing.pdf", ContentFile(b"%PDF"))
+
+    data = region_detail(region, "gsb")
+
+    assert data["certified_document_url"] == f"/api/certified-documents/{document.pk}/"
+    assert data["certified_document_preview_url"] is None
 
 
 @pytest.mark.django_db

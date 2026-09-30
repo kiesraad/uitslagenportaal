@@ -231,10 +231,7 @@ class ElectionDocument(BaseModel):
     """
 
     class FileType(models.TextChoices):
-        """
-        Available file types, prefixed with the extensions (i.e. EML, PDF).
-        Make sure to also update FILE_TYPE_MAPPINGS in the frontend code on change.
-        """
+        """Source files listed in FILE_TYPE_MAPPINGS, including the scanned proces-verbaal forms."""
 
         EML_110A = "EML110a", "Verkiezingsdefinitie"
         EML_230B = "EML230b", "Kandidatenlijst"
@@ -242,6 +239,46 @@ class ElectionDocument(BaseModel):
         EML_510C = "EML510c", "Totaaltelling HSB"
         EML_510D = "EML510d", "Totaaltelling CSB"
         CSV_OSV43 = "CSV_OSV4-3", "OSV4-3 telling CSV"
+        PDF_N10_1 = "PDF_N10-1", "Proces-verbaal stembureau"
+        PDF_N10_2 = "PDF_N10-2", "Proces-verbaal stembureau in een gemeente die CSB is"
+        PDF_NA14_1 = "PDF_NA14-1", "Corrigendum proces-verbaal stembureau"
+        PDF_NA31_1 = "PDF_NA31-1", "Proces-verbaal gemeentelijk stembureau (DSO)"
+        PDF_NA31_2 = "PDF_NA31-2", "Proces-verbaal gemeentelijk stembureau (CSO)"
+        PDF_NA14_2 = "PDF_NA14-2", "Corrigendum proces-verbaal gemeentelijk stembureau"
+        PDF_O7 = "PDF_O7", "Proces-verbaal hoofdstembureau"
+        PDF_P22_1 = "PDF_P22-1", "Proces-verbaal centraal stembureau met meerdere kieskringen"
+        PDF_P22_2 = "PDF_P22-2", "Proces-verbaal centraal stembureau met één kieskring"
+
+        @classmethod
+        def from_form_code(cls, form_code: str) -> Self | None:
+            """Map a filename form code (N10-1) to its PDF_ file type."""
+            form_code = form_code.upper()
+            return next(
+                (
+                    file_type
+                    for file_type in cls
+                    if file_type.startswith("PDF_") and file_type.removeprefix("PDF_") == form_code
+                ),
+                None,
+            )
+
+    # Scanned forms. Kept out of the source-file list on a region.
+    CERTIFIED_FILE_TYPES = frozenset(
+        {
+            FileType.PDF_N10_1,
+            FileType.PDF_N10_2,
+            FileType.PDF_NA14_1,
+            FileType.PDF_NA31_1,
+            FileType.PDF_NA31_2,
+            FileType.PDF_NA14_2,
+            FileType.PDF_O7,
+            FileType.PDF_P22_1,
+            FileType.PDF_P22_2,
+        }
+    )
+
+    storage_key = models.CharField(max_length=512, unique=True)
+    size = models.PositiveIntegerField()
 
     region = models.ForeignKey(
         "region.Region",
@@ -250,9 +287,8 @@ class ElectionDocument(BaseModel):
         null=True,
         blank=True,
     )
-    storage_key = models.CharField(max_length=512, unique=True)
+
     content_type = models.CharField(max_length=128, default="application/xml")
-    size = models.PositiveIntegerField()
 
     file_type = models.CharField(
         max_length=32,

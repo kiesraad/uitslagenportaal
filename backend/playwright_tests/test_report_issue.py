@@ -13,7 +13,7 @@ BORSELE_RESULTS = "/ab2023/gsb/654-borsele/csb/17-scheldestromen/resultaten"
 def test_results_page_leads_to_the_report_issue_page(page: Page):
     page.goto(BORSELE_RESULTS)
 
-    page.get_by_role("link", name=re.compile(r"Meld een fout of iets dat niet klopt")).click()
+    page.locator("#fout-melden").get_by_role("link", name=re.compile(r"Meld een fout of iets dat niet klopt")).click()
     expect(page).to_have_url(re.compile(r"/ab2023/fout-melden/?$"))
     expect(page.get_by_role("heading", level=1, name="Een fout melden")).to_be_visible()
     expect(page.get_by_role("heading", level=2, name="Waarvoor kunt u een melding maken?")).to_be_visible()
