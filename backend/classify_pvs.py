@@ -19,7 +19,7 @@ from contextlib import nullcontext
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import pymupdf
+import pypdfium2 as pdfium
 import pytesseract
 import regex
 from PIL import Image
@@ -133,11 +133,15 @@ ELECTION_CODE_NAME_RE = re.compile(r"(gr|tk|ps|ep|ws)[-_ ]?(?:20)?(\d\d)(?!\d)",
 
 
 def render_page(path: Path, index: int) -> Image.Image | None:
-    with pymupdf.open(path) as doc:
-        if index >= doc.page_count:
+    pdf = pdfium.PdfDocument(path)
+    try:
+        if index >= len(pdf):
             return None
-        pix = doc[index].get_pixmap(dpi=DPI, colorspace=pymupdf.csGRAY)
-    return Image.frombytes("L", (pix.width, pix.height), pix.samples)
+        # Filled-in form fields are only drawn once forms are initialised.
+        pdf.init_forms()
+        return pdf[index].render(scale=DPI / 72, grayscale=True).to_pil()
+    finally:
+        pdf.close()
 
 
 def ocr(image: Image.Image) -> str:
