@@ -1,12 +1,14 @@
+import hashlib
+import logging
 from pathlib import Path
 
 import pytest
 from django.core.files.storage import FileSystemStorage, default_storage
-from django.db import IntegrityError
 
 from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
 from eml_import.exceptions import PDFImporterException
+from eml_import.models import ImportedFileHash
 from eml_import.utils.folder_pdf_file_handler import PDFFileHandler
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
@@ -57,27 +59,51 @@ def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
     assert default_storage.open(preview_key).read().startswith(b"\x89PNG\r\n\x1a\n")
 
 
-@pytest.mark.django_db
-def test_rejects_a_second_certified_document_for_the_same_region_and_type(tmp_path):
+def _barneveld():
     config = ElectionConfigFactory(identifier="TK2025", category=ElectionCategory.TK.value)
     election = ElectionFactory(election_config=config, subcategory="TK")
-    RegionFactory(
+    return RegionFactory(
         election=election,
         region_category=RegionCategory.GEMEENTE,
         region_name="Barneveld",
         region_number="203",
     )
+
+
+@pytest.mark.django_db
+def test_records_the_hash_and_skips_bytes_that_were_already_imported(tmp_path):
+    barneveld = _barneveld()
+    write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf")
+    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+
+    assert handler.run() == 1
+    recorded = ImportedFileHash.objects.get()
+    assert recorded.election == barneveld.election
+    assert recorded.sha256 == hashlib.sha256(PDF_BYTES).hexdigest()
+
+    assert handler.run() == 0
+    assert ElectionDocument.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_logs_and_continues_when_the_same_name_has_different_bytes(tmp_path, caplog):
+    _barneveld()
     first = one_page_pdf(b"first")
     write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf", first)
-    PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
+    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    handler.run()
     write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf", one_page_pdf(b"replaced"))
+    write_pdf(tmp_path, "TK2025_NA31-1_Barneveld.pdf")
 
-    with pytest.raises(IntegrityError):
-        PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
+    with caplog.at_level(logging.ERROR):
+        imported = handler.run()
 
-    document = ElectionDocument.objects.get()
-    assert document.size == len(first)
-    assert default_storage.open(document.storage_key).read() == first
+    assert imported == 1
+    stored = ElectionDocument.objects.get(file_type=ElectionDocument.FileType.PDF_NA31_2)
+    assert default_storage.open(stored.storage_key).read() == first
+    assert ElectionDocument.objects.filter(file_type=ElectionDocument.FileType.PDF_NA31_1).exists()
+    assert ImportedFileHash.objects.count() == 2
+    assert "left unchanged" in caplog.text
 
 
 @pytest.mark.django_db
@@ -139,7 +165,7 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies(tmp_path):
         "GEN_NA14-2_Alpha.pdf",
         "GEN_O7_North.pdf",
     ):
-        write_pdf(tmp_path, name)
+        write_pdf(tmp_path, name, one_page_pdf(name.encode()))
 
     PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
 
@@ -175,7 +201,8 @@ def test_imports_p22_onto_the_csb_of_that_election(tmp_path):
             region_name=region_name,
             region_number="1",
         )
-        write_pdf(tmp_path, f"{category.value}_{document_type.removeprefix('PDF_')}_{region_name}.pdf")
+        filename = f"{category.value}_{document_type.removeprefix('PDF_')}_{region_name}.pdf"
+        write_pdf(tmp_path, filename, one_page_pdf(filename.encode()))
         expected.add((csb.id, document_type))
 
     PDFFileHandler(FileSystemStorage(location=tmp_path)).run()

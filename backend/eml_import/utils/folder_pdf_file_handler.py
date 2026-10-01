@@ -7,10 +7,11 @@ import pypdfium2 as pdfium
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage, default_storage
-from django.db import transaction
+from django.db import IntegrityError, transaction
 
 from election.models import ElectionCategory, ElectionConfig, ElectionDocument
-from eml_import.exceptions import PDFImporterException
+from eml_import.exceptions import FileAlreadyImported, PDFImporterException
+from eml_import.models import ImportedFileHash
 from mainsite.models import RegionCategory
 from region.models import Region
 
@@ -53,10 +54,14 @@ class PDFFileHandler:
         self.storage = storage
 
     def run(self) -> int:
-        names = sorted(self._pdf_names(""))
-        for name in names:
-            self._import_pv(_StoragePdf(self.storage, name))
-        return len(names)
+        imported = 0
+        for name in sorted(self._pdf_names("")):
+            try:
+                if self._import_pv(_StoragePdf(self.storage, name)):
+                    imported += 1
+            except IntegrityError:
+                logger.exception("Failed to import proces-verbaal %s", name)
+        return imported
 
     def _pdf_names(self, directory: str):
         directories, filenames = self.storage.listdir(directory)
@@ -66,12 +71,35 @@ class PDFFileHandler:
         for name in directories:
             yield from self._pdf_names(f"{directory}/{name}" if directory else name)
 
-    def _import_pv(self, file: _StoragePdf) -> None:
+    def _import_pv(self, file: _StoragePdf) -> bool:
         election_id, file_type, region_token = self._parse_filename(file)
         config = self._election_config(election_id)
         region = self._region(config, file_type, region_token)
-        self._store(file, config.identifier, region, file_type)
+        with file.open("rb") as handle:
+            content = BytesIO(handle.read())
+
+        # A new hash for a form that is already stored is not a replacement.
+        if ElectionDocument.objects.filter(region=region, file_type=file_type).exists():
+            if ImportedFileHash.objects.filter(sha256=ImportedFileHash._sha256(content)).exists():
+                logger.info("Skipping duplicate proces-verbaal %s", file.name)
+            else:
+                logger.error(
+                    "%s was not imported; a current %s for %s is left unchanged",
+                    file.name,
+                    file_type,
+                    region.region_name,
+                )
+            return False
+
+        try:
+            with ImportedFileHash.if_not_imported(content, region.election):
+                self._store(file, config.identifier, region, file_type)
+        except FileAlreadyImported:
+            logger.info("Skipping duplicate proces-verbaal %s", file.name)
+            return False
+
         logger.info("Imported %s onto %s %s", file.name, region.region_category, region.region_name)
+        return True
 
     def _parse_filename(self, file: _StoragePdf) -> tuple[str, str, str]:
         parts = file.stem.split("_", 2)

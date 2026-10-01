@@ -26,8 +26,8 @@ class ImportedCommit(BaseModel):
     commit_sha = models.CharField(max_length=40)
 
 
-class ImportedEmlHash(BaseModel):
-    """To record imported EML files based on a sha256 file hash"""
+class ImportedFileHash(BaseModel):
+    """Sha256 of a file already imported for an election. The same bytes are skipped next time."""
 
     election = models.ForeignKey(
         "election.Election",
@@ -37,15 +37,15 @@ class ImportedEmlHash(BaseModel):
     sha256 = models.CharField(max_length=64, unique=True)
 
     @staticmethod
-    def _sha256(eml_file: Path | BytesIO) -> str:
-        data = eml_file.read_bytes() if isinstance(eml_file, Path) else eml_file.getvalue()
+    def _sha256(imported_file: Path | BytesIO) -> str:
+        data = imported_file.read_bytes() if isinstance(imported_file, Path) else imported_file.getvalue()
         return hashlib.sha256(data).hexdigest()
 
     @classmethod
     @contextmanager
-    def if_not_imported(cls, eml_file: Path | BytesIO, election: Election):
+    def if_not_imported(cls, imported_file: Path | BytesIO, election: Election):
         """Run the block unless these bytes were imported before; record them once it succeeds."""
-        sha256 = cls._sha256(eml_file)
+        sha256 = cls._sha256(imported_file)
         if cls.objects.filter(sha256=sha256).exists():
             raise FileAlreadyImported()
 
