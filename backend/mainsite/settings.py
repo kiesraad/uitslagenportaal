@@ -254,7 +254,11 @@ STORAGES = {
         if os.environ.get("PV_IMPORT_SOURCE", "s3") == "folder"
         else {
             "BACKEND": "mainsite.utils.custom_s3_storage.SignedCustomDomainS3Storage",
-            "OPTIONS": {**_OBJECT_STORAGE_OPTIONS, "bucket_name": os.environ.get("PV_IMPORT_BUCKET", "pvs")},
+            "OPTIONS": {
+                **_OBJECT_STORAGE_OPTIONS,
+                "bucket_name": os.environ.get("PV_IMPORT_BUCKET", "pvs"),
+                "custom_domain": "",
+            },
         }
     ),
 }
