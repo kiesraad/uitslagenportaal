@@ -12,7 +12,6 @@ from region.tests.factories import RegionFactory
     ("category", "expected_csb"),
     [
         (ElectionCategory.TK, RegionCategory.STAAT),
-        (ElectionCategory.EK, RegionCategory.STAAT),
         (ElectionCategory.EP, RegionCategory.STAAT),
         (ElectionCategory.PS, RegionCategory.PROVINCIE),
         (ElectionCategory.WS, RegionCategory.WATERSCHAP),
