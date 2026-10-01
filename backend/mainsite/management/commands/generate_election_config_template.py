@@ -18,7 +18,7 @@ ELECTION_CONFIG_TEMPLATE = {
     "election": {
         "id": "string, unique election identifier, e.g. TK2025",
         "label": "string, human-readable election name, e.g. Tweede Kamer Verkiezingen 2025",
-        "category": "string, one of TK, EK, PS, WS, GR, EP",
+        "category": "string, one of TK, PS, WS, GR, EP",
         "date": "ISO 8601 datetime, e.g. 2025-04-12T10:00:00",
         "issue_report_opens_at": "ISO 8601 datetime, e.g. 2025-08-18T11:00:00",
         "issue_report_deadline": "ISO 8601 datetime, e.g. 2025-09-12T10:00:00",
