@@ -21,6 +21,7 @@ def test_request_is_logged_with_its_fields(client, caplog):
     assert record.method == "GET"
     assert record.path == "/api/does-not-exist/?page=2"
     assert record.status == 404
+    assert record.levelno == logging.WARNING
     assert record.duration_ms >= 0
 
 
@@ -46,6 +47,7 @@ def test_failing_probe_is_logged(client, caplog, monkeypatch):
 
     [record] = access_records(caplog)
     assert record.status == 503
+    assert record.levelno == logging.ERROR
 
 
 def test_json_formatter_puts_extra_fields_in_the_object():

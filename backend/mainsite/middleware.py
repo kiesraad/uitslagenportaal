@@ -22,8 +22,16 @@ class AccessLogMiddleware:
         if request.path in QUIET_PATHS and response.status_code < 400:
             return response
 
+        if response.status_code >= 500:
+            level = logging.ERROR
+        elif response.status_code >= 400:
+            level = logging.WARNING
+        else:
+            level = logging.INFO
+
         path = request.get_full_path()
-        logger.info(
+        logger.log(
+            level,
             "%s %s %d %.1fms",
             request.method,
             path,
