@@ -3,7 +3,7 @@ import time
 from django.core.files.storage import storages
 from django.core.management.base import BaseCommand
 
-from eml_import.utils.folder_pdf_file_handler import FolderPDFFileHanlder
+from eml_import.utils.folder_pdf_file_handler import PDFFileHandler
 
 
 class Command(BaseCommand):
@@ -12,7 +12,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         storage = storages["pv_import"]
         start = time.time()
-        count = FolderPDFFileHanlder(storage).run()
+        count = PDFFileHandler(storage).run()
         elapsed = time.time() - start
         self.stdout.write(
             self.style.SUCCESS(

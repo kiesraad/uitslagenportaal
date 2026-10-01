@@ -47,7 +47,7 @@ class _StoragePdf:
         return SimpleNamespace(st_size=self._storage.size(self._key))
 
 
-class FolderPDFFileHanlder:
+class PDFFileHandler:
     def __init__(self, storage: Storage):
         super().__init__()
         self.storage = storage
