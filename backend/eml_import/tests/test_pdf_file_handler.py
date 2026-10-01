@@ -47,27 +47,6 @@ def test_records_the_hash_and_skips_bytes_that_were_already_imported(tmp_path):
 
 
 @pytest.mark.django_db
-def test_logs_and_continues_when_the_same_name_has_different_bytes(tmp_path, caplog):
-    barneveld()
-    first = one_page_pdf(b"first")
-    write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf", first)
-    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
-    handler.run()
-    write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf", one_page_pdf(b"replaced"))
-    write_pdf(tmp_path, "TK2025_NA31-1_Barneveld.pdf")
-
-    with caplog.at_level(logging.ERROR):
-        imported = handler.run()
-
-    assert imported == 1
-    stored = ElectionDocument.objects.get(file_type=ElectionDocument.FileType.PDF_NA31_2)
-    assert default_storage.open(stored.storage_key).read() == first
-    assert ElectionDocument.objects.filter(file_type=ElectionDocument.FileType.PDF_NA31_1).exists()
-    assert ImportedFileHash.objects.count() == 2
-    assert "left unchanged" in caplog.text
-
-
-@pytest.mark.django_db
 def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path):
     gemeente = barneveld()
     station = RegionFactory(

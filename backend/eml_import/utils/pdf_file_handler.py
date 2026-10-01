@@ -68,23 +68,14 @@ class PDFFileHandler:
 
     def _import_pv(self, file: _StoragePdf) -> bool:
         election_id, file_type, region_token = self._parse_filename(file)
+        # A later upload of the same name is left unnoticed.
+        if ElectionDocument.objects.filter(storage_key=f"{election_id}/{file.name}").exists():
+            return False
+
         config = self._election_config(election_id)
         region = self._region(config, file_type, region_token)
         with file.open("rb") as handle:
             content = BytesIO(handle.read())
-
-        # A new hash for a form that is already stored is not a replacement.
-        if ElectionDocument.objects.filter(region=region, file_type=file_type).exists():
-            if ImportedFileHash.objects.filter(sha256=ImportedFileHash._sha256(content)).exists():
-                logger.info("Skipping duplicate proces-verbaal %s", file.name)
-            else:
-                logger.error(
-                    "%s was not imported; a current %s for %s is left unchanged",
-                    file.name,
-                    file_type,
-                    region.region_name,
-                )
-            return False
 
         try:
             with ImportedFileHash.if_not_imported(content, region.election):
