@@ -9,8 +9,7 @@ from django.core.files.storage import Storage, default_storage
 from django.db import IntegrityError, transaction
 
 from election.models import ElectionCategory, ElectionConfig, ElectionDocument
-from eml_import.exceptions import FileAlreadyImported, PDFImporterException
-from eml_import.models import ImportedFileHash
+from eml_import.exceptions import PDFImporterException
 from mainsite.models import RegionCategory
 from region.models import Region
 
@@ -76,13 +75,7 @@ class PDFFileHandler:
         region = self._region(config, file_type, region_token)
         with file.open("rb") as handle:
             content = BytesIO(handle.read())
-
-        try:
-            with ImportedFileHash.if_not_imported(content, region.election):
-                self._store(content, file.name, config.identifier, region, file_type)
-        except FileAlreadyImported:
-            logger.info("Skipping duplicate proces-verbaal %s", file.name)
-            return False
+        self._store(content, file.name, config.identifier, region, file_type)
 
         logger.info("Imported %s onto %s %s", file.name, region.region_category, region.region_name)
         return True

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from election.models import Election, ElectionConfig, ElectionDocument
 from eml_import.exceptions import EMLImporterException, FileAlreadyImported
-from eml_import.models import ImportedFileHash
+from eml_import.models import ImportedEmlHash
 from eml_import.utils.named_bytes_io import NamedBytesIO
 
 
@@ -21,7 +21,7 @@ class BaseImporter(ABC):
             raise EMLImporterException("Election not loaded before calling parse()")
 
         try:
-            with ImportedFileHash.if_not_imported(self.file_path, self.election):
+            with ImportedEmlHash.if_not_imported(self.file_path, self.election):
                 self._parse_data()
         except ElectionConfig.DoesNotExist:
             self.logger.warning("Election is not configured, skipping %s data import", self.file_type.value)

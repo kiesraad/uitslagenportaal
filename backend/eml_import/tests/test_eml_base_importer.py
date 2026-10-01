@@ -8,7 +8,7 @@ from election.models import Election, ElectionCategory, ElectionConfig, VoteCoun
 from election.tests.factories import ContestFactory, ElectionConfigFactory, ElectionFactory
 from election.utils import visibility_cutoff
 from eml_import.exceptions import EMLImporterException
-from eml_import.models import ImportedFileHash
+from eml_import.models import ImportedEmlHash
 from eml_import.tests.fakes import fake_eml_file
 from eml_import.tests.test_eml_110_importer import CONFIG_IDENTIFIER, ELECTION_NAME
 from eml_import.tests.test_eml_110_importer import make_eml as make_110a_eml
@@ -94,7 +94,7 @@ def test_raises_when_election_config_is_missing():
         EML110aImporter(eml_file, eml=make_110a_eml())
 
     assert not Election.objects.exists()
-    assert not ImportedFileHash.objects.exists()
+    assert not ImportedEmlHash.objects.exists()
 
 
 @pytest.mark.django_db
@@ -103,12 +103,12 @@ def test_records_hash_after_successful_import_and_skips_duplicate():
     content = b"<eml identical bytes/>"
 
     EML110aImporter(NamedBytesIO(content, "definitie.eml.xml"), eml=make_110a_eml()).parse()
-    assert ImportedFileHash.objects.get().election == Election.objects.get()
+    assert ImportedEmlHash.objects.get().election == Election.objects.get()
     region_ids = list(Region.objects.values_list("pk", flat=True))
 
     EML110aImporter(NamedBytesIO(content, "other-name.eml.xml"), eml=make_110a_eml()).parse()
 
-    assert ImportedFileHash.objects.count() == 1
+    assert ImportedEmlHash.objects.count() == 1
     # Duplicate short-circuits before correction; current regions are untouched
     assert list(Region.objects.values_list("pk", flat=True)) == region_ids
 
@@ -121,12 +121,12 @@ def test_deleting_the_election_allows_its_files_to_be_imported_again():
 
     # As when a branch change wipes the election
     Election.objects.all().delete()
-    assert not ImportedFileHash.objects.exists()
+    assert not ImportedEmlHash.objects.exists()
 
     EML110aImporter(NamedBytesIO(content, "definitie.eml.xml"), eml=make_110a_eml()).parse()
 
     assert Region.objects.filter(election=Election.objects.get()).exists()
-    assert ImportedFileHash.objects.count() == 1
+    assert ImportedEmlHash.objects.count() == 1
 
 
 @pytest.mark.django_db
@@ -138,7 +138,7 @@ def test_parse_raises_when_no_election_is_loaded():
     with pytest.raises(EMLImporterException, match="Election not loaded"):
         importer.parse()
 
-    assert not ImportedFileHash.objects.exists()
+    assert not ImportedEmlHash.objects.exists()
 
 
 @pytest.mark.django_db
@@ -154,7 +154,7 @@ def test_parse_skips_the_file_when_the_election_config_is_gone(monkeypatch, capl
     importer.parse()
 
     assert "Election is not configured" in caplog.text
-    assert not ImportedFileHash.objects.exists()
+    assert not ImportedEmlHash.objects.exists()
 
 
 @pytest.mark.django_db
@@ -171,7 +171,7 @@ def test_failed_import_does_not_record_a_hash():
     with pytest.raises(EMLImporterException):
         EML510bImporter(NamedBytesIO(b"<eml/>", "telling.eml.xml"), eml=eml).parse()
 
-    assert not ImportedFileHash.objects.exists()
+    assert not ImportedEmlHash.objects.exists()
 
 
 @pytest.mark.django_db

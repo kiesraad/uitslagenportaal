@@ -1,4 +1,3 @@
-import hashlib
 import logging
 from pathlib import Path
 
@@ -7,7 +6,6 @@ from django.core.files.storage import FileSystemStorage, default_storage
 
 from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
-from eml_import.models import ImportedFileHash
 from eml_import.tests.pdf_files import PDF_BYTES, barneveld, one_page_pdf, write_pdf
 from eml_import.utils.pdf_file_handler import PDFFileHandler
 from mainsite.models import RegionCategory
@@ -32,16 +30,12 @@ def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
 
 
 @pytest.mark.django_db
-def test_records_the_hash_and_skips_bytes_that_were_already_imported(tmp_path):
-    region = barneveld()
+def test_skips_a_filename_that_was_already_imported(tmp_path):
+    barneveld()
     write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf")
     handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
 
     assert handler.run() == 1
-    recorded = ImportedFileHash.objects.get()
-    assert recorded.election == region.election
-    assert recorded.sha256 == hashlib.sha256(PDF_BYTES).hexdigest()
-
     assert handler.run() == 0
     assert ElectionDocument.objects.count() == 1
 

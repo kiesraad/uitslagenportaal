@@ -6,7 +6,7 @@ from django.core.files.storage import default_storage
 from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
 from eml_import.exceptions import EMLImporterException
-from eml_import.models import ImportedFileHash
+from eml_import.models import ImportedEmlHash
 from eml_import.tests.fakes import fake_osv43_csv
 from eml_import.utils.csv_osv43_importer import CSVOsv43Importer
 from eml_import.utils.github_eml_file_handler import GithubEmlFileHandler
@@ -104,7 +104,7 @@ def test_parse_rejects_an_unknown_election(ws_csb):
     with pytest.raises(EMLImporterException, match="does not exist"):
         CSVOsv43Importer(csv).parse()
 
-    assert not ImportedFileHash.objects.exists()
+    assert not ImportedEmlHash.objects.exists()
 
 
 @pytest.mark.django_db
@@ -138,7 +138,7 @@ def test_parse_stores_the_csv_as_a_current_document_of_the_region(ws_csb):
     assert document.storage_key.endswith(".csv")
     with default_storage.open(document.storage_key) as stored:
         assert stored.read() == csv.getvalue()
-    assert ImportedFileHash.objects.get().election == ws_csb.election
+    assert ImportedEmlHash.objects.get().election == ws_csb.election
 
 
 @pytest.mark.django_db
