@@ -7,7 +7,6 @@ from django.core.files.storage import FileSystemStorage, default_storage
 
 from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
-from eml_import.exceptions import PDFImporterException
 from eml_import.models import ImportedFileHash
 from eml_import.tests.pdf_files import PDF_BYTES, barneveld, one_page_pdf, write_pdf
 from eml_import.utils.pdf_file_handler import PDFFileHandler
@@ -167,10 +166,14 @@ def test_imports_p22_onto_the_csb_of_that_election(tmp_path):
 
 
 @pytest.mark.django_db
-def test_rejects_a_filename_that_does_not_match_the_convention(tmp_path):
+def test_logs_a_bad_filename_and_imports_the_rest(tmp_path, caplog):
+    barneveld()
     write_pdf(tmp_path, "NA31-2_Barneveld.pdf")
+    write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf")
 
-    with pytest.raises(PDFImporterException, match="does not match"):
-        PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
+    with caplog.at_level(logging.ERROR):
+        imported = PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
 
-    assert ElectionDocument.objects.count() == 0
+    assert imported == 1
+    assert ElectionDocument.objects.count() == 1
+    assert "NA31-2_Barneveld.pdf" in caplog.text

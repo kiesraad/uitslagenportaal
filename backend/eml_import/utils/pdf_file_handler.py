@@ -53,7 +53,8 @@ class PDFFileHandler:
             try:
                 if self._import_pv(_StoragePdf(self.storage, name)):
                     imported += 1
-            except IntegrityError:
+            except IntegrityError, PDFImporterException:
+                # A bad file must not stop the rest of this sweep.
                 logger.exception("Failed to import proces-verbaal %s", name)
         return imported
 
