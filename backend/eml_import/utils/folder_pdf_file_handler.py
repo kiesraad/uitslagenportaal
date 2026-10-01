@@ -1,11 +1,12 @@
 import logging
 from io import BytesIO
 from pathlib import Path
+from types import SimpleNamespace
 
 import pypdfium2 as pdfium
 from django.core.files import File
 from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
+from django.core.files.storage import Storage, default_storage
 from django.db import transaction
 
 from election.models import ElectionCategory, ElectionConfig, ElectionDocument
@@ -30,24 +31,49 @@ _REGION_CATEGORY_BY_FILE_TYPE = {
 }
 
 
+class _StoragePdf:
+    """A PDF in a Django storage, with the name, stem, open and stat the importer uses."""
+
+    def __init__(self, storage: Storage, key: str):
+        self._storage = storage
+        self._key = key
+        self.name = Path(key).name
+        self.stem = Path(key).stem
+
+    def open(self, mode="rb"):
+        return self._storage.open(self._key, mode)
+
+    def stat(self):
+        return SimpleNamespace(st_size=self._storage.size(self._key))
+
+
 class FolderPDFFileHanlder:
-    def __init__(self, folder: Path):
+    def __init__(self, storage: Storage):
         super().__init__()
-        self.folder = folder
+        self.storage = storage
 
-    def run(self):
-        files = sorted(self.folder.rglob("*.pdf"))
-        for file in files:
-            self._import_pv(file)
+    def run(self) -> int:
+        names = sorted(self._pdf_names(""))
+        for name in names:
+            self._import_pv(_StoragePdf(self.storage, name))
+        return len(names)
 
-    def _import_pv(self, file: Path) -> None:
+    def _pdf_names(self, directory: str):
+        directories, filenames = self.storage.listdir(directory)
+        for filename in filenames:
+            if filename.endswith(".pdf"):
+                yield f"{directory}/{filename}" if directory else filename
+        for name in directories:
+            yield from self._pdf_names(f"{directory}/{name}" if directory else name)
+
+    def _import_pv(self, file: _StoragePdf) -> None:
         election_id, file_type, region_token = self._parse_filename(file)
         config = self._election_config(election_id)
         region = self._region(config, file_type, region_token)
         self._store(file, config.identifier, region, file_type)
         logger.info("Imported %s onto %s %s", file.name, region.region_category, region.region_name)
 
-    def _parse_filename(self, file: Path) -> tuple[str, str, str]:
+    def _parse_filename(self, file: _StoragePdf) -> tuple[str, str, str]:
         parts = file.stem.split("_", 2)
         if len(parts) != 3 or not all(parts):
             raise PDFImporterException(f"{file.name} does not match {{election}}_{{file_type}}_{{region}}.pdf")
@@ -87,8 +113,9 @@ class FolderPDFFileHanlder:
                 f"Several {category} regions match {region_token!r} for election {config.identifier}"
             ) from None
 
-    def _preview_png(self, file: Path) -> bytes:
-        document = pdfium.PdfDocument(file)
+    def _preview_png(self, file: _StoragePdf) -> bytes:
+        with file.open("rb") as handle:
+            document = pdfium.PdfDocument(handle.read())
         try:
             page = document[0]
             bitmap = page.render(scale=_PREVIEW_SCALE)
@@ -105,7 +132,7 @@ class FolderPDFFileHanlder:
         return buffer.getvalue()
 
     @transaction.atomic
-    def _store(self, file: Path, election_id: str, region: Region, file_type: str) -> None:
+    def _store(self, file: _StoragePdf, election_id: str, region: Region, file_type: str) -> None:
         preview = self._preview_png(file)
         storage_key = f"{election_id}/{file.name}"
 
