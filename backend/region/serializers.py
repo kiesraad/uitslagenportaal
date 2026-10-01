@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from django.core.files.storage import default_storage
-from django.db.models import Case, IntegerField, Value, When
 from django.urls import reverse
 from rest_framework import serializers
 
@@ -63,22 +62,11 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         )
 
     def _certified_document(self, region):
-        return (
-            ElectionDocument.objects.filter(
-                region=region,
-                file_type__in=ElectionDocument.CERTIFIED_FILE_TYPES,
-            )
-            .order_by(
-                Case(
-                    When(file_type__in=ElectionDocument.CORRIGENDUM_FILE_TYPES, then=Value(0)),
-                    default=Value(1),
-                    output_field=IntegerField(),
-                ),
-                "-created_at",
-                "-pk",
-            )
-            .first()
-        )
+        documents = ElectionDocument.objects.filter(
+            region=region,
+            file_type__in=ElectionDocument.CERTIFIED_FILE_TYPES,
+        ).order_by("-created_at", "-pk")
+        return documents.filter(file_type__in=ElectionDocument.CORRIGENDUM_FILE_TYPES).first() or documents.first()
 
     def get_certified_document_url(self, region) -> str | None:
         document = self._certified_document(region)

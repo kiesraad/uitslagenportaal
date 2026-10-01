@@ -1,7 +1,6 @@
 import logging
 from io import BytesIO
 from pathlib import Path
-from types import SimpleNamespace
 
 import pypdfium2 as pdfium
 from django.core.files import File
@@ -33,8 +32,6 @@ _REGION_CATEGORY_BY_FILE_TYPE = {
 
 
 class _StoragePdf:
-    """A PDF in a Django storage, with the name, stem, open and stat the importer uses."""
-
     def __init__(self, storage: Storage, key: str):
         self._storage = storage
         self._key = key
@@ -43,9 +40,6 @@ class _StoragePdf:
 
     def open(self, mode="rb"):
         return self._storage.open(self._key, mode)
-
-    def stat(self):
-        return SimpleNamespace(st_size=self._storage.size(self._key))
 
 
 class PDFFileHandler:
@@ -93,7 +87,7 @@ class PDFFileHandler:
 
         try:
             with ImportedFileHash.if_not_imported(content, region.election):
-                self._store(file, config.identifier, region, file_type)
+                self._store(content, file.name, config.identifier, region, file_type)
         except FileAlreadyImported:
             logger.info("Skipping duplicate proces-verbaal %s", file.name)
             return False
@@ -141,9 +135,8 @@ class PDFFileHandler:
                 f"Several {category} regions match {region_token!r} for election {config.identifier}"
             ) from None
 
-    def _preview_png(self, file: _StoragePdf) -> bytes:
-        with file.open("rb") as handle:
-            document = pdfium.PdfDocument(handle.read())
+    def _preview_png(self, content: BytesIO) -> bytes:
+        document = pdfium.PdfDocument(content.getvalue())
         try:
             page = document[0]
             bitmap = page.render(scale=_PREVIEW_SCALE)
@@ -160,12 +153,13 @@ class PDFFileHandler:
         return buffer.getvalue()
 
     @transaction.atomic
-    def _store(self, file: _StoragePdf, election_id: str, region: Region, file_type: str) -> None:
-        preview = self._preview_png(file)
-        storage_key = f"{election_id}/{file.name}"
+    def _store(self, content: BytesIO, filename: str, election_id: str, region: Region, file_type: str) -> None:
+        preview = self._preview_png(content)
+        storage_key = f"{election_id}/{filename}"
+        size = content.getbuffer().nbytes
 
-        with file.open("rb") as handle:
-            stored_key = default_storage.save(storage_key, File(handle))
+        content.seek(0)
+        stored_key = default_storage.save(storage_key, File(content))
         default_storage.save(Path(stored_key).with_suffix(".png").as_posix(), ContentFile(preview))
 
         ElectionDocument.objects.create(
@@ -173,5 +167,5 @@ class PDFFileHandler:
             file_type=file_type,
             storage_key=stored_key,
             content_type="application/pdf",
-            size=file.stat().st_size,
+            size=size,
         )
