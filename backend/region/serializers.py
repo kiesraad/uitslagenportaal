@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from django.core.files.storage import default_storage
+from django.db.models import Case, IntegerField, Value, When
 from django.urls import reverse
 from rest_framework import serializers
 
@@ -67,7 +68,15 @@ class RegionDetailSerializer(serializers.ModelSerializer):
                 region=region,
                 file_type__in=ElectionDocument.CERTIFIED_FILE_TYPES,
             )
-            .order_by("-created_at", "-pk")
+            .order_by(
+                Case(
+                    When(file_type__in=ElectionDocument.CORRIGENDUM_FILE_TYPES, then=Value(0)),
+                    default=Value(1),
+                    output_field=IntegerField(),
+                ),
+                "-created_at",
+                "-pk",
+            )
             .first()
         )
 

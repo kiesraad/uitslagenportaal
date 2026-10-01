@@ -277,6 +277,14 @@ class ElectionDocument(BaseModel):
         }
     )
 
+    # The results box shows a corrigendum ahead of the proces-verbaal it corrects.
+    CORRIGENDUM_FILE_TYPES = frozenset(
+        {
+            FileType.PDF_NA14_1,
+            FileType.PDF_NA14_2,
+        }
+    )
+
     storage_key = models.CharField(max_length=512, unique=True)
     size = models.PositiveIntegerField()
 
