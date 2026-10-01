@@ -66,3 +66,9 @@ class ElectionDocumentFactory(DjangoModelFactory):
     storage_key = factory.Sequence(lambda n: f"document-{n}.xml")
     content_type = "application/xml"
     size = factory.Faker("random_int", min=1, max=10_000)
+
+
+class CertifiedElectionDocumentFactory(ElectionDocumentFactory):
+    storage_key = factory.Sequence(lambda n: f"TK2025/document-{n}.pdf")
+    content_type = "application/pdf"
+    file_type = ElectionDocument.FileType.PDF_NA31_2

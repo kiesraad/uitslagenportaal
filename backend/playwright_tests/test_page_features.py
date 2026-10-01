@@ -29,7 +29,7 @@ def test_searching_a_stembureau_submits_on_the_first_match(page: Page):
 
     # Unlike the region lists, the stembureau search takes the first suggestion on
     # Enter, so a fragment of the name is enough.
-    search = page.get_by_role("combobox", name="Zoek op naam, adres of stembureau-nummer")
+    search = page.get_by_role("searchbox", name="Zoek op naam, adres of stembureau-nummer")
     search.fill("Heinkenszand")
     search.press("Enter")
 

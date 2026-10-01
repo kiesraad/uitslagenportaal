@@ -43,5 +43,5 @@ def test_election_content_is_translated_for_the_active_locale(page: Page):
     page.get_by_role("link", name="Water authorities").click()
     page.get_by_role("link", name="Scheldestromen").click()
     expect(page.get_by_role("link", name="Entire water authority")).to_be_visible()
-    expect(page.get_by_role("heading", name="Counting results")).to_be_visible()
+    expect(page.get_by_role("heading", name="Counting results", exact=True)).to_be_visible()
     expect(page.get_by_text("Number of votes")).to_be_visible()

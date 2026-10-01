@@ -1,6 +1,6 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faFolder } from "@fortawesome/free-regular-svg-icons";
-import { faFile, faTable } from "@fortawesome/free-solid-svg-icons";
+import { faFile, faFilePdf, faTable } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -47,6 +47,60 @@ const FILE_TYPE_MAPPINGS: Record<
       fileType: "csv",
       icon: faTable,
       description: msg`Output van de optelsoftware, bevat alle resultaten voor de regio en onderliggende regio's.`,
+   },
+   "PDF_N10-1": {
+      name: msg`Proces-verbaal stembureau`,
+      fileType: "pdf",
+      icon: faFilePdf,
+      description: msg`Het ondertekende proces-verbaal van het stembureau.`,
+   },
+   "PDF_N10-2": {
+      name: msg`Proces-verbaal stembureau in een gemeente die CSB is`,
+      fileType: "pdf",
+      icon: faFilePdf,
+      description: msg`Het ondertekende proces-verbaal van het stembureau in een gemeente die CSB is.`,
+   },
+   "PDF_NA14-1": {
+      name: msg`Corrigendum proces-verbaal stembureau`,
+      fileType: "pdf",
+      icon: faFilePdf,
+      description: msg`Corrigendum op het proces-verbaal van het stembureau.`,
+   },
+   "PDF_NA31-1": {
+      name: msg`Proces-verbaal gemeentelijk stembureau (DSO)`,
+      fileType: "pdf",
+      icon: faFilePdf,
+      description: msg`Het ondertekende proces-verbaal van het gemeentelijk stembureau bij decentrale stemopneming.`,
+   },
+   "PDF_NA31-2": {
+      name: msg`Proces-verbaal gemeentelijk stembureau (CSO)`,
+      fileType: "pdf",
+      icon: faFilePdf,
+      description: msg`Het ondertekende proces-verbaal van het gemeentelijk stembureau bij centrale stemopneming.`,
+   },
+   "PDF_NA14-2": {
+      name: msg`Corrigendum proces-verbaal gemeentelijk stembureau`,
+      fileType: "pdf",
+      icon: faFilePdf,
+      description: msg`Corrigendum op het proces-verbaal van het gemeentelijk stembureau.`,
+   },
+   PDF_O7: {
+      name: msg`Proces-verbaal hoofdstembureau`,
+      fileType: "pdf",
+      icon: faFilePdf,
+      description: msg`Het ondertekende proces-verbaal van het hoofdstembureau.`,
+   },
+   "PDF_P22-1": {
+      name: msg`Proces-verbaal centraal stembureau met meerdere kieskringen`,
+      fileType: "pdf",
+      icon: faFilePdf,
+      description: msg`Het ondertekende proces-verbaal van het centraal stembureau voor een verkiezing met meerdere kieskringen.`,
+   },
+   "PDF_P22-2": {
+      name: msg`Proces-verbaal centraal stembureau met één kieskring`,
+      fileType: "pdf",
+      icon: faFilePdf,
+      description: msg`Het ondertekende proces-verbaal van het centraal stembureau voor een verkiezing met één kieskring.`,
    },
 }))();
 

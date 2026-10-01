@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.core.files.storage import default_storage
 from django.db.models import Q
 from django.http import Http404, HttpResponseRedirect
@@ -54,3 +56,32 @@ def download_document(request, pk):
     return HttpResponseRedirect(
         default_storage.url(document.storage_key, parameters={"ResponseContentDisposition": "attachment"})
     )
+
+
+def _visible_certified_document(pk):
+    return get_object_or_404(
+        ElectionDocument.objects.filter(
+            file_type__in=ElectionDocument.CERTIFIED_FILE_TYPES,
+            region__election__election_config__date__gte=visibility_cutoff(),
+        ),
+        pk=pk,
+    )
+
+
+def certified_document(request, pk):
+    document = _visible_certified_document(pk)
+    if not default_storage.exists(document.storage_key):
+        raise Http404("Document not found")
+
+    return HttpResponseRedirect(
+        default_storage.url(document.storage_key, parameters={"ResponseContentType": "application/pdf"})
+    )
+
+
+def certified_document_preview(request, pk):
+    document = _visible_certified_document(pk)
+    preview_key = Path(document.storage_key).with_suffix(".png").as_posix()
+    if not default_storage.exists(preview_key):
+        raise Http404("Preview not found")
+
+    return HttpResponseRedirect(default_storage.url(preview_key, parameters={"ResponseContentType": "image/png"}))

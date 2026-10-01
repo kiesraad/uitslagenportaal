@@ -68,7 +68,7 @@ jobs:
     with:
       environment: scaleway-dev
       namespace: uitslagenportaal-dev
-      values-file: k8s-config/values-dev.yaml
+      values-file: k8s-config/application/values-dev.yaml
       backend-image: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-backend@${{ needs.backend-docker-image.outputs.digest }}
       frontend-image: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-frontend@${{ needs.frontend-docker-image.outputs.digest }}
 
@@ -83,6 +83,6 @@ jobs:
     with:
       environment: scaleway-staging
       namespace: uitslagenportaal-staging
-      values-file: k8s-config/values-staging.yaml
+      values-file: k8s-config/application/values-staging.yaml
       backend-image: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-backend@${{ needs.backend-docker-image.outputs.digest }}
       frontend-image: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-frontend@${{ needs.frontend-docker-image.outputs.digest }}
