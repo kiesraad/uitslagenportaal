@@ -9,48 +9,21 @@ from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
 from eml_import.exceptions import PDFImporterException
 from eml_import.models import ImportedFileHash
+from eml_import.tests.pdf_files import PDF_BYTES, barneveld, one_page_pdf, write_pdf
 from eml_import.utils.folder_pdf_file_handler import PDFFileHandler
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
 
 
-def one_page_pdf(mark: bytes = b"a") -> bytes:
-    """A one-page PDF pdfium can open. `mark` only changes the bytes."""
-    return (
-        b"%PDF-1.4\n%"
-        + mark
-        + b"\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
-        + b"2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n"
-        + b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\n"
-        + b"trailer<</Root 1 0 R>>\n%%EOF\n"
-    )
-
-
-PDF_BYTES = one_page_pdf()
-
-
-def write_pdf(folder: Path, name: str, content: bytes = PDF_BYTES) -> Path:
-    path = folder / name
-    path.write_bytes(content)
-    return path
-
-
 @pytest.mark.django_db
 def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
-    config = ElectionConfigFactory(identifier="TK2025", category=ElectionCategory.TK.value)
-    election = ElectionFactory(election_config=config, subcategory="TK")
-    barneveld = RegionFactory(
-        election=election,
-        region_category=RegionCategory.GEMEENTE,
-        region_name="Barneveld",
-        region_number="203",
-    )
+    region = barneveld()
     write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf")
 
     PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
 
     document = ElectionDocument.objects.get()
-    assert document.region == barneveld
+    assert document.region == region
     assert document.file_type == ElectionDocument.FileType.PDF_NA31_2
     assert document.content_type == "application/pdf"
     assert document.size == len(PDF_BYTES)
@@ -59,26 +32,15 @@ def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
     assert default_storage.open(preview_key).read().startswith(b"\x89PNG\r\n\x1a\n")
 
 
-def _barneveld():
-    config = ElectionConfigFactory(identifier="TK2025", category=ElectionCategory.TK.value)
-    election = ElectionFactory(election_config=config, subcategory="TK")
-    return RegionFactory(
-        election=election,
-        region_category=RegionCategory.GEMEENTE,
-        region_name="Barneveld",
-        region_number="203",
-    )
-
-
 @pytest.mark.django_db
 def test_records_the_hash_and_skips_bytes_that_were_already_imported(tmp_path):
-    barneveld = _barneveld()
+    region = barneveld()
     write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf")
     handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
 
     assert handler.run() == 1
     recorded = ImportedFileHash.objects.get()
-    assert recorded.election == barneveld.election
+    assert recorded.election == region.election
     assert recorded.sha256 == hashlib.sha256(PDF_BYTES).hexdigest()
 
     assert handler.run() == 0
@@ -87,7 +49,7 @@ def test_records_the_hash_and_skips_bytes_that_were_already_imported(tmp_path):
 
 @pytest.mark.django_db
 def test_logs_and_continues_when_the_same_name_has_different_bytes(tmp_path, caplog):
-    _barneveld()
+    barneveld()
     first = one_page_pdf(b"first")
     write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf", first)
     handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
@@ -108,16 +70,9 @@ def test_logs_and_continues_when_the_same_name_has_different_bytes(tmp_path, cap
 
 @pytest.mark.django_db
 def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path):
-    config = ElectionConfigFactory(identifier="TK2025", category=ElectionCategory.TK.value)
-    election = ElectionFactory(election_config=config, subcategory="TK")
-    gemeente = RegionFactory(
-        election=election,
-        region_category=RegionCategory.GEMEENTE,
-        region_name="Barneveld",
-        region_number="203",
-    )
+    gemeente = barneveld()
     station = RegionFactory(
-        election=election,
+        election=gemeente.election,
         parent=gemeente,
         region_category=RegionCategory.STEMBUREAU,
         region_name="Gemeentehuis",
