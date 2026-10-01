@@ -1,9 +1,9 @@
 FROM python:3.14-slim
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# git is required because pyeml-bindings is installed straight from GitHub
+# git installs pyeml-bindings straight from GitHub; tesseract OCRs processen-verbaal (pv_classifier.py)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
+    && apt-get install -y --no-install-recommends git tesseract-ocr tesseract-ocr-nld \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1
