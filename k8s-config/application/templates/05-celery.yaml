@@ -5,6 +5,10 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: {{ .Values.celery.worker.replicas }}
+  # A rolling update would need room for a second worker's memory request. Queued tasks
+  # simply wait in Redis while the worker is replaced.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: {{ .Release.Name }}-celery-worker
