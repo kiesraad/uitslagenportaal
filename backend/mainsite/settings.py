@@ -17,6 +17,13 @@ ALLOWED_HOSTS = [
     host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]").split(",") if host.strip()
 ]
 
+# A metrics scrape and a kubelet HTTP probe both address the pod by its IP, which is
+# allocated at schedule time and so cannot be listed above. Without this they are
+# answered with 400 and the pod never passes its readiness check.
+POD_IP = os.environ.get("POD_IP")
+if POD_IP:
+    ALLOWED_HOSTS.append(POD_IP)
+
 
 INSTALLED_APPS = [
     "mainsite.apps.MainsiteConfig",
@@ -24,6 +31,7 @@ INSTALLED_APPS = [
     "region.apps.RegionConfig",
     "party.apps.PartyConfig",
     "eml_import.apps.EmlImportConfig",
+    "pv_scraper.apps.PvScraperConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -33,13 +41,18 @@ INSTALLED_APPS = [
     "django_extensions",
     "rest_framework",
     "corsheaders",
+    "django_prometheus",
 ]
 
 # Dev-only: runserver reloads on file-change events instead of polling every module each second.
 if importlib.util.find_spec("django_watchfiles"):
     INSTALLED_APPS.append("django_watchfiles")
 
+# The two prometheus middlewares bracket the rest of the stack, and the request timing
+# is the span between them: moving either one inwards drops whatever it now sits inside
+# out of the latency histogram without changing anything visible.
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -48,6 +61,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "mainsite.urls"
@@ -115,8 +129,8 @@ REDIS_SSL_OPTIONS = (
     {
         "ssl_cert_reqs": ssl.CERT_REQUIRED,
         "ssl_ca_certs": REDIS_CA_CERT_FILE,
-        # IP-based connection, so don't verify hostnames (as with the database's verify-ca).
-        "ssl_check_hostname": False,
+        # Full CA verification: the cert contains the private IP as SAN.
+        "ssl_check_hostname": True,
     }
     if REDIS_CA_CERT_FILE
     else {}
@@ -140,6 +154,10 @@ CELERY_WORKER_MAX_TASKS_PER_CHILD = int(os.environ.get("CELERY_WORKER_MAX_TASKS_
 # An import runs for minutes, so reserving more than one message per child only leaves work
 # queued behind a busy one.
 CELERY_WORKER_PREFETCH_MULTIPLIER = int(os.environ.get("CELERY_WORKER_PREFETCH_MULTIPLIER", "1"))
+
+# Enable sending events to be able to gather Prometheus metrics.
+CELERY_WORKER_SEND_TASK_EVENTS = True
+CELERY_TASK_SEND_SENT_EVENT = True
 
 # Cache config
 CACHES = {
@@ -279,5 +297,7 @@ LOGGING = {
         "celery": {"level": "INFO"},
         "kombu": {"level": "INFO"},
         "redis.connection": {"level": "INFO"},
+        "pytesseract": {"level": "INFO"},
+        "pypdfium2": {"level": "INFO"},
     },
 }

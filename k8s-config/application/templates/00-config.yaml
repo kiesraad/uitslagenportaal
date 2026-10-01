@@ -20,6 +20,7 @@ data:
   GRANIAN_BLOCKING_THREADS: "{{ .Values.backend.blockingThreads }}"
 
   # Redis
+  REDIS_DB: "{{ .Values.redis.db }}"
   {{- if .Values.redis.tls }}
   # Set the REDIS_CA_CERT_FILE var when TLS is enabled, the file is mounted from the redis-creds secret.
   REDIS_CA_CERT_FILE: "/etc/ssl/redis/ca.pem"

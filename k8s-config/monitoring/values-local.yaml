@@ -1,0 +1,38 @@
+# Overrides for a local cluster such as Docker Desktop. See docs/deployments.md.
+
+kube-prometheus-stack:
+  prometheus-node-exporter:
+    hostRootFsMount:
+      # `/` in Docker Desktop's VM is not a shared mount, so a HostToContainer mount of it
+      # is refused with "path / is mounted on / but it is not a shared or slave mount".
+      mountPropagation: None
+    # kube-prometheus-stack's own defaults, plus 9p: the Windows drives Docker Desktop
+    # shares into its VM, which are nothing the node runs on but still trip the
+    # disk-space alerts when they fill up. A list replaces the default rather than
+    # merging into it, hence the repetition.
+    extraArgs:
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/containerd/.+|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+      - --collector.filesystem.fs-types-exclude=^(9p|autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|erofs)$
+
+loki:
+  # Local logs are throwaway, so chunks stay on Loki's own volume rather than in a
+  # bucket. That also leaves no dependency on the application's object storage, which
+  # is installed later and in another namespace.
+  loki:
+    storage:
+      type: filesystem
+    schemaConfig:
+      configs:
+        - from: "2026-01-01"
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: index_
+            period: 24h
+    compactor:
+      delete_request_store: filesystem
+
+  # No object storage, so no loki-s3-creds secret to read.
+  singleBinary:
+    extraEnv: []
