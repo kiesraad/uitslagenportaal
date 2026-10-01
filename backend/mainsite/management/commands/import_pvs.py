@@ -3,7 +3,7 @@ import time
 from django.core.files.storage import storages
 from django.core.management.base import BaseCommand
 
-from eml_import.utils.folder_pdf_file_handler import PDFFileHandler
+from eml_import.utils.pdf_file_handler import PDFFileHandler
 
 
 class Command(BaseCommand):

@@ -10,7 +10,7 @@ from election.tests.factories import ElectionConfigFactory, ElectionFactory
 from eml_import.exceptions import PDFImporterException
 from eml_import.models import ImportedFileHash
 from eml_import.tests.pdf_files import PDF_BYTES, barneveld, one_page_pdf, write_pdf
-from eml_import.utils.folder_pdf_file_handler import PDFFileHandler
+from eml_import.utils.pdf_file_handler import PDFFileHandler
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
 
