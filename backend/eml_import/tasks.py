@@ -10,8 +10,8 @@ from redis.exceptions import ConnectionError as RedisConnectionError
 from requests import RequestException
 
 from election.models import ElectionConfig
-from eml_import.utils.pdf_file_handler import PDFFileHandler
 from eml_import.utils.github_eml_file_handler import GithubEmlFileHandler
+from eml_import.utils.pdf_file_handler import PDFFileHandler
 from mainsite.celery import app
 
 logger = logging.getLogger(__name__)
