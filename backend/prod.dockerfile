@@ -18,6 +18,7 @@ FROM python:3.14-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DEBUG=false
+ENV LOG_FORMAT=json
 ENV PATH="/app/.venv/bin:$PATH"
 
 RUN groupadd --system backend \
@@ -33,4 +34,4 @@ COPY --chown=backend:backend . .
 USER backend
 
 EXPOSE 8000
-CMD ["granian", "mainsite.wsgi:application", "--interface", "wsgi", "--host", "0.0.0.0", "--access-log"]
+CMD ["granian", "mainsite.wsgi:application", "--interface", "wsgi", "--host", "0.0.0.0"]
