@@ -31,7 +31,6 @@ class ElectionCategory(Choices):
         return self._config_
 
     TK = "TK", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Tweede Kamerverkiezing"
-    EK = "EK", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Eerste Kamerverkiezing"
     PS = "PS", ElectionCategoryConfig(csb=RegionCategory.PROVINCIE), "Provinciale Statenverkiezing"
     WS = "WS", ElectionCategoryConfig(csb=RegionCategory.WATERSCHAP), "Waterschapsverkiezing"
     GR = "GR", ElectionCategoryConfig(csb=RegionCategory.GEMEENTE), "Gemeenteraadsverkiezing"
