@@ -1,54 +1,26 @@
+import logging
 from pathlib import Path
 
 import pytest
-from django.core.files.storage import default_storage
-from django.db import IntegrityError
+from django.core.files.storage import FileSystemStorage, default_storage
 
 from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
-from eml_import.exceptions import PDFImporterException
-from eml_import.utils.folder_pdf_file_handler import FolderPDFFileHanlder
+from eml_import.tests.pdf_files import PDF_BYTES, barneveld, one_page_pdf, write_pdf
+from eml_import.utils.pdf_file_handler import PDFFileHandler
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
 
 
-def one_page_pdf(mark: bytes = b"a") -> bytes:
-    """A one-page PDF pdfium can open. `mark` only changes the bytes."""
-    return (
-        b"%PDF-1.4\n%"
-        + mark
-        + b"\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
-        + b"2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n"
-        + b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\n"
-        + b"trailer<</Root 1 0 R>>\n%%EOF\n"
-    )
-
-
-PDF_BYTES = one_page_pdf()
-
-
-def write_pdf(folder: Path, name: str, content: bytes = PDF_BYTES) -> Path:
-    path = folder / name
-    path.write_bytes(content)
-    return path
-
-
 @pytest.mark.django_db
 def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
-    config = ElectionConfigFactory(identifier="TK2025", category=ElectionCategory.TK.value)
-    election = ElectionFactory(election_config=config, subcategory="TK")
-    barneveld = RegionFactory(
-        election=election,
-        region_category=RegionCategory.GEMEENTE,
-        region_name="Barneveld",
-        region_number="203",
-    )
+    region = barneveld()
     write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf")
 
-    FolderPDFFileHanlder(tmp_path).run()
+    PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
 
     document = ElectionDocument.objects.get()
-    assert document.region == barneveld
+    assert document.region == region
     assert document.file_type == ElectionDocument.FileType.PDF_NA31_2
     assert document.content_type == "application/pdf"
     assert document.size == len(PDF_BYTES)
@@ -58,40 +30,21 @@ def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
 
 
 @pytest.mark.django_db
-def test_rejects_a_second_certified_document_for_the_same_region_and_type(tmp_path):
-    config = ElectionConfigFactory(identifier="TK2025", category=ElectionCategory.TK.value)
-    election = ElectionFactory(election_config=config, subcategory="TK")
-    RegionFactory(
-        election=election,
-        region_category=RegionCategory.GEMEENTE,
-        region_name="Barneveld",
-        region_number="203",
-    )
-    first = one_page_pdf(b"first")
-    write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf", first)
-    FolderPDFFileHanlder(tmp_path).run()
-    write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf", one_page_pdf(b"replaced"))
+def test_skips_a_filename_that_was_already_imported(tmp_path):
+    barneveld()
+    write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf")
+    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
 
-    with pytest.raises(IntegrityError):
-        FolderPDFFileHanlder(tmp_path).run()
-
-    document = ElectionDocument.objects.get()
-    assert document.size == len(first)
-    assert default_storage.open(document.storage_key).read() == first
+    assert handler.run() == 1
+    assert handler.run() == 0
+    assert ElectionDocument.objects.count() == 1
 
 
 @pytest.mark.django_db
 def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path):
-    config = ElectionConfigFactory(identifier="TK2025", category=ElectionCategory.TK.value)
-    election = ElectionFactory(election_config=config, subcategory="TK")
-    gemeente = RegionFactory(
-        election=election,
-        region_category=RegionCategory.GEMEENTE,
-        region_name="Barneveld",
-        region_number="203",
-    )
+    gemeente = barneveld()
     station = RegionFactory(
-        election=election,
+        election=gemeente.election,
         parent=gemeente,
         region_category=RegionCategory.STEMBUREAU,
         region_name="Gemeentehuis",
@@ -99,7 +52,7 @@ def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path)
     )
     write_pdf(tmp_path, "TK2025_N10-1_0203::SB1.pdf")
 
-    FolderPDFFileHanlder(tmp_path).run()
+    PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
 
     document = ElectionDocument.objects.get()
     assert document.region == station
@@ -139,9 +92,9 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies(tmp_path):
         "GEN_NA14-2_Alpha.pdf",
         "GEN_O7_North.pdf",
     ):
-        write_pdf(tmp_path, name)
+        write_pdf(tmp_path, name, one_page_pdf(name.encode()))
 
-    FolderPDFFileHanlder(tmp_path).run()
+    PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
 
     file_type = ElectionDocument.FileType
     attached = {(document.region_id, document.file_type) for document in ElectionDocument.objects.all()}
@@ -175,20 +128,25 @@ def test_imports_p22_onto_the_csb_of_that_election(tmp_path):
             region_name=region_name,
             region_number="1",
         )
-        write_pdf(tmp_path, f"{category.value}_{document_type.removeprefix('PDF_')}_{region_name}.pdf")
+        filename = f"{category.value}_{document_type.removeprefix('PDF_')}_{region_name}.pdf"
+        write_pdf(tmp_path, filename, one_page_pdf(filename.encode()))
         expected.add((csb.id, document_type))
 
-    FolderPDFFileHanlder(tmp_path).run()
+    PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
 
     attached = {(document.region_id, document.file_type) for document in ElectionDocument.objects.all()}
     assert attached == expected
 
 
 @pytest.mark.django_db
-def test_rejects_a_filename_that_does_not_match_the_convention(tmp_path):
+def test_logs_a_bad_filename_and_imports_the_rest(tmp_path, caplog):
+    barneveld()
     write_pdf(tmp_path, "NA31-2_Barneveld.pdf")
+    write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf")
 
-    with pytest.raises(PDFImporterException, match="does not match"):
-        FolderPDFFileHanlder(tmp_path).run()
+    with caplog.at_level(logging.ERROR):
+        imported = PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
 
-    assert ElectionDocument.objects.count() == 0
+    assert imported == 1
+    assert ElectionDocument.objects.count() == 1
+    assert "NA31-2_Barneveld.pdf" in caplog.text

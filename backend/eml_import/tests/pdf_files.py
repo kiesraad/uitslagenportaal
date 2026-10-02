@@ -1,0 +1,40 @@
+from pathlib import Path
+
+from election.models import ElectionCategory
+from election.tests.factories import ElectionConfigFactory, ElectionFactory
+from mainsite.models import RegionCategory
+from region.models import Region
+from region.tests.factories import RegionFactory
+
+
+def one_page_pdf(mark: bytes = b"a") -> bytes:
+    """A one-page PDF pdfium can open. `mark` only changes the bytes."""
+    return (
+        b"%PDF-1.4\n%"
+        + mark
+        + b"\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+        + b"2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n"
+        + b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\n"
+        + b"trailer<</Root 1 0 R>>\n%%EOF\n"
+    )
+
+
+PDF_BYTES = one_page_pdf()
+
+
+def write_pdf(folder: Path, name: str, content: bytes = PDF_BYTES) -> Path:
+    path = folder / name
+    path.write_bytes(content)
+    return path
+
+
+def barneveld() -> Region:
+    """Gemeente Barneveld for TK2025, the region the sample filenames name."""
+    config = ElectionConfigFactory(identifier="TK2025", category=ElectionCategory.TK.value)
+    election = ElectionFactory(election_config=config, subcategory="TK")
+    return RegionFactory(
+        election=election,
+        region_category=RegionCategory.GEMEENTE,
+        region_name="Barneveld",
+        region_number="203",
+    )

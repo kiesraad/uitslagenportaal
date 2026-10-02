@@ -39,6 +39,13 @@ export type ElectionDocument = {
    file_type: string;
 };
 
+export type PollingStationPvArchive = {
+   url: string;
+   present_count: number;
+   total_count: number;
+   size: number;
+};
+
 export type ReportingLevel = "gsb" | "hsb" | "csb" | "sb";
 
 export type RegionCategory = "STAAT" | "WATERSCHAP" | "KIESKRING" | "GEMEENTE" | "PROVINCIE" | "STEMBUREAU";
@@ -59,6 +66,7 @@ export type Region = {
    timeline_entries?: TimelineEntry[];
    timeline_variant?: TimelineVariant;
    documents?: ElectionDocument[];
+   polling_station_pv_archive?: PollingStationPvArchive | null;
    certified_document_url?: string | null;
    certified_document_preview_url?: string | null;
    region_category: RegionCategory;

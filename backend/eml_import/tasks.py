@@ -4,12 +4,14 @@ from botocore.exceptions import ConnectionError as S3ConnectionError
 from celery import Celery
 from celery.exceptions import BackendError
 from celery.schedules import crontab
+from django.core.files.storage import storages
 from django.db import DatabaseError
 from redis.exceptions import ConnectionError as RedisConnectionError
 from requests import RequestException
 
 from election.models import ElectionConfig
 from eml_import.utils.github_eml_file_handler import GithubEmlFileHandler
+from eml_import.utils.pdf_file_handler import PDFFileHandler
 from mainsite.celery import app
 
 logger = logging.getLogger(__name__)
@@ -23,6 +25,25 @@ def setup_periodic_tasks(sender: Celery, **_) -> None:
         import_next_eml_commits.s(),
         name="Import next EML commits from Github",
     )
+    sender.add_periodic_task(
+        crontab(minute="*/5"),
+        import_pvs.s(),
+        name="Import proces-verbalen from object storage",
+    )
+
+
+@app.task(
+    ignore_result=True,
+    autoretry_for=[DatabaseError, S3ConnectionError],
+    retry_backoff=5,
+    max_retries=2,
+)
+def import_pvs() -> int:
+    """Import proces-verbaal PDFs from the pv_import storage."""
+    imported = PDFFileHandler(storages["pv_import"]).run()
+    if imported:
+        logger.info("Imported %d proces-verbaal PDF(s).", imported)
+    return imported
 
 
 @app.task(

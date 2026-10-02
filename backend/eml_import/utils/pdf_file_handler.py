@@ -5,8 +5,8 @@ from pathlib import Path
 import pypdfium2 as pdfium
 from django.core.files import File
 from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
-from django.db import transaction
+from django.core.files.storage import Storage, default_storage
+from django.db import IntegrityError, transaction
 
 from election.models import ElectionCategory, ElectionConfig, ElectionDocument
 from eml_import.exceptions import PDFImporterException
@@ -30,24 +30,57 @@ _REGION_CATEGORY_BY_FILE_TYPE = {
 }
 
 
-class FolderPDFFileHanlder:
-    def __init__(self, folder: Path):
+class _StoragePdf:
+    def __init__(self, storage: Storage, key: str):
+        self._storage = storage
+        self._key = key
+        self.name = Path(key).name
+        self.stem = Path(key).stem
+
+    def open(self, mode="rb"):
+        return self._storage.open(self._key, mode)
+
+
+class PDFFileHandler:
+    def __init__(self, storage: Storage):
         super().__init__()
-        self.folder = folder
+        self.storage = storage
 
-    def run(self):
-        files = sorted(self.folder.rglob("*.pdf"))
-        for file in files:
-            self._import_pv(file)
+    def run(self) -> int:
+        imported = 0
+        for name in sorted(self._pdf_names("")):
+            try:
+                if self._import_pv(_StoragePdf(self.storage, name)):
+                    imported += 1
+            except IntegrityError, PDFImporterException:
+                # A bad file must not stop the rest of this sweep.
+                logger.exception("Failed to import proces-verbaal %s", name)
+        return imported
 
-    def _import_pv(self, file: Path) -> None:
+    def _pdf_names(self, directory: str):
+        directories, filenames = self.storage.listdir(directory)
+        for filename in filenames:
+            if filename.endswith(".pdf"):
+                yield f"{directory}/{filename}" if directory else filename
+        for name in directories:
+            yield from self._pdf_names(f"{directory}/{name}" if directory else name)
+
+    def _import_pv(self, file: _StoragePdf) -> bool:
         election_id, file_type, region_token = self._parse_filename(file)
+        # A later upload of the same name is left unnoticed.
+        if ElectionDocument.objects.filter(storage_key=f"{election_id}/{file.name}").exists():
+            return False
+
         config = self._election_config(election_id)
         region = self._region(config, file_type, region_token)
-        self._store(file, config.identifier, region, file_type)
-        logger.info("Imported %s onto %s %s", file.name, region.region_category, region.region_name)
+        with file.open("rb") as handle:
+            content = BytesIO(handle.read())
+        self._store(content, file.name, config.identifier, region, file_type)
 
-    def _parse_filename(self, file: Path) -> tuple[str, str, str]:
+        logger.info("Imported %s onto %s %s", file.name, region.region_category, region.region_name)
+        return True
+
+    def _parse_filename(self, file: _StoragePdf) -> tuple[str, str, str]:
         parts = file.stem.split("_", 2)
         if len(parts) != 3 or not all(parts):
             raise PDFImporterException(f"{file.name} does not match {{election}}_{{file_type}}_{{region}}.pdf")
@@ -87,8 +120,8 @@ class FolderPDFFileHanlder:
                 f"Several {category} regions match {region_token!r} for election {config.identifier}"
             ) from None
 
-    def _preview_png(self, file: Path) -> bytes:
-        document = pdfium.PdfDocument(file)
+    def _preview_png(self, content: BytesIO) -> bytes:
+        document = pdfium.PdfDocument(content.getvalue())
         try:
             page = document[0]
             bitmap = page.render(scale=_PREVIEW_SCALE)
@@ -105,12 +138,13 @@ class FolderPDFFileHanlder:
         return buffer.getvalue()
 
     @transaction.atomic
-    def _store(self, file: Path, election_id: str, region: Region, file_type: str) -> None:
-        preview = self._preview_png(file)
-        storage_key = f"{election_id}/{file.name}"
+    def _store(self, content: BytesIO, filename: str, election_id: str, region: Region, file_type: str) -> None:
+        preview = self._preview_png(content)
+        storage_key = f"{election_id}/{filename}"
+        size = content.getbuffer().nbytes
 
-        with file.open("rb") as handle:
-            stored_key = default_storage.save(storage_key, File(handle))
+        content.seek(0)
+        stored_key = default_storage.save(storage_key, File(content))
         default_storage.save(Path(stored_key).with_suffix(".png").as_posix(), ContentFile(preview))
 
         ElectionDocument.objects.create(
@@ -118,5 +152,5 @@ class FolderPDFFileHanlder:
             file_type=file_type,
             storage_key=stored_key,
             content_type="application/pdf",
-            size=file.stat().st_size,
+            size=size,
         )
