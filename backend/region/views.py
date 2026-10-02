@@ -1,5 +1,6 @@
 from django.db.models import Prefetch
 from django.http import StreamingHttpResponse
+from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
@@ -172,6 +173,7 @@ def _visible_municipality(request, election_config_slug, region_slug):
         ) from None
 
 
+@api_view(["GET"])
 def polling_station_pv_archive(request, election_config, region):
     municipality = _visible_municipality(request, election_config, region)
     documents = list(polling_station_pv_documents(municipality))
