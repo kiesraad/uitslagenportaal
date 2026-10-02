@@ -304,6 +304,10 @@ msgstr "Municipalities"
 msgid "Geplaatst op: {publishedAt}"
 msgstr "Published on: {publishedAt}"
 
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Handgeschreven verslagen van {presentCount} van de {totalCount} stembureaus"
+msgstr "Handwritten reports from {presentCount} of the {totalCount} polling stations"
+
 #: src/utils/region.ts
 msgid "Heel stembureau"
 msgstr "Entire polling station"
@@ -616,6 +620,10 @@ msgstr "Certified election results of the polling station"
 #: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Proces-verbaal stembureau in een gemeente die CSB is"
 msgstr "Certified election results of the polling station in a municipality that is the central electoral committee"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Processen-verbaal van alle stembureaus"
+msgstr "Official reports of all polling stations"
 
 #: src/utils/region.ts
 msgid "Provincie"

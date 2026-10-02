@@ -1,12 +1,12 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faFolder } from "@fortawesome/free-regular-svg-icons";
-import { faFile, faFilePdf, faTable } from "@fortawesome/free-solid-svg-icons";
+import { faFile, faFilePdf, faFileZipper, faTable } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import type { ElectionDocument } from "../../api/types";
+import type { ElectionDocument, PollingStationPvArchive } from "../../api/types";
 import { useFormatters } from "../../utils/format";
 
 type ReportFile = ElectionDocument & {
@@ -18,6 +18,7 @@ type Props = {
    subtitle?: string;
    description: string;
    documents: ElectionDocument[] | undefined;
+   pollingStationPvArchive?: PollingStationPvArchive | null;
 };
 
 const FILE_TYPE_MAPPINGS: Record<
@@ -111,10 +112,18 @@ function toReportFiles(documents: ElectionDocument[] | undefined): ReportFile[] 
    }));
 }
 
-export default function ReportsWithResults({ title, subtitle, description, documents }: Props) {
+export default function ReportsWithResults({
+   title,
+   subtitle,
+   description,
+   documents,
+   pollingStationPvArchive,
+}: Props) {
    const { t } = useLingui();
    const { formatFileSize } = useFormatters();
    const files = toReportFiles(documents);
+   const presentCount = pollingStationPvArchive?.present_count ?? 0;
+   const totalCount = pollingStationPvArchive?.total_count ?? 0;
 
    /** The API sends the size as a string; anything unparseable is shown as-is. */
    function formatSize(size: number | string): string {
@@ -127,7 +136,7 @@ export default function ReportsWithResults({ title, subtitle, description, docum
       return formatFileSize(bytes);
    }
 
-   if (files.length === 0) {
+   if (files.length === 0 && !pollingStationPvArchive) {
       return null;
    }
 
@@ -155,6 +164,22 @@ export default function ReportsWithResults({ title, subtitle, description, docum
                   </div>
                );
             })}
+            {pollingStationPvArchive && (
+               <div className={"results-reports-item"}>
+                  <div className={"results-reports-icon"}>
+                     <FontAwesomeIcon icon={faFileZipper} />
+                  </div>
+                  <div className={"results-reports-content"}>
+                     <a href={pollingStationPvArchive.url} className={"results-reports-content-title"} download>
+                        <span className="font-semibold">{t`Processen-verbaal van alle stembureaus`}</span> (zip,{" "}
+                        {formatSize(pollingStationPvArchive.size)})
+                     </a>
+                     <span className="results-reports-description-text">
+                        {t`Handgeschreven verslagen van ${presentCount} van de ${totalCount} stembureaus`}
+                     </span>
+                  </div>
+               </div>
+            )}
          </div>
       </div>
    );

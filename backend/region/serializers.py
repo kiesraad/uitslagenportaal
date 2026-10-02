@@ -12,6 +12,7 @@ from mainsite.serializers import (
     VoterTurnoutCountSummarySerializer,
 )
 from region.models import Region
+from region.polling_station_pv_archive import polling_station_pv_summary
 
 
 class RegionListSerializer(serializers.ModelSerializer):
@@ -34,6 +35,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     voter_turnout_counts = VoterTurnoutCountSummarySerializer(read_only=True, many=True)
     vote_counts = VoteCountSummarySerializer(read_only=True, many=True)
     documents = ElectionDocumentSerializer(read_only=True, many=True)
+    polling_station_pv_archive = serializers.SerializerMethodField()
     certified_document_url = serializers.SerializerMethodField()
     certified_document_preview_url = serializers.SerializerMethodField()
     timeline_entries = serializers.SerializerMethodField()
@@ -50,6 +52,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "vote_counts",
             "slug",
             "documents",
+            "polling_station_pv_archive",
             "certified_document_url",
             "certified_document_preview_url",
             "timeline_entries",
@@ -60,6 +63,9 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "csb_slug",
             "election_slug",
         )
+
+    def get_polling_station_pv_archive(self, region):
+        return polling_station_pv_summary(region, self.context.get("request"))
 
     def _certified_document(self, region):
         documents = ElectionDocument.objects.filter(

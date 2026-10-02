@@ -1,4 +1,5 @@
 from django.db.models import Prefetch
+from django.http import StreamingHttpResponse
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
@@ -7,6 +8,7 @@ from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, EmlType, ReportingLevel
 from region.models import Region
+from region.polling_station_pv_archive import iter_polling_station_pv_zip, polling_station_pv_documents
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
 _OWN_RESULTS_EML_TYPE = {
@@ -145,3 +147,37 @@ class RegionDetailView(RetrieveAPIView):
             raise ValidationError(
                 {"detail": "Multiple regions match this slug. Specify the 'parent_region' or 'csb' query parameter."}
             )
+
+
+def _visible_municipality(request, election_config_slug, region_slug):
+    queryset = Region.objects.select_related("election__election_config").filter(
+        election__election_config__slug=election_config_slug,
+        election__election_config__date__gte=visibility_cutoff(),
+        slug=region_slug,
+        region_category=RegionCategory.GEMEENTE,
+    )
+    parent_region_slug = request.GET.get("parent_region")
+    csb_slug = request.GET.get("csb")
+    if parent_region_slug:
+        queryset = queryset.filter(parent__slug=parent_region_slug)
+    if csb_slug:
+        queryset = queryset.filter(csb__slug=csb_slug)
+    try:
+        return queryset.get()
+    except Region.DoesNotExist:
+        raise NotFound({"detail": "Region not found for this election."}) from None
+    except Region.MultipleObjectsReturned:
+        raise ValidationError(
+            {"detail": "Multiple regions match this slug. Specify the 'parent_region' or 'csb' query parameter."}
+        ) from None
+
+
+def polling_station_pv_archive(request, election_config, region):
+    municipality = _visible_municipality(request, election_config, region)
+    documents = list(polling_station_pv_documents(municipality))
+    if not documents:
+        raise NotFound({"detail": "No polling-station reports."})
+
+    response = StreamingHttpResponse(iter_polling_station_pv_zip(documents), content_type="application/zip")
+    response["Content-Disposition"] = f'attachment; filename="processen-verbaal-{municipality.slug}.zip"'
+    return response
