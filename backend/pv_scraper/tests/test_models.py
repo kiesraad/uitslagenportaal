@@ -1,4 +1,5 @@
 import pytest
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 from pv_scraper.tests.factories import ScrapedFileFactory, ScrapeSourceFactory
@@ -10,6 +11,18 @@ def test_scrape_source_code_is_unique():
 
     with pytest.raises(IntegrityError):
         ScrapeSourceFactory(code="gm0344")
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "fields",
+    [{"code": "gm344"}, {"election_pages": ["not a url"]}, {"election_pages": "https://www.gm0344.nl/"}],
+)
+def test_scrape_source_validation_rejects(fields):
+    source = ScrapeSourceFactory.build(**fields)
+
+    with pytest.raises(ValidationError):
+        source.full_clean()
 
 
 @pytest.mark.django_db

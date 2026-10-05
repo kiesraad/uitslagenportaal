@@ -1,7 +1,16 @@
+from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator, URLValidator
 from django.db import models
 from django.utils import timezone
 
 from mainsite.models import BaseModel, RegionCategory
+
+
+def validate_url_list(value) -> None:
+    if not isinstance(value, list) or not all(isinstance(url, str) for url in value):
+        raise ValidationError("Enter a list of URLs.")
+    for url in value:
+        URLValidator()(url)
 
 
 class ScrapeStatus(models.TextChoices):
@@ -17,11 +26,11 @@ class ScrapeSource(BaseModel):
     """The website of a gemeente, waterschap, province or the state that publishes PVs: settings and scrape state."""
 
     # TOOi code from the government organisation register: gm0344, ws0539, pv26; `nl` for the state.
-    code = models.CharField(max_length=6, unique=True)
+    code = models.CharField(max_length=6, unique=True, validators=[RegexValidator(r"^(gm\d{4}|ws\d{4}|pv\d{2}|nl)$")])
     kind = models.CharField(max_length=32, choices=RegionCategory.choices)
     name = models.CharField(max_length=255)
     website = models.URLField()
-    election_pages = models.JSONField(default=list, blank=True)
+    election_pages = models.JSONField(default=list, blank=True, validators=[validate_url_list])
     exclude = models.CharField(max_length=255, null=True, blank=True)
     cookie_banner_label = models.CharField(max_length=255, null=True, blank=True)
     disabled = models.BooleanField(default=False)
