@@ -23,7 +23,7 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
 
    return (
       <div className="counting-results-infobox">
-         <InfoBox>
+         <InfoBox disableMargin>
             <h2 className="h4">
                <Trans>Waar komen deze telresultaten vandaan?</Trans>
             </h2>
