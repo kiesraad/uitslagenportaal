@@ -35,3 +35,32 @@ USER backend
 
 EXPOSE 8000
 CMD ["granian", "mainsite.wsgi:application", "--interface", "wsgi", "--host", "0.0.0.0"]
+
+# Separate image for the scraper worker, which is about 3x larger than `runtime`
+FROM python:3.14-slim AS celery-playwright-worker
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV DEBUG=false
+ENV PATH="/app/.venv/bin:$PATH"
+
+RUN groupadd --system backend \
+    && useradd --system --gid backend --no-create-home backend \
+    && mkdir /app \
+    && chown -R backend /app
+
+WORKDIR /app
+
+COPY --from=builder --chown=backend:backend /app/.venv /app/.venv
+
+RUN pip install "playwright>=1.62.0" \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends git tesseract-ocr tesseract-ocr-nld \
+    && playwright install --no-progress --only-shell chromium \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --chown=backend:backend . .
+
+USER backend
+
+CMD ["celery", "-A", "mainsite", "worker", "-Q", "scraper", "--concurrency", "2"]

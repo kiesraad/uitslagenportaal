@@ -25,5 +25,20 @@ The list is imported using the `import_scrape_sources` command to seed the `Scra
 `docker compose run --rm backend-scripts python manage.py import_scrape_sources`.
 It imports `pv_scraper/authorities.json` from default storage.
 
+### Crawling
+
+`dispatch_scrape_tasks` runs every 10 minutes and sends `run_scrape_for_source` to the `scraper` queue for each source
+that is due. One scrape is split over three modules in `pv_scraper/utils/`:
+- `SiteScraper` holds the state of the run. It keeps the queue of pages to visit, and pages about results go first.
+  It decides which links to follow or download, stores PDFs in default storage under `pv_scraper/<code>/` as
+  `ScrapedFile`s, and merges the pages, rejections and errors it recorded into the `ScrapeSource`.
+- `SiteCrawler` visits one page at a time in Playwright: it accepts the cookie banner, expands collapsed content and
+  collects the links. It also fetches files with the browser's cookies.
+- `link_rules` contains the patterns that pick out pages worth following and documents that may be PVs.
+
+The scraper downloads every PDF that may be a PV of any election and year. It only skips documents that are clearly
+something else, such as kandidatenlijsten, instructions and folders. The election and model of a file are decided
+afterwards, by `PvClassifier`.
+
 The scraper from then on updates its state in the DB and keeps track of downloaded files, pages on which to find PVs and errors.
 Based on the DB state, we can manually verify and update the list of authorities to increase coverage.
