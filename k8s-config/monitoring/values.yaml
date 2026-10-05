@@ -119,14 +119,14 @@ kube-prometheus-stack:
     deploymentStrategy:
       type: Recreate
 
-    # Grafana's two sidecars request nothing and use about 150Mi between them, so this
-    # is set above Grafana's own use to cover them.
+    # Grafana container only; the two sidecars are separate containers. Its in-memory
+    # search indexes plus Explore and log queries got it OOM-killed at 512Mi.
     resources:
       requests:
         cpu: 50m
-        memory: 384Mi
-      limits:
         memory: 512Mi
+      limits:
+        memory: 1Gi
 
   # A managed control plane exposes none of these components, so their targets are
   # permanently down and their alerts fire forever. That teaches everyone to ignore the
@@ -373,18 +373,63 @@ alloy:
 
         loki.source.kubernetes "pod_logs" {
           targets    = discovery.relabel.pod_logs.output
-          forward_to = [loki.process.drop_probes.receiver]
+          forward_to = [loki.process.app_json.receiver]
         }
 
-        // The backend's readiness probe and Prometheus scrape each log an access line
-        // every few seconds per pod, burying the requests anyone would read. Only the
-        // successful ones go: a failing probe or scrape is exactly what to keep.
-        loki.process "drop_probes" {
+        // The backend, Celery (LOG_FORMAT) and the frontend's nginx log JSON with the same
+        // keys. Its fields go to structured metadata, where Grafana shows them as fields and
+        // table columns without a `| json` in every query, and the line itself becomes the
+        // message (plus any traceback).
+        loki.process "app_json" {
           forward_to = [loki.write.default.receiver]
 
-          stage.drop {
-            expression          = `^\[[^\]]+\] \S+ - "GET /(healthz/|metrics) HTTP/[0-9.]+" 200 `
-            drop_counter_reason = "probe"
+          stage.match {
+            selector = `{container=~"backend|celery-worker|celery-beat|frontend"}`
+
+            stage.json {
+              expressions = {
+                message     = "",
+                exc_info    = "",
+                level       = "levelname",
+                logger      = "name",
+                process     = "processName",
+                method      = "",
+                path        = "",
+                status      = "",
+                duration_ms = "",
+                // Celery passes its task lines' fields as `extra={"data": …}`; runtime is in seconds.
+                task        = "data.name",
+                task_id     = "data.id",
+                runtime     = "data.runtime",
+              }
+            }
+
+            // A line that is not JSON, such as Granian's startup lines, is kept as is. The
+            // chart renders this config with Helm's tpl, so the template is a Helm raw string.
+            stage.template {
+              source   = "line"
+              template = {{`"{{ if .message }}{{ .message }}{{ with .exc_info }}\n{{ . }}{{ end }}{{ else }}{{ .Entry }}{{ end }}"`}}
+            }
+
+            // Loki derives detected_level from `level`, which Grafana colours lines by.
+            stage.structured_metadata {
+              values = {
+                level       = "",
+                logger      = "",
+                process     = "",
+                method      = "",
+                path        = "",
+                status      = "",
+                duration_ms = "",
+                task        = "",
+                task_id     = "",
+                runtime     = "",
+              }
+            }
+
+            stage.output {
+              source = "line"
+            }
           }
         }
 
