@@ -15,7 +15,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv export --locked --no-emit-project --format requirements-txt > /tmp/requirements.txt \
     && uv pip install --system -r /tmp/requirements.txt \
-    && playwright install --no-progress  --only-shell chromium
+    && playwright install --no-progress --with-deps --only-shell chromium \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY . .
 

@@ -32,8 +32,9 @@ that is due. One scrape is split over three modules in `pv_scraper/utils/`:
 - `SiteScraper` holds the state of the run. It keeps the queue of pages to visit, and pages about results go first.
   It decides which links to follow or download, stores PDFs in default storage under `pv_scraper/<code>/` as
   `ScrapedFile`s, and merges the pages, rejections and errors it recorded into the `ScrapeSource`.
-- `SiteCrawler` visits one page at a time in Playwright: it accepts the cookie banner, expands collapsed content and
-  collects the links. It also fetches files with the browser's cookies.
+- `SiteCrawler` requests one link at a time with the browser's cookies. The response tells a page from a file: an HTML
+  page is rendered in Playwright, where it accepts the cookie banner, expands collapsed content and collects the links;
+  any other response is returned as a file.
 - `link_rules` contains the patterns that pick out pages worth following and documents that may be PVs.
 
 The scraper downloads every PDF that may be a PV of any election and year. It only skips documents that are clearly

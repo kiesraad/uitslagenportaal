@@ -51,8 +51,6 @@ def dispatch_scrape_tasks():
 @app.task
 def run_scrape_for_source(source_id: int):
     # Only the scraper worker image has Playwright, and every worker imports this module.
-    from playwright.sync_api import sync_playwright
-
     from pv_scraper.utils.site_crawler import SiteCrawler
     from pv_scraper.utils.site_scraper import SiteScraper
 
@@ -61,7 +59,5 @@ def run_scrape_for_source(source_id: int):
     source.last_run_status = ScrapeStatus.RUNNING
     source.save(update_fields=["last_run_started_at", "last_run_status", "updated_at"])
 
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(args=["--disable-blink-features=AutomationControlled"])
-        with SiteCrawler(browser, source.cookie_banner_label) as crawler:
-            SiteScraper(source, crawler).run()
+    with SiteCrawler(source.cookie_banner_label) as crawler:
+        SiteScraper(source, crawler).run()

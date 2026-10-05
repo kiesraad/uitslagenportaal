@@ -43,6 +43,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DEBUG=false
 ENV PATH="/app/.venv/bin:$PATH"
+# Outside root's home, so the backend user finds the browser.
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
 
 RUN groupadd --system backend \
     && useradd --system --gid backend --no-create-home backend \
@@ -51,12 +53,14 @@ RUN groupadd --system backend \
 
 WORKDIR /app
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/
 COPY --from=builder --chown=backend:backend /app/.venv /app/.venv
 
-RUN pip install "playwright>=1.62.0" \
+# Playwright is a dev dependency, so the venv from the builder lacks it.
+RUN uv pip install --python /app/.venv/bin/python "playwright>=1.62.0" \
     && apt-get update \
     && apt-get install -y --no-install-recommends git tesseract-ocr tesseract-ocr-nld \
-    && playwright install --no-progress --only-shell chromium \
+    && playwright install --no-progress --with-deps --only-shell chromium \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --chown=backend:backend . .

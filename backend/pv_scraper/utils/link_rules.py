@@ -4,12 +4,7 @@ import re
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-# The Rx.Front CMS (Brunssum, Elburg, Hattem, ...) serves attachments at paths ending in ".org".
-DOC_URL_RE = re.compile(
-    r"\.pdf($|\?)|/media/|/sites/default/files/|/documents?/|/documenten/|/file/download|[?&]download|/_flysystem/|"
-    r"/download/|\.org($|\?)",
-    re.IGNORECASE,
-)
+# Files that are certainly no PV; whether any other link is a file shows from its response.
 NON_PDF_RE = re.compile(r"\.(csv|xml|zip|docx?|xlsx?|odt|ods|jpe?g|png|gif|svg|mp4|eml)($|\?)", re.IGNORECASE)
 # Model numbers: N 10-1/N 10-2 (stembureau), Na 14-2 (centrale stemopneming), Na 31-1/Na 31-2 (gemeentelijk
 # stembureau), P 22 (centraal stembureau).

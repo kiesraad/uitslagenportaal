@@ -1,4 +1,3 @@
-
 from django.core.management.base import BaseCommand
 
 from pv_scraper.tasks import run_scrape_for_source

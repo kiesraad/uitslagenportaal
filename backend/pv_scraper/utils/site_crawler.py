@@ -1,10 +1,11 @@
 """Visit pages of an authority's website in a Playwright browser and fetch files with the browser's cookies."""
 
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 import requests
-from playwright.sync_api import Browser, BrowserContext, Error, Page
+from playwright.sync_api import Browser, BrowserContext, Error, Page, Playwright, sync_playwright
 
 from pv_scraper.utils.link_rules import host
 
@@ -19,7 +20,7 @@ COOKIE_LABELS = [
     "Accepteer",
 ]
 BLOCKED_RE = re.compile(r"captcha|just a moment|access denied|attention required|verify you are human", re.IGNORECASE)
-# Errors fetch() can raise for a single URL.
+# Errors a request for a single URL can raise.
 FETCH_ERRORS = (Error, requests.RequestException)
 
 COLLECT_JS = """
@@ -72,8 +73,10 @@ class Link:
 @dataclass
 class CrawledPage:
     url: str
-    # HTTP status, or "download" when the URL turned out to be a file.
-    status: int | str | None = None
+    status: int | None = None
+    headers: dict = field(default_factory=dict)
+    # The body of a response that is not an HTML page; None for a page.
+    file: bytes | None = None
     title: str = ""
     links: list[Link] = field(default_factory=list)
     blocked: bool = False
@@ -81,35 +84,71 @@ class CrawledPage:
 
 
 class SiteCrawler:
-    """One browser context for one website; use as a context manager."""
+    """A browser for one website; use as a context manager.
 
-    def __init__(self, browser: Browser, cookie_banner_label: str | None = None):
-        self.browser = browser
+    Playwright's sync API runs an event loop on its thread, where Django refuses database queries. The browser
+    therefore lives on a thread of its own, and crawl() hands its work to it.
+    """
+
+    def __init__(self, cookie_banner_label: str | None = None):
         self.cookie_labels = ([cookie_banner_label] if cookie_banner_label else []) + COOKIE_LABELS
         self.cookies_done: set[str] = set()
+        self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="playwright")
+        self.playwright: Playwright | None = None
+        self.browser: Browser | None = None
         self.context: BrowserContext | None = None
         self.page: Page | None = None
 
     def __enter__(self):
-        # Bot protection compares the UA with the browser's client hints, so a spoofed version gets a 403.
-        user_agent = UA.replace("Chrome/130.0", f"Chrome/{self.browser.version}")
-        self.context = self.browser.new_context(user_agent=user_agent, locale="nl-NL", accept_downloads=True)
-        self.page = self.context.new_page()
+        self._on_browser_thread(self._start)
         return self
 
     def __exit__(self, *exc_info):
         try:
-            self.context.close()
+            self._on_browser_thread(self._stop)
+        finally:
+            self.executor.shutdown()
+
+    def crawl(self, url: str, headers: dict[str, str] | None = None) -> CrawledPage:
+        """Request a URL; render it in the browser when it is an HTML page, or return the file otherwise."""
+        return self._on_browser_thread(self._crawl, url, headers)
+
+    def _on_browser_thread(self, fn, *args):
+        return self.executor.submit(fn, *args).result()
+
+    def _start(self) -> None:
+        self.playwright = sync_playwright().start()
+        self.browser = self.playwright.chromium.launch(args=["--disable-blink-features=AutomationControlled"])
+        # Bot protection compares the UA with the browser's client hints, so a spoofed version gets a 403.
+        user_agent = UA.replace("Chrome/130.0", f"Chrome/{self.browser.version}")
+        self.context = self.browser.new_context(user_agent=user_agent, locale="nl-NL", accept_downloads=True)
+        self.page = self.context.new_page()
+
+    def _stop(self) -> None:
+        try:
+            if self.browser:
+                self.browser.close()
         except Error:
             pass
+        finally:
+            if self.playwright:
+                self.playwright.stop()
 
-    def crawl(self, url: str) -> CrawledPage:
+    def _crawl(self, url: str, headers: dict[str, str] | None) -> CrawledPage:
+        try:
+            status, response_headers, body = self._fetch(url, headers)
+        except FETCH_ERRORS as exc:
+            return CrawledPage(url, error=str(exc).splitlines()[0])
+        # A 304 has no content type: it answers a conditional request for a known file.
+        if status == 304 or "html" not in response_headers.get("content-type", ""):
+            return CrawledPage(url, status, response_headers, file=body)
+        if status >= 400:
+            return CrawledPage(url, status, response_headers)
+
         page = self.page
         try:
             response = page.goto(url, wait_until="domcontentloaded", timeout=45_000)
         except Error as exc:
-            if "Download is starting" in str(exc):
-                return CrawledPage(url, "download")
             return CrawledPage(url, error=str(exc).splitlines()[0])
         result = CrawledPage(page.url, response.status if response else None)
         if response and response.status >= 400:
@@ -148,7 +187,7 @@ class SiteCrawler:
             except Error:
                 continue
 
-    def fetch(self, url: str, headers: dict[str, str] | None = None) -> tuple[int, dict, bytes]:
+    def _fetch(self, url: str, headers: dict[str, str] | None) -> tuple[int, dict, bytes]:
         """Fetch with the browser's cookies; fall back to requests for servers whose headers Playwright rejects."""
         try:
             response = self.context.request.get(url, headers=headers, timeout=60_000, max_redirects=10)

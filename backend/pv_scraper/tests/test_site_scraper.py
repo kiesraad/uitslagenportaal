@@ -21,32 +21,35 @@ def etag(body: bytes) -> str:
     return f'"{sha256(body)[:8]}"'
 
 
+def page(url: str, *links: Link) -> CrawledPage:
+    return CrawledPage(url, 200, links=list(links))
+
+
 class FakeCrawler:
-    """Serves pages and files from dicts, with an etag per file content; anything else is a 404."""
+    """Answers with files and pages from dicts, with an etag per file content; anything else is a 404 page."""
 
     def __init__(self, pages: dict[str, CrawledPage] = None, files: dict[str, bytes] = None):
         self.pages = pages or {}
         self.files = files or {}
-        self.crawled: list[str] = []
-        self.fetched: list[tuple[str, dict]] = []
+        self.crawled: list[tuple[str, dict]] = []
 
-    def crawl(self, url: str) -> CrawledPage:
-        self.crawled.append(url)
+    @property
+    def crawled_urls(self) -> list[str]:
+        return [url for url, _ in self.crawled]
+
+    def crawl(self, url: str, headers: dict | None = None) -> CrawledPage:
+        self.crawled.append((url, headers or {}))
+        if url in self.files:
+            body = self.files[url]
+            if (headers or {}).get("If-None-Match") == etag(body):
+                return CrawledPage(url, 304, {"etag": etag(body)}, file=b"")
+            return CrawledPage(url, 200, {"etag": etag(body), "content-type": "application/pdf"}, file=body)
         return self.pages.get(url, CrawledPage(url, 404))
-
-    def fetch(self, url: str, headers: dict | None = None) -> tuple[int, dict, bytes]:
-        self.fetched.append((url, headers or {}))
-        if url not in self.files:
-            return 404, {}, b"not found"
-        body = self.files[url]
-        if (headers or {}).get("If-None-Match") == etag(body):
-            return 304, {"etag": etag(body)}, b""
-        return 200, {"etag": etag(body)}, body
 
 
 @pytest.fixture(autouse=True)
 def no_pauses():
-    with patch.object(site_scraper, "pause"), patch.object(site_scraper.time, "sleep"):
+    with patch.object(site_scraper, "pause"):
         yield
 
 
@@ -62,7 +65,7 @@ def test_pv_links_of_any_election_are_downloaded_to_storage():
     links = [Link(pdf_url, "Proces-verbaal stembureau 1"), Link(old_pdf_url, "Centrum", heading="Verkiezingen PS 2019")]
     files = {pdf_url: PDF, old_pdf_url: PDF + b" 2019"}
 
-    status = scrape(source, FakeCrawler({WEBSITE: CrawledPage(WEBSITE, 200, "", links)}, files))
+    status = scrape(source, FakeCrawler({WEBSITE: page(WEBSITE, *links)}, files))
 
     scraped = ScrapedFile.objects.get(source=source, url=pdf_url)
     # The election and model are left to the OCR classification.
@@ -75,17 +78,52 @@ def test_pv_links_of_any_election_are_downloaded_to_storage():
 
 
 @pytest.mark.django_db
+def test_link_is_a_file_when_its_response_is_not_a_page():
+    source = ScrapeSourceFactory(website=WEBSITE)
+    url = "https://www.gm0001.nl/dsresource?objectid=1&type=pdf"
+    crawler = FakeCrawler({WEBSITE: page(WEBSITE, Link(url, "Stembureau 1", heading="Processen-verbaal"))}, {url: PDF})
+
+    scrape(source, crawler)
+
+    source.refresh_from_db()
+    assert [p["url"] for p in source.pages] == [WEBSITE]
+    scraped = ScrapedFile.objects.get(source=source)
+    assert (scraped.url, scraped.link_text, scraped.heading_text) == (url, "Stembureau 1", "Processen-verbaal")
+
+
+@pytest.mark.django_db
+def test_off_site_links_are_only_visited_for_files():
+    source = ScrapeSourceFactory(website=WEBSITE)
+    off_site_page = "https://www.other.nl/processen-verbaal"
+    links = [
+        Link("https://www.rijksoverheid.nl/documenten/folder.pdf", "Folder verkiezingen"),
+        Link(f"https://www.facebook.com/sharer.php?u={WEBSITE}processen-verbaal", "Deel", heading="Processen-verbaal"),
+        Link(off_site_page, "Processen-verbaal"),
+    ]
+    pages = {
+        WEBSITE: page(WEBSITE, *links),
+        off_site_page: page(off_site_page, Link("https://www.other.nl/uitslag", "Uitslag")),
+    }
+    crawler = FakeCrawler(pages)
+
+    scrape(source, crawler)
+
+    assert crawler.crawled_urls == [WEBSITE, off_site_page]
+
+
+@pytest.mark.django_db
 def test_unchanged_file_is_not_stored_again():
     source = ScrapeSourceFactory(website=WEBSITE)
     known_url = "https://www.gm0001.nl/media/pv-1.pdf"
     moved_url = "https://www.gm0001.nl/media/pv-1-copy.pdf"
     ScrapedFileFactory(source=source, url=known_url, sha256=sha256(PDF), etag=etag(PDF), last_modified="Mon, 1 Jun")
     links = [Link(known_url, "Proces-verbaal 1"), Link(moved_url, "Proces-verbaal 1")]
-    crawler = FakeCrawler({WEBSITE: CrawledPage(WEBSITE, 200, "", links)}, {known_url: PDF, moved_url: PDF})
+    crawler = FakeCrawler({WEBSITE: page(WEBSITE, *links)}, {known_url: PDF, moved_url: PDF})
 
     scrape(source, crawler)
 
-    assert crawler.fetched == [
+    assert crawler.crawled == [
+        (WEBSITE, {}),
         (known_url, {"If-None-Match": etag(PDF), "If-Modified-Since": "Mon, 1 Jun"}),
         (moved_url, {}),
     ]
@@ -98,7 +136,7 @@ def test_changed_file_at_known_url_is_stored_as_new_version():
     url = "https://www.gm0001.nl/media/pv-1.pdf"
     ScrapedFileFactory(source=source, url=url, sha256=sha256(PDF), etag=etag(PDF))
     corrected = PDF + b" gecorrigeerd"
-    crawler = FakeCrawler({WEBSITE: CrawledPage(WEBSITE, 200, "", [Link(url, "Proces-verbaal 1")])}, {url: corrected})
+    crawler = FakeCrawler({WEBSITE: page(WEBSITE, Link(url, "Proces-verbaal 1"))}, {url: corrected})
 
     scrape(source, crawler)
 
@@ -112,7 +150,7 @@ def test_same_content_under_new_etag_updates_the_known_file():
     source = ScrapeSourceFactory(website=WEBSITE)
     url = "https://www.gm0001.nl/media/pv-1.pdf"
     known = ScrapedFileFactory(source=source, url=url, sha256=sha256(PDF), etag='"old"')
-    crawler = FakeCrawler({WEBSITE: CrawledPage(WEBSITE, 200, "", [Link(url, "Proces-verbaal 1")])}, {url: PDF})
+    crawler = FakeCrawler({WEBSITE: page(WEBSITE, Link(url, "Proces-verbaal 1"))}, {url: PDF})
 
     scrape(source, crawler)
 
@@ -122,24 +160,19 @@ def test_same_content_under_new_etag_updates_the_known_file():
 
 
 @pytest.mark.django_db
-def test_rejected_links_are_recorded():
+def test_rejected_files_are_recorded():
     source = ScrapeSourceFactory(website=WEBSITE)
-    links = [
-        Link("https://www.rijksoverheid.nl/documenten/folder.pdf", "Folder"),
-        Link("https://www.gm0001.nl/media/garantstelling.pdf", "Garantstelling"),
-        Link("https://www.gm0001.nl/media/jaarverslag.pdf", "Jaarverslag"),
-        Link("https://www.gm0001.nl/media/pv-2.pdf", "Proces-verbaal 2"),
-    ]
-    crawler = FakeCrawler({WEBSITE: CrawledPage(WEBSITE, 200, "", links)})
+    excluded_url = "https://www.gm0001.nl/media/garantstelling.pdf"
+    not_pdf_url = "https://www.gm0001.nl/media/pv-2.pdf"
+    links = [Link(excluded_url, "Uitslag verkiezingen"), Link(not_pdf_url, "Proces-verbaal 2")]
+    crawler = FakeCrawler({WEBSITE: page(WEBSITE, *links)}, {excluded_url: PDF, not_pdf_url: b"<xml/>"})
 
     status = scrape(source, crawler)
 
     source.refresh_from_db()
-    assert [(r["url"].rsplit("/", 1)[-1], r["reason"]) for r in source.rejected] == [
-        ("folder.pdf", "off-site"),
-        ("garantstelling.pdf", "excluded"),
-        ("jaarverslag.pdf", "no-pv-signal"),
-        ("pv-2.pdf", "not-pdf (HTTP 404)"),
+    assert [(r["url"], r["reason"]) for r in source.rejected] == [
+        (excluded_url, "excluded"),
+        (not_pdf_url, "not-pdf (HTTP 200)"),
     ]
     assert status == ScrapeStatus.NO_PVS_FOUND
 
@@ -155,11 +188,11 @@ def test_follow_links_are_visited_results_first():
         Link("https://www.gm0001.nl/zoeken?q=verkiezingen", "Zoeken"),
         Link("https://www.other.nl/verkiezingen", "Elders"),
     ]
-    crawler = FakeCrawler({WEBSITE: CrawledPage(WEBSITE, 200, "", links)})
+    crawler = FakeCrawler({WEBSITE: page(WEBSITE, *links)})
 
     scrape(source, crawler)
 
-    assert crawler.crawled == [
+    assert crawler.crawled_urls == [
         WEBSITE,
         "https://www.gm0001.nl/uitslag-gemeenteraad",
         "https://www.gm0001.nl/verkiezingen-tweede-kamer",
@@ -169,7 +202,7 @@ def test_follow_links_are_visited_results_first():
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "page, expected",
+    "result, expected",
     [
         (CrawledPage(WEBSITE, 403), ScrapeStatus.BLOCKED),
         (CrawledPage(WEBSITE, 200, blocked=True), ScrapeStatus.BLOCKED),
@@ -178,17 +211,17 @@ def test_follow_links_are_visited_results_first():
         (CrawledPage(WEBSITE, 200), ScrapeStatus.NO_PVS_FOUND),
     ],
 )
-def test_status_without_files(page, expected):
+def test_status_without_files(result, expected):
     source = ScrapeSourceFactory(website=WEBSITE)
 
-    assert scrape(source, FakeCrawler({WEBSITE: page})) == expected
+    assert scrape(source, FakeCrawler({WEBSITE: result})) == expected
 
 
 @pytest.mark.django_db
 def test_unexpected_error_is_recorded():
     source = ScrapeSourceFactory(website=WEBSITE)
     crawler = FakeCrawler()
-    crawler.crawl = lambda url: 1 / 0
+    crawler.crawl = lambda url, headers=None: 1 / 0
 
     assert scrape(source, crawler) == ScrapeStatus.ERROR
     source.refresh_from_db()
@@ -205,7 +238,7 @@ def test_state_is_merged_with_earlier_runs():
         ],
     )
 
-    scrape(source, FakeCrawler({WEBSITE: CrawledPage(WEBSITE, 200)}))
+    scrape(source, FakeCrawler({WEBSITE: page(WEBSITE)}))
 
     source.refresh_from_db()
     current, old = sorted(source.pages, key=lambda p: p["url"])
