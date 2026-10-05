@@ -23,15 +23,17 @@ The scraper is based on a list of authorities, which lists municipalities, water
 The list is created by hand (or a manually run script) and will need updating if websites of municipalities change or when there are mergers.
 The list is imported using the `import_scrape_sources` command to seed the `ScrapeSource` model: 
 `docker compose run --rm backend-scripts python manage.py import_scrape_sources`.
-It imports `pv_scraper/authorities.json` from default storage.
+It imports `pv_scraper/authorities.json` from default storage. Election pages in the file are merged with those
+already known, so pages the scraper found since the file was exported are kept.
 
 ### Crawling
 
 `dispatch_scrape_tasks` runs every 10 minutes and sends `run_scrape_for_source` to the `scraper` queue for each source
 that is due. One scrape is split over three modules in `pv_scraper/utils/`:
 - `SiteScraper` holds the state of the run. It keeps the queue of pages to visit, and pages about results go first.
-  It decides which links to follow or download, stores PDFs in default storage under `pv_scraper/<code>/` as
-  `ScrapedFile`s, and merges the pages, rejections and errors it recorded into the `ScrapeSource`.
+  It decides which links to follow or download and stores PDFs in default storage under `pv_scraper/<code>/`. Every
+  downloaded file becomes a `ScrapedFile`; files that are no PV are only recorded, with a `rejected_reason`, so that
+  an unchanged one is not downloaded again. Every visited page becomes a `ScrapedPage`, with the page that led to it.
 - `SiteCrawler` requests one link at a time with the browser's cookies. The response tells a page from a file: an HTML
   page is rendered in Playwright, where it accepts the cookie banner, expands collapsed content and collects the links;
   any other response is returned as a file.
@@ -40,6 +42,23 @@ that is due. One scrape is split over three modules in `pv_scraper/utils/`:
 The scraper downloads every PDF that may be a PV of any election and year. It only skips documents that are clearly
 something else, such as kandidatenlijsten, instructions and folders. The election and model of a file are decided
 afterwards, by `PvClassifier`.
+
+#### Election pages
+
+A scrape starts from the source's `election_pages`, or from its `website` when there are none. The scraper keeps
+that list up to date:
+- **Added:** for each page with PV files, the highest page above it that is about elections in general, such as
+  `/verkiezingen` rather than `/verkiezingen/gemeenteraad-2026`: a page about one election never links to the next.
+  "Above" means the pages that linked to it, in this or an earlier run, or the folders in its URL that answered as a
+  page. Without such a page, the page that led to the files is added, or the files page itself when that was the
+  home page.
+- **Removed:** a page that answered 404 or 410 for over a week, or that led to no PV files for over a month. The
+  month only counts on runs that visited every link worth visiting. Errors, bot walls and 5xx answers don't count as
+  missing.
+- **Replaced:** a page that moved permanently within the site (301 or 308) is replaced by its new address.
+
+Removals and replacements are noted in the source's `errors`. After a site redesign the old pages disappear from the
+list, so the next scrape crawls the whole website again and finds the new ones.
 
 The scraper from then on updates its state in the DB and keeps track of downloaded files, pages on which to find PVs and errors.
 Based on the DB state, we can manually verify and update the list of authorities to increase coverage.

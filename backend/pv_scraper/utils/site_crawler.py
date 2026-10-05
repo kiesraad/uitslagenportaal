@@ -1,5 +1,6 @@
 """Visit pages of an authority's website in a Playwright browser and fetch files with the browser's cookies."""
 
+import logging
 import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -61,6 +62,8 @@ REVEAL_JS = """
 }
 """
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class Link:
@@ -81,6 +84,8 @@ class CrawledPage:
     links: list[Link] = field(default_factory=list)
     blocked: bool = False
     error: str | None = None
+    # Where the page moved to, when it was reached through 301 and 308 redirects within the site only.
+    permanent_redirect: str | None = None
 
 
 class SiteCrawler:
@@ -117,6 +122,7 @@ class SiteCrawler:
         return self.executor.submit(fn, *args).result()
 
     def _start(self) -> None:
+        logger.info("Starting browser...")
         self.playwright = sync_playwright().start()
         self.browser = self.playwright.chromium.launch(args=["--disable-blink-features=AutomationControlled"])
         # Bot protection compares the UA with the browser's client hints, so a spoofed version gets a 403.
@@ -141,8 +147,10 @@ class SiteCrawler:
             return CrawledPage(url, error=str(exc).splitlines()[0])
         # A 304 has no content type: it answers a conditional request for a known file.
         if status == 304 or "html" not in response_headers.get("content-type", ""):
+            logger.info("Crawled %s: file download (status %d)", url, status)
             return CrawledPage(url, status, response_headers, file=body)
         if status >= 400:
+            logger.info("Crawled %s: status %d", url, status)
             return CrawledPage(url, status, response_headers)
 
         page = self.page
@@ -153,6 +161,13 @@ class SiteCrawler:
         result = CrawledPage(page.url, response.status if response else None)
         if response and response.status >= 400:
             return result
+        if response and response.url != url and host(response.url) == host(url):
+            hops, request = [], response.request.redirected_from
+            while request:
+                hops.append(request.response())
+                request = request.redirected_from
+            if hops and all(hop and hop.status in (301, 308) for hop in hops):
+                result.permanent_redirect = response.url
         try:
             page.wait_for_load_state("networkidle", timeout=15_000)
         except Error:
@@ -168,12 +183,15 @@ class SiteCrawler:
             result.title = page.title()
         except Error as exc:
             result.error = str(exc).splitlines()[0]
+            logger.info("Crawled %s: error %s", url, result.error)
             return result
         if BLOCKED_RE.search(result.title) or (len(links) < 3 and BLOCKED_RE.search(page.content())):
             result.blocked = True
+            logger.info("Crawled %s: blocked", url)
             return result
         result.url = page.url
         result.links = [Link(**link) for link in links]
+        logger.info("Crawled %s: found %d links", url, len(links))
         return result
 
     def accept_cookies(self) -> None:

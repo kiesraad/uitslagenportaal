@@ -1,6 +1,24 @@
 import pytest
 
-from pv_scraper.utils.link_rules import filename_for, is_pv, is_results_context
+from pv_scraper.utils.link_rules import filename_for, is_pv, is_results_context, newest_year
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("Uitslag gemeenteraad 2022", 2022),
+        ("Verkiezingen 2018 tot en met 2026", 2026),
+        ("0717_pv_stembureau_1_veere_tk23.pdf", 2023),
+        ("uitslag_gr_22.pdf", 2022),
+        # Not inside a word, which "program22" would be; a missed year only means a link is kept.
+        ("helvoirtgr26eerstetelling.pdf", None),
+        ("GR-2026 stembureau", 2026),
+        ("Proces-verbaal stembureau 12", None),
+        ("20180321 telefoon 0118-412000", None),
+    ],
+)
+def test_newest_year(text, expected):
+    assert newest_year(text) == expected
 
 
 @pytest.mark.parametrize(

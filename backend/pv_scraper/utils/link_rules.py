@@ -29,6 +29,10 @@ ELECTION_RE = re.compile(
     r"referendum|kieskring|(?<![a-z])(gr|tk|ps|ws|ab|ep)[\s_-]?(20)?\d\d(?!\d)",
     re.IGNORECASE,
 )
+# A page about elections or their results; not "gemeenteraad" alone, which also names the council's own pages.
+ELECTION_PAGE_RE = re.compile(r"verkiezing|uitslag|stembureau|proces[\s_-]*verba", re.IGNORECASE)
+# A year, written out ("2019") or as part of an election code ("tk23", "gr_22").
+YEAR_RE = re.compile(r"(?<!\d)(20\d\d)(?!\d)|(?<![a-z])(?:gr|tk|ps|ws|ab|ep)[\s_-]?(\d\d)(?!\d)", re.IGNORECASE)
 # "documenten" only as a whole path segment or at the start of the link text: "reisdocumenten" and
 # "uittreksels-en-documenten" lead into passport pages.
 FOLLOW_RE = re.compile(
@@ -43,6 +47,8 @@ NO_FOLLOW_RE = re.compile(
     r"^https?://[^/]+/(en|de|fr|pl|tr|uk|ua|ar|es|it|pt|ro|bg|ru|zh)(/|$)|%d[0-9a-f]%[89ab][0-9a-f]",
     re.IGNORECASE,
 )
+# A URL path that names a file rather than a page, such as a PDF on a CDN.
+FILE_PATH_RE = re.compile(r"\.(?!html?$|php$|aspx?$|jsp$)[a-z0-9]{2,4}$", re.IGNORECASE)
 # Pleio file folders nest per election and per municipality; descending into one should not use up the depth.
 FREE_FOLLOW_RE = re.compile(r"pleio\.nl/.*/files/[0-9a-f-]{36}$", re.IGNORECASE)
 PLEIO_VIEW_RE = re.compile(r"^(https://[^/]*pleio\.nl)/files/view/", re.IGNORECASE)
@@ -67,6 +73,11 @@ def is_pv(context: str, file_context: str) -> tuple[bool, str]:
     if weak and not NOT_PV_RE.search(context):
         return True, ""
     return False, "excluded" if weak else "no-pv-signal"
+
+
+def newest_year(text: str) -> int | None:
+    """The latest year mentioned in a text, if any."""
+    return max((int(year or f"20{short}") for year, short in YEAR_RE.findall(text)), default=None)
 
 
 def is_results_context(context: str) -> bool:
