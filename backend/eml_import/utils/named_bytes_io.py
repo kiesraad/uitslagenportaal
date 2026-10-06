@@ -1,5 +1,5 @@
 from io import BytesIO
-from os import path
+from pathlib import Path
 
 
 class NamedBytesIO(BytesIO):
@@ -8,14 +8,14 @@ class NamedBytesIO(BytesIO):
     def __init__(self, data: bytes, filename: str) -> None:
         super().__init__(data)
         self.filename = filename
+        self.path = Path(filename)
 
     def __str__(self) -> str:
-        return f"<NamedBytesIO {self.filename}>"
+        return f"<NamedBytesIO {self.name}>"
 
-    @property
-    def name(self) -> str:
-        return self.filename
+    def __getattr__(self, item):
+        """Forward attributes to self.path, so a NamedBytesIO is compatible with a Path object."""
+        if hasattr(self.path, item):
+            return getattr(self.path, item)
 
-    @property
-    def suffix(self) -> str:
-        return path.splitext(self.filename)[1]
+        return super().__getattribute__(item)
