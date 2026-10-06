@@ -6,7 +6,7 @@ import pytesseract
 import pytest
 from PIL import Image
 
-from pv_scraper.utils.pv_classifier import DPI, PvClassifier, ResultMatch
+from pv_scraper.utils.pv_classifier import DPI, PvClassifier, PvRegion, ResultMatch
 
 N_10_2_TITLE = "Proces-verbaal van een stembureau. Zo telt u hoeveel stemmen elke lijst heeft gekregen"
 NA_31_2_TITLE = "Het gemeentelijk stembureau telt de stemmen per kandidaat"
@@ -100,11 +100,44 @@ def test_identify_model_keeps_what_ocr_found():
         ),
         ("Nummer stembureau 602", {"stembureau": "602"}),
         ("Stembureaunummer: nr. 7", {"stembureau": "7"}),
+        ("Stembureau-nr. 210", {"stembureau": "210"}),
+        ("Stembureau Nr: 33", {"stembureau": "33"}),
+        ("1659 Laarbeek\nCentraal Stembureau", {"gemeente": "1659", "gemeente_name": "Laarbeek"}),
+        ("373 Bergen (NH)\nGemeentelijk stembureau", {"gemeente": "0373", "gemeente_name": "Bergen (NH)"}),
+        ("Stembureau 17\n\nBrummen\nStembureau 17", {"gemeente_name": "Brummen", "stembureau": "17"}),
+        ("Moerdijk\nStembureau\nNummer: 19", {"gemeente_name": "Moerdijk", "stembureau": "19"}),
+        ("Gemeente Velsen\nStembureau-nr. 19", {"gemeente_name": "Velsen", "stembureau": "19"}),
+        (
+            "Gemeente 0899 Brunssum Stembureau 13",
+            {"gemeente": "0899", "gemeente_name": "Brunssum", "stembureau": "13"},
+        ),
+        (
+            "Gemeente 0762 Deurne — Stembureau 10",
+            {"gemeente": "0762", "gemeente_name": "Deurne", "stembureau": "10"},
+        ),
+        ("Gemeente 0762 Deurne -", {"gemeente": "0762", "gemeente_name": "Deurne"}),
+        ("Deurne -\nStembureau 10", {"gemeente_name": "Deurne", "stembureau": "10"}),
+        ("Edam-Volendam\nStembureau 1", {"gemeente_name": "Edam-Volendam", "stembureau": "1"}),
+        (
+            "0796 's-Hertogenbosch\nGemeentelijk stembureau",
+            {"gemeente": "0796", "gemeente_name": "'s-Hertogenbosch"},
+        ),
+        ("’s-Gravenhage\nStembureau 3", {"gemeente_name": "’s-Gravenhage", "stembureau": "3"}),
+        (
+            "Gemeente: 888\n1659 Laarbeek\nCentraal Stembureau",
+            {"gemeente": "0888", "gemeente_name": "Laarbeek"},
+        ),
+        ("verslag van het gemeentelijk\nstembureau.", {}),
+        ("Details van het stembureau\nStembureau 32", {"stembureau": "32"}),
+        ("1659 Laarbeek", {}),
+        ("5741 AB Beek en Donk", {}),
+        ("73E9 F1DD A095\n3372 3063 B838 CF21", {}),
+        ("18 maart 2026\n2026 Verkiezing", {}),
         ("Geen regio", {}),
     ],
 )
 def test_find_region(text, expected):
-    assert PvClassifier.find_region(text) == expected
+    assert PvClassifier.find_region(text) == PvRegion(**expected)
 
 
 @pytest.mark.parametrize(
@@ -148,7 +181,7 @@ def test_classify_stops_at_the_first_identifying_pass():
     assert asked == ["crop", "full"]
     assert (result.model, result.matched_on, result.found_by) == ("N 10-2", ResultMatch.CODE_TITLE, "full")
     assert result.text == identified
-    assert result.region == {"gemeente": "0888", "stembureau": "12"}
+    assert result.region == PvRegion(gemeente_code="0888", stembureau="12")
     assert result.election == ("GR2026", "name")
 
 
@@ -161,7 +194,7 @@ def test_classify_returns_the_best_supported_pass_when_none_identifies():
     assert asked == ["crop", "full", "rotated"]
     assert (result.model, result.matched_on, result.found_by) == ("N 10-2", ResultMatch.CODE, "full")
     # Region and election are only read for an identified model.
-    assert result.region == {}
+    assert result.region == PvRegion()
     assert result.election == ("", "")
 
 

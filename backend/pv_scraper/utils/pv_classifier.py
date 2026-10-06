@@ -14,7 +14,13 @@ from typing import Self
 import pypdfium2 as pdfium
 import pytesseract
 import regex
+from django.core.files.storage import storages
 from PIL import Image
+
+from eml_import.utils.named_bytes_io import NamedBytesIO
+from mainsite.models import RegionCategory
+from pv_scraper.models import ScrapeSource
+from region.models import Region
 
 DPI = 300
 # OCR of the top 40% first is fastest overall, although OSV forms, whose titles sit lower, then need a full page.
@@ -100,8 +106,23 @@ MODEL_RE = re.compile(
 )
 TO_DIGIT = str.maketrans("IlOoz", "11002")
 
-GEMEENTE_RE = re.compile(r"(?i:gemeente)[:\s]*(\d{3,4})\b")
-STEMBUREAU_RE = re.compile(r"(?i:stembureau(?:nummer)?|nummer\s*stembureau)[:\s]*(?:nr\.?)?\s*(\d{1,4})\b")
+# A gemeente name has no digits and is short, unlike prose; OCR may curl the quote of "'s-Hertogenbosch".
+GEMEENTE_NAME = r"(?:['‘’]s[- ])?[A-Z][^\d\n]{1,40}?"
+# A dash may separate the name from what follows it: "Gemeente 0762 Deurne — Stembureau 10".
+NAME_END = r"[ \t]*(?:[-–—][ \t]*)?"
+# The name may follow the code to the end of the line or up to the stembureau: "Gemeente 0899 Brunssum Stembureau 13".
+GEMEENTE_RE = re.compile(
+    rf"(?i:gemeente)[:\s]*(\d{{3,4}})\b(?:[ \t]+({GEMEENTE_NAME})(?={NAME_END}(?:Stembureau|$)))?",
+    re.MULTILINE,
+)
+# OSV headers put the name, with or without its code, on the line above the stembureau: "1659 Laarbeek\nCentraal
+# Stembureau", "Moerdijk\nStembureau". OCR can drop the code's leading zero ("373 Bergen (NH)").
+GEMEENTE_HEADER_RE = re.compile(
+    rf"^[ \t]*(?:(\d{{3,4}})[ \t]+|Gemeente[ \t]+)?(?!(?i:.*stembureau))({GEMEENTE_NAME}){NAME_END}\n\s*"
+    r"(?:(?:Centraal|Gemeentelijk)[ \t]+[Ss]|S)tembureau\b",
+    re.MULTILINE,
+)
+STEMBUREAU_RE = re.compile(r"(?i:stembureau(?:nummer)?|nummer\s*stembureau)[-:\s]*(?i:nr\.?|nummer)?[:\s]*(\d{1,4})\b")
 KIESKRING_RE = re.compile(r"(?i:kieskring)[:\s]*(\d{1,2})\b")
 
 # The election is named with its year a few words later: "de leden van de gemeenteraad van Brummen op 18 maart
@@ -136,6 +157,19 @@ class ResultMatch(StrEnum):
     def members(cls):
         return [m for m in cls]
 
+    def is_certain(self):
+        return self in (self.CODE_TITLE, self.TITLE)
+
+
+@dataclass
+class PvRegion:
+    """Region numbers and name read from a PV; empty when not on the page."""
+
+    gemeente_code: str = ""
+    gemeente_name: str = ""
+    stembureau: str = ""
+    kieskring: str = ""
+
 
 @dataclass
 class ClassificationResult:
@@ -145,7 +179,7 @@ class ClassificationResult:
     titles: list[str] = field(default_factory=list)
     found_by: str = ""
     text: str = ""
-    region: dict[str, str] = field(default_factory=dict)
+    region: PvRegion = field(default_factory=PvRegion)
     election: tuple[str, str] = "", ""
 
 
@@ -165,11 +199,12 @@ class TitleMatch:
 
 
 class PvClassifier:
-    def __init__(self, path: Path):
-        self.path = path
+    def __init__(self, file: Path | NamedBytesIO):
+        self.file = file
+        self.result: ClassificationResult | None
 
     def render_page(self, index: int) -> Image.Image | None:
-        pdf = pdfium.PdfDocument(self.path)
+        pdf = pdfium.PdfDocument(self.file)
         try:
             if index >= len(pdf):
                 return None
@@ -181,7 +216,7 @@ class PvClassifier:
 
     @staticmethod
     def ocr(image: Image.Image) -> str:
-        return pytesseract.image_to_string(image, lang="nld", config="--psm 6")
+        return pytesseract.image_to_string(image, lang="nld", config="--psm 3")
 
     @staticmethod
     def rotate_upright(image: Image.Image) -> Image.Image | None:
@@ -243,14 +278,18 @@ class PvClassifier:
         return ClassificationResult(None, ResultMatch.UNKNOWN if codes else ResultMatch.NONE, codes, titles)
 
     @staticmethod
-    def find_region(text: str) -> dict[str, str]:
-        region = {}
-        if match := GEMEENTE_RE.search(text):
-            region["gemeente"] = match.group(1).zfill(4)
+    def find_region(text: str) -> PvRegion:
+        region = PvRegion()
+        # An explicit "Gemeente 0888" wins over the header.
+        matches = [m for m in (GEMEENTE_RE.search(text), GEMEENTE_HEADER_RE.search(text)) if m]
+        if code := next((m.group(1) for m in matches if m.group(1)), None):
+            region.gemeente_code = code.zfill(4)
+        if name := next((m.group(2) for m in matches if m.group(2)), None):
+            region.gemeente_name = name
         if match := STEMBUREAU_RE.search(text):
-            region["stembureau"] = match.group(1)
+            region.stembureau = match.group(1)
         if match := KIESKRING_RE.search(text):
-            region["kieskring"] = match.group(1)
+            region.kieskring = match.group(1)
         return region
 
     def find_election(self, text: str) -> tuple[str, str]:
@@ -262,7 +301,7 @@ class PvClassifier:
         if match := ELECTION_CODE_TEXT_RE.search(flat):
             return f"{match.group(1)}20{match.group(2)}", "pdf"
         # Bijlagen don't name the election on their first page.
-        if match := ELECTION_CODE_NAME_RE.search(self.path.stem):
+        if match := ELECTION_CODE_NAME_RE.search(self.file.stem):
             return f"{match.group(1).upper()}20{match.group(2)}", "name"
         return "", ""
 
@@ -279,7 +318,7 @@ class PvClassifier:
             yield "page2", full + "\n" + self.ocr(second)
 
     def classify(self) -> ClassificationResult | None:
-        """Run OCR passes until the model is identified; otherwise return the best-supported result of all passes."""
+        """Run OCR passes until the model is identified; otherwise return None."""
         best = None
         for found_by, text in self.ocr_passes():
             result = self.identify_model(text)
@@ -289,8 +328,47 @@ class PvClassifier:
                 best.matched_on
             ):
                 best = result
-            if result.matched_on in ("code+title", "title"):
+            if result.matched_on in (ResultMatch.CODE_TITLE, ResultMatch.TITLE):
                 result.region = self.find_region(text)
                 result.election = self.find_election(text)
                 break
-        return best
+
+        self.result = best
+        return self.result
+
+    def save_to_storage(self, source: ScrapeSource):
+        # Check if the result has enough info for the file to be saved, and limit to gemeente PVs for now
+        if (
+            self.result is None
+            or self.result.model is None
+            or not self.result.election[0]
+            or source.kind != RegionCategory.GEMEENTE
+        ):
+            return
+
+        storage = storages["default"]
+        election_id = self.result.election[0].upper()
+        model = self.result.model.replace(" ", "").upper()
+
+        # Check if the region of the source matches on either code or name
+        gemeente_code = source.code.replace("gm", "")
+        gemeente: Region = Region.objects.filter(
+            election__election_config__identifier=election_id,
+            region_number=gemeente_code,
+            region_category=RegionCategory.GEMEENTE,
+        ).first()
+
+        if (
+            self.result.region.gemeente_code != gemeente.region_number
+            and self.result.region.gemeente_name != gemeente.region_name
+        ):
+            return
+
+        # Determine the file name according to the naming convention: "[election id]_[CSB]_[model]_[region]"
+        if self.result.region.stembureau:
+            region = f"{gemeente.region_number}::SB{self.result.region.stembureau}"
+        else:
+            region = gemeente.region_name
+
+        filename = "_".join([election_id, gemeente.csb.region_name, model, region])
+        storage.save(filename, self.file)
