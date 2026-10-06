@@ -41,6 +41,7 @@ jobs:
     uses: ./.github/workflows/publish-docker-image.yml
     with:
       context: frontend
+      target: server
       image-name: uitslagenportaal-frontend
 
   backend-docker-image:
@@ -55,7 +56,23 @@ jobs:
     uses: ./.github/workflows/publish-docker-image.yml
     with:
       context: backend
+      target: runtime
       image-name: uitslagenportaal-backend
+
+  playwright-worker-docker-image:
+    name: Publish Celery Playwright Worker Image
+    needs: [backend-ci, frontend-ci, playwright, helm-ci]
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+      artifact-metadata: write
+    uses: ./.github/workflows/publish-docker-image.yml
+    with:
+      context: backend
+      target: celery-playwright-worker
+      image-name: uitslagenportaal-playwright-worker
 
   deploy-dev:
     name: Deploy to scaleway-dev

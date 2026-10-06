@@ -301,4 +301,4 @@ LOGGING = {
 
 # PV scraper-specific settings
 # Number of tasks to dispatch every run of dispatch_scrape_tasks, defaults to 1
-PV_SCRAPER_DISPATCH_MAX_TASKS = int(os.environ.get("PV_SCRAPER_DISPATCH_MAX_TASKS", 1))
+PV_SCRAPER_DISPATCH_MAX_TASKS = int(os.environ.get("PV_SCRAPER_DISPATCH_MAX_TASKS", 0))
