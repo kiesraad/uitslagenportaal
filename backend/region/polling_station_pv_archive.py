@@ -23,7 +23,7 @@ def polling_station_pv_documents(gemeente):
         region__parent=gemeente,
         region__region_category=RegionCategory.STEMBUREAU,
         file_type__in=_POLLING_STATION_PV_FILE_TYPES,
-    ).select_related("region")
+    ).select_related("region__parent", "region__election__election_config")
 
 
 def polling_station_pv_summary(gemeente, request=None):
@@ -55,13 +55,6 @@ def polling_station_pv_summary(gemeente, request=None):
     }
 
 
-def _entry_name(document) -> str:
-    number = (document.region.region_number or "").replace("::", "-").replace("/", "-")
-    name = document.region.region_name.replace("/", "-").replace("\\", "-")
-    form = str(document.file_type).removeprefix("PDF_")
-    return f"{number} {name} {form}.pdf".strip()
-
-
 class _ChunkWriter(io.RawIOBase):
     """Collects the bytes a ZipFile writes, so each member can be streamed out."""
 
@@ -90,7 +83,7 @@ def iter_polling_station_pv_zip(documents):
     with zipfile.ZipFile(writer, "w", compression=zipfile.ZIP_STORED) as archive:
         for document in ordered:
             with default_storage.open(document.storage_key, "rb") as handle:
-                archive.writestr(_entry_name(document), handle.read())
+                archive.writestr(document.download_filename, handle.read())
             chunk = writer.pop()
             if chunk:
                 yield chunk

@@ -9,7 +9,12 @@ from django.test import RequestFactory
 from django.utils import timezone
 
 from election.models import ElectionCategory
-from election.tests.factories import CertifiedElectionDocumentFactory, ElectionConfigFactory, ElectionDocumentFactory
+from election.tests.factories import (
+    CertifiedElectionDocumentFactory,
+    ElectionConfigFactory,
+    ElectionDocumentFactory,
+    ElectionFactory,
+)
 from election.utils import VISIBILITY_MONTHS
 from election.views import certified_document, certified_document_preview, download_document
 from mainsite.models import RegionCategory
@@ -83,7 +88,10 @@ def test_download_document_returns_file_for_valid_storage_key():
     assert response.status_code == 302
     assert response.url == f"{settings.MEDIA_URL}document.xml"
 
-    assert default_storage.url_parameters["document.xml"] == {"ResponseContentDisposition": "attachment"}
+    # Source files already have a readable storage key, so the name is taken from it as-is.
+    assert default_storage.url_parameters["document.xml"] == {
+        "ResponseContentDisposition": 'attachment; filename="document.xml"'
+    }
 
 
 @pytest.mark.django_db
@@ -97,7 +105,10 @@ def test_certified_document_redirects_to_the_pdf():
     default_storage.save("TK2025/TK2025_NA31-2_Barneveld.pdf", ContentFile(b"%PDF-1.4"))
     document = CertifiedElectionDocumentFactory(
         storage_key="TK2025/TK2025_NA31-2_Barneveld.pdf",
-        region=RegionFactory(),
+        region=RegionFactory(
+            election=ElectionFactory(election_config__identifier="TK2025"),
+            region_name="Barneveld",
+        ),
     )
 
     response = certified_document(RequestFactory().get("/"), document.pk)
@@ -105,7 +116,8 @@ def test_certified_document_redirects_to_the_pdf():
     assert response.status_code == 302
     assert response.url == f"{settings.MEDIA_URL}TK2025/TK2025_NA31-2_Barneveld.pdf"
     assert default_storage.url_parameters["TK2025/TK2025_NA31-2_Barneveld.pdf"] == {
-        "ResponseContentType": "application/pdf"
+        "ResponseContentType": "application/pdf",
+        "ResponseContentDisposition": 'inline; filename="TK2025 Barneveld NA31-2.pdf"',
     }
 
 

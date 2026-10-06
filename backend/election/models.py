@@ -1,5 +1,7 @@
+import re
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Self
 from zoneinfo import ZoneInfo
 
@@ -307,6 +309,17 @@ class ElectionDocument(BaseModel):
 
     objects = CurrentManager()
     all_objects = models.Manager()
+
+    @property
+    def download_filename(self) -> str:
+        """Storage keys carry the raw EML region id (0638::SB001); browsers get a readable name."""
+        if self.file_type not in self.CERTIFIED_FILE_TYPES or self.region is None:
+            return Path(self.storage_key).name
+        parts = [self.region.election.election_config.identifier]
+        if self.region.region_category == RegionCategory.STEMBUREAU and self.region.parent:
+            parts += [self.region.parent.region_name, (self.region.region_number or "").split("::")[-1]]
+        parts += [self.region.region_name, str(self.file_type).removeprefix("PDF_")]
+        return re.sub(r"[^\w .-]", "-", " ".join(filter(None, parts))) + ".pdf"
 
     class Meta:
         base_manager_name = "all_objects"

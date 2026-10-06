@@ -85,7 +85,7 @@ def test_municipality_detail_has_no_archive_until_a_polling_station_report_is_in
 
 @pytest.mark.django_db
 def test_archive_download_stores_each_form_uncompressed():
-    election = ElectionFactory()
+    election = ElectionFactory(election_config__identifier="TK2025")
     municipality = RegionFactory(
         election=election,
         region_category=RegionCategory.GEMEENTE,
@@ -101,9 +101,9 @@ def test_archive_download_stores_each_form_uncompressed():
     assert response.status_code == 200
     assert response["Content-Disposition"] == 'attachment; filename="processen-verbaal-lisserdam.zip"'
     with zipfile.ZipFile(BytesIO(b"".join(response.streaming_content))) as archive:
-        assert archive.read("0203-SB1 Gemeentehuis N10-1.pdf") == b"%PDF-n10"
-        assert archive.read("0203-SB1 Gemeentehuis NA14-1.pdf") == b"%PDF-na14"
-        assert archive.getinfo("0203-SB1 Gemeentehuis N10-1.pdf").compress_type == zipfile.ZIP_STORED
+        assert archive.read("TK2025 Lisserdam SB1 Gemeentehuis N10-1.pdf") == b"%PDF-n10"
+        assert archive.read("TK2025 Lisserdam SB1 Gemeentehuis NA14-1.pdf") == b"%PDF-na14"
+        assert archive.getinfo("TK2025 Lisserdam SB1 Gemeentehuis N10-1.pdf").compress_type == zipfile.ZIP_STORED
 
 
 @pytest.mark.django_db
@@ -144,8 +144,8 @@ def test_archive_download_is_not_found_for_an_expired_election():
 
 @pytest.mark.django_db
 def test_archive_download_lists_polling_station_forms_in_station_then_form_order():
-    election = ElectionFactory()
-    municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE)
+    election = ElectionFactory(election_config__identifier="TK2025")
+    municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Lisserdam")
     other = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE)
     later = _station(municipality, "0203::SB2", "School")
     earlier = _station(municipality, "0203::SB1", "Gemeentehuis")
@@ -157,7 +157,7 @@ def test_archive_download_lists_polling_station_forms_in_station_then_form_order
     _pdf(_station(other, "0203::SB1", "Kerk"), ElectionDocument.FileType.PDF_N10_1, b"%PDF-other", 3)
 
     assert _member_names(_download(municipality)) == [
-        "0203-SB1 Gemeentehuis N10-1.pdf",
-        "0203-SB1 Gemeentehuis N10-2.pdf",
-        "0203-SB2 School NA14-1.pdf",
+        "TK2025 Lisserdam SB1 Gemeentehuis N10-1.pdf",
+        "TK2025 Lisserdam SB1 Gemeentehuis N10-2.pdf",
+        "TK2025 Lisserdam SB2 School NA14-1.pdf",
     ]
