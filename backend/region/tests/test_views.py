@@ -170,7 +170,7 @@ def test_region_detail_links_the_certified_document_when_one_is_imported():
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    ("category", "level", "original_type", "corrigendum_type"),
+    ("category", "level", "original_type", "correction_type"),
     [
         (
             RegionCategory.STEMBUREAU,
@@ -186,38 +186,72 @@ def test_region_detail_links_the_certified_document_when_one_is_imported():
         ),
     ],
 )
-def test_region_detail_lists_each_proces_verbaal_and_previews_the_corrigendum(
-    category, level, original_type, corrigendum_type
+def test_region_detail_lists_each_proces_verbaal_and_previews_the_correction(
+    category, level, original_type, correction_type
 ):
     region = RegionFactory(region_category=category)
-    # The original is newer than the corrigendum.
-    corrigendum = CertifiedElectionDocumentFactory(
+    # The original is newer than the correction.
+    correction = CertifiedElectionDocumentFactory(
         region=region,
-        storage_key=f"TK2025/{corrigendum_type}.pdf",
-        file_type=corrigendum_type,
+        storage_key=f"TK2025/{correction_type}.pdf",
+        file_type=correction_type,
     )
     original = CertifiedElectionDocumentFactory(
         region=region,
         storage_key=f"TK2025/{original_type}.pdf",
         file_type=original_type,
     )
-    for file_type in (corrigendum_type, original_type):
+    for file_type in (correction_type, original_type):
         default_storage.save(f"TK2025/{file_type}.pdf", ContentFile(b"%PDF"))
         default_storage.save(f"TK2025/{file_type}.png", ContentFile(b"\x89PNG"))
 
     data = region_detail(region, level)
 
-    assert {item["file_type"] for item in data["documents"]} == {original_type, corrigendum_type}
+    assert {item["file_type"] for item in data["documents"]} == {original_type, correction_type}
     assert {item["url"] for item in data["documents"]} == {
         f"/api/documents/{original.pk}/download/",
-        f"/api/documents/{corrigendum.pk}/download/",
+        f"/api/documents/{correction.pk}/download/",
     }
-    assert data["certified_document_url"] == f"/api/certified-documents/{corrigendum.pk}/"
-    assert data["certified_document_preview_url"] == f"/api/certified-documents/{corrigendum.pk}/preview/"
+    assert data["certified_document_url"] == f"/api/certified-documents/{correction.pk}/"
+    assert data["certified_document_preview_url"] == f"/api/certified-documents/{correction.pk}/preview/"
 
 
 @pytest.mark.django_db
-def test_region_detail_previews_the_newer_proces_verbaal_when_there_is_no_corrigendum():
+def test_region_detail_lists_every_correction_and_previews_the_last_one():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/pv.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA31_2,
+    )
+    first = CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/correction.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA14_2,
+    )
+    last = CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/correction-again.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA14_2,
+    )
+    for key in ("TK2025/pv", "TK2025/correction", "TK2025/correction-again"):
+        default_storage.save(f"{key}.pdf", ContentFile(b"%PDF"))
+        default_storage.save(f"{key}.png", ContentFile(b"\x89PNG"))
+
+    data = region_detail(region, "gsb")
+
+    corrections = [item for item in data["documents"] if item["file_type"] == ElectionDocument.FileType.PDF_NA14_2]
+    assert [item["url"] for item in corrections] == [
+        f"/api/documents/{first.pk}/download/",
+        f"/api/documents/{last.pk}/download/",
+    ]
+    assert [item["correction_number"] for item in corrections] == [1, 2]
+    assert data["certified_document_url"] == f"/api/certified-documents/{last.pk}/"
+    assert data["certified_document_preview_url"] == f"/api/certified-documents/{last.pk}/preview/"
+
+
+@pytest.mark.django_db
+def test_region_detail_previews_the_newer_proces_verbaal_when_there_is_no_correction():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)
     CertifiedElectionDocumentFactory(
         region=region,

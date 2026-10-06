@@ -12,7 +12,7 @@ from pyeml_bindings import Eml230
 from election.models import Contest, Election, ElectionConfig
 from election.tests.factories import ElectionConfigFactory
 from eml_import.exceptions import GithubImportException
-from eml_import.models import BranchType, ImportedCommit, ImportedEmlHash
+from eml_import.models import BranchType, ImportedCommit, ImportedFileHash
 from eml_import.tests.factories import ImportedCommitFactory
 from eml_import.tests.fakes import FakeCommit, FakeFile, FakeGithub, FakeRepo
 from eml_import.tests.test_eml_110_importer import CONFIG_IDENTIFIER
@@ -367,7 +367,7 @@ def test_idempotency_within_one_commit_when_failing_halfway(monkeypatch):
     with pytest.raises(RuntimeError, match="hard failure mid-commit"):
         handler.import_file_objects(files)
 
-    assert ImportedEmlHash.objects.get().sha256 == hashlib.sha256(file_110a.getvalue()).hexdigest()
+    assert ImportedFileHash.objects.get().sha256 == hashlib.sha256(file_110a.getvalue()).hexdigest()
     region_ids = list(Region.objects.values_list("pk", flat=True))
     assert region_ids
     assert not Candidate.objects.exists()
@@ -376,7 +376,7 @@ def test_idempotency_within_one_commit_when_failing_halfway(monkeypatch):
 
     # First file was skipped by hash: no correction archive of the regions it already wrote
     assert list(Region.objects.values_list("pk", flat=True)) == region_ids
-    assert ImportedEmlHash.objects.count() == 2
+    assert ImportedFileHash.objects.count() == 2
     assert Contest.objects.filter(election=Election.objects.get()).count() == 1
     assert Candidate.objects.count() == 2
 

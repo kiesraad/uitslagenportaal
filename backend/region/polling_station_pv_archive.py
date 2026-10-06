@@ -9,7 +9,7 @@ from django.urls import reverse
 from election.models import ElectionDocument
 from mainsite.models import RegionCategory
 
-# The original polling-station form and its corrigendum both belong in the zip.
+# The original polling-station form and every correction on it belong in the zip.
 _POLLING_STATION_PV_FILE_TYPES = (
     ElectionDocument.FileType.PDF_N10_1,
     ElectionDocument.FileType.PDF_N10_2,
@@ -32,7 +32,7 @@ def polling_station_pv_summary(gemeente, request=None):
         return None
 
     documents = polling_station_pv_documents(gemeente)
-    # A corrigendum on the same polling station does not raise the count.
+    # Corrections on the same polling station do not raise the count.
     present_count = documents.values("region_id").distinct().count()
     if present_count == 0:
         return None
@@ -77,7 +77,11 @@ def iter_polling_station_pv_zip(documents):
     """PDFs are stored uncompressed; they are already compressed."""
     ordered = sorted(
         documents,
-        key=lambda document: (document.region.region_number or "", _FORM_ORDER[document.file_type]),
+        key=lambda document: (
+            document.region.region_number or "",
+            _FORM_ORDER[document.file_type],
+            document.created_at,
+        ),
     )
     writer = _ChunkWriter()
     with zipfile.ZipFile(writer, "w", compression=zipfile.ZIP_STORED) as archive:

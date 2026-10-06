@@ -1,3 +1,4 @@
+import hashlib
 import logging
 from pathlib import Path
 
@@ -6,6 +7,7 @@ from django.core.files.storage import FileSystemStorage, default_storage
 
 from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
+from eml_import.models import ImportedFileHash
 from eml_import.tests.pdf_files import PDF_BYTES, barneveld, one_page_pdf, write_pdf
 from eml_import.utils.pdf_file_handler import PDFFileHandler
 from mainsite.models import RegionCategory
@@ -30,14 +32,55 @@ def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
 
 
 @pytest.mark.django_db
-def test_skips_a_filename_that_was_already_imported(tmp_path):
-    barneveld()
+def test_records_the_hash_and_skips_bytes_that_were_already_imported(tmp_path):
+    region = barneveld()
     write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
     handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
 
     assert handler.run() == 1
+    recorded = ImportedFileHash.objects.get()
+    assert recorded.election == region.election
+    assert recorded.sha256 == hashlib.sha256(PDF_BYTES).hexdigest()
+
     assert handler.run() == 0
     assert ElectionDocument.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_a_rescanned_proces_verbaal_supersedes_the_one_it_replaces(tmp_path):
+    region = barneveld()
+    storage = FileSystemStorage(location=tmp_path)
+    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf", one_page_pdf(b"first scan"))
+    PDFFileHandler(storage).run()
+    superseded = ElectionDocument.objects.get()
+
+    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf", one_page_pdf(b"second scan"))
+    assert PDFFileHandler(storage).run() == 1
+
+    current = ElectionDocument.objects.get(region=region)
+    assert current.pk != superseded.pk
+    assert default_storage.open(current.storage_key).read() == one_page_pdf(b"second scan")
+    superseded.refresh_from_db()
+    assert superseded.is_current is False
+
+
+@pytest.mark.django_db
+def test_every_correction_on_one_form_stays_current(tmp_path):
+    region = barneveld()
+    storage = FileSystemStorage(location=tmp_path)
+    write_pdf(tmp_path, "TK2025_Nederland_NA14-2_Barneveld.pdf", one_page_pdf(b"first correction"))
+    PDFFileHandler(storage).run()
+
+    write_pdf(tmp_path, "TK2025_Nederland_NA14-2_Barneveld.pdf", one_page_pdf(b"second correction"))
+    assert PDFFileHandler(storage).run() == 1
+
+    corrections = ElectionDocument.objects.filter(region=region).order_by("created_at", "pk")
+    assert [default_storage.open(document.storage_key).read() for document in corrections] == [
+        one_page_pdf(b"first correction"),
+        one_page_pdf(b"second correction"),
+    ]
+    # Shared region and file type, so the download names have to part on their timestamp
+    assert len({document.download_filename for document in corrections}) == 2
 
 
 @pytest.mark.django_db
@@ -182,8 +225,8 @@ def test_csb_name_picks_the_region_when_it_also_serves_another_board(tmp_path):
     config = ElectionConfigFactory(identifier="AB2023", category=ElectionCategory.WS.value)
     _, rijnland_station = _board_with_shared_station(config, "Rijnland", "13")
     amstel_municipality, _ = _board_with_shared_station(config, "Amstel, Gooi en Vecht", "14")
-    write_pdf(tmp_path, "AB2023_Rijnland_N10-1_0394::SB1.pdf")
-    write_pdf(tmp_path, "AB2023_Amstel, Gooi en Vecht_NA31-2_Haarlemmermeer.pdf")
+    write_pdf(tmp_path, "AB2023_Rijnland_N10-1_0394::SB1.pdf", one_page_pdf(b"rijnland"))
+    write_pdf(tmp_path, "AB2023_Amstel, Gooi en Vecht_NA31-2_Haarlemmermeer.pdf", one_page_pdf(b"amstel"))
 
     PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
 

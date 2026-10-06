@@ -125,7 +125,12 @@ class RegionDetailView(RetrieveAPIView):
                 ),
                 # ElectionDocument uses CurrentManager; explicit Prefetch ensures prefetched
                 # rows match obj.documents.all(), not all_objects.
-                Prefetch("documents", queryset=ElectionDocument.objects.filter(file_type__in=document_file_type)),
+                Prefetch(
+                    "documents",
+                    queryset=ElectionDocument.objects.filter(file_type__in=document_file_type).order_by(
+                        "file_type", "created_at", "pk"
+                    ),
+                ),
                 "election__election_config__timeline_entries",
             )
             .filter(

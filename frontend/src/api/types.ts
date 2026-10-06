@@ -37,6 +37,7 @@ export type ElectionDocument = {
    size: string;
    description: string;
    file_type: string;
+   correction_number: number;
 };
 
 export type PollingStationPvArchive = {

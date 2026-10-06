@@ -57,7 +57,7 @@ def _member_names(response):
 
 
 @pytest.mark.django_db
-def test_municipality_detail_counts_a_polling_station_once_when_it_also_has_a_corrigendum():
+def test_municipality_detail_counts_a_polling_station_once_when_it_also_has_a_correction():
     election = ElectionFactory()
     municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Lisserdam")
     first = _station(municipality, "0203::SB1", "Gemeentehuis")
@@ -104,6 +104,29 @@ def test_archive_download_stores_each_form_uncompressed():
         assert archive.read("TK2025 Lisserdam SB1 Gemeentehuis N10-1.pdf") == b"%PDF-n10"
         assert archive.read("TK2025 Lisserdam SB1 Gemeentehuis NA14-1.pdf") == b"%PDF-na14"
         assert archive.getinfo("TK2025 Lisserdam SB1 Gemeentehuis N10-1.pdf").compress_type == zipfile.ZIP_STORED
+
+
+@pytest.mark.django_db
+def test_archive_download_numbers_a_second_correction_on_the_same_form():
+    election = ElectionFactory(election_config__identifier="TK2025")
+    municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Lisserdam")
+    station = _station(municipality, "0203::SB1", "Gemeentehuis")
+    _pdf(station, ElectionDocument.FileType.PDF_N10_1, b"%PDF-n10", 8)
+    first = _pdf(station, ElectionDocument.FileType.PDF_NA14_1, b"%PDF-na14", 9)
+    second = CertifiedElectionDocumentFactory(
+        region=station,
+        file_type=ElectionDocument.FileType.PDF_NA14_1,
+        size=9,
+        storage_key=f"TK2025/{station.pk}-na14-again.pdf",
+    )
+    default_storage.save(second.storage_key, ContentFile(b"%PDF-na14-again"))
+
+    assert first.is_current and second.is_current
+    assert _member_names(_download(municipality)) == [
+        "TK2025 Lisserdam SB1 Gemeentehuis N10-1.pdf",
+        "TK2025 Lisserdam SB1 Gemeentehuis NA14-1.pdf",
+        "TK2025 Lisserdam SB1 Gemeentehuis NA14-1 2.pdf",
+    ]
 
 
 @pytest.mark.django_db

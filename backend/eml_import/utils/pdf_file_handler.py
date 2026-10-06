@@ -10,7 +10,8 @@ from django.db import IntegrityError, transaction
 from django.db.models import Q
 
 from election.models import ElectionCategory, ElectionConfig, ElectionDocument
-from eml_import.exceptions import PDFImporterException
+from eml_import.exceptions import FileAlreadyImported, PDFImporterException
+from eml_import.models import ImportedFileHash
 from mainsite.models import RegionCategory
 from region.models import Region
 
@@ -68,15 +69,17 @@ class PDFFileHandler:
 
     def _import_pv(self, file: _StoragePdf) -> bool:
         election_id, csb_name, file_type, region_token = self._parse_filename(file)
-        # A later upload of the same name is left unnoticed.
-        if ElectionDocument.objects.filter(storage_key=f"{election_id}/{file.name}").exists():
-            return False
-
         config = self._election_config(election_id)
         region = self._region(config, file_type, csb_name, region_token)
         with file.open("rb") as handle:
             content = BytesIO(handle.read())
-        self._store(content, file.name, config.identifier, region, file_type)
+
+        try:
+            with ImportedFileHash.if_not_imported(content, region.election):
+                self._store(content, file.name, config.identifier, region, file_type)
+        except FileAlreadyImported:
+            logger.info("Skipping duplicate proces-verbaal %s", file.name)
+            return False
 
         logger.info("Imported %s onto %s %s", file.name, region.region_category, region.region_name)
         return True
@@ -153,6 +156,9 @@ class PDFFileHandler:
         preview = self._preview_png(content)
         storage_key = f"{election_id}/{filename}"
         size = content.getbuffer().nbytes
+
+        if file_type not in ElectionDocument.CORRECTION_FILE_TYPES:
+            ElectionDocument.objects.filter(region=region, file_type=file_type).archive()
 
         content.seek(0)
         stored_key = default_storage.save(storage_key, File(content))

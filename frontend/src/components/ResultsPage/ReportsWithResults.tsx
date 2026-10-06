@@ -148,14 +148,17 @@ export default function ReportsWithResults({
          <div className={"results-reports-files"}>
             {files.map((file) => {
                const mapping = FILE_TYPE_MAPPINGS[file.file_type];
+               // Corrections stack on one form, so each past the first names its place in the stack.
+               const name = mapping ? t(mapping.name) : file.name;
+               const title = file.correction_number > 1 ? `${name} ${file.correction_number}` : name;
 
                return (
-                  <div key={file.file_type} className={"results-reports-item"}>
+                  <div key={file.url} className={"results-reports-item"}>
                      <div className={"results-reports-icon"}>{file.icon}</div>
                      <div className={"results-reports-content"}>
                         <a href={file.url} className={"results-reports-content-title"} download>
-                           <span className="font-semibold">{mapping ? t(mapping.name) : file.name}</span> (
-                           {mapping?.fileType ?? file.type}, {formatSize(file.size)})
+                           <span className="font-semibold">{title}</span> ({mapping?.fileType ?? file.type},{" "}
+                           {formatSize(file.size)})
                         </a>
                         <span className="results-reports-description-text">
                            {mapping ? t(mapping.description) : file.description}

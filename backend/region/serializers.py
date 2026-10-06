@@ -72,7 +72,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             region=region,
             file_type__in=ElectionDocument.CERTIFIED_FILE_TYPES,
         ).order_by("-created_at", "-pk")
-        return documents.filter(file_type__in=ElectionDocument.CORRIGENDUM_FILE_TYPES).first() or documents.first()
+        return documents.filter(file_type__in=ElectionDocument.CORRECTION_FILE_TYPES).first() or documents.first()
 
     def get_certified_document_url(self, region) -> str | None:
         document = self._certified_document(region)
