@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from mainsite.celery import app
 from pv_scraper.models import ScrapeSource, ScrapeStatus
+from pv_scraper.utils.pv_classifier import PvClassifier
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,11 @@ def run_scrape_for_source(source_id: int):
 
     try:
         with SiteCrawler(source.cookie_banner_label) as crawler:
-            SiteScraper(source, crawler).run()
+            for file in SiteScraper(source, crawler).run():
+                classifier = PvClassifier(file.content)
+                classification = classifier.classify()
+                if classification and classification.matched_on.is_certain():
+                    classifier.save_to_storage(file.scraped_file.source)
     except Exception:
         # A failure outside the scrape itself, such as the browser not starting, still ends the run.
         if source.last_run_status == ScrapeStatus.RUNNING:

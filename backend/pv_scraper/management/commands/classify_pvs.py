@@ -70,7 +70,7 @@ class Command(BaseCommand):
         # Rows are printed as each file is done, so the columns have fixed widths and the file name goes last.
         # "model" is the verdict; "code" and "title" show what OCR found on the page.
         # "election" comes from the PDF, or from the file name when "from" says so.
-        row = "{:<18} {:<10} {:<8} {:<17} {:<8} {:<4} {:<8} {:<10} {:<9} {:<7} {:>6}  {}"
+        row = "{:<18} {:<10} {:<8} {:<17} {:<8} {:<4} {:<8} {:<22} {:<10} {:<9} {:<7} {:>6}  {}"
         header = row.format(
             "model",
             "basis",
@@ -79,6 +79,7 @@ class Command(BaseCommand):
             "election",
             "from",
             "gemeente",
+            "gemeente_name",
             "stembureau",
             "kieskring",
             "pass",
@@ -111,6 +112,7 @@ class Command(BaseCommand):
                             "",
                             "",
                             "",
+                            "",
                             f"{seconds:.1f}s",
                             f"{display_path(path)}  {error}",
                         )
@@ -130,9 +132,10 @@ class Command(BaseCommand):
                         "/".join(result.titles),
                         election or "-",
                         election_from,
-                        result.region.get("gemeente", ""),
-                        result.region.get("stembureau", ""),
-                        result.region.get("kieskring", ""),
+                        result.region.gemeente_code,
+                        result.region.gemeente_name,
+                        result.region.stembureau,
+                        result.region.kieskring,
                         result.found_by,
                         f"{seconds:.1f}s",
                         display_path(path),
