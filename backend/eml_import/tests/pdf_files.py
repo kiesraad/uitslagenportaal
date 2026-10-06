@@ -29,11 +29,20 @@ def write_pdf(folder: Path, name: str, content: bytes = PDF_BYTES) -> Path:
 
 
 def barneveld() -> Region:
-    """Gemeente Barneveld for TK2025, the region the sample filenames name."""
+    """Gemeente Barneveld for TK2025. Sample filenames name its CSB, Nederland."""
     config = ElectionConfigFactory(identifier="TK2025", category=ElectionCategory.TK.value)
     election = ElectionFactory(election_config=config, subcategory="TK")
+    # The STAAT region of a TK election definition carries a name but no number.
+    staat = RegionFactory(
+        election=election,
+        region_category=RegionCategory.STAAT,
+        region_name="Nederland",
+        region_number=None,
+    )
     return RegionFactory(
         election=election,
+        parent=staat,
+        csb=staat,
         region_category=RegionCategory.GEMEENTE,
         region_name="Barneveld",
         region_number="203",

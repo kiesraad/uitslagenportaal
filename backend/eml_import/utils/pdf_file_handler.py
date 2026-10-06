@@ -7,6 +7,7 @@ from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage, default_storage
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 
 from election.models import ElectionCategory, ElectionConfig, ElectionDocument
 from eml_import.exceptions import PDFImporterException
@@ -66,13 +67,13 @@ class PDFFileHandler:
             yield from self._pdf_names(f"{directory}/{name}" if directory else name)
 
     def _import_pv(self, file: _StoragePdf) -> bool:
-        election_id, file_type, region_token = self._parse_filename(file)
+        election_id, csb_name, file_type, region_token = self._parse_filename(file)
         # A later upload of the same name is left unnoticed.
         if ElectionDocument.objects.filter(storage_key=f"{election_id}/{file.name}").exists():
             return False
 
         config = self._election_config(election_id)
-        region = self._region(config, file_type, region_token)
+        region = self._region(config, file_type, csb_name, region_token)
         with file.open("rb") as handle:
             content = BytesIO(handle.read())
         self._store(content, file.name, config.identifier, region, file_type)
@@ -80,15 +81,15 @@ class PDFFileHandler:
         logger.info("Imported %s onto %s %s", file.name, region.region_category, region.region_name)
         return True
 
-    def _parse_filename(self, file: _StoragePdf) -> tuple[str, str, str]:
-        parts = file.stem.split("_", 2)
-        if len(parts) != 3 or not all(parts):
-            raise PDFImporterException(f"{file.name} does not match {{election}}_{{file_type}}_{{region}}.pdf")
-        election_id, form_code, region_token = parts
+    def _parse_filename(self, file: _StoragePdf) -> tuple[str, str, str, str]:
+        parts = file.stem.split("_", 3)
+        if len(parts) != 4 or not all(parts):
+            raise PDFImporterException(f"{file.name} does not match {{election}}_{{csb}}_{{file_type}}_{{region}}.pdf")
+        election_id, csb_name, form_code, region_token = parts
         file_type = ElectionDocument.FileType.from_form_code(form_code)
         if file_type is None:
             raise PDFImporterException(f"Unknown certified election document type {form_code} in {file.name}")
-        return election_id, file_type, region_token
+        return election_id, csb_name, file_type, region_token
 
     def _election_config(self, election_id: str) -> ElectionConfig:
         try:
@@ -101,23 +102,33 @@ class PDFFileHandler:
             return ElectionCategory(config.category).config.csb
         return _REGION_CATEGORY_BY_FILE_TYPE[file_type]
 
-    def _region(self, config: ElectionConfig, file_type: str, region_token: str) -> Region:
+    def _region(self, config: ElectionConfig, file_type: str, csb_name: str, region_token: str) -> Region:
         category = self._region_category(config, file_type)
         # A stembureau number repeats in every gemeente; the stored id carries the gemeente (0203::SB1).
         lookup = (
             {"region_number": region_token} if category == RegionCategory.STEMBUREAU else {"region_name": region_token}
         )
+        csb_category = ElectionCategory(config.category).config.csb
+        belongs_to_csb = Q(csb__region_name=csb_name) | Q(
+            csb__isnull=True,
+            region_name=csb_name,
+            region_category=csb_category,
+        )
         try:
             return Region.objects.get(
+                belongs_to_csb,
                 election__election_config=config,
                 region_category=category,
                 **lookup,
             )
         except Region.DoesNotExist:
-            raise PDFImporterException(f"No {category} {region_token!r} for election {config.identifier}") from None
+            raise PDFImporterException(
+                f"No {category} {region_token!r} under CSB {csb_name!r} for election {config.identifier}"
+            ) from None
         except Region.MultipleObjectsReturned:
             raise PDFImporterException(
-                f"Several {category} regions match {region_token!r} for election {config.identifier}"
+                f"Several {category} regions match {region_token!r} under CSB {csb_name!r} "
+                f"for election {config.identifier}"
             ) from None
 
     def _preview_png(self, content: BytesIO) -> bytes:

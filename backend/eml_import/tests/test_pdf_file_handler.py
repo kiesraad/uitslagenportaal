@@ -15,7 +15,7 @@ from region.tests.factories import RegionFactory
 @pytest.mark.django_db
 def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
     region = barneveld()
-    write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf")
+    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
 
     PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
 
@@ -32,7 +32,7 @@ def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
 @pytest.mark.django_db
 def test_skips_a_filename_that_was_already_imported(tmp_path):
     barneveld()
-    write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf")
+    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
     handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
 
     assert handler.run() == 1
@@ -46,11 +46,12 @@ def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path)
     station = RegionFactory(
         election=gemeente.election,
         parent=gemeente,
+        csb=gemeente.csb,
         region_category=RegionCategory.STEMBUREAU,
         region_name="Gemeentehuis",
         region_number="0203::SB1",
     )
-    write_pdf(tmp_path, "TK2025_N10-1_0203::SB1.pdf")
+    write_pdf(tmp_path, "TK2025_Nederland_N10-1_0203::SB1.pdf")
 
     PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
 
@@ -63,8 +64,16 @@ def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path)
 def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies(tmp_path):
     config = ElectionConfigFactory(identifier="GEN", category=ElectionCategory.TK.value)
     election = ElectionFactory(election_config=config, subcategory="TK")
+    staat = RegionFactory(
+        election=election,
+        region_category=RegionCategory.STAAT,
+        region_name="Nederland",
+        region_number=None,
+    )
     kieskring = RegionFactory(
         election=election,
+        parent=staat,
+        csb=staat,
         region_category=RegionCategory.KIESKRING,
         region_name="North",
         region_number="1",
@@ -72,6 +81,7 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies(tmp_path):
     gemeente = RegionFactory(
         election=election,
         parent=kieskring,
+        csb=staat,
         region_category=RegionCategory.GEMEENTE,
         region_name="Alpha",
         region_number="0001",
@@ -79,18 +89,19 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies(tmp_path):
     station = RegionFactory(
         election=election,
         parent=gemeente,
+        csb=staat,
         region_category=RegionCategory.STEMBUREAU,
         region_name="Desk",
         region_number="0001::SB1",
     )
     for name in (
-        "GEN_N10-1_0001::SB1.pdf",
-        "GEN_N10-2_0001::SB1.pdf",
-        "GEN_NA14-1_0001::SB1.pdf",
-        "GEN_NA31-1_Alpha.pdf",
-        "GEN_NA31-2_Alpha.pdf",
-        "GEN_NA14-2_Alpha.pdf",
-        "GEN_O7_North.pdf",
+        "GEN_Nederland_N10-1_0001::SB1.pdf",
+        "GEN_Nederland_N10-2_0001::SB1.pdf",
+        "GEN_Nederland_NA14-1_0001::SB1.pdf",
+        "GEN_Nederland_NA31-1_Alpha.pdf",
+        "GEN_Nederland_NA31-2_Alpha.pdf",
+        "GEN_Nederland_NA14-2_Alpha.pdf",
+        "GEN_Nederland_O7_North.pdf",
     ):
         write_pdf(tmp_path, name, one_page_pdf(name.encode()))
 
@@ -128,7 +139,7 @@ def test_imports_p22_onto_the_csb_of_that_election(tmp_path):
             region_name=region_name,
             region_number="1",
         )
-        filename = f"{category.value}_{document_type.removeprefix('PDF_')}_{region_name}.pdf"
+        filename = f"{category.value}_{region_name}_{document_type.removeprefix('PDF_')}_{region_name}.pdf"
         write_pdf(tmp_path, filename, one_page_pdf(filename.encode()))
         expected.add((csb.id, document_type))
 
@@ -138,15 +149,59 @@ def test_imports_p22_onto_the_csb_of_that_election(tmp_path):
     assert attached == expected
 
 
+def _board_with_shared_station(config, board_name, board_number):
+    """The same Haarlemmermeer polling station as it is stored under one of its two waterschappen."""
+    election = ElectionFactory(election_config=config, name=board_name, subcategory="AB2")
+    board = RegionFactory(
+        election=election,
+        region_category=RegionCategory.WATERSCHAP,
+        region_name=board_name,
+        region_number=board_number,
+    )
+    municipality = RegionFactory(
+        election=election,
+        parent=board,
+        csb=board,
+        region_category=RegionCategory.GEMEENTE,
+        region_name="Haarlemmermeer",
+        region_number="394",
+    )
+    station = RegionFactory(
+        election=election,
+        parent=municipality,
+        csb=board,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name="Don Bosco",
+        region_number="0394::SB1",
+    )
+    return municipality, station
+
+
+@pytest.mark.django_db
+def test_csb_name_picks_the_region_when_it_also_serves_another_board(tmp_path):
+    config = ElectionConfigFactory(identifier="AB2023", category=ElectionCategory.WS.value)
+    _, rijnland_station = _board_with_shared_station(config, "Rijnland", "13")
+    amstel_municipality, _ = _board_with_shared_station(config, "Amstel, Gooi en Vecht", "14")
+    write_pdf(tmp_path, "AB2023_Rijnland_N10-1_0394::SB1.pdf")
+    write_pdf(tmp_path, "AB2023_Amstel, Gooi en Vecht_NA31-2_Haarlemmermeer.pdf")
+
+    PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
+
+    file_type = ElectionDocument.FileType
+    attached = {document.file_type: document.region for document in ElectionDocument.objects.all()}
+    assert attached[file_type.PDF_N10_1] == rijnland_station
+    assert attached[file_type.PDF_NA31_2] == amstel_municipality
+
+
 @pytest.mark.django_db
 def test_logs_a_bad_filename_and_imports_the_rest(tmp_path, caplog):
     barneveld()
-    write_pdf(tmp_path, "NA31-2_Barneveld.pdf")
     write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf")
+    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
 
     with caplog.at_level(logging.ERROR):
         imported = PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
 
     assert imported == 1
     assert ElectionDocument.objects.count() == 1
-    assert "NA31-2_Barneveld.pdf" in caplog.text
+    assert "TK2025_NA31-2_Barneveld.pdf" in caplog.text

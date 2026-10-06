@@ -151,7 +151,9 @@ To read the local folder instead of the bucket, put this in `backend/.env`, or i
 PV_IMPORT_SOURCE=folder
 ```
 
-File names stay `{election}_{form}_{region}.pdf`. Subfolders are included.
+File names are `{election}_{csb}_{form}_{region}.pdf`, e.g. `AB2023_Delfland_N10-1_0518::SB5.pdf`. `csb` names
+the centraal stembureau, which in a waterschapsverkiezing is the only thing separating a polling station that
+serves two waterschappen. Subfolders are included.
 
 ```bash
 docker compose run --rm backend-scripts python manage.py import_pvs
