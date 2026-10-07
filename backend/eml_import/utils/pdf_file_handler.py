@@ -14,6 +14,7 @@ from eml_import.exceptions import FileAlreadyImported, PDFImporterException
 from eml_import.models import ImportedFileHash
 from mainsite.models import RegionCategory
 from region.models import Region
+from region.polling_station_pv_archive import POLLING_STATION_PV_FILE_TYPES
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +48,11 @@ class PDFFileHandler:
     def __init__(self, storage: Storage):
         super().__init__()
         self.storage = storage
+        self.archive_gemeente_ids: set[int] = set()
 
     def run(self) -> int:
         imported = 0
+        self.archive_gemeente_ids = set()
         for name in sorted(self._pdf_names("")):
             try:
                 if self._import_pv(_StoragePdf(self.storage, name)):
@@ -80,6 +83,9 @@ class PDFFileHandler:
         except FileAlreadyImported:
             logger.info("Skipping duplicate proces-verbaal %s", file.name)
             return False
+
+        if file_type in POLLING_STATION_PV_FILE_TYPES and region.parent_id:
+            self.archive_gemeente_ids.add(region.parent_id)
 
         logger.info("Imported %s onto %s %s", file.name, region.region_category, region.region_name)
         return True

@@ -3,7 +3,7 @@ import time
 from django.core.files.storage import storages
 from django.core.management.base import BaseCommand
 
-from eml_import.utils.pdf_file_handler import PDFFileHandler
+from eml_import.tasks import import_pvs
 
 
 class Command(BaseCommand):
@@ -12,7 +12,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         storage = storages["pv_import"]
         start = time.time()
-        count = PDFFileHandler(storage).run()
+        count = import_pvs()
         elapsed = time.time() - start
         self.stdout.write(
             self.style.SUCCESS(

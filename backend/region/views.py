@@ -1,5 +1,7 @@
+from django.core.files.storage import default_storage
 from django.db.models import Prefetch
-from django.http import StreamingHttpResponse
+from django.http import HttpResponseRedirect
+from django.utils.http import content_disposition_header
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
@@ -9,7 +11,7 @@ from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, EmlType, ReportingLevel
 from region.models import Region
-from region.polling_station_pv_archive import iter_polling_station_pv_zip, polling_station_pv_documents
+from region.polling_station_pv_archive import polling_station_pv_zip_storage_key
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
 _OWN_RESULTS_EML_TYPE = {
@@ -181,10 +183,17 @@ def _visible_municipality(request, election_config_slug, region_slug):
 @api_view(["GET"])
 def polling_station_pv_archive(request, election_config, region):
     municipality = _visible_municipality(request, election_config, region)
-    documents = list(polling_station_pv_documents(municipality))
-    if not documents:
+    key = polling_station_pv_zip_storage_key(municipality)
+    if not default_storage.exists(key):
         raise NotFound({"detail": "No polling-station reports."})
 
-    response = StreamingHttpResponse(iter_polling_station_pv_zip(documents), content_type="application/zip")
-    response["Content-Disposition"] = f'attachment; filename="processen-verbaal-{municipality.slug}.zip"'
-    return response
+    filename = f"processen-verbaal-{municipality.slug}.zip"
+    return HttpResponseRedirect(
+        default_storage.url(
+            key,
+            parameters={
+                "ResponseContentType": "application/zip",
+                "ResponseContentDisposition": content_disposition_header(True, filename),
+            },
+        )
+    )

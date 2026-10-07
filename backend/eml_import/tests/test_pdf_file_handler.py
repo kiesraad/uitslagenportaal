@@ -19,9 +19,11 @@ def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
     region = barneveld()
     write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
 
-    PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
+    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    handler.run()
 
     document = ElectionDocument.objects.get()
+    assert handler.archive_gemeente_ids == set()
     assert document.region == region
     assert document.file_type == ElectionDocument.FileType.PDF_NA31_2
     assert document.content_type == "application/pdf"
@@ -96,11 +98,13 @@ def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path)
     )
     write_pdf(tmp_path, "TK2025_Nederland_N10-1_0203::SB1.pdf")
 
-    PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
+    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    handler.run()
 
     document = ElectionDocument.objects.get()
     assert document.region == station
     assert document.file_type == ElectionDocument.FileType.PDF_N10_1
+    assert handler.archive_gemeente_ids == {gemeente.id}
 
 
 @pytest.mark.django_db
@@ -148,7 +152,9 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies(tmp_path):
     ):
         write_pdf(tmp_path, name, one_page_pdf(name.encode()))
 
-    PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
+    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    handler.run()
+    assert handler.archive_gemeente_ids == {gemeente.id}
 
     file_type = ElectionDocument.FileType
     attached = {(document.region_id, document.file_type) for document in ElectionDocument.objects.all()}

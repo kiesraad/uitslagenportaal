@@ -137,7 +137,9 @@ and reports every problem it finds rather than stopping at the first one.
 ### Importing proces-verbalen
 
 `import_pvs` reads proces-verbaal PDFs from the `pv_import` storage. A Celery beat task
-(`eml_import.tasks.import_pvs`) runs that same import every 5 minutes.
+(`eml_import.tasks.import_pvs`) runs that same import every 5 minutes. After each sweep it
+queues one zip rebuild per gemeente that received a polling-station form in that sweep;
+the zip is stored in object storage and the download endpoint redirects to it.
 
 | `PV_IMPORT_SOURCE` | `pv_import` is |
 | --- | --- |

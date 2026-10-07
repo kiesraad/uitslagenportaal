@@ -1,7 +1,9 @@
-import io
+import tempfile
 import zipfile
+from pathlib import Path
 from urllib.parse import urlencode
 
+from django.core.files import File
 from django.core.files.storage import default_storage
 from django.db.models import Sum
 from django.urls import reverse
@@ -10,24 +12,28 @@ from election.models import ElectionDocument
 from mainsite.models import RegionCategory
 
 # The original polling-station form and every correction on it belong in the zip.
-_POLLING_STATION_PV_FILE_TYPES = (
+POLLING_STATION_PV_FILE_TYPES = (
     ElectionDocument.FileType.PDF_N10_1,
     ElectionDocument.FileType.PDF_N10_2,
     ElectionDocument.FileType.PDF_NA14_1,
 )
-_FORM_ORDER = {file_type: index for index, file_type in enumerate(_POLLING_STATION_PV_FILE_TYPES)}
+_FORM_ORDER = {file_type: index for index, file_type in enumerate(POLLING_STATION_PV_FILE_TYPES)}
 
 
 def polling_station_pv_documents(gemeente):
     return ElectionDocument.objects.filter(
         region__parent=gemeente,
         region__region_category=RegionCategory.STEMBUREAU,
-        file_type__in=_POLLING_STATION_PV_FILE_TYPES,
+        file_type__in=POLLING_STATION_PV_FILE_TYPES,
     ).select_related("region__parent", "region__election__election_config")
 
 
+def polling_station_pv_zip_storage_key(gemeente):
+    return f"{gemeente.election.election_config.identifier}/polling-station-pvs/{gemeente.pk}.zip"
+
+
 def polling_station_pv_summary(gemeente, request=None):
-    """Counts and download URL for the gemeente page. None until the first form is in."""
+    """Counts and download URL for the gemeente page. None until the zip is in storage."""
     if gemeente.region_category != RegionCategory.GEMEENTE:
         return None
 
@@ -35,6 +41,8 @@ def polling_station_pv_summary(gemeente, request=None):
     # Corrections on the same polling station do not raise the count.
     present_count = documents.values("region_id").distinct().count()
     if present_count == 0:
+        return None
+    if not default_storage.exists(polling_station_pv_zip_storage_key(gemeente)):
         return None
 
     query = {}
@@ -55,27 +63,8 @@ def polling_station_pv_summary(gemeente, request=None):
     }
 
 
-class _ChunkWriter(io.RawIOBase):
-    """Collects the bytes a ZipFile writes, so each member can be streamed out."""
-
-    def __init__(self):
-        self._chunks: list[bytes] = []
-
-    def writable(self):
-        return True
-
-    def write(self, data):
-        self._chunks.append(bytes(data))
-        return len(data)
-
-    def pop(self) -> bytes:
-        chunks, self._chunks = self._chunks, []
-        return b"".join(chunks)
-
-
-def iter_polling_station_pv_zip(documents):
-    """PDFs are stored uncompressed; they are already compressed."""
-    ordered = sorted(
+def _ordered_polling_station_pvs(documents):
+    return sorted(
         documents,
         key=lambda document: (
             document.region.region_number or "",
@@ -83,14 +72,25 @@ def iter_polling_station_pv_zip(documents):
             document.created_at,
         ),
     )
-    writer = _ChunkWriter()
-    with zipfile.ZipFile(writer, "w", compression=zipfile.ZIP_STORED) as archive:
-        for document in ordered:
-            with default_storage.open(document.storage_key, "rb") as handle:
-                archive.writestr(document.download_filename, handle.read())
-            chunk = writer.pop()
-            if chunk:
-                yield chunk
-    tail = writer.pop()
-    if tail:
-        yield tail
+
+
+def write_polling_station_pv_zip(gemeente):
+    """Write the gemeente zip to object storage, or delete it when no forms remain."""
+    documents = list(polling_station_pv_documents(gemeente))
+    key = polling_station_pv_zip_storage_key(gemeente)
+    if not documents:
+        if default_storage.exists(key):
+            default_storage.delete(key)
+        return None
+
+    with tempfile.TemporaryFile() as tmp:
+        # PDFs are stored uncompressed; they are already compressed.
+        with zipfile.ZipFile(tmp, "w", compression=zipfile.ZIP_STORED) as archive:
+            for document in _ordered_polling_station_pvs(documents):
+                with default_storage.open(document.storage_key, "rb") as handle:
+                    archive.writestr(document.download_filename, handle.read())
+        tmp.seek(0)
+        if default_storage.exists(key):
+            default_storage.delete(key)
+        default_storage.save(key, File(tmp, name=Path(key).name))
+    return key

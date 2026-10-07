@@ -13,6 +13,7 @@ from election.models import ElectionConfig
 from eml_import.utils.github_eml_file_handler import GithubEmlFileHandler
 from eml_import.utils.pdf_file_handler import PDFFileHandler
 from mainsite.celery import app
+from region.tasks import build_polling_station_pv_zip
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +41,12 @@ def setup_periodic_tasks(sender: Celery, **_) -> None:
 )
 def import_pvs() -> int:
     """Import proces-verbaal PDFs from the pv_import storage."""
-    imported = PDFFileHandler(storages["pv_import"]).run()
+    handler = PDFFileHandler(storages["pv_import"])
+    imported = handler.run()
     if imported:
         logger.info("Imported %d proces-verbaal PDF(s).", imported)
+    for gemeente_id in sorted(handler.archive_gemeente_ids):
+        build_polling_station_pv_zip.delay(gemeente_id)
     return imported
 
 

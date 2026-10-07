@@ -3,6 +3,7 @@ import zipfile
 from io import BytesIO
 
 import pytest
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.utils import timezone
@@ -12,6 +13,7 @@ from election.models import ElectionDocument
 from election.tests.factories import CertifiedElectionDocumentFactory, ElectionFactory
 from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
+from region.polling_station_pv_archive import polling_station_pv_zip_storage_key, write_polling_station_pv_zip
 from region.tests.factories import RegionFactory
 from region.views import RegionDetailView, polling_station_pv_archive
 
@@ -51,8 +53,9 @@ def _download(municipality, params=None):
     return polling_station_pv_archive(request, election_config=slug, region=municipality.slug)
 
 
-def _member_names(response):
-    with zipfile.ZipFile(BytesIO(b"".join(response.streaming_content))) as archive:
+def _member_names(municipality):
+    key = write_polling_station_pv_zip(municipality)
+    with zipfile.ZipFile(BytesIO(default_storage.open(key).read())) as archive:
         return archive.namelist()
 
 
@@ -66,6 +69,7 @@ def test_municipality_detail_counts_a_polling_station_once_when_it_also_has_a_co
     _pdf(first, ElectionDocument.FileType.PDF_N10_1, b"%PDF-n10", 10)
     _pdf(first, ElectionDocument.FileType.PDF_NA14_1, b"%PDF-na14", 4)
     _pdf(second, ElectionDocument.FileType.PDF_N10_2, b"%PDF-n10-2", 7)
+    write_polling_station_pv_zip(municipality)
 
     archive = _detail(municipality).data["polling_station_pv_archive"]
 
@@ -84,7 +88,16 @@ def test_municipality_detail_has_no_archive_until_a_polling_station_report_is_in
 
 
 @pytest.mark.django_db
-def test_archive_download_stores_each_form_uncompressed():
+def test_municipality_detail_has_no_archive_until_the_zip_is_written():
+    municipality = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    station = _station(municipality, "0203::SB1", "Gemeentehuis")
+    _pdf(station, ElectionDocument.FileType.PDF_N10_1, b"%PDF-n10", 8)
+
+    assert _detail(municipality).data["polling_station_pv_archive"] is None
+
+
+@pytest.mark.django_db
+def test_archive_download_redirects_to_the_stored_zip():
     election = ElectionFactory(election_config__identifier="TK2025")
     municipality = RegionFactory(
         election=election,
@@ -95,19 +108,24 @@ def test_archive_download_stores_each_form_uncompressed():
     station = _station(municipality, "0203::SB1", "Gemeentehuis")
     _pdf(station, ElectionDocument.FileType.PDF_N10_1, b"%PDF-n10", 8)
     _pdf(station, ElectionDocument.FileType.PDF_NA14_1, b"%PDF-na14", 9)
+    key = write_polling_station_pv_zip(municipality)
 
     response = _download(municipality)
 
-    assert response.status_code == 200
-    assert response["Content-Disposition"] == 'attachment; filename="processen-verbaal-lisserdam.zip"'
-    with zipfile.ZipFile(BytesIO(b"".join(response.streaming_content))) as archive:
+    assert response.status_code == 302
+    assert response.url == f"{settings.MEDIA_URL}{key}"
+    assert default_storage.url_parameters[key] == {
+        "ResponseContentType": "application/zip",
+        "ResponseContentDisposition": 'attachment; filename="processen-verbaal-lisserdam.zip"',
+    }
+    with zipfile.ZipFile(BytesIO(default_storage.open(key).read())) as archive:
         assert archive.read("TK2025 Lisserdam SB1 Gemeentehuis N10-1.pdf") == b"%PDF-n10"
         assert archive.read("TK2025 Lisserdam SB1 Gemeentehuis NA14-1.pdf") == b"%PDF-na14"
         assert archive.getinfo("TK2025 Lisserdam SB1 Gemeentehuis N10-1.pdf").compress_type == zipfile.ZIP_STORED
 
 
 @pytest.mark.django_db
-def test_archive_download_numbers_a_second_correction_on_the_same_form():
+def test_archive_zip_numbers_a_second_correction_on_the_same_form():
     election = ElectionFactory(election_config__identifier="TK2025")
     municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Lisserdam")
     station = _station(municipality, "0203::SB1", "Gemeentehuis")
@@ -122,7 +140,7 @@ def test_archive_download_numbers_a_second_correction_on_the_same_form():
     default_storage.save(second.storage_key, ContentFile(b"%PDF-na14-again"))
 
     assert first.is_current and second.is_current
-    assert _member_names(_download(municipality)) == [
+    assert _member_names(municipality) == [
         "TK2025 Lisserdam SB1 Gemeentehuis N10-1.pdf",
         "TK2025 Lisserdam SB1 Gemeentehuis NA14-1.pdf",
         "TK2025 Lisserdam SB1 Gemeentehuis NA14-1 2.pdf",
@@ -158,6 +176,7 @@ def test_archive_download_is_not_found_for_an_expired_election():
     municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE)
     station = _station(municipality, "0203::SB1", "Gemeentehuis")
     _pdf(station, ElectionDocument.FileType.PDF_N10_1, b"%PDF-n10", 8)
+    write_polling_station_pv_zip(municipality)
 
     response = _download(municipality)
 
@@ -166,7 +185,7 @@ def test_archive_download_is_not_found_for_an_expired_election():
 
 
 @pytest.mark.django_db
-def test_archive_download_lists_polling_station_forms_in_station_then_form_order():
+def test_archive_zip_lists_polling_station_forms_in_station_then_form_order():
     election = ElectionFactory(election_config__identifier="TK2025")
     municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Lisserdam")
     other = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE)
@@ -179,8 +198,22 @@ def test_archive_download_lists_polling_station_forms_in_station_then_form_order
     _pdf(municipality, ElectionDocument.FileType.PDF_NA31_2, b"%PDF-gsb", 20)
     _pdf(_station(other, "0203::SB1", "Kerk"), ElectionDocument.FileType.PDF_N10_1, b"%PDF-other", 3)
 
-    assert _member_names(_download(municipality)) == [
+    assert _member_names(municipality) == [
         "TK2025 Lisserdam SB1 Gemeentehuis N10-1.pdf",
         "TK2025 Lisserdam SB1 Gemeentehuis N10-2.pdf",
         "TK2025 Lisserdam SB2 School NA14-1.pdf",
     ]
+
+
+@pytest.mark.django_db
+def test_write_polling_station_pv_zip_removes_the_object_when_no_forms_remain():
+    election = ElectionFactory(election_config__identifier="TK2025")
+    municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE)
+    station = _station(municipality, "0203::SB1", "Gemeentehuis")
+    document = _pdf(station, ElectionDocument.FileType.PDF_N10_1, b"%PDF-n10", 8)
+    key = write_polling_station_pv_zip(municipality)
+    assert default_storage.exists(key)
+
+    document.delete()
+    assert write_polling_station_pv_zip(municipality) is None
+    assert not default_storage.exists(polling_station_pv_zip_storage_key(municipality))
