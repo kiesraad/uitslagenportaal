@@ -48,11 +48,11 @@ class PDFFileHandler:
     def __init__(self, storage: Storage):
         super().__init__()
         self.storage = storage
-        self.archive_gemeente_ids: set[int] = set()
+        self.archive_municipality_ids: set[int] = set()
 
     def run(self) -> int:
         imported = 0
-        self.archive_gemeente_ids = set()
+        self.archive_municipality_ids = set()
         for name in sorted(self._pdf_names("")):
             try:
                 if self._import_pv(_StoragePdf(self.storage, name)):
@@ -85,7 +85,7 @@ class PDFFileHandler:
             return False
 
         if file_type in POLLING_STATION_PV_FILE_TYPES and region.parent_id:
-            self.archive_gemeente_ids.add(region.parent_id)
+            self.archive_municipality_ids.add(region.parent_id)
 
         logger.info("Imported %s onto %s %s", file.name, region.region_category, region.region_name)
         return True
@@ -113,7 +113,7 @@ class PDFFileHandler:
 
     def _region(self, config: ElectionConfig, file_type: str, csb_name: str, region_token: str) -> Region:
         category = self._region_category(config, file_type)
-        # A stembureau number repeats in every gemeente; the stored id carries the gemeente (0203::SB1).
+        # A stembureau number repeats in every municipality; the stored id carries the municipality (0203::SB1).
         lookup = (
             {"region_number": region_token} if category == RegionCategory.STEMBUREAU else {"region_name": region_token}
         )
