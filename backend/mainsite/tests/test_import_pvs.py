@@ -17,11 +17,9 @@ def use_pv_import(settings, backend, **options):
 @pytest.mark.django_db
 def test_import_pvs_reads_whatever_storage_is_configured(tmp_path, settings):
     barneveld()
-    nested = tmp_path / "nested"
-    nested.mkdir()
-    write_pdf(nested, "TK2025_Nederland_NA31-2_Barneveld.pdf")
-    write_pdf(tmp_path, "readme.txt", b"not a pdf")
     use_pv_import(settings, "django.core.files.storage.FileSystemStorage", location=str(tmp_path))
+    write_pdf("nested/TK2025_Nederland_NA31-2_Barneveld.pdf")
+    storages["pv_import"].save("readme.txt", ContentFile(b"not a pdf"))
 
     call_command("import_pvs")
 
@@ -32,9 +30,8 @@ def test_import_pvs_reads_whatever_storage_is_configured(tmp_path, settings):
 def test_import_pvs_reads_an_object_storage_the_same_way(settings):
     region = barneveld()
     use_pv_import(settings, "mainsite.tests.storage.InMemoryPresignStorage")
-    source = storages["pv_import"]
-    source.save("nested/TK2025_Nederland_NA31-2_Barneveld.pdf", ContentFile(PDF_BYTES))
-    source.save("readme.txt", ContentFile(b"not a pdf"))
+    write_pdf("nested/TK2025_Nederland_NA31-2_Barneveld.pdf")
+    storages["pv_import"].save("readme.txt", ContentFile(b"not a pdf"))
     default_storage.save("elsewhere/TK2025_Nederland_NA31-2_Barneveld.pdf", ContentFile(PDF_BYTES))
 
     call_command("import_pvs")

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 from django.core.cache import cache
-from django.core.files.storage import FileSystemStorage, default_storage
+from django.core.files.storage import default_storage, storages
 
 from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
@@ -21,11 +21,11 @@ def warnings_of(caplog) -> list[str]:
 
 
 @pytest.mark.django_db
-def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
+def test_imports_a_municipal_certified_document_onto_the_gemeente():
     region = barneveld()
-    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
 
-    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    handler = PDFFileHandler(storages["pv_import"])
     handler.run()
 
     document = ElectionDocument.objects.get()
@@ -40,10 +40,10 @@ def test_imports_a_municipal_certified_document_onto_the_gemeente(tmp_path):
 
 
 @pytest.mark.django_db
-def test_records_the_hash_and_skips_bytes_that_were_already_imported(tmp_path):
+def test_records_the_hash_and_skips_bytes_that_were_already_imported():
     region = barneveld()
-    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
-    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    handler = PDFFileHandler(storages["pv_import"])
 
     assert handler.run() == 1
     recorded = ImportedFileHash.objects.get()
@@ -55,15 +55,14 @@ def test_records_the_hash_and_skips_bytes_that_were_already_imported(tmp_path):
 
 
 @pytest.mark.django_db
-def test_a_rescanned_proces_verbaal_supersedes_the_one_it_replaces(tmp_path):
+def test_a_rescanned_proces_verbaal_supersedes_the_one_it_replaces():
     region = barneveld()
-    storage = FileSystemStorage(location=tmp_path)
-    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf", one_page_pdf(b"first scan"))
-    PDFFileHandler(storage).run()
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf", one_page_pdf(b"first scan"))
+    PDFFileHandler(storages["pv_import"]).run()
     superseded = ElectionDocument.objects.get()
 
-    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf", one_page_pdf(b"second scan"))
-    assert PDFFileHandler(storage).run() == 1
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf", one_page_pdf(b"second scan"))
+    assert PDFFileHandler(storages["pv_import"]).run() == 1
 
     current = ElectionDocument.objects.get(region=region)
     assert current.pk != superseded.pk
@@ -73,14 +72,13 @@ def test_a_rescanned_proces_verbaal_supersedes_the_one_it_replaces(tmp_path):
 
 
 @pytest.mark.django_db
-def test_every_correction_on_one_form_stays_current(tmp_path):
+def test_every_correction_on_one_form_stays_current():
     region = barneveld()
-    storage = FileSystemStorage(location=tmp_path)
-    write_pdf(tmp_path, "TK2025_Nederland_NA14-2_Barneveld.pdf", one_page_pdf(b"first correction"))
-    PDFFileHandler(storage).run()
+    write_pdf("TK2025_Nederland_NA14-2_Barneveld.pdf", one_page_pdf(b"first correction"))
+    PDFFileHandler(storages["pv_import"]).run()
 
-    write_pdf(tmp_path, "TK2025_Nederland_NA14-2_Barneveld.pdf", one_page_pdf(b"second correction"))
-    assert PDFFileHandler(storage).run() == 1
+    write_pdf("TK2025_Nederland_NA14-2_Barneveld.pdf", one_page_pdf(b"second correction"))
+    assert PDFFileHandler(storages["pv_import"]).run() == 1
 
     corrections = ElectionDocument.objects.filter(region=region).order_by("created_at", "pk")
     assert [default_storage.open(document.storage_key).read() for document in corrections] == [
@@ -92,7 +90,7 @@ def test_every_correction_on_one_form_stays_current(tmp_path):
 
 
 @pytest.mark.django_db
-def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path):
+def test_imports_a_polling_station_certified_document_by_stembureau_id():
     gemeente = barneveld()
     station = RegionFactory(
         election=gemeente.election,
@@ -102,9 +100,9 @@ def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path)
         region_name="Gemeentehuis",
         region_number="0203::SB1",
     )
-    write_pdf(tmp_path, "TK2025_Nederland_N10-1_0203::SB1.pdf")
+    write_pdf("TK2025_Nederland_N10-1_0203::SB1.pdf")
 
-    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    handler = PDFFileHandler(storages["pv_import"])
     handler.run()
 
     document = ElectionDocument.objects.get()
@@ -114,7 +112,7 @@ def test_imports_a_polling_station_certified_document_by_stembureau_id(tmp_path)
 
 
 @pytest.mark.django_db
-def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies(tmp_path):
+def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies():
     config = ElectionConfigFactory(identifier="GEN", category=ElectionCategory.TK.value)
     election = ElectionFactory(election_config=config, subcategory="TK")
     staat = RegionFactory(
@@ -156,9 +154,9 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies(tmp_path):
         "GEN_Nederland_NA14-2_Alpha.pdf",
         "GEN_Nederland_O7_North.pdf",
     ):
-        write_pdf(tmp_path, name, one_page_pdf(name.encode()))
+        write_pdf(name, one_page_pdf(name.encode()))
 
-    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    handler = PDFFileHandler(storages["pv_import"])
     handler.run()
     assert handler.archive_municipality_ids == {gemeente.id}
 
@@ -176,7 +174,7 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies(tmp_path):
 
 
 @pytest.mark.django_db
-def test_imports_p22_onto_the_csb_of_that_election(tmp_path):
+def test_imports_p22_onto_the_csb_of_that_election():
     file_type = ElectionDocument.FileType
     cases = (
         (ElectionCategory.TK, "Country", file_type.PDF_P22_1),
@@ -195,10 +193,10 @@ def test_imports_p22_onto_the_csb_of_that_election(tmp_path):
             region_number="1",
         )
         filename = f"{category.value}_{region_name}_{document_type.removeprefix('PDF_')}_{region_name}.pdf"
-        write_pdf(tmp_path, filename, one_page_pdf(filename.encode()))
+        write_pdf(filename, one_page_pdf(filename.encode()))
         expected.add((csb.id, document_type))
 
-    PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
+    PDFFileHandler(storages["pv_import"]).run()
 
     attached = {(document.region_id, document.file_type) for document in ElectionDocument.objects.all()}
     assert attached == expected
@@ -233,14 +231,14 @@ def _board_with_shared_station(config, board_name, board_number):
 
 
 @pytest.mark.django_db
-def test_csb_name_picks_the_region_when_it_also_serves_another_board(tmp_path):
+def test_csb_name_picks_the_region_when_it_also_serves_another_board():
     config = ElectionConfigFactory(identifier="AB2023", category=ElectionCategory.WS.value)
     _, rijnland_station = _board_with_shared_station(config, "Rijnland", "13")
     amstel_municipality, _ = _board_with_shared_station(config, "Amstel, Gooi en Vecht", "14")
-    write_pdf(tmp_path, "AB2023_Rijnland_N10-1_0394::SB1.pdf", one_page_pdf(b"rijnland"))
-    write_pdf(tmp_path, "AB2023_Amstel, Gooi en Vecht_NA31-2_Haarlemmermeer.pdf", one_page_pdf(b"amstel"))
+    write_pdf("AB2023_Rijnland_N10-1_0394::SB1.pdf", one_page_pdf(b"rijnland"))
+    write_pdf("AB2023_Amstel, Gooi en Vecht_NA31-2_Haarlemmermeer.pdf", one_page_pdf(b"amstel"))
 
-    PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
+    PDFFileHandler(storages["pv_import"]).run()
 
     file_type = ElectionDocument.FileType
     attached = {document.file_type: document.region for document in ElectionDocument.objects.all()}
@@ -249,13 +247,13 @@ def test_csb_name_picks_the_region_when_it_also_serves_another_board(tmp_path):
 
 
 @pytest.mark.django_db
-def test_logs_a_bad_filename_and_imports_the_rest(tmp_path, caplog):
+def test_logs_a_bad_filename_and_imports_the_rest(caplog):
     barneveld()
-    write_pdf(tmp_path, "TK2025_NA31-2_Barneveld.pdf")
-    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
+    write_pdf("TK2025_NA31-2_Barneveld.pdf")
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
 
     with caplog.at_level(logging.ERROR):
-        imported = PDFFileHandler(FileSystemStorage(location=tmp_path)).run()
+        imported = PDFFileHandler(storages["pv_import"]).run()
 
     assert imported == 1
     assert ElectionDocument.objects.count() == 1
@@ -263,10 +261,10 @@ def test_logs_a_bad_filename_and_imports_the_rest(tmp_path, caplog):
 
 
 @pytest.mark.django_db
-def test_run_skips_the_import_while_another_worker_holds_the_lock(tmp_path, caplog):
+def test_run_skips_the_import_while_another_worker_holds_the_lock(caplog):
     barneveld()
-    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
-    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    handler = PDFFileHandler(storages["pv_import"])
 
     with cache.lock(handler.cache_lock_key(), timeout=LOCK_TIMEOUT):
         imported = handler.run()
@@ -278,10 +276,10 @@ def test_run_skips_the_import_while_another_worker_holds_the_lock(tmp_path, capl
 
 
 @pytest.mark.django_db
-def test_run_releases_the_lock_when_it_finishes(tmp_path):
+def test_run_releases_the_lock_when_it_finishes():
     barneveld()
-    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
-    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    handler = PDFFileHandler(storages["pv_import"])
 
     handler.run()
 
@@ -289,11 +287,11 @@ def test_run_releases_the_lock_when_it_finishes(tmp_path):
 
 
 @pytest.mark.django_db
-def test_run_holds_a_lock_that_expires_on_its_own(tmp_path, monkeypatch):
+def test_run_holds_a_lock_that_expires_on_its_own(monkeypatch):
     """A worker that dies mid-import must not block the next sweep forever."""
     barneveld()
-    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
-    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    handler = PDFFileHandler(storages["pv_import"])
     remaining = []
     original = PDFFileHandler._import_pv
 
@@ -309,10 +307,10 @@ def test_run_holds_a_lock_that_expires_on_its_own(tmp_path, monkeypatch):
 
 
 @pytest.mark.django_db
-def test_run_keeps_its_result_when_the_lock_expires_mid_import(tmp_path, monkeypatch, caplog):
+def test_run_keeps_its_result_when_the_lock_expires_mid_import(monkeypatch, caplog):
     barneveld()
-    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
-    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    handler = PDFFileHandler(storages["pv_import"])
     original = PDFFileHandler._import_pv
 
     def expire_lock(self, file):

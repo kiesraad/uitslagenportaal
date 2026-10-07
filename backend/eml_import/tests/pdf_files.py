@@ -1,4 +1,5 @@
-from pathlib import Path
+from django.core.files.base import ContentFile
+from django.core.files.storage import Storage, storages
 
 from election.models import ElectionCategory
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
@@ -22,10 +23,11 @@ def one_page_pdf(mark: bytes = b"a") -> bytes:
 PDF_BYTES = one_page_pdf()
 
 
-def write_pdf(folder: Path, name: str, content: bytes = PDF_BYTES) -> Path:
-    path = folder / name
-    path.write_bytes(content)
-    return path
+def write_pdf(name: str, content: bytes = PDF_BYTES, storage: Storage | None = None) -> str:
+    storage = storage or storages["pv_import"]
+    if storage.exists(name):
+        storage.delete(name)
+    return storage.save(name, ContentFile(content))
 
 
 def barneveld() -> Region:
