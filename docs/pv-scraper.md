@@ -71,32 +71,45 @@ or `docker compose run --rm backend-scripts python manage.py classify_pv <path>`
 #### Naming convention
 
 An identified PV is stored in default storage under `pvs/` as `<election>_<model>[_<csb>]_<region>[_SB<n>].pdf`. The
-name is built from what the PV and its source say, without the application's database, so another platform delivering
-PVs can follow it too.
+name is built from what the PV and its source say, and the application's database only corrects the gemeente's name,
+so another platform delivering PVs can follow it too.
 
-| Part     | Contents                                                                                  | Example              |
-|----------|-------------------------------------------------------------------------------------------|----------------------|
-| election | election id, as in the EML                                                                | `GR2026`, `AB2027`   |
-| model    | model code without spaces; a bijlage as `-B<n>`                                           | `N10-2`, `Na31-2-B1` |
-| csb      | slug of the province or waterschap, for PS and AB elections only; left out when not known | `vallei-en-veluwe`   |
-| region   | the gemeente as `<code>-<slug of its name>`, or either one when only that is known        | `0228-ede`           |
-| SB\<n\>  | the stembureau, for the models of one stembureau only                                     | `SB12`               |
+| Part     | Contents                                                                                                           | Example              |
+|----------|--------------------------------------------------------------------------------------------------------------------|----------------------|
+| election | election id, as in the EML                                                                                         | `GR2026`, `AB2027`   |
+| model    | model code without spaces; a bijlage as `-B<n>`                                                                    | `N10-2`, `Na31-2-B1` |
+| csb      | slug of the province or waterschap, for PS and AB elections only; left out when not known or when it is the region | `vallei-en-veluwe`   |
+| region   | the gemeente as `<code>-<slug of its name>`, or either one when only that is known       ; for a CSB model the CSB | `0228-ede`           |
+| SB\<n\>  | the stembureau, for the models of one stembureau only                                                              | `SB12`               |
 
-For example `GR2026_N10-2_0228-ede_SB12.pdf`, `AB2027_Na31-1_vallei-en-veluwe_0228-ede.pdf`. Slugs consist of
+The gemeente's name is taken from the gemeenten of the most recent election that has it: by its code when known, or else
+by the name read, which may have one misread letter or a mangled accent (an exact match wins); the code is then taken
+from there too. A gemeente not found keeps what the PV and its source say.
+
+The CSB of TK and EP is `Nederland`. It is in the metadata of every PV of those elections, but not in the file name,
+where it would be the same for all of them.
+
+The models of a centraal stembureau (P 22-1, P 22-2) name no gemeente. Of a PS, AB, TK or EP election, their region is
+the CSB, named once and without a code, and a PS or AB PV without a known CSB is not stored. Of a GR election, the CSB
+is the gemeente itself.
+
+For example `GR2026_N10-2_0228-ede_SB12.pdf`, `AB2027_Na31-1_vallei-en-veluwe_0228-ede.pdf`,
+`AB2027_P22-2_vallei-en-veluwe.pdf`, `TK2025_P22-2_nederland.pdf`. Slugs consist of
 `[a-z0-9-]`, so `_` only separates parts. To read a name back: the first two parts are election and model, a last part
 `SB<n>` is the stembureau, then the last remaining part is the region and one before it the CSB.
 
 The stored PDF also carries what it is in its document information, added with pypdf as an incremental update: the
 original bytes stay in front unchanged, so a digital signature stays valid. `/Title` (`Na31-2-B1 Ede stembureau 12`)
 and `/Subject` (`AB2027 Vallei en Veluwe`) show in any PDF viewer; software reads `/PvElection`, `/PvElectionDate`,
-`/PvModel`, `/PvCsb`, `/PvGemeenteCode`, `/PvGemeenteName`, `/PvStembureau` and `/PvMatchedOn`. A key whose value is
+`/PvModel`, `/PvCsb`, `/PvRegionCode`, `/PvRegionName`, `/PvStembureau` and `/PvMatchedOn`. A key whose value is
 unknown is left out. The metadata, not the file name, is what software should rely on; the name only has to be
 readable and unique.
 
 A file of the same name is replaced, since it holds the same PV. So that a misread stembureau doesn't replace another
 stembureau's PV, a PV whose stembureau differs from the one in its file name is not stored. A PV found on a gemeente's
 website must be about that
-gemeente by code or name, and a GR header naming another gemeente is refused; the source then gives the gemeente's code
+gemeente by code or name, unless its region is a province or waterschap, and a GR header naming another gemeente is
+refused; the source then gives the gemeente's code
 and name. A waterschap's or province's website gives the CSB when the header doesn't name it.
 
 #### Election pages

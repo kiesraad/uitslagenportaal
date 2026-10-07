@@ -9,6 +9,7 @@ from django.core.files.storage import default_storage
 from PIL import Image
 from pypdf import PdfReader
 
+from election.tests.factories import ElectionFactory
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
 from pv_scraper.tests.factories import ScrapeSourceFactory
@@ -22,6 +23,7 @@ from pv_scraper.utils.pv_classifier import (
     ResultMatch,
     model_token,
 )
+from region.tests.factories import RegionFactory
 
 N_10_2_TITLE = "Proces-verbaal van een stembureau. Zo telt u hoeveel stemmen elke lijst heeft gekregen"
 NA_31_2_TITLE = "Het gemeentelijk stembureau telt de stemmen per kandidaat"
@@ -65,8 +67,6 @@ def test_result_match_is_certain(matched_on, certain):
         # OCR misreads letters as digits and the other way round.
         ("Modei N I0-z", ["N 10-2"]),
         ("ModelNa31-2", ["Na 31-2"]),
-        # A look-alike followed by a space is the letter I.
-        ("Model 1 1", ["I 1"]),
         # Without its letters a number counts only when a single known model has it.
         ("Model 31-1", ["Na 31-1"]),
         ("Model 22", ["22"]),
@@ -529,7 +529,7 @@ def test_render_page(tmp_path):
 
 @pytest.mark.parametrize(
     ("model", "token"),
-    [("N 10-2", "N10-2"), ("Na 31-2", "Na31-2"), ("Na 31-2 Bijlage 1", "Na31-2-B1"), ("P 2a", "P2a"), ("I 1", "I1")],
+    [("N 10-2", "N10-2"), ("Na 31-2", "Na31-2"), ("Na 31-2 Bijlage 1", "Na31-2-B1"), ("P 2a", "P2a")],
 )
 def test_model_token(model, token):
     assert model_token(model) == token
@@ -606,8 +606,56 @@ EDE_12 = PvRegion(code="228", name="Ede", stembureau="12")
         ),
     ],
 )
+@pytest.mark.django_db
 def test_storage_name(model, election, region, name):
     assert classified(model, election, region).storage_name() == name
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("region", "name"),
+    [
+        (PvRegion(code="0228"), "GR2026_Na31-1_0228-ede.pdf"),
+        (PvRegion(name="ede"), "GR2026_Na31-1_0228-ede.pdf"),
+        # The code decides the name.
+        (PvRegion(code="0228", name="Edde"), "GR2026_Na31-1_0228-ede.pdf"),
+        # An unknown gemeente keeps what was read.
+        (PvRegion(code="0229", name="Wageningen"), "GR2026_Na31-1_0229-wageningen.pdf"),
+        (PvRegion(code="0229"), "GR2026_Na31-1_0229.pdf"),
+    ],
+)
+def test_storage_name_takes_the_gemeente_from_the_regions(region, name):
+    RegionFactory(region_number="228", region_name="Oud-Ede", election=ElectionFactory(date=datetime.date(2022, 3, 16)))
+    RegionFactory(region_number="228", region_name="Ede", election=ElectionFactory(date=datetime.date(2026, 3, 18)))
+    later = ElectionFactory(date=datetime.date(2027, 3, 17))
+    RegionFactory(region_number="9", region_name="Ede", region_category=RegionCategory.KIESKRING, election=later)
+    RegionFactory(
+        region_number="228", region_name="Kieskring", region_category=RegionCategory.KIESKRING, election=later
+    )
+
+    assert classified("Na 31-1", PvElection("GR2026"), region).storage_name() == name
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("read", "gemeente"),
+    [
+        ("Sudwest-Frysl�n", ("1900", "Súdwest-Fryslân")),
+        ("Wageninqen", ("289", "Wageningen")),
+        # An exact match wins over a more recent one with a misread letter.
+        ("Hengelo", ("164", "Hengelo")),
+        ("Edam", ("", "Edam")),
+    ],
+)
+def test_complete_gemeente_corrects_a_misread_name(read, gemeente):
+    election = ElectionFactory(date=datetime.date(2026, 3, 18))
+    RegionFactory(region_number="1900", region_name="Súdwest-Fryslân", election=election)
+    RegionFactory(region_number="289", region_name="Wageningen", election=election)
+    RegionFactory(region_number="164", region_name="Hengelo", election=election)
+    RegionFactory(region_number="999", region_name="Hengel", election=ElectionFactory(date=datetime.date(2027, 3, 17)))
+    RegionFactory(region_number="228", region_name="Ede", election=election)
+
+    assert PvClassifier.complete_gemeente("", read) == gemeente
 
 
 @pytest.mark.parametrize(
@@ -628,6 +676,7 @@ def test_slug(name, slug):
     assert PvClassifier.slug(name) == slug
 
 
+@pytest.mark.django_db
 def test_storage_name_takes_the_names_it_is_given():
     pv = classified("N 10-2", PvElection("AB2027"), PvRegion(code="0229", name="Edde", stembureau="12"))
 
@@ -642,11 +691,12 @@ def test_storage_name_takes_the_names_it_is_given():
         ("N 10-2", PvElection("GR2026"), PvRegion()),
     ],
 )
-def test_storage_name_needs_model_election_and_gemeente(model, election, region):
+def test_storage_name_needs_model_election_and_region(model, election, region):
     with pytest.raises(PvClassificationException):
         classified(model, election, region).storage_name()
 
 
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("file_name", "stembureau", "agrees"),
     [
@@ -674,7 +724,7 @@ def test_save_to_storage_names_the_gemeente_as_its_source_does(region):
     key = classified("N 10-2", PvElection("GR2026"), region).save_to_storage(source, "pvs")
 
     assert key == "pvs/GR2026_N10-2_0228-ede_SB12.pdf"
-    assert PdfReader(default_storage.open(key)).metadata["/PvGemeenteName"] == "Ede"
+    assert PdfReader(default_storage.open(key)).metadata["/PvRegionName"] == "Ede"
 
 
 @pytest.mark.django_db
@@ -703,6 +753,60 @@ def test_save_to_storage_takes_the_csb_from_a_waterschap_source():
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("election", "region", "name"),
+    [
+        # The region is the CSB, named once; a gemeente the PV mentions is left out.
+        (PvElection("PS2027", authority="Drenthe"), PvRegion(), "PS2027_P22-2_drenthe.pdf"),
+        (PvElection("AB2027", authority="Vallei en Veluwe"), EDE_12, "AB2027_P22-2_vallei-en-veluwe.pdf"),
+        (PvElection("TK2025"), EDE_12, "TK2025_P22-2_nederland.pdf"),
+        (PvElection("EP2024"), PvRegion(), "EP2024_P22-2_nederland.pdf"),
+        # The CSB of a GR election is the gemeente.
+        (PvElection("GR2026"), EDE_12, "GR2026_P22-2_0228-ede.pdf"),
+    ],
+)
+def test_storage_name_of_a_csb_model_names_the_csb(election, region, name):
+    assert classified("P 22-2", election, region).storage_name() == name
+
+
+@pytest.mark.django_db
+def test_the_csb_of_a_national_election_is_left_out_of_the_name_of_a_gemeente_pv():
+    pv = classified("N 10-2", PvElection("TK2025"), EDE_12)
+
+    assert pv.storage_name() == "TK2025_N10-2_0228-ede_SB12.pdf"
+    assert PdfReader(pv.with_metadata()).metadata["/PvCsb"] == "Nederland"
+
+
+def test_storage_name_of_a_csb_model_needs_the_csb():
+    with pytest.raises(PvClassificationException):
+        classified("P 22-2", PvElection("AB2027"), EDE_12).storage_name()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("kind", "code", "name", "election"),
+    [
+        (RegionCategory.WATERSCHAP, "ws0665", "Vallei en Veluwe", PvElection("AB2027")),
+        # A gemeente's website may publish the PV of its waterschap.
+        (RegionCategory.GEMEENTE, "gm0289", "Wageningen", PvElection("AB2027", authority="Vallei en Veluwe")),
+    ],
+)
+def test_save_to_storage_stores_a_csb_model_under_its_csb(kind, code, name, election):
+    source = ScrapeSourceFactory(code=code, kind=kind, name=name)
+
+    key = classified("P 22-2", election, PvRegion()).save_to_storage(source, "pvs")
+
+    assert key == "pvs/AB2027_P22-2_vallei-en-veluwe.pdf"
+    metadata = PdfReader(default_storage.open(key)).metadata
+    assert (metadata["/Title"], metadata["/PvCsb"], metadata["/PvRegionName"]) == (
+        "P22-2 Vallei en Veluwe",
+        "Vallei en Veluwe",
+        "Vallei en Veluwe",
+    )
+    assert "/PvRegionCode" not in metadata
+
+
+@pytest.mark.django_db
 def test_save_to_storage_replaces_a_file_of_the_same_name():
     source = ScrapeSourceFactory(code="gm0228", name="Ede")
     classified("N 10-2", PvElection("GR2026"), EDE_12).save_to_storage(source, "pvs")
@@ -716,6 +820,7 @@ def test_save_to_storage_replaces_a_file_of_the_same_name():
     assert default_storage.open(key).read().startswith(newer_pdf)
 
 
+@pytest.mark.django_db
 def test_with_metadata_adds_what_the_pv_is_and_keeps_the_original_bytes():
     election = PvElection("AB2027", datetime.date(2027, 3, 17), "Vallei en Veluwe")
     pv = classified("Na 31-2 Bijlage 1", election, PvRegion(code="228", name="Ede", stembureau="12"))
@@ -731,21 +836,22 @@ def test_with_metadata_adds_what_the_pv_is_and_keeps_the_original_bytes():
         "/PvElectionDate": "2027-03-17",
         "/PvModel": "Na31-2-B1",
         "/PvCsb": "Vallei en Veluwe",
-        "/PvGemeenteCode": "0228",
-        "/PvGemeenteName": "Ede",
+        "/PvRegionCode": "0228",
+        "/PvRegionName": "Ede",
         "/PvStembureau": "12",
         "/PvMatchedOn": "code+title",
     }
 
 
+@pytest.mark.django_db
 def test_with_metadata_leaves_out_what_is_unknown():
     pv = classified("Na 31-1", PvElection("GR2026"), PvRegion(name="Súdwest-Fryslân"))
 
     metadata = PdfReader(pv.with_metadata()).metadata
 
-    assert (metadata["/Title"], metadata["/Subject"], metadata["/PvGemeenteName"]) == (
+    assert (metadata["/Title"], metadata["/Subject"], metadata["/PvRegionName"]) == (
         "Na31-1 Súdwest-Fryslân",
         "GR2026",
         "Súdwest-Fryslân",
     )
-    assert not {"/PvElectionDate", "/PvCsb", "/PvGemeenteCode", "/PvStembureau"} & set(metadata)
+    assert not {"/PvElectionDate", "/PvCsb", "/PvRegionCode", "/PvStembureau"} & set(metadata)
