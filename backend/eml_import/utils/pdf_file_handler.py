@@ -157,7 +157,7 @@ class PDFFileHandler:
         csb_category = ElectionCategory(config.category).config.csb
         belongs_to_csb = Q(csb__region_name=csb_name) | Q(
             csb__isnull=True,
-            region_name=csb_name,
+            region_name=csb_name.upper(),
             region_category=csb_category,
         )
         try:
