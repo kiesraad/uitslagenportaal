@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from mainsite.celery import app
 from pv_scraper.models import ScrapeSource, ScrapeStatus
-from pv_scraper.utils.pv_classifier import PvClassifier
+from pv_scraper.utils.pv_classifier import PvClassificationException, PvClassifier
 
 logger = logging.getLogger(__name__)
 
@@ -71,10 +71,21 @@ def run_scrape_for_source(source_id: int):
     try:
         with SiteCrawler(source.cookie_banner_label) as crawler:
             for file in SiteScraper(source, crawler).run():
+                if file.scraped_file is None:
+                    continue
+
+                logger.info(f"Classifying {file.content.name}...")
                 classifier = PvClassifier(file.content)
                 classification = classifier.classify()
-                if classification and classification.matched_on.is_certain():
-                    classifier.save_to_storage(file.scraped_file.source)
+                if not classification or not classification.matched_on.is_certain():
+                    logger.info("Classification not certain, discarding file")
+                    continue
+
+                logger.info(f"Classified as {classification.model}, saving file")
+                try:
+                    classifier.save_to_storage(file.scraped_file.source, "pvs")
+                except PvClassificationException as e:
+                    logger.info(str(e))
     except Exception:
         # A failure outside the scrape itself, such as the browser not starting, still ends the run.
         if source.last_run_status == ScrapeStatus.RUNNING:
