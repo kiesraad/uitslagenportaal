@@ -454,6 +454,23 @@ def test_walk_up_stops_at_a_page_not_about_elections():
 
 
 @pytest.mark.django_db
+def test_page_about_one_election_does_not_become_an_election_page():
+    source = ScrapeSourceFactory(website=WEBSITE)
+    election = f"{WEBSITE}gemeenteraadsverkiezingen-{YEAR}"
+    results = f"{WEBSITE}uitslag-gemeenteraadsverkiezingen-{YEAR}"
+    pages = {
+        WEBSITE: page(WEBSITE, Link(election, f"Gemeenteraadsverkiezingen {YEAR}")),
+        election: page(election, Link(results, "Uitslag")),
+        results: page(results, Link(PDF_URL, "Proces-verbaal 1")),
+    }
+
+    scrape(source, FakeCrawler(pages, {PDF_URL: PDF}))
+
+    source.refresh_from_db()
+    assert source.election_pages == []
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize("days, removed", [(8, True), (1, False)])
 def test_election_page_is_removed_after_a_week_of_404(days, removed):
     source = ScrapeSourceFactory(website=WEBSITE, election_pages=[HUB])

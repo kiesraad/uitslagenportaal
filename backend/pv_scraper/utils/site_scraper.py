@@ -329,34 +329,35 @@ class SiteScraper:
                 # home page would make every scrape a full crawl.
                 via = record["via"]
                 hub = via if via and url_key(via) != website else record["url"]
+                # A page about one election never links to the next one: no start page is better than that.
+                if self.is_election_page(hub) is False:
+                    continue
             if url_key(hub) != website:
                 hubs.append(hub)
         return hubs
+
+    def page_path(self, url: str) -> str:
+        # A short URL such as "/verkiezingsuitslag" redirects to the results of one election; judge where it lands.
+        return urlsplit(self.final_urls.get(url, url)).path
+
+    def is_election_page(self, url: str) -> bool | None:
+        """True for a general election page, False for one about a single election, None if not about elections."""
+        context = f"{unquote(self.page_path(url))} {self.titles.get(url, '')}"
+        return None if not ELECTION_PAGE_RE.search(context) else newest_year(context) is None
 
     def general_election_page(
         self, url: str, parents: dict[str, str | None], answered: dict[str, str], website: str
     ) -> str | None:
         """The highest page above a page with PV files that is about elections but not about one in particular.
 
-        A page about one election ("/gemeenteraad-2026") never links to the next one, so it makes a poor start. Two
-        routes lead up: the pages that linked to it, and the folders in its URL, which only count when they answered
-        as a page. Pages for a single election are passed over; a route stops at the home page or at a page not about
-        elections. The candidate with the fewest folders wins.
+        Two routes lead up: the pages that linked to it, and the folders in its URL, which only count when they
+        answered as a page. Pages for a single election are passed over; a route stops at the home page or at a page
+        not about elections. The candidate with the fewest folders wins.
         """
-
-        def path(page_url: str) -> str:
-            # A short URL such as "/verkiezingsuitslag" redirects to the results of one election; judge where it lands.
-            return urlsplit(self.final_urls.get(page_url, page_url)).path
-
-        def is_election_page(page_url: str) -> bool | None:
-            """True for a general election page, False for one about a single election, None if not about elections."""
-            context = f"{unquote(path(page_url))} {self.titles.get(page_url, '')}"
-            return None if not ELECTION_PAGE_RE.search(context) else newest_year(context) is None
-
         best_linked, current, visited = None, url, set()
         while current and url_key(current) != website and current not in visited:
             visited.add(current)
-            general = is_election_page(current)
+            general = self.is_election_page(current)
             if general is None:
                 break
             if general:
@@ -368,14 +369,14 @@ class SiteScraper:
         folders = parts.path.strip("/").split("/")
         for count in range(len(folders) - 1, 0, -1):
             folder = f"{parts.scheme}://{parts.netloc}/{'/'.join(folders[:count])}"
-            general = is_election_page(folder)
+            general = self.is_election_page(folder)
             if general is None:
                 break
             if general and url_key(folder) in answered:
                 best_folder = answered[url_key(folder)]
 
         candidates = [page for page in (best_linked, best_folder) if page]
-        return min(candidates, key=lambda page: path(page).strip("/").count("/"), default=None)
+        return min(candidates, key=lambda page: self.page_path(page).strip("/").count("/"), default=None)
 
     def save_state(self, status: ScrapeStatus) -> None:
         now = timezone.now()
