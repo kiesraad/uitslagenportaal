@@ -20,29 +20,29 @@ POLLING_STATION_PV_FILE_TYPES = (
 _FORM_ORDER = {file_type: index for index, file_type in enumerate(POLLING_STATION_PV_FILE_TYPES)}
 
 
-def polling_station_pv_documents(gemeente):
+def polling_station_pv_documents(municipality):
     return ElectionDocument.objects.filter(
-        region__parent=gemeente,
+        region__parent=municipality,
         region__region_category=RegionCategory.STEMBUREAU,
         file_type__in=POLLING_STATION_PV_FILE_TYPES,
     ).select_related("region__parent", "region__election__election_config")
 
 
-def polling_station_pv_zip_storage_key(gemeente):
-    return f"{gemeente.election.election_config.identifier}/polling-station-pvs/{gemeente.pk}.zip"
+def polling_station_pv_zip_storage_key(municipality):
+    return f"{municipality.election.election_config.identifier}/polling-station-pvs/{municipality.pk}.zip"
 
 
-def polling_station_pv_summary(gemeente, request=None):
-    """Counts and download URL for the gemeente page. None until the zip is in storage."""
-    if gemeente.region_category != RegionCategory.GEMEENTE:
+def polling_station_pv_summary(municipality, request=None):
+    """Counts and download URL for the municipality page. None until the zip is in storage."""
+    if municipality.region_category != RegionCategory.municipality:
         return None
 
-    documents = polling_station_pv_documents(gemeente)
+    documents = polling_station_pv_documents(municipality)
     # Corrections on the same polling station do not raise the count.
     present_count = documents.values("region_id").distinct().count()
     if present_count == 0:
         return None
-    if not default_storage.exists(polling_station_pv_zip_storage_key(gemeente)):
+    if not default_storage.exists(polling_station_pv_zip_storage_key(municipality)):
         return None
 
     query = {}
@@ -50,7 +50,7 @@ def polling_station_pv_summary(gemeente, request=None):
         query = {key: request.GET[key] for key in ("csb", "parent_region") if request.GET.get(key)}
     url = reverse(
         "polling-station-pv-archive",
-        kwargs={"election_config": gemeente.election.election_config.slug, "region": gemeente.slug},
+        kwargs={"election_config": municipality.election.election_config.slug, "region": municipality.slug},
     )
     if query:
         url = f"{url}?{urlencode(query)}"
@@ -58,7 +58,7 @@ def polling_station_pv_summary(gemeente, request=None):
     return {
         "url": url,
         "present_count": present_count,
-        "total_count": gemeente.children.filter(region_category=RegionCategory.STEMBUREAU).count(),
+        "total_count": municipality.children.filter(region_category=RegionCategory.STEMBUREAU).count(),
         "size": documents.aggregate(total=Sum("size"))["total"] or 0,
     }
 
@@ -74,10 +74,10 @@ def _ordered_polling_station_pvs(documents):
     )
 
 
-def write_polling_station_pv_zip(gemeente):
-    """Write the gemeente zip to object storage, or delete it when no forms remain."""
-    documents = list(polling_station_pv_documents(gemeente))
-    key = polling_station_pv_zip_storage_key(gemeente)
+def write_polling_station_pv_zip(municipality):
+    """Write the municipality zip to object storage, or delete it when no forms remain."""
+    documents = list(polling_station_pv_documents(municipality))
+    key = polling_station_pv_zip_storage_key(municipality)
     if not documents:
         if default_storage.exists(key):
             default_storage.delete(key)
