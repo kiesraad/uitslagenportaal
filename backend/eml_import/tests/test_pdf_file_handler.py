@@ -37,21 +37,57 @@ def test_imports_a_municipal_certified_document_onto_the_gemeente():
     assert default_storage.open(document.storage_key).read() == PDF_BYTES
     preview_key = Path(document.storage_key).with_suffix(".png").as_posix()
     assert default_storage.open(preview_key).read().startswith(b"\x89PNG\r\n\x1a\n")
+    assert not storages["pv_import"].exists("TK2025_Nederland_NA31-2_Barneveld.pdf")
 
 
 @pytest.mark.django_db
 def test_records_the_hash_and_skips_bytes_that_were_already_imported():
     region = barneveld()
-    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    name = "TK2025_Nederland_NA31-2_Barneveld.pdf"
+    write_pdf(name)
     handler = PDFFileHandler(storages["pv_import"])
 
     assert handler.run() == 1
     recorded = ImportedFileHash.objects.get()
     assert recorded.election == region.election
     assert recorded.sha256 == hashlib.sha256(PDF_BYTES).hexdigest()
+    assert not storages["pv_import"].exists(name)
 
+    write_pdf(name)
     assert handler.run() == 0
     assert ElectionDocument.objects.count() == 1
+    assert not storages["pv_import"].exists(name)
+
+
+@pytest.mark.django_db
+def test_deletes_a_processed_pdf_from_a_subfolder_of_the_import_storage():
+    barneveld()
+    key = "nested/TK2025_Nederland_NA31-2_Barneveld.pdf"
+    write_pdf(key)
+
+    PDFFileHandler(storages["pv_import"]).run()
+
+    assert not storages["pv_import"].exists(key)
+    assert default_storage.open(ElectionDocument.objects.get().storage_key).read() == PDF_BYTES
+
+
+@pytest.mark.django_db
+def test_keeps_the_imported_document_when_the_inbox_delete_fails(monkeypatch, caplog):
+    barneveld()
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    handler = PDFFileHandler(storages["pv_import"])
+
+    def fail_delete(_name):
+        raise OSError("inbox unavailable")
+
+    monkeypatch.setattr(handler.storage, "delete", fail_delete)
+
+    with caplog.at_level(logging.ERROR):
+        assert handler.run() == 1
+
+    assert ElectionDocument.objects.count() == 1
+    assert storages["pv_import"].exists("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    assert "Failed to delete processed proces-verbaal" in caplog.text
 
 
 @pytest.mark.django_db
@@ -258,6 +294,8 @@ def test_logs_a_bad_filename_and_imports_the_rest(caplog):
     assert imported == 1
     assert ElectionDocument.objects.count() == 1
     assert "TK2025_NA31-2_Barneveld.pdf" in caplog.text
+    assert storages["pv_import"].exists("TK2025_NA31-2_Barneveld.pdf")
+    assert not storages["pv_import"].exists("TK2025_Nederland_NA31-2_Barneveld.pdf")
 
 
 @pytest.mark.django_db

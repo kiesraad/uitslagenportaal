@@ -43,12 +43,12 @@ _REGION_CATEGORY_BY_FILE_TYPE = {
 class _StoragePdf:
     def __init__(self, storage: Storage, key: str):
         self._storage = storage
-        self._key = key
+        self.key = key
         self.name = Path(key).name
         self.stem = Path(key).stem
 
     def open(self, mode="rb"):
-        return self._storage.open(self._key, mode)
+        return self._storage.open(self.key, mode)
 
 
 class PDFFileHandler:
@@ -84,7 +84,7 @@ class PDFFileHandler:
             try:
                 if self._import_pv(_StoragePdf(self.storage, name)):
                     imported += 1
-            except (IntegrityError, PDFImporterException):
+            except IntegrityError, PDFImporterException:
                 # A bad file must not stop the rest of this sweep.
                 logger.exception("Failed to import proces-verbaal %s", name)
         return imported
@@ -109,13 +109,23 @@ class PDFFileHandler:
                 self._store(content, file.name, config.identifier, region, file_type)
         except FileAlreadyImported:
             logger.info("Skipping duplicate proces-verbaal %s", file.name)
+            self._delete_from_import_storage(file)
             return False
+
+        self._delete_from_import_storage(file)
 
         if file_type in POLLING_STATION_PV_FILE_TYPES and region.parent_id:
             self.archive_municipality_ids.add(region.parent_id)
 
         logger.info("Imported %s onto %s %s", file.name, region.region_category, region.region_name)
         return True
+
+    def _delete_from_import_storage(self, file: _StoragePdf) -> None:
+        """Remove a processed file from the inbox. A failed import must not call this."""
+        try:
+            self.storage.delete(file.key)
+        except Exception:
+            logger.exception("Failed to delete processed proces-verbaal %s from import storage", file.key)
 
     def _parse_filename(self, file: _StoragePdf) -> tuple[str, str, str, str]:
         parts = file.stem.split("_", 3)

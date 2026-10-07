@@ -24,6 +24,7 @@ def test_import_pvs_reads_whatever_storage_is_configured(tmp_path, settings):
     call_command("import_pvs")
 
     assert ElectionDocument.objects.get().size == len(PDF_BYTES)
+    assert not storages["pv_import"].exists("nested/TK2025_Nederland_NA31-2_Barneveld.pdf")
 
 
 @pytest.mark.django_db
@@ -40,3 +41,4 @@ def test_import_pvs_reads_an_object_storage_the_same_way(settings):
     assert document.region == region
     assert document.storage_key == "TK2025/TK2025_Nederland_NA31-2_Barneveld.pdf"
     assert default_storage.open(document.storage_key).read() == PDF_BYTES
+    assert not storages["pv_import"].exists("nested/TK2025_Nederland_NA31-2_Barneveld.pdf")
