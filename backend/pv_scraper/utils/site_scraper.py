@@ -68,9 +68,9 @@ class Visit:
 
 @dataclass
 class FileResult:
-    scraped_file: ScrapedFile | None
-    content: NamedBytesIO
     is_pv: bool
+    content: NamedBytesIO | None = None
+    scraped_file: ScrapedFile | None = None
 
 
 class SiteScraper:
@@ -265,7 +265,7 @@ class SiteScraper:
 
         known: ScrapedFile | None = self.known_files.get(link.href)
         if result.status == 304:
-            return FileResult(is_pv=bool(known) and not known.rejected_reason, scraped_file=known)
+            return FileResult(bool(known) and not known.rejected_reason, scraped_file=known)
         body, headers = result.file, result.headers
         file_name = filename_for(link.href, headers, link.text)
         if not body.startswith(b"%PDF"):
@@ -283,7 +283,7 @@ class SiteScraper:
             if known and known.sha256 == sha256:
                 known.etag, known.last_modified = headers.get("etag"), headers.get("last-modified")
                 known.save(update_fields=["etag", "last_modified", "updated_at"])
-            return FileResult(is_pv=sha256 in self.pv_hashes, scraped_file=known)
+            return FileResult(sha256 in self.pv_hashes, scraped_file=known)
 
         # A changed file at a known URL is a new version; the earlier one stays.
         scraped_file = ScrapedFile.objects.create(
@@ -305,9 +305,9 @@ class SiteScraper:
         if not rejected_reason:
             logger.info("Downloaded file from %s", self.source)
             self.pv_hashes.add(sha256)
-            return FileResult(scraped_file, NamedBytesIO(body, file_name), True)
+            return FileResult(True, NamedBytesIO(body, file_name), scraped_file)
 
-        return FileResult(is_pv=not rejected_reason, scraped_file=scraped_file)
+        return FileResult(not rejected_reason, scraped_file=scraped_file)
 
     def hubs(self) -> list[str]:
         """The pages to start the next scrape from, one for each page with PV files."""
