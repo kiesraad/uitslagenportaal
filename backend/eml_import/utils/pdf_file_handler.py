@@ -3,11 +3,13 @@ from io import BytesIO
 from pathlib import Path
 
 import pypdfium2 as pdfium
+from django.core.cache import cache
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage, default_storage
 from django.db import IntegrityError, transaction
 from django.db.models import Q
+from redis.exceptions import LockError
 
 from election.models import ElectionCategory, ElectionConfig, ElectionDocument
 from eml_import.exceptions import FileAlreadyImported, PDFImporterException
@@ -17,6 +19,11 @@ from region.models import Region
 from region.polling_station_pv_archive import POLLING_STATION_PV_FILE_TYPES
 
 logger = logging.getLogger(__name__)
+
+# Seconds before the sweep lock expires on its own, so a worker that dies mid-import
+# does not block the next Beat tick forever. Kept at the Celery hard limit so a
+# long sweep is not overlapped before the worker is killed.
+LOCK_TIMEOUT = 30 * 60
 
 # The results box shows one page. Twice the PDF point size stays sharp at that width.
 _PREVIEW_SCALE = 2
@@ -50,9 +57,29 @@ class PDFFileHandler:
         self.storage = storage
         self.archive_municipality_ids: set[int] = set()
 
+    @staticmethod
+    def cache_lock_key() -> str:
+        """The cache key of the lock held while proces-verbalen are imported."""
+        return "pdf-importer"
+
     def run(self) -> int:
-        imported = 0
         self.archive_municipality_ids = set()
+        # One sweep at a time, so two workers cannot import the same PDF twice
+        lock = cache.lock(self.cache_lock_key(), timeout=LOCK_TIMEOUT, blocking=False)
+        if not lock.acquire():
+            logger.warning("Could not acquire lock, PDFFileHandler is already running")
+            return 0
+
+        try:
+            return self._run_import()
+        finally:
+            try:
+                lock.release()
+            except LockError:
+                logger.warning("Lock expired while importing proces-verbalen")
+
+    def _run_import(self) -> int:
+        imported = 0
         for name in sorted(self._pdf_names("")):
             try:
                 if self._import_pv(_StoragePdf(self.storage, name)):

@@ -3,15 +3,21 @@ import logging
 from pathlib import Path
 
 import pytest
+from django.core.cache import cache
 from django.core.files.storage import FileSystemStorage, default_storage
 
 from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
 from eml_import.models import ImportedFileHash
 from eml_import.tests.pdf_files import PDF_BYTES, barneveld, one_page_pdf, write_pdf
-from eml_import.utils.pdf_file_handler import PDFFileHandler
+from eml_import.utils.pdf_file_handler import LOCK_TIMEOUT, PDFFileHandler
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
+
+
+def warnings_of(caplog) -> list[str]:
+    """The warnings the file handler logged, which is the only trace a lock problem leaves."""
+    return [record.getMessage() for record in caplog.records if record.levelno == logging.WARNING]
 
 
 @pytest.mark.django_db
@@ -254,3 +260,69 @@ def test_logs_a_bad_filename_and_imports_the_rest(tmp_path, caplog):
     assert imported == 1
     assert ElectionDocument.objects.count() == 1
     assert "TK2025_NA31-2_Barneveld.pdf" in caplog.text
+
+
+@pytest.mark.django_db
+def test_run_skips_the_import_while_another_worker_holds_the_lock(tmp_path, caplog):
+    barneveld()
+    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
+    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+
+    with cache.lock(handler.cache_lock_key(), timeout=LOCK_TIMEOUT):
+        imported = handler.run()
+
+    assert imported == 0
+    assert ElectionDocument.objects.count() == 0
+    assert handler.archive_municipality_ids == set()
+    assert warnings_of(caplog) == ["Could not acquire lock, PDFFileHandler is already running"]
+
+
+@pytest.mark.django_db
+def test_run_releases_the_lock_when_it_finishes(tmp_path):
+    barneveld()
+    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
+    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+
+    handler.run()
+
+    assert cache.lock(handler.cache_lock_key(), blocking=False).acquire() is True
+
+
+@pytest.mark.django_db
+def test_run_holds_a_lock_that_expires_on_its_own(tmp_path, monkeypatch):
+    """A worker that dies mid-import must not block the next sweep forever."""
+    barneveld()
+    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
+    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    remaining = []
+    original = PDFFileHandler._import_pv
+
+    def observe_ttl(self, file):
+        remaining.append(cache.ttl(self.cache_lock_key()))
+        return original(self, file)
+
+    monkeypatch.setattr(PDFFileHandler, "_import_pv", observe_ttl)
+
+    handler.run()
+
+    assert remaining == [LOCK_TIMEOUT]
+
+
+@pytest.mark.django_db
+def test_run_keeps_its_result_when_the_lock_expires_mid_import(tmp_path, monkeypatch, caplog):
+    barneveld()
+    write_pdf(tmp_path, "TK2025_Nederland_NA31-2_Barneveld.pdf")
+    handler = PDFFileHandler(FileSystemStorage(location=tmp_path))
+    original = PDFFileHandler._import_pv
+
+    def expire_lock(self, file):
+        cache.delete(self.cache_lock_key())
+        return original(self, file)
+
+    monkeypatch.setattr(PDFFileHandler, "_import_pv", expire_lock)
+
+    imported = handler.run()
+
+    assert imported == 1
+    assert ElectionDocument.objects.count() == 1
+    assert warnings_of(caplog) == ["Lock expired while importing proces-verbalen"]
