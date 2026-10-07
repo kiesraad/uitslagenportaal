@@ -87,7 +87,7 @@ def test_import_task_lets_file_handler_failures_escape_so_celery_can_retry(githu
 def test_import_pvs_runs_the_pdf_importer(pdf_file_handler, delay):
     handler = pdf_file_handler.return_value
     handler.run.return_value = 2
-    handler.archive_gemeente_ids = set()
+    handler.archive_municipality_ids = set()
 
     assert import_pvs() == 2
 
@@ -101,7 +101,7 @@ def test_import_pvs_runs_the_pdf_importer(pdf_file_handler, delay):
 def test_import_pvs_queues_one_zip_rebuild_per_gemeente_that_got_a_polling_station_form(pdf_file_handler, delay):
     handler = pdf_file_handler.return_value
     handler.run.return_value = 4
-    handler.archive_gemeente_ids = {19, 17}
+    handler.archive_municipality_ids = {19, 17}
 
     assert import_pvs() == 4
 

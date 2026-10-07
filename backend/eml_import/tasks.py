@@ -45,7 +45,7 @@ def import_pvs() -> int:
     imported = handler.run()
     if imported:
         logger.info("Imported %d proces-verbaal PDF(s).", imported)
-    for gemeente_id in sorted(handler.archive_gemeente_ids):
+    for gemeente_id in sorted(handler.archive_municipality_ids):
         build_polling_station_pv_zip.delay(gemeente_id)
     return imported
 
