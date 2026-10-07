@@ -152,12 +152,14 @@ class PDFFileHandler:
         category = self._region_category(config, file_type)
         # A stembureau number repeats in every municipality; the stored id carries the municipality (0203::SB1).
         lookup = (
-            {"region_number": region_token} if category == RegionCategory.STEMBUREAU else {"region_name": region_token}
+            {"region_number": region_token}
+            if category == RegionCategory.STEMBUREAU
+            else {"region_name__iexact": region_token}
         )
         csb_category = ElectionCategory(config.category).config.csb
-        belongs_to_csb = Q(csb__region_name=csb_name) | Q(
+        belongs_to_csb = Q(csb__region_name__iexact=csb_name) | Q(
             csb__isnull=True,
-            region_name=csb_name.upper(),
+            region_name__iexact=csb_name,
             region_category=csb_category,
         )
         try:
