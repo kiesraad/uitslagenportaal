@@ -34,7 +34,7 @@ def polling_station_pv_zip_storage_key(municipality):
 
 def polling_station_pv_summary(municipality, request=None):
     """Counts and download URL for the municipality page. None until the zip is in storage."""
-    if municipality.region_category != RegionCategory.municipality:
+    if municipality.region_category != RegionCategory.GEMEENTE:
         return None
 
     documents = polling_station_pv_documents(municipality)
