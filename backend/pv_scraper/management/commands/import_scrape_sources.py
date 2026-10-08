@@ -20,7 +20,8 @@ def format_error(error: ValidationError) -> str:
 class Command(BaseCommand):
     help = (
         "Create or update scrape sources from an authorities.json in default storage, keyed by TOOi code. "
-        "Scrape state and sources missing from the file are left alone; invalid records are skipped."
+        "Election pages are merged with those already known. Scrape state and sources missing from the file are left "
+        "alone; invalid records are skipped."
     )
 
     def add_arguments(self, parser):
@@ -41,11 +42,15 @@ class Command(BaseCommand):
         with transaction.atomic():
             for code, fields in authorities.items():
                 source = ScrapeSource.objects.filter(code=code).first() or ScrapeSource(code=code)
+                existing_pages = list(source.election_pages)
                 try:
                     if not isinstance(fields, dict):
                         raise ValidationError("Record is not an object.")
                     for field in IMPORTED_FIELDS & fields.keys():
                         setattr(source, field, fields[field])
+                    # The scraper adds election pages too; keep those it found since the file was exported.
+                    if isinstance(fields.get("election_pages"), list):
+                        source.election_pages = list(dict.fromkeys([*existing_pages, *fields["election_pages"]]))
                     source.full_clean()
                 except ValidationError as error:
                     rejected += 1

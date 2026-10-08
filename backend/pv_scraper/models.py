@@ -14,6 +14,7 @@ def validate_url_list(value) -> None:
 
 
 class ScrapeStatus(models.TextChoices):
+    QUEUED = "queued", "Queued"
     RUNNING = "running", "Running"
     OK = "ok", "OK"
     NO_PVS_FOUND = "no-pvs-found", "No PVs found"
@@ -30,28 +31,58 @@ class ScrapeSource(BaseModel):
     kind = models.CharField(max_length=32, choices=RegionCategory.choices)
     name = models.CharField(max_length=255)
     website = models.URLField()
+    # Where scrapes start; the scraper adds the pages that lead to PVs and drops those that no longer do. Empty means a
+    # full crawl from `website`.
     election_pages = models.JSONField(default=list, blank=True, validators=[validate_url_list])
     exclude = models.CharField(max_length=255, null=True, blank=True)
     cookie_banner_label = models.CharField(max_length=255, null=True, blank=True)
     disabled = models.BooleanField(default=False)
 
-    # A scrape is due when it was requested after the last run started.
+    # A scrape is due when it was requested after the last run was queued; the worker resets the time on start.
     scrape_requested_at = models.DateTimeField(null=True, blank=True)
     last_run_started_at = models.DateTimeField(null=True, blank=True)
     last_run_finished_at = models.DateTimeField(null=True, blank=True)
     last_run_status = models.CharField(max_length=16, choices=ScrapeStatus.choices, null=True, blank=True)
 
-    # Merged across runs: one entry per URL (per URL and error for `errors`), each with first_seen and last_seen.
-    pages = models.JSONField(default=list, blank=True)
-    rejected = models.JSONField(default=list, blank=True)
+    # Merged across runs: one entry per URL and error, with first_seen and last_seen. Also notes changes to
+    # election_pages.
     errors = models.JSONField(default=list, blank=True)
 
     def __str__(self) -> str:
         return f"{self.name} ({self.code})"
 
 
+class ScrapedPage(BaseModel):
+    """A page visited while scraping a source, kept across runs to choose and prune the election pages."""
+
+    source = models.ForeignKey(ScrapeSource, on_delete=models.CASCADE, related_name="scraped_pages")
+    url = models.TextField()
+    # The page whose link led here, and the election page (or website) the visit started from.
+    via = models.TextField(null=True, blank=True)
+    root = models.TextField()
+    depth = models.PositiveSmallIntegerField()
+    status = models.PositiveSmallIntegerField(null=True, blank=True)
+    error = models.TextField(null=True, blank=True)
+    blocked = models.BooleanField(default=False)
+    links = models.PositiveIntegerField(null=True, blank=True)
+    # PV files linked from this page on its last visit.
+    files = models.PositiveIntegerField(default=0)
+    first_seen = models.DateTimeField(default=timezone.now)
+    last_seen = models.DateTimeField(default=timezone.now)
+    # Start of an unbroken run of 404 and 410 answers.
+    missing_since = models.DateTimeField(null=True, blank=True)
+    # When a PV file was last reached from this page, directly or through the pages below it.
+    last_file_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["source", "url"], name="unique_page_url_per_source")]
+
+    def __str__(self) -> str:
+        return self.url
+
+
 class ScrapedFile(BaseModel):
-    """A downloaded document; the file itself goes to storage for the processing service."""
+    """A downloaded document. Unless rejected, the file itself goes to storage for the processing service."""
 
     source = models.ForeignKey(ScrapeSource, on_delete=models.CASCADE, related_name="scraped_files")
     election = models.CharField(max_length=64, null=True, blank=True)
@@ -64,6 +95,8 @@ class ScrapedFile(BaseModel):
     last_modified = models.CharField(max_length=64, null=True, blank=True)
     link_text = models.TextField(blank=True)
     heading_text = models.TextField(blank=True)
+    # Why the file is not a PV, such as "excluded" or "not-pdf (HTTP 200)"; kept so it is not downloaded again.
+    rejected_reason = models.CharField(max_length=64, null=True, blank=True)
     downloaded_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

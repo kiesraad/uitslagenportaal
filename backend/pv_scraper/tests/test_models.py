@@ -2,7 +2,15 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
-from pv_scraper.tests.factories import ScrapedFileFactory, ScrapeSourceFactory
+from pv_scraper.tests.factories import ScrapedFileFactory, ScrapedPageFactory, ScrapeSourceFactory
+
+
+@pytest.mark.django_db
+def test_scraped_page_url_is_unique_per_source():
+    source = ScrapedPageFactory(url="https://www.gm0344.nl/verkiezingen").source
+
+    with pytest.raises(IntegrityError):
+        ScrapedPageFactory(source=source, url="https://www.gm0344.nl/verkiezingen")
 
 
 @pytest.mark.django_db
