@@ -14,6 +14,7 @@ def validate_url_list(value) -> None:
 
 
 class ScrapeStatus(models.TextChoices):
+    QUEUED = "queued", "Queued"
     RUNNING = "running", "Running"
     OK = "ok", "OK"
     NO_PVS_FOUND = "no-pvs-found", "No PVs found"
@@ -37,7 +38,7 @@ class ScrapeSource(BaseModel):
     cookie_banner_label = models.CharField(max_length=255, null=True, blank=True)
     disabled = models.BooleanField(default=False)
 
-    # A scrape is due when it was requested after the last run started.
+    # A scrape is due when it was requested after the last run was queued; the worker resets the time on start.
     scrape_requested_at = models.DateTimeField(null=True, blank=True)
     last_run_started_at = models.DateTimeField(null=True, blank=True)
     last_run_finished_at = models.DateTimeField(null=True, blank=True)

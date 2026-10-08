@@ -102,9 +102,13 @@ class SiteScraper:
         try:
             for url in self.start_urls:
                 self.push(Visit(Link(url), 0, None, url), 0)
+            # One API call per site, credited to its first start page: the API lists every election at once.
+            origins = {}
             for url in self.start_urls:
                 if host(url).startswith("mijnstembureau-"):
-                    self.mijnstembureau(f"https://{urlsplit(url).netloc}", url)
+                    origins.setdefault(f"https://{urlsplit(url).netloc}", url)
+            for origin, root in origins.items():
+                self.mijnstembureau(origin, root)
             self.crawl()
             status = self.status()
         except Exception as exc:
@@ -115,7 +119,8 @@ class SiteScraper:
         return status
 
     def status(self) -> ScrapeStatus:
-        if self.pv_hashes:
+        # PVs reached this run only: a site that is down now still has the PVs of earlier runs on record.
+        if self.files_by_root:
             return ScrapeStatus.OK
         if self.pages and all(p["status"] in (401, 403) or p["blocked"] for p in self.pages):
             return ScrapeStatus.BLOCKED

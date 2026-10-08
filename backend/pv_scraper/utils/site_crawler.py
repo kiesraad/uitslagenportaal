@@ -209,7 +209,11 @@ class SiteCrawler:
         """Fetch with the browser's cookies; fall back to requests for servers whose headers Playwright rejects."""
         try:
             response = self.context.request.get(url, headers=headers, timeout=60_000, max_redirects=10)
-            return response.status, response.headers, response.body()
+            # Playwright keeps a body until the context closes, which is only after the whole site.
+            try:
+                return response.status, response.headers, response.body()
+            finally:
+                response.dispose()
         except Error as exc:
             if "Parse Error" not in str(exc):
                 raise

@@ -19,11 +19,10 @@ SCRAPER_QUEUE = "scraper"
 
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender: Celery, **_) -> None:
-    # Run the `import_next_eml_commits` task every 10 min
     sender.add_periodic_task(
         crontab(minute="*/10"),
         dispatch_scrape_tasks.s(),
-        name="Dispatch a task for each source to scrape",
+        name="Dispatch a task which dispatches scrape tasks if needed.",
     )
 
 
@@ -33,19 +32,28 @@ def dispatch_scrape_tasks():
 
     # Request a scrape for the sources that haven't been scraped in SCRAPE_INTERVAL (or never)
     # A scrape can also be requested from other parts of the application, e.g. the EML importer.
-    ScrapeSource.objects.filter(
+    enabled = ScrapeSource.objects.filter(disabled=False)
+    enabled.filter(
         Q(last_run_started_at__lt=timezone.now() - SCRAPE_INTERVAL) | Q(last_run_started_at__isnull=True)
     ).update(scrape_requested_at=timezone.now())
 
     # Get the source we want to scrape, this includes the ones for which we just requested a scrape
     task_limit = settings.PV_SCRAPER_DISPATCH_MAX_TASKS
-    sources = ScrapeSource.objects.filter(
-        Q(scrape_requested_at__gt=F("last_run_started_at"))
-        | (Q(scrape_requested_at__isnull=False) & Q(last_run_started_at__isnull=True))
-    ).order_by("scrape_requested_at")[:task_limit]
+    source_ids = list(
+        enabled.filter(
+            Q(scrape_requested_at__gt=F("last_run_started_at"))
+            | (Q(scrape_requested_at__isnull=False) & Q(last_run_started_at__isnull=True))
+        )
+        .order_by("scrape_requested_at")
+        .values_list("id", flat=True)[:task_limit]
+    )
 
-    for source in sources:
-        run_scrape_for_source.apply_async((source.id,), queue=SCRAPER_QUEUE)
+    # Counted as started once queued, so the next dispatch does not queue the source again while it waits.
+    ScrapeSource.objects.filter(pk__in=source_ids).update(
+        last_run_started_at=timezone.now(), last_run_status=ScrapeStatus.QUEUED
+    )
+    for source_id in source_ids:
+        run_scrape_for_source.apply_async((source_id,), queue=SCRAPER_QUEUE)
 
 
 @app.task
@@ -59,5 +67,13 @@ def run_scrape_for_source(source_id: int):
     source.last_run_status = ScrapeStatus.RUNNING
     source.save(update_fields=["last_run_started_at", "last_run_status", "updated_at"])
 
-    with SiteCrawler(source.cookie_banner_label) as crawler:
-        SiteScraper(source, crawler).run()
+    try:
+        with SiteCrawler(source.cookie_banner_label) as crawler:
+            SiteScraper(source, crawler).run()
+    except Exception:
+        # A failure outside the scrape itself, such as the browser not starting, still ends the run.
+        if source.last_run_status == ScrapeStatus.RUNNING:
+            source.last_run_status = ScrapeStatus.ERROR
+            source.last_run_finished_at = timezone.now()
+            source.save(update_fields=["last_run_status", "last_run_finished_at", "updated_at"])
+        raise

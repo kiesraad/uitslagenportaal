@@ -15,6 +15,10 @@ from pv_scraper.utils.link_rules import filename_for, is_pv, is_results_context,
         ("GR-2026 stembureau", 2026),
         ("Proces-verbaal stembureau 12", None),
         ("20180321 telefoon 0118-412000", None),
+        ("Stembureau 12 - Stadhuis, Grote Markt 2, 2011 RD Haarlem", None),
+        ("Stembureau Postkantoor, Brievenbussteeg 1, 2026PP Keteldorp", None),
+        ("2011RD Haarlem, uitslag 2026", 2026),
+        ("Uitslag 2022 en 2026", 2026),
     ],
 )
 def test_newest_year(text, expected):

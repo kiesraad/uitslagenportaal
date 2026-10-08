@@ -287,6 +287,26 @@ def test_status_without_files(result, expected):
 
 
 @pytest.mark.django_db
+def test_status_ignores_files_of_earlier_runs():
+    source = ScrapeSourceFactory(website=WEBSITE)
+    ScrapedFileFactory(source=source, sha256=sha256(PDF))
+
+    assert scrape(source, FakeCrawler({WEBSITE: CrawledPage(WEBSITE, 500)})) == ScrapeStatus.GONE
+
+
+@pytest.mark.django_db
+def test_mijnstembureau_api_is_called_once_per_site():
+    origin = "https://mijnstembureau-gm0001.nl"
+    source = ScrapeSourceFactory(website=WEBSITE, election_pages=[f"{origin}/gr", f"{origin}/tk"])
+    api_url = f"{origin}/uitslagen/api/uitslagen"
+    crawler = FakeCrawler({api_url: CrawledPage(api_url, 200, file=b"[]")})
+
+    assert scrape(source, crawler) == ScrapeStatus.NO_PVS_FOUND
+    assert crawler.crawled_urls.count(api_url) == 1
+    assert ScrapedPage.objects.filter(source=source, url=api_url).count() == 1
+
+
+@pytest.mark.django_db
 def test_unexpected_error_is_recorded():
     source = ScrapeSourceFactory(website=WEBSITE)
     crawler = FakeCrawler()
