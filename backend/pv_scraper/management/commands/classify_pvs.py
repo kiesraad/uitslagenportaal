@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import random
 import time
@@ -6,10 +7,11 @@ from concurrent.futures import ProcessPoolExecutor
 from contextlib import nullcontext
 from pathlib import Path
 
+import django
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from pv_scraper.utils.pv_classifier import BASES, MODELS, ClassificationResult, PvClassifier
+from pv_scraper.utils.pv_classifier import BASES, MODELS, ClassificationResult, PvClassificationException, PvClassifier
 
 PVS = settings.BASE_DIR / ".data" / "PVs"
 
@@ -30,14 +32,21 @@ def collect_pdfs(paths: list[Path], pattern: str) -> list[Path]:
     return pdfs
 
 
-def classify_timed(path: Path) -> tuple[ClassificationResult | None, str | None, float]:
-    """Classify one file, also in a worker process: the result or the error, and the seconds it took."""
+def classify_timed(path: Path) -> tuple[ClassificationResult | None, str, str | None, float]:
+    """Classify one file, also in a worker process: the result and its storage name, or the error, and the seconds it
+    took. The name is empty when the PV doesn't give enough to name it."""
     start = time.perf_counter()
+    result, name, error = None, "", None
     try:
-        result, error = PvClassifier(path).classify(), None
+        classifier = PvClassifier(path)
+        result = classifier.classify()
+        if result and result.matched_on.is_certain():
+            name = classifier.storage_name()
+    except PvClassificationException:
+        pass
     except Exception as exc:
         result, error = None, repr(exc)
-    return result, error, time.perf_counter() - start
+    return result, name, error, time.perf_counter() - start
 
 
 class Command(BaseCommand):
@@ -69,16 +78,16 @@ class Command(BaseCommand):
 
         # Rows are printed as each file is done, so the columns have fixed widths and the file name goes last.
         # "model" is the verdict; "code" and "title" show what OCR found on the page.
-        # "election" comes from the PDF, or from the file name when "from" says so.
-        row = "{:<18} {:<10} {:<8} {:<17} {:<8} {:<4} {:<8} {:<10} {:<9} {:<7} {:>6}  {}"
+        # "storage name" is what the PV would be stored as, from what it says alone; "from" tells where its election
+        # was read: the header, elsewhere in the PDF, or the file name.
+        row = "{:<18} {:<10} {:<8} {:<17} {:<48} {:<6} {:<10} {:<9} {:<7} {:>6}  {}"
         header = row.format(
             "model",
             "basis",
             "code",
             "title",
-            "election",
+            "storage name",
             "from",
-            "gemeente",
             "stembureau",
             "kieskring",
             "pass",
@@ -93,16 +102,21 @@ class Command(BaseCommand):
         if jobs > 1:
             # Tesseract's own threads compete with the workers; one each is about 1.6x faster with 4 jobs.
             os.environ["OMP_THREAD_LIMIT"] = "1"
+        # Workers don't inherit Django's setup, which unpickling a task needs because the classifier imports models.
         # Results come back in input order, so a slow file holds back the rows after it.
-        with ProcessPoolExecutor(jobs) if jobs > 1 else nullcontext() as pool:
+        executor = (
+            ProcessPoolExecutor(jobs, mp_context=multiprocessing.get_context("spawn"), initializer=django.setup)
+            if jobs > 1
+            else nullcontext()
+        )
+        with executor as pool:
             outcomes = pool.map(classify_timed, pdfs) if pool else map(classify_timed, pdfs)
             result: ClassificationResult
-            for path, (result, error, seconds) in zip(pdfs, outcomes):
+            for path, (result, name, error, seconds) in zip(pdfs, outcomes):
                 if error:
                     self.stdout.write(
                         row.format(
                             "error",
-                            "",
                             "",
                             "",
                             "",
@@ -121,18 +135,17 @@ class Command(BaseCommand):
                 assert result is not None
                 # A model read from its code alone is shown with a question mark.
                 model = f"{result.model}?" if result.matched_on == "code" else result.model or "-"
-                election, election_from = result.election
+                election = result.election
                 self.stdout.write(
                     row.format(
                         model,
                         result.matched_on,
                         result.codes[0] if result.codes else "",
                         "/".join(result.titles),
-                        election or "-",
-                        election_from,
-                        result.region.get("gemeente", ""),
-                        result.region.get("stembureau", ""),
-                        result.region.get("kieskring", ""),
+                        name or "-",
+                        election.found_in,
+                        result.region.stembureau,
+                        result.region.kieskring,
                         result.found_by,
                         f"{seconds:.1f}s",
                         display_path(path),
@@ -142,7 +155,7 @@ class Command(BaseCommand):
                     self.stdout.write("    " + " ".join(result.text.split())[:300])
                 models[model] += 1
                 bases[result.matched_on] += 1
-                elections[f"{election or '-'} {election_from}".strip()] += 1
+                elections[" ".join(filter(None, [election.id or "-", election.found_in, election.authority]))] += 1
 
         summary = "{:>5}  {:<18} {}"
         self.stdout.write("")

@@ -2,14 +2,13 @@ from datetime import date, timedelta
 from unittest.mock import patch
 
 import pytest
-from django.core.files.storage import default_storage
 from django.utils import timezone
 
 from pv_scraper.models import ScrapedFile, ScrapedPage, ScrapeStatus
 from pv_scraper.tests.factories import ScrapedFileFactory, ScrapedPageFactory, ScrapeSourceFactory
 from pv_scraper.utils import site_scraper
 from pv_scraper.utils.site_crawler import CrawledPage, Link
-from pv_scraper.utils.site_scraper import SiteScraper
+from pv_scraper.utils.site_scraper import FileResult, SiteScraper
 
 PDF = b"%PDF-1.7 proces-verbaal"
 WEBSITE = "https://www.gm0001.nl/"
@@ -60,12 +59,22 @@ def no_pauses():
         yield
 
 
+def scrape_files(source, crawler) -> tuple[ScrapeStatus, list[FileResult]]:
+    """Run a scrape to the end; return its status and the files it yielded."""
+    run, files = SiteScraper(source, crawler).run(), []
+    while True:
+        try:
+            files.append(next(run))
+        except StopIteration as stop:
+            return stop.value, files
+
+
 def scrape(source, crawler) -> ScrapeStatus:
-    return SiteScraper(source, crawler).run()
+    return scrape_files(source, crawler)[0]
 
 
 @pytest.mark.django_db
-def test_pv_links_of_any_election_are_downloaded_to_storage():
+def test_pv_links_of_any_election_are_downloaded_for_classification():
     source = ScrapeSourceFactory(code="gm0001", website=WEBSITE)
     pdf_url = "https://www.gm0001.nl/media/pv-stembureau-1.pdf"
     ps_pdf_url = "https://www.gm0001.nl/media/centrum.pdf"
@@ -75,13 +84,17 @@ def test_pv_links_of_any_election_are_downloaded_to_storage():
     ]
     files = {pdf_url: PDF, ps_pdf_url: PDF + b" PS"}
 
-    status = scrape(source, FakeCrawler({WEBSITE: page(WEBSITE, *links)}, files))
+    status, downloaded = scrape_files(source, FakeCrawler({WEBSITE: page(WEBSITE, *links)}, files))
 
     scraped = ScrapedFile.objects.get(source=source, url=pdf_url)
     # The election and model are left to the OCR classification.
     assert (scraped.election, scraped.model, scraped.size, scraped.etag) == (None, None, len(PDF), etag(PDF))
-    assert default_storage.exists("pv_scraper/gm0001/pv-stembureau-1.pdf")
     assert ScrapedFile.objects.filter(source=source, url=ps_pdf_url).exists()
+    # Both files are handed on with their contents, for the classifier to store.
+    assert {(f.scraped_file.url, f.content.name, f.content.getvalue()) for f in downloaded} == {
+        (pdf_url, "pv-stembureau-1.pdf", PDF),
+        (ps_pdf_url, "centrum.pdf", PDF + b" PS"),
+    }
     assert status == ScrapeStatus.OK
     source.refresh_from_db()
     assert source.last_run_status == ScrapeStatus.OK
@@ -174,20 +187,20 @@ def test_same_content_under_new_etag_updates_the_known_file():
 
 
 @pytest.mark.django_db
-def test_rejected_files_are_recorded_but_not_stored_or_downloaded_again():
+def test_rejected_files_are_recorded_but_not_handed_on_or_downloaded_again():
     source = ScrapeSourceFactory(code="gm0001", website=WEBSITE)
     excluded_url = "https://www.gm0001.nl/media/garantstelling.pdf"
     not_pdf_url = "https://www.gm0001.nl/media/pv-2.pdf"
     links = [Link(excluded_url, "Uitslag verkiezingen"), Link(not_pdf_url, "Proces-verbaal 2")]
     files = {excluded_url: PDF, not_pdf_url: b"<xml/>"}
 
-    status = scrape(source, FakeCrawler({WEBSITE: page(WEBSITE, *links)}, files))
+    status, downloaded = scrape_files(source, FakeCrawler({WEBSITE: page(WEBSITE, *links)}, files))
 
     assert sorted(ScrapedFile.objects.values_list("url", "rejected_reason")) == [
         (excluded_url, "excluded"),
         (not_pdf_url, "not-pdf (HTTP 200)"),
     ]
-    assert not default_storage.exists("pv_scraper/gm0001/garantstelling.pdf")
+    assert downloaded == []
     assert status == ScrapeStatus.NO_PVS_FOUND
 
     crawler = FakeCrawler({WEBSITE: page(WEBSITE, *links)}, files)
@@ -458,6 +471,23 @@ def test_walk_up_stops_at_a_page_not_about_elections():
 
     source.refresh_from_db()
     assert source.election_pages == [council]
+
+
+@pytest.mark.django_db
+def test_page_about_one_election_does_not_become_an_election_page():
+    source = ScrapeSourceFactory(website=WEBSITE)
+    election = f"{WEBSITE}gemeenteraadsverkiezingen-{YEAR}"
+    results = f"{WEBSITE}uitslag-gemeenteraadsverkiezingen-{YEAR}"
+    pages = {
+        WEBSITE: page(WEBSITE, Link(election, f"Gemeenteraadsverkiezingen {YEAR}")),
+        election: page(election, Link(results, "Uitslag")),
+        results: page(results, Link(PDF_URL, "Proces-verbaal 1")),
+    }
+
+    scrape(source, FakeCrawler(pages, {PDF_URL: PDF}))
+
+    source.refresh_from_db()
+    assert source.election_pages == []
 
 
 @pytest.mark.django_db

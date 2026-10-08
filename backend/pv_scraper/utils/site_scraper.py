@@ -10,12 +10,12 @@ import time
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Generator
 from urllib.parse import unquote, urldefrag, urlsplit
 
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 from django.utils import timezone
 
+from eml_import.utils.named_bytes_io import NamedBytesIO
 from pv_scraper.models import ScrapedFile, ScrapedPage, ScrapeSource, ScrapeStatus
 from pv_scraper.utils.link_rules import (
     ELECTION_PAGE_RE,
@@ -66,6 +66,13 @@ class Visit:
     root: str
 
 
+@dataclass
+class FileResult:
+    is_pv: bool
+    content: NamedBytesIO | None = None
+    scraped_file: ScrapedFile | None = None
+
+
 class SiteScraper:
     """The state of one scrape of a source: the links still to visit, and what was found, rejected or failed."""
 
@@ -79,7 +86,7 @@ class SiteScraper:
         today = timezone.localdate()
         # Early in the year, PVs of an election late in the previous year are still being published.
         self.oldest_year = today.year - (1 if today.month <= GRACE_MONTHS else 0)
-        files = list(source.scraped_files.order_by("downloaded_at"))
+        files: list[ScrapedFile] = list(source.scraped_files.order_by("downloaded_at"))
         # The latest download per URL, whose etag and last-modified make the next request conditional.
         self.known_files = {file.url: file for file in files}
         self.known_hashes = {file.sha256 for file in files}
@@ -98,7 +105,7 @@ class SiteScraper:
         self.redirects: dict[str, str] = {}
         self.errors: list[dict] = []
 
-    def run(self) -> ScrapeStatus:
+    def run(self) -> Generator[FileResult, None, ScrapeStatus]:
         try:
             for url in self.start_urls:
                 self.push(Visit(Link(url), 0, None, url), 0)
@@ -109,7 +116,7 @@ class SiteScraper:
                     origins.setdefault(f"https://{urlsplit(url).netloc}", url)
             for origin, root in origins.items():
                 self.mijnstembureau(origin, root)
-            self.crawl()
+            yield from self.crawl()
             status = self.status()
         except Exception as exc:
             logger.exception("Scrape of %s failed", self.source)
@@ -134,7 +141,7 @@ class SiteScraper:
             self.seen.add(key)
             heapq.heappush(self.queue, (priority, visit.depth, len(self.seen), visit))
 
-    def crawl(self) -> None:
+    def crawl(self) -> Generator[FileResult]:
         visited = 0
         while self.queue and visited < MAX_PAGES:
             _, _, _, visit = heapq.heappop(self.queue)
@@ -147,9 +154,14 @@ class SiteScraper:
                 conditional["If-Modified-Since"] = known.last_modified
             result = self.crawler.crawl(url, conditional)
             if result.file is not None:
-                if self.keep_file(visit.link, result):
+                file_result = self.keep_file(visit.link, result)
+                if file_result.is_pv:
                     self.files_by_page[visit.via] += 1
                     self.files_by_root[visit.root] += 1
+
+                if file_result.content:
+                    yield file_result
+
                 continue
 
             visited += 1
@@ -247,21 +259,23 @@ class SiteScraper:
                 # Credited to the start page rather than the API, which is no page to start from.
                 self.push(Visit(link, FILES_ONLY, root, root), 0)
 
-    def keep_file(self, link: Link, result: CrawledPage) -> bool:
-        """Record a downloaded file and store it when it may be a PV; return whether it is one."""
-        known = self.known_files.get(link.href)
+    def keep_file(self, link: Link, result: CrawledPage) -> FileResult:
+        """Record a downloaded file; return whether it may be a PV, with its content when it is new."""
+        assert result.file is not None, "Call keep_file() only if result has a file"
+
+        known: ScrapedFile | None = self.known_files.get(link.href)
         if result.status == 304:
-            return bool(known) and not known.rejected_reason
+            return FileResult(bool(known) and not known.rejected_reason, scraped_file=known)
         body, headers = result.file, result.headers
-        name = filename_for(link.href, headers, link.text)
+        file_name = filename_for(link.href, headers, link.text)
         if not body.startswith(b"%PDF"):
-            reason = f"not-pdf (HTTP {result.status})"
+            rejected_reason = f"not-pdf (HTTP {result.status})"
         else:
-            file_context = f"{name} {link.text} {link.title}"
-            reason = is_pv(f"{unquote(link.href)} {file_context} {link.heading}", file_context)[1] or None
+            file_context = f"{file_name} {link.text} {link.title}"
+            rejected_reason = is_pv(f"{unquote(link.href)} {file_context} {link.heading}", file_context)[1] or None
         # The name the server gives a file can show its year where the link did not.
-        if not reason and self.outdated(name):
-            reason = f"outdated ({newest_year(name)})"
+        if not rejected_reason and self.outdated(file_name):
+            rejected_reason = f"outdated ({newest_year(file_name)})"
 
         sha256 = hashlib.sha256(body).hexdigest()
         if sha256 in self.known_hashes:
@@ -269,14 +283,11 @@ class SiteScraper:
             if known and known.sha256 == sha256:
                 known.etag, known.last_modified = headers.get("etag"), headers.get("last-modified")
                 known.save(update_fields=["etag", "last_modified", "updated_at"])
-            return sha256 in self.pv_hashes
-        # Rejected files are recorded but not stored, so an unchanged one is not downloaded again.
-        if not reason:
-            key = default_storage.save(f"pv_scraper/{self.source.code}/{name}", ContentFile(body))
-            logger.info("Downloaded %s from %s", key, self.source)
-            self.pv_hashes.add(sha256)
-        # A changed file at a known URL is a new version; the earlier one stays.
-        self.known_files[link.href] = ScrapedFile.objects.create(
+            return FileResult(sha256 in self.pv_hashes, scraped_file=known)
+
+        # A changed file at a known URL is a new version; the earlier one stays. Rejected files are recorded too, so an
+        # unchanged one is not downloaded again.
+        scraped_file = ScrapedFile.objects.create(
             source=self.source,
             url=link.href,
             sha256=sha256,
@@ -285,11 +296,17 @@ class SiteScraper:
             last_modified=headers.get("last-modified"),
             link_text=link.text,
             heading_text=link.heading,
-            rejected_reason=reason,
+            rejected_reason=rejected_reason,
         )
+        self.known_files[link.href] = scraped_file
         self.known_hashes.add(sha256)
         pause(0.5, 1)
-        return not reason
+
+        if rejected_reason:
+            return FileResult(False, scraped_file=scraped_file)
+        logger.info("Downloaded file from %s", self.source)
+        self.pv_hashes.add(sha256)
+        return FileResult(True, NamedBytesIO(body, file_name), scraped_file)
 
     def hubs(self) -> list[str]:
         """The pages to start the next scrape from, one for each page with PV files."""
@@ -316,34 +333,35 @@ class SiteScraper:
                 # home page would make every scrape a full crawl.
                 via = record["via"]
                 hub = via if via and url_key(via) != website else record["url"]
+                # A page about one election never links to the next one: no start page is better than that.
+                if self.is_election_page(hub) is False:
+                    continue
             if url_key(hub) != website:
                 hubs.append(hub)
         return hubs
+
+    def page_path(self, url: str) -> str:
+        # A short URL such as "/verkiezingsuitslag" redirects to the results of one election; judge where it lands.
+        return urlsplit(self.final_urls.get(url, url)).path
+
+    def is_election_page(self, url: str) -> bool | None:
+        """True for a general election page, False for one about a single election, None if not about elections."""
+        context = f"{unquote(self.page_path(url))} {self.titles.get(url, '')}"
+        return None if not ELECTION_PAGE_RE.search(context) else newest_year(context) is None
 
     def general_election_page(
         self, url: str, parents: dict[str, str | None], answered: dict[str, str], website: str
     ) -> str | None:
         """The highest page above a page with PV files that is about elections but not about one in particular.
 
-        A page about one election ("/gemeenteraad-2026") never links to the next one, so it makes a poor start. Two
-        routes lead up: the pages that linked to it, and the folders in its URL, which only count when they answered
-        as a page. Pages for a single election are passed over; a route stops at the home page or at a page not about
-        elections. The candidate with the fewest folders wins.
+        Two routes lead up: the pages that linked to it, and the folders in its URL, which only count when they
+        answered as a page. Pages for a single election are passed over; a route stops at the home page or at a page
+        not about elections. The candidate with the fewest folders wins.
         """
-
-        def path(page_url: str) -> str:
-            # A short URL such as "/verkiezingsuitslag" redirects to the results of one election; judge where it lands.
-            return urlsplit(self.final_urls.get(page_url, page_url)).path
-
-        def is_election_page(page_url: str) -> bool | None:
-            """True for a general election page, False for one about a single election, None if not about elections."""
-            context = f"{unquote(path(page_url))} {self.titles.get(page_url, '')}"
-            return None if not ELECTION_PAGE_RE.search(context) else newest_year(context) is None
-
         best_linked, current, visited = None, url, set()
         while current and url_key(current) != website and current not in visited:
             visited.add(current)
-            general = is_election_page(current)
+            general = self.is_election_page(current)
             if general is None:
                 break
             if general:
@@ -355,14 +373,14 @@ class SiteScraper:
         folders = parts.path.strip("/").split("/")
         for count in range(len(folders) - 1, 0, -1):
             folder = f"{parts.scheme}://{parts.netloc}/{'/'.join(folders[:count])}"
-            general = is_election_page(folder)
+            general = self.is_election_page(folder)
             if general is None:
                 break
             if general and url_key(folder) in answered:
                 best_folder = answered[url_key(folder)]
 
         candidates = [page for page in (best_linked, best_folder) if page]
-        return min(candidates, key=lambda page: path(page).strip("/").count("/"), default=None)
+        return min(candidates, key=lambda page: self.page_path(page).strip("/").count("/"), default=None)
 
     def save_state(self, status: ScrapeStatus) -> None:
         now = timezone.now()
