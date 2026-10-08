@@ -37,3 +37,10 @@ def test_name_drops_the_directory_of_a_zip_entry():
 
 def test_str_shows_the_name():
     assert str(NamedBytesIO(b"", "dir/telling.eml.xml")) == "<NamedBytesIO telling.eml.xml>"
+
+
+def test_does_not_reach_the_disk_through_its_name():
+    file = NamedBytesIO(b"", "pv.pdf")
+
+    with pytest.raises(AttributeError):
+        _ = file.read_bytes

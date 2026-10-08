@@ -1,24 +1,22 @@
 import logging
 from datetime import timedelta
-from typing import TYPE_CHECKING
 
 from celery import Celery
 from celery.schedules import crontab
 from django.conf import settings
+from django.core.files.storage import default_storage
 from django.db.models import F, Q
 from django.utils import timezone
 
+from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.celery import app
-from pv_scraper.models import ScrapeSource, ScrapeStatus
+from pv_scraper.models import ScrapedFile, ScrapeSource, ScrapeStatus
 from pv_scraper.utils.pv_classifier import PvClassificationException, PvClassifier
-
-if TYPE_CHECKING:
-    from pv_scraper.utils.site_scraper import FileResult
 
 logger = logging.getLogger(__name__)
 
 SCRAPE_INTERVAL = timedelta(hours=24)
-# Consumed only by the worker with Playwright (`-Q scraper` in prod.dockerfile).
+# Consumed only by the worker with Playwright and Tesseract (`-Q scraper` in prod.dockerfile), which also classifies.
 SCRAPER_QUEUE = "scraper"
 
 
@@ -61,10 +59,19 @@ def dispatch_scrape_tasks():
         run_scrape_for_source.apply_async((source_id,), queue=SCRAPER_QUEUE)
 
 
-def classify_and_store(file: "FileResult") -> None:
-    """Classify a scraped file and store it under pvs/ when its model is certain."""
-    logger.info(f"Classifying {file.content.name}...")
-    classifier = PvClassifier(file.content)
+@app.task
+def classify_scraped_file(scraped_file_id: int, key: str, file_name: str) -> None:
+    """Classify a scraped file stored under a key and store it under pvs/ when its model is certain.
+
+    The file name is the one it was published under, which storage may have suffixed in the key; the classifier reads
+    the election and stembureau from it.
+    """
+    source = ScrapedFile.objects.select_related("source").get(pk=scraped_file_id).source
+    with default_storage.open(key) as stored:
+        content = NamedBytesIO(stored.read(), file_name)
+
+    logger.info(f"Classifying {key}...")
+    classifier = PvClassifier(content)
     classification = classifier.classify()
     if not classification or not classification.matched_on.is_certain():
         logger.info("Classification not certain, discarding file")
@@ -72,7 +79,7 @@ def classify_and_store(file: "FileResult") -> None:
 
     logger.info(f"Classified as {classification.model} for {classification.region}, saving file")
     try:
-        classifier.save_to_storage(file.scraped_file.source, "pvs")
+        classifier.save_to_storage(source, "pvs")
     except PvClassificationException as e:
         logger.info(str(e))
 
@@ -90,14 +97,10 @@ def run_scrape_for_source(source_id: int):
 
     try:
         with SiteCrawler(source.cookie_banner_label) as crawler:
+            # Classified in a task of its own, so the browser does not wait on OCR.
             for file in SiteScraper(source, crawler).run():
-                if file.scraped_file is None:
-                    continue
-                # One bad file must not end the scrape: the rest of the queue and the scrape state still count.
-                try:
-                    classify_and_store(file)
-                except Exception:
-                    logger.exception("Classifying %s failed", file.content.name)
+                key = default_storage.save(f"pv_scraper/{source.code}/{file.content.name}", file.content)
+                classify_scraped_file.apply_async((file.scraped_file.pk, key, file.content.name), queue=SCRAPER_QUEUE)
     except Exception:
         # A failure outside the scrape itself, such as the browser not starting, still ends the run.
         if source.last_run_status == ScrapeStatus.RUNNING:

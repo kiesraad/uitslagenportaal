@@ -208,7 +208,8 @@ def election_code(abbreviation: str, year: str) -> str:
 # OSV forms name the election and its date in the header, just above the title and model code: "Verkiezing
 # Gemeenteraad 2026 woensdag 18 maart 2026", "De verkiezing van de leden van de gemeenteraad\n18 maart 2026". OCR
 # splits words and misreads letters there ("Gemeentera ad", "ma art", "maarl2o26"), so the date is read with the
-# spaces removed and a month may have one misread letter after its first.
+# spaces removed and a month of five letters or more may have one misread letter after its first. A shorter month
+# would match too much that way: "mei" matches the "men" of "Emmen2026".
 MONTHS = [
     "januari",
     "februari",
@@ -223,15 +224,17 @@ MONTHS = [
     "november",
     "december",
 ]
+MONTH_PATTERNS = [f"{m[0]}(?:{m[1:]}){{e<=1}}" if len(m) >= 5 else m for m in MONTHS]
 HEADER_DATE_RE = regex.compile(
-    rf"(?e)(?P<day>[0-3]?\d)?(?:{'|'.join(f'(?P<m{i}>{m[0]}(?:{m[1:]}){{e<=1}})' for i, m in enumerate(MONTHS))})"
+    rf"(?e)(?P<day>[0-3]?\d)?(?:{'|'.join(f'(?P<m{i}>{m})' for i, m in enumerate(MONTH_PATTERNS))})"
     rf"(?P<year>2{OCR_DIGIT}{{3}})"
 )
 HEADER_LABEL_START_RE = re.compile(rf"(?i:\b(?:de\s+)?verkiezing)|{ELECTION_TYPE_RE.pattern}", re.IGNORECASE)
 # What may trail the label before the date: a weekday, "van", "op" or "in", and OCR debris such as the "1 B" of
-# "1 B maart".
+# "1 B maart". Each word matches only one way, or a run of them backtracks exponentially.
 HEADER_LABEL_TAIL_RE = re.compile(
-    r"(?:\s+(?:(?:maan|dins|woens|donder|vrij|zater|zon)dag|van|op|in|\S?\d\S?|\S))*[\s,.\-–—]*$", re.IGNORECASE
+    r"(?:\s+(?:(?:maan|dins|woens|donder|vrij|zater|zon)dag|van|op|in|\d\S?|[^\s\d]\d\S?|[^\s\d]))*[\s,.\-–—]*$",
+    re.IGNORECASE,
 )
 YEAR_IN_COMPACT_RE = re.compile(r"(?<!\d)(20\d\d)(?!\d)")
 # The Kiesraad's own models (O 7, P 22-1, P 22-2) name the election below the model code and title, in fixed words:
@@ -404,7 +407,7 @@ class PvClassificationException(Exception):
 class PvClassifier:
     def __init__(self, file: Path | NamedBytesIO):
         self.file = NamedBytesIO.from_path(file) if isinstance(file, Path) else file
-        self.result: ClassificationResult | None
+        self.result: ClassificationResult | None = None
 
     def render_page(self, index: int) -> Image.Image | None:
         pdf = pdfium.PdfDocument(self.file)
@@ -651,7 +654,8 @@ class PvClassifier:
             yield "page2", full + "\n" + self.ocr(second)
 
     def classify(self) -> ClassificationResult | None:
-        """Run OCR passes until the model is identified; otherwise return None."""
+        """Run OCR passes until the model is identified, and return the best result, whose matched_on says how certain
+        it is; None when the PDF has no page."""
         best = None
         for found_by, text in self.ocr_passes():
             result = self.identify_model(text)
@@ -741,7 +745,7 @@ class PvClassifier:
         else:
             csb = (csb or result.election.authority) if election_type in AUTHORITIES else ""
 
-        # Check if PV is a CSB PV (but not a municipality PV)
+        # A CSB PV, not a gemeente PV.
         if self.is_csb_pv():
             if not csb:
                 raise PvClassificationException("Cannot name file: CSB not known")
@@ -756,8 +760,12 @@ class PvClassifier:
         if not code and not name:
             raise PvClassificationException("Cannot name file: region not known")
 
-        stembureau = result.region.stembureau if result.model in STEMBUREAU_MODELS else ""
-        # A wrong stembureau would replace another stembureau's PV, so the PV and its file name must agree.
+        # A missing or wrong stembureau would replace another stembureau's PV, so it must be known, and the PV and its
+        # file name must agree on it.
+        stembureau = ""
+        if result.model in STEMBUREAU_MODELS:
+            if not (stembureau := result.region.stembureau):
+                raise PvClassificationException("Cannot name file: stembureau not known")
         if stembureau and (in_name := self.find_stembureau_in_name(self.file.stem)) and in_name != stembureau:
             raise PvClassificationException(
                 f"Cannot name file: stembureau {stembureau} in the PV but {in_name} in its file name"
@@ -775,7 +783,7 @@ class PvClassifier:
             matched_on=str(result.matched_on),
         )
 
-    def storage_name(self, csb: str = "", region_code: str = "", region_name: str = "") -> str:
+    def storage_name(self, pv: PvIdentity | None = None) -> str:
         """
         The file name of the PV: "<election>_<model>[_<csb>]_<region>[_SB<n>].pdf".
 
@@ -784,7 +792,7 @@ class PvClassifier:
         CSB model, or the kieskring as "kieskring-<number>-<name>" for a hoofdstembureau model. They are slugs, so "_"
         only separates parts, and a last part "SB<n>" is the stembureau of a stembureau model.
         """
-        pv = self.identity(csb, region_code, region_name)
+        pv = pv or self.identity()
         parts = [
             pv.election,
             pv.model,
@@ -794,14 +802,14 @@ class PvClassifier:
         ]
         return "_".join(filter(None, parts)) + ".pdf"
 
-    def add_metadata_to_pv(self, csb: str = "", region_code: str = "", region_name: str = "") -> NamedBytesIO:
+    def add_metadata_to_pv(self, pv: PvIdentity | None = None) -> NamedBytesIO:
         """
         The PDF with what the PV is in its document information, added as an incremental update.
 
         The original bytes stay in front unchanged, so a digital signature stays valid and the published file can be
         recovered. Title and subject show in any viewer; the "/Pv…" keys are for software.
         """
-        pv = self.identity(csb, region_code, region_name)
+        pv = pv or self.identity()
         stembureau = f"stembureau {pv.stembureau}" if pv.stembureau else ""
         region = [pv.region_name or pv.region_code]
         if self.is_kieskring_pv():
@@ -849,8 +857,9 @@ class PvClassifier:
             csb = self.known_authority(election.id[:2], source.name)
 
         # Name the PV and add what it is to its PDF metadata.
-        key = f"{folder}/{self.storage_name(csb, region_code, region_name)}"
-        content = self.add_metadata_to_pv(csb, region_code, region_name)
+        pv = self.identity(csb, region_code, region_name)
+        key = f"{folder}/{self.storage_name(pv)}"
+        content = self.add_metadata_to_pv(pv)
 
         # Replace a file of the same name, which storage would otherwise keep, saving this one under a suffixed name.
         storage = storages["default"]

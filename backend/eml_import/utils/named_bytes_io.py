@@ -1,17 +1,18 @@
 from io import BytesIO
-from pathlib import Path
+from pathlib import Path, PurePath
+from typing import Self
 
 
 class NamedBytesIO(BytesIO):
     """In-memory binary file that carries a file name, like a file on disk does."""
 
-    @staticmethod
-    def from_path(path: Path) -> NamedBytesIO:
-        return NamedBytesIO(path.read_bytes(), path)
+    @classmethod
+    def from_path(cls, path: Path) -> Self:
+        return cls(path.read_bytes(), path)
 
-    def __init__(self, data: bytes, filename: str | Path) -> None:
+    def __init__(self, data: bytes, filename: str | PurePath) -> None:
         super().__init__(data)
-        self.path = Path(filename)
+        self.path = PurePath(filename)
 
     @property
     def filename(self):
@@ -21,7 +22,8 @@ class NamedBytesIO(BytesIO):
         return f"<NamedBytesIO {self.name}>"
 
     def __getattr__(self, item):
-        """Forward attributes to self.path, so a NamedBytesIO is compatible with a Path object."""
+        """Forward attributes to self.path, so a NamedBytesIO has a Path's name, stem and suffix. A PurePath has no
+        methods that touch the disk, so neither does this."""
         if self.path and hasattr(self.path, item):
             return getattr(self.path, item)
 
