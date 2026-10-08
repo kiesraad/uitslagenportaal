@@ -31,7 +31,7 @@ jobs:
 
   frontend-docker-image:
     name: Publish Frontend Image
-    needs: [backend-ci, frontend-ci, playwright, helm-ci]
+    needs: [ backend-ci, frontend-ci, playwright, helm-ci ]
     permissions:
       contents: read
       packages: write
@@ -41,11 +41,12 @@ jobs:
     uses: ./.github/workflows/publish-docker-image.yml
     with:
       context: frontend
+      target: server
       image-name: uitslagenportaal-frontend
 
   backend-docker-image:
     name: Publish Backend Image
-    needs: [backend-ci, frontend-ci, playwright, helm-ci]
+    needs: [ backend-ci, frontend-ci, playwright, helm-ci ]
     permissions:
       contents: read
       packages: write
@@ -55,12 +56,28 @@ jobs:
     uses: ./.github/workflows/publish-docker-image.yml
     with:
       context: backend
+      target: runtime
       image-name: uitslagenportaal-backend
+
+  playwright-worker-docker-image:
+    name: Publish Celery Playwright Worker Image
+    needs: [ backend-ci, frontend-ci, playwright, helm-ci ]
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+      artifact-metadata: write
+    uses: ./.github/workflows/publish-docker-image.yml
+    with:
+      context: backend
+      target: celery-playwright-worker
+      image-name: uitslagenportaal-playwright-worker
 
   deploy-dev:
     name: Deploy to scaleway-dev
     if: github.ref == 'refs/heads/dev'
-    needs: [frontend-docker-image, backend-docker-image]
+    needs: [ frontend-docker-image, backend-docker-image, playwright-worker-docker-image ]
     permissions:
       contents: read
     uses: ./.github/workflows/deploy.yml
@@ -75,7 +92,7 @@ jobs:
   deploy-staging:
     name: Deploy to scaleway-staging
     if: github.ref == 'refs/heads/main'
-    needs: [ frontend-docker-image, backend-docker-image ]
+    needs: [ frontend-docker-image, backend-docker-image, playwright-worker-docker-image ]
     permissions:
       contents: read
     uses: ./.github/workflows/deploy.yml

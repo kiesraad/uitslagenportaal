@@ -314,3 +314,8 @@ LOGGING = {
         "pypdfium2": {"level": "INFO"},
     },
 }
+
+
+# PV scraper-specific settings
+# Number of tasks to dispatch every run of dispatch_scrape_tasks, defaults to 0 (disabled) for now
+PV_SCRAPER_DISPATCH_MAX_TASKS = int(os.environ.get("PV_SCRAPER_DISPATCH_MAX_TASKS", 0))

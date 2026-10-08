@@ -43,14 +43,29 @@ def test_import_creates_sources_from_the_file():
 
 @pytest.mark.django_db
 def test_import_updates_settings_but_keeps_scrape_state():
-    ScrapeSourceFactory(code="ws0539", name="Dommel", last_run_status=ScrapeStatus.OK, pages=[{"url": "x"}])
+    ScrapeSourceFactory(code="ws0539", name="Dommel", last_run_status=ScrapeStatus.OK, errors=[{"url": "x"}])
     save_authorities({"ws0539": {**DOMMEL, "disabled": True}})
 
     call_command("import_scrape_sources")
 
     source = ScrapeSource.objects.get(code="ws0539")
     assert (source.name, source.disabled) == ("De Dommel", True)
-    assert (source.last_run_status, source.pages) == (ScrapeStatus.OK, [{"url": "x"}])
+    assert (source.last_run_status, source.errors) == (ScrapeStatus.OK, [{"url": "x"}])
+
+
+@pytest.mark.django_db
+def test_import_merges_election_pages_with_those_the_scraper_found():
+    found = "https://www.dommel.nl/verkiezingen/uitslagen"
+    ScrapeSourceFactory(code="ws0539", election_pages=[found, "https://www.dommel.nl/verkiezingen"])
+    save_authorities({"ws0539": {**DOMMEL, "election_pages": ["https://www.dommel.nl/verkiezingen", "https://a.nl/"]}})
+
+    call_command("import_scrape_sources")
+
+    assert ScrapeSource.objects.get(code="ws0539").election_pages == [
+        found,
+        "https://www.dommel.nl/verkiezingen",
+        "https://a.nl/",
+    ]
 
 
 @pytest.mark.django_db
