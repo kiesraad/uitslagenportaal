@@ -21,7 +21,8 @@ from pv_scraper.utils.pv_classifier import (
     PvElection,
     PvRegion,
     ResultMatch,
-    model_token,
+    pv_model_short_form,
+    uncompact,
 )
 from region.tests.factories import RegionFactory
 
@@ -337,6 +338,20 @@ def test_find_header_election_needs_a_model_code():
 
 
 @pytest.mark.parametrize(
+    ("line", "index", "expected"),
+    [
+        ("18 maart 2026", 0, ""),
+        ("Gemeentera ad 18 maart", 12, "Gemeentera ad "),
+        ("gemeenteraad van Brummen\n18 maart", 22, "gemeenteraad van Brummen\n"),
+        # A position past the last character keeps the whole line.
+        ("Brummen ", 7, "Brummen "),
+    ],
+)
+def test_uncompact(line, index, expected):
+    assert uncompact(line, index) == expected
+
+
+@pytest.mark.parametrize(
     ("stem", "expected"),
     [
         ("stembureau_7_mfc_de_kloek_zonder_handtekeningen", "7"),
@@ -532,7 +547,7 @@ def test_render_page(tmp_path):
     [("N 10-2", "N10-2"), ("Na 31-2", "Na31-2"), ("Na 31-2 Bijlage 1", "Na31-2-B1"), ("P 2a", "P2a")],
 )
 def test_model_token(model, token):
-    assert model_token(model) == token
+    assert pv_model_short_form(model) == token
 
 
 @pytest.mark.parametrize(
@@ -774,7 +789,7 @@ def test_the_csb_of_a_national_election_is_left_out_of_the_name_of_a_gemeente_pv
     pv = classified("N 10-2", PvElection("TK2025"), EDE_12)
 
     assert pv.storage_name() == "TK2025_N10-2_0228-ede_SB12.pdf"
-    assert PdfReader(pv.with_metadata()).metadata["/PvCsb"] == "Nederland"
+    assert PdfReader(pv.add_metadata_to_pv()).metadata["/PvCsb"] == "Nederland"
 
 
 def test_storage_name_of_a_csb_model_needs_the_csb():
@@ -825,7 +840,7 @@ def test_with_metadata_adds_what_the_pv_is_and_keeps_the_original_bytes():
     election = PvElection("AB2027", datetime.date(2027, 3, 17), "Vallei en Veluwe")
     pv = classified("Na 31-2 Bijlage 1", election, PvRegion(code="228", name="Ede", stembureau="12"))
 
-    content = pv.with_metadata().getvalue()
+    content = pv.add_metadata_to_pv().getvalue()
 
     assert content.startswith(BLANK_PDF)
     assert {key: value for key, value in PdfReader(io.BytesIO(content)).metadata.items() if key != "/CreationDate"} == {
@@ -847,7 +862,7 @@ def test_with_metadata_adds_what_the_pv_is_and_keeps_the_original_bytes():
 def test_with_metadata_leaves_out_what_is_unknown():
     pv = classified("Na 31-1", PvElection("GR2026"), PvRegion(name="Súdwest-Fryslân"))
 
-    metadata = PdfReader(pv.with_metadata()).metadata
+    metadata = PdfReader(pv.add_metadata_to_pv()).metadata
 
     assert (metadata["/Title"], metadata["/Subject"], metadata["/PvRegionName"]) == (
         "Na31-1 Súdwest-Fryslân",

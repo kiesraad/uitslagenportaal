@@ -81,7 +81,7 @@ def run_scrape_for_source(source_id: int):
                     logger.info("Classification not certain, discarding file")
                     continue
 
-                logger.info(f"Classified as {classification.model}, saving file")
+                logger.info(f"Classified as {classification.model} for {classification.region}, saving file")
                 try:
                     classifier.save_to_storage(file.scraped_file.source, "pvs")
                 except PvClassificationException as e:
