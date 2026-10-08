@@ -639,7 +639,8 @@ class PvClassifier:
 
     def ocr_passes(self) -> Iterator[tuple[str, str]]:
         """Yield (pass, text) from cheapest to most expensive; later passes only run when asked for."""
-        page = self.render_page(0)
+        if not (page := self.render_page(0)):
+            return
         yield "crop", self.ocr(page.crop((0, 0, page.width, int(page.height * CROP_FRACTION))))
         full = self.ocr(page)
         yield "full", full
@@ -665,7 +666,11 @@ class PvClassifier:
                 if result.model == "Na 31-2 Bijlage 1":
                     # The running header may repeat one stembureau on every page (Ede GR2026); the section heading
                     # names the right one, on page 1 or after a cover page on page 2.
-                    if section := self.find_section_stembureau(text) or self.find_section_stembureau(self.page_text(1)):
+                    section = self.find_section_stembureau(text)
+                    # The page2 pass has read page 2 already.
+                    if not section and found_by != "page2":
+                        section = self.find_section_stembureau(self.page_text(1))
+                    if section:
                         result.region.stembureau = section
                 if result.model in STEMBUREAU_MODELS and not result.region.stembureau:
                     result.region.stembureau = self.find_stembureau_in_name(self.file.stem)
@@ -704,7 +709,8 @@ class PvClassifier:
             return code, region_name or name
         if not name:
             return code, name
-        rows = list(regions.values_list("region_number", "region_name"))
+        # Each gemeente once per spelling, the most recent first.
+        rows = list(dict.fromkeys(regions.values_list("region_number", "region_name")))
         key = letters_only(name)
         match = next((row for row in rows if letters_only(row[1]) == key), None)
         match = match or next((row for row in rows if cls.authority_matches(row[1], name)), None)

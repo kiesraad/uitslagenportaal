@@ -19,6 +19,7 @@ class Command(BaseCommand):
             result = PvClassifier(path).classify()
             if result is None:
                 self.stdout.write("Classification failed")
+                continue
 
             self.stdout.write("Result:")
             for field in fields(result.__class__):

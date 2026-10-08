@@ -542,6 +542,22 @@ def test_classify_takes_the_stembureau_of_a_bijlage_from_its_section(page1, page
     assert page_text.called is (page2 is not None)
 
 
+def test_classify_does_not_read_page_2_again_after_the_page2_pass():
+    pv = classifier("bijlage.pdf")
+    pv.ocr_passes, _ = passes(("page2", BIJLAGE_1 + "Stembureau 891\nOver deze bijlage"))
+    with mock.patch.object(pv, "page_text") as page_text:
+        result = pv.classify()
+
+    assert (result.model, result.region.stembureau) == ("Na 31-2 Bijlage 1", "891")
+    page_text.assert_not_called()
+
+
+def test_classify_returns_none_for_a_pdf_without_pages():
+    pv = classifier()
+    with mock.patch.object(pv, "render_page", return_value=None):
+        assert pv.classify() is None
+
+
 def test_classify_returns_the_best_supported_pass_when_none_identifies():
     pv = classifier()
     pv.ocr_passes, asked = passes(("crop", "niets"), ("full", "Model N 10-2\nGemeente 888"), ("rotated", "Model X 9"))
@@ -739,6 +755,10 @@ def test_complete_gemeente_corrects_a_misread_name(read, gemeente):
     RegionFactory(region_number="164", region_name="Hengelo", election=election)
     RegionFactory(region_number="999", region_name="Hengel", election=ElectionFactory(date=datetime.date(2027, 3, 17)))
     RegionFactory(region_number="228", region_name="Ede", election=election)
+    # An older election with the same gemeenten, one spelled differently, which the most recent spelling overrides.
+    older = ElectionFactory(date=datetime.date(2025, 10, 29))
+    RegionFactory(region_number="1900", region_name="Sudwest-Fryslan", election=older)
+    RegionFactory(region_number="289", region_name="Wageningen", election=older)
 
     assert PvClassifier.complete_gemeente("", read) == gemeente
 
