@@ -53,6 +53,7 @@ if importlib.util.find_spec("django_watchfiles"):
 # out of the latency histogram without changing anything visible.
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
+    "mainsite.middleware.AccessLogMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -268,6 +269,8 @@ STORAGES = {
 # https://docs.djangoproject.com/en/6.0/topics/logging/
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "DEBUG" if DEBUG else "INFO")
+# The prod image sets "json" so Loki can parse every field; "simple" is for reading by eye.
+LOG_FORMAT = os.environ.get("LOG_FORMAT", "simple")
 
 LOGGING = {
     "version": 1,
@@ -277,12 +280,18 @@ LOGGING = {
             "format": "{asctime} {processName} - {levelname} - {name} - {message}",
             "style": "{",
         },
+        # Fields passed as `extra` become keys of their own.
+        "json": {
+            "()": "pythonjsonlogger.json.JsonFormatter",
+            "format": "{asctime}{processName}{levelname}{name}{message}",
+            "style": "{",
+        },
     },
     "handlers": {
         "stdout": {
             "class": "logging.StreamHandler",
             "stream": "ext://sys.stdout",
-            "formatter": "simple",
+            "formatter": LOG_FORMAT,
         },
     },
     # Handler on the root logger, so every app logger is covered without
