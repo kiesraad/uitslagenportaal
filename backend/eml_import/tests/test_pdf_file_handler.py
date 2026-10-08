@@ -9,7 +9,7 @@ from django.core.files.storage import default_storage, storages
 from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
 from eml_import.models import ImportedFileHash
-from eml_import.tests.pdf_files import PDF_BYTES, barneveld, one_page_pdf, write_pdf
+from eml_import.tests.pdf_files import PDF_BYTES, barneveld, one_page_pdf, pv_pdf, write_pdf
 from eml_import.utils.pdf_file_handler import LOCK_TIMEOUT, PDFFileHandler
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
@@ -93,16 +93,16 @@ def test_keeps_the_imported_document_when_the_inbox_delete_fails(monkeypatch, ca
 @pytest.mark.django_db
 def test_a_rescanned_proces_verbaal_supersedes_the_one_it_replaces():
     region = barneveld()
-    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf", one_page_pdf(b"first scan"))
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf", pv_pdf(b"first scan"))
     PDFFileHandler(storages["pv_import"]).run()
     superseded = ElectionDocument.objects.get()
 
-    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf", one_page_pdf(b"second scan"))
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf", pv_pdf(b"second scan"))
     assert PDFFileHandler(storages["pv_import"]).run() == 1
 
     current = ElectionDocument.objects.get(region=region)
     assert current.pk != superseded.pk
-    assert default_storage.open(current.storage_key).read() == one_page_pdf(b"second scan")
+    assert default_storage.open(current.storage_key).read() == pv_pdf(b"second scan")
     superseded.refresh_from_db()
     assert superseded.is_current is False
 
@@ -110,16 +110,16 @@ def test_a_rescanned_proces_verbaal_supersedes_the_one_it_replaces():
 @pytest.mark.django_db
 def test_every_correction_on_one_form_stays_current():
     region = barneveld()
-    write_pdf("TK2025_Nederland_NA14-2_Barneveld.pdf", one_page_pdf(b"first correction"))
+    write_pdf("TK2025_Nederland_NA14-2_Barneveld.pdf", pv_pdf(b"first correction", PvModel="NA14-2"))
     PDFFileHandler(storages["pv_import"]).run()
 
-    write_pdf("TK2025_Nederland_NA14-2_Barneveld.pdf", one_page_pdf(b"second correction"))
+    write_pdf("TK2025_Nederland_NA14-2_Barneveld.pdf", pv_pdf(b"second correction", PvModel="NA14-2"))
     assert PDFFileHandler(storages["pv_import"]).run() == 1
 
     corrections = ElectionDocument.objects.filter(region=region).order_by("created_at", "pk")
     assert [default_storage.open(document.storage_key).read() for document in corrections] == [
-        one_page_pdf(b"first correction"),
-        one_page_pdf(b"second correction"),
+        pv_pdf(b"first correction", PvModel="NA14-2"),
+        pv_pdf(b"second correction", PvModel="NA14-2"),
     ]
     # Shared region and file type, so the download names have to part on their timestamp
     assert len({document.download_filename for document in corrections}) == 2
@@ -136,7 +136,7 @@ def test_imports_a_polling_station_certified_document_by_stembureau_id():
         region_name="Gemeentehuis",
         region_number="0203::SB1",
     )
-    write_pdf("TK2025_Nederland_N10-1_0203::SB1.pdf")
+    write_pdf("TK2025_Nederland_N10-1_0203::SB1.pdf", pv_pdf(PvModel="N10-1", PvStembureau="1"))
 
     handler = PDFFileHandler(storages["pv_import"])
     handler.run()
@@ -181,16 +181,25 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies():
         region_name="Desk",
         region_number="0001::SB1",
     )
-    for name in (
-        "GEN_Nederland_N10-1_0001::SB1.pdf",
-        "GEN_Nederland_N10-2_0001::SB1.pdf",
-        "GEN_Nederland_NA14-1_0001::SB1.pdf",
-        "GEN_Nederland_NA31-1_Alpha.pdf",
-        "GEN_Nederland_NA31-2_Alpha.pdf",
-        "GEN_Nederland_NA14-2_Alpha.pdf",
-        "GEN_Nederland_O7_North.pdf",
+    for model, region_name, stembureau in (
+        ("N10-1", "Alpha", "1"),
+        ("N10-2", "Alpha", "1"),
+        ("NA14-1", "Alpha", "1"),
+        ("NA31-1", "Alpha", ""),
+        ("NA31-2", "Alpha", ""),
+        ("NA14-2", "Alpha", ""),
+        ("O7", "North", ""),
     ):
-        write_pdf(name, one_page_pdf(name.encode()))
+        write_pdf(
+            f"{model}.pdf",
+            pv_pdf(
+                model.encode(),
+                PvElection="GEN",
+                PvModel=model,
+                PvRegionName=region_name,
+                PvStembureau=stembureau,
+            ),
+        )
 
     handler = PDFFileHandler(storages["pv_import"])
     handler.run()
@@ -228,8 +237,15 @@ def test_imports_p22_onto_the_csb_of_that_election():
             region_name=region_name,
             region_number="1",
         )
-        filename = f"{category.value}_{region_name}_{document_type.removeprefix('PDF_')}_{region_name}.pdf"
-        write_pdf(filename, one_page_pdf(filename.encode()))
+        write_pdf(
+            f"{category.value}.pdf",
+            pv_pdf(
+                category.value.encode(),
+                PvElection=category.value,
+                PvModel=document_type.removeprefix("PDF_"),
+                PvRegionName=region_name,
+            ),
+        )
         expected.add((csb.id, document_type))
 
     PDFFileHandler(storages["pv_import"]).run()
@@ -271,8 +287,27 @@ def test_csb_name_picks_the_region_when_it_also_serves_another_board():
     config = ElectionConfigFactory(identifier="AB2023", category=ElectionCategory.WS.value)
     _, rijnland_station = _board_with_shared_station(config, "Rijnland", "13")
     amstel_municipality, _ = _board_with_shared_station(config, "Amstel, Gooi en Vecht", "14")
-    write_pdf("AB2023_Rijnland_N10-1_0394::SB1.pdf", one_page_pdf(b"rijnland"))
-    write_pdf("AB2023_Amstel, Gooi en Vecht_NA31-2_Haarlemmermeer.pdf", one_page_pdf(b"amstel"))
+    write_pdf(
+        "n10.pdf",
+        pv_pdf(
+            b"rijnland",
+            PvElection="AB2023",
+            PvModel="N10-1",
+            PvRegionName="Haarlemmermeer",
+            PvCsb="Rijnland",
+            PvStembureau="1",
+        ),
+    )
+    write_pdf(
+        "na31.pdf",
+        pv_pdf(
+            b"amstel",
+            PvElection="AB2023",
+            PvModel="NA31-2",
+            PvRegionName="Haarlemmermeer",
+            PvCsb="Amstel, Gooi en Vecht",
+        ),
+    )
 
     PDFFileHandler(storages["pv_import"]).run()
 
@@ -283,9 +318,23 @@ def test_csb_name_picks_the_region_when_it_also_serves_another_board():
 
 
 @pytest.mark.django_db
-def test_logs_a_bad_filename_and_imports_the_rest(caplog):
+def test_logs_a_waterschap_polling_station_form_without_csb(caplog):
+    config = ElectionConfigFactory(identifier="AB2023", category=ElectionCategory.WS.value)
+    _board_with_shared_station(config, "Rijnland", "13")
+    write_pdf("n10.pdf", pv_pdf(PvElection="AB2023", PvModel="N10-1", PvRegionName="Haarlemmermeer", PvStembureau="1"))
+
+    with caplog.at_level(logging.ERROR):
+        imported = PDFFileHandler(storages["pv_import"]).run()
+
+    assert imported == 0
+    assert "needs PvCsb" in caplog.text
+    assert storages["pv_import"].exists("n10.pdf")
+
+
+@pytest.mark.django_db
+def test_logs_a_pdf_missing_identity_and_imports_the_rest(caplog):
     barneveld()
-    write_pdf("TK2025_NA31-2_Barneveld.pdf")
+    write_pdf("blank.pdf", one_page_pdf(b"blank"))
     write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
 
     with caplog.at_level(logging.ERROR):
@@ -293,8 +342,8 @@ def test_logs_a_bad_filename_and_imports_the_rest(caplog):
 
     assert imported == 1
     assert ElectionDocument.objects.count() == 1
-    assert "TK2025_NA31-2_Barneveld.pdf" in caplog.text
-    assert storages["pv_import"].exists("TK2025_NA31-2_Barneveld.pdf")
+    assert "blank.pdf" in caplog.text
+    assert storages["pv_import"].exists("blank.pdf")
     assert not storages["pv_import"].exists("TK2025_Nederland_NA31-2_Barneveld.pdf")
 
 

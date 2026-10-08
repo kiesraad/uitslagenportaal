@@ -45,7 +45,6 @@ class _StoragePdf:
         self._storage = storage
         self.key = key
         self.name = Path(key).name
-        self.stem = Path(key).stem
 
     def open(self, mode="rb"):
         return self._storage.open(self.key, mode)
@@ -98,11 +97,11 @@ class PDFFileHandler:
             yield from self._pdf_names(f"{directory}/{name}" if directory else name)
 
     def _import_pv(self, file: _StoragePdf) -> bool:
-        election_id, csb_name, file_type, region_token = self._parse_filename(file)
-        config = self._election_config(election_id)
-        region = self._region(config, file_type, csb_name, region_token)
         with file.open("rb") as handle:
             content = BytesIO(handle.read())
+        election_id, file_type, region_name, csb_name, stembureau = self._parse_metadata(content, file.name)
+        config = self._election_config(election_id)
+        region = self._region(config, file_type, region_name, csb_name, stembureau)
 
         try:
             with ImportedFileHash.if_not_imported(content, region.election):
@@ -127,15 +126,24 @@ class PDFFileHandler:
         except Exception:
             logger.exception("Failed to delete processed proces-verbaal %s from import storage", file.key)
 
-    def _parse_filename(self, file: _StoragePdf) -> tuple[str, str, str, str]:
-        parts = file.stem.split("_", 3)
-        if len(parts) != 4 or not all(parts):
-            raise PDFImporterException(f"{file.name} does not match {{election}}_{{csb}}_{{file_type}}_{{region}}.pdf")
-        election_id, csb_name, form_code, region_token = parts
-        file_type = ElectionDocument.FileType.from_form_code(form_code)
+    def _parse_metadata(self, content: BytesIO, filename: str) -> tuple[str, str, str, str | None, str | None]:
+        try:
+            document = pdfium.PdfDocument(content.getvalue())
+        except Exception as exc:
+            raise PDFImporterException(f"{filename} is not a readable PDF") from exc
+        try:
+            election_id, model, region_name, csb_name, stembureau = (
+                document.get_metadata_value(key).strip()
+                for key in ("PvElection", "PvModel", "PvRegionName", "PvCsb", "PvStembureau")
+            )
+        finally:
+            document.close()
+        if not (election_id and model and region_name):
+            raise PDFImporterException(f"{filename} is missing PvElection, PvModel or PvRegionName")
+        file_type = ElectionDocument.FileType.from_form_code(model)
         if file_type is None:
-            raise PDFImporterException(f"Unknown certified election document type {form_code} in {file.name}")
-        return election_id, csb_name, file_type, region_token
+            raise PDFImporterException(f"Unknown certified election document type {model} in {filename}")
+        return election_id, file_type, region_name, csb_name or None, stembureau or None
 
     def _election_config(self, election_id: str) -> ElectionConfig:
         try:
@@ -148,35 +156,39 @@ class PDFFileHandler:
             return ElectionCategory(config.category).config.csb
         return _REGION_CATEGORY_BY_FILE_TYPE[file_type]
 
-    def _region(self, config: ElectionConfig, file_type: str, csb_name: str, region_token: str) -> Region:
+    def _region(
+        self,
+        config: ElectionConfig,
+        file_type: str,
+        region_name: str,
+        csb_name: str | None,
+        stembureau: str | None,
+    ) -> Region:
         category = self._region_category(config, file_type)
-        # A stembureau number repeats in every municipality; the stored id carries the municipality (0203::SB1).
-        lookup = (
-            {"region_number": region_token}
-            if category == RegionCategory.STEMBUREAU
-            else {"region_name__iexact": region_token}
-        )
-        csb_category = ElectionCategory(config.category).config.csb
-        belongs_to_csb = Q(csb__region_name__iexact=csb_name) | Q(
-            csb__isnull=True,
-            region_name__iexact=csb_name,
-            region_category=csb_category,
-        )
-        try:
-            return Region.objects.get(
-                belongs_to_csb,
-                election__election_config=config,
-                region_category=category,
-                **lookup,
+        if category == RegionCategory.STEMBUREAU and not stembureau:
+            raise PDFImporterException("Polling-station form needs PvStembureau")
+        if config.category == ElectionCategory.WS.value and file_type in POLLING_STATION_PV_FILE_TYPES and not csb_name:
+            raise PDFImporterException("Waterschap polling-station form needs PvCsb")
+
+        regions = Region.objects.filter(election__election_config=config, region_category=category)
+        if csb_name:
+            csb_category = ElectionCategory(config.category).config.csb
+            regions = regions.filter(
+                Q(csb__region_name__iexact=csb_name)
+                | Q(csb__isnull=True, region_name__iexact=csb_name, region_category=csb_category)
             )
+        if category == RegionCategory.STEMBUREAU:
+            station = (stembureau or "").removeprefix("SB")
+            regions = regions.filter(parent__region_name__iexact=region_name, region_number__iendswith=f"::SB{station}")
+        else:
+            regions = regions.filter(region_name__iexact=region_name)
+        try:
+            return regions.get()
         except Region.DoesNotExist:
-            raise PDFImporterException(
-                f"No {category} {region_token!r} under CSB {csb_name!r} for election {config.identifier}"
-            ) from None
+            raise PDFImporterException(f"No {category} {region_name!r} for election {config.identifier}") from None
         except Region.MultipleObjectsReturned:
             raise PDFImporterException(
-                f"Several {category} regions match {region_token!r} under CSB {csb_name!r} "
-                f"for election {config.identifier}"
+                f"Several {category} regions match {region_name!r} for election {config.identifier}"
             ) from None
 
     def _preview_png(self, content: BytesIO) -> bytes:
