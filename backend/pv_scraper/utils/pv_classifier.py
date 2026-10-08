@@ -9,7 +9,7 @@ import logging
 import re
 import unicodedata
 from collections.abc import Iterator
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from pathlib import Path
 from typing import Self
@@ -87,7 +87,7 @@ TITLE_KEYS = [
 
 
 def uncompact(line: str, index: int) -> str:
-    """The start of a line up to a position in its spaceless form."""
+    """The first part of a string, up to the position `index`, but in its spaceless form."""
     seen = 0
     for i, char in enumerate(line):
         if not char.isspace():
@@ -105,7 +105,7 @@ def pv_code(model: str) -> str:
 PV_CODES = {pv_code(model) for model in MODELS}
 
 
-def model_token(model: str) -> str:
+def pv_model_short_form(model: str) -> str:
     """The model as written in a file name: "N 10-2" is "N10-2", "Na 31-2 Bijlage 1" is "Na31-2-B1"."""
     code, _, bijlage = model.partition(" Bijlage ")
     return code.replace(" ", "") + (f"-B{bijlage}" if bijlage else "")
@@ -271,7 +271,7 @@ AUTHORITIES = {
 NATIONAL_CSBS = {"TK": "Nederland", "EP": "Nederland"}
 AUTHORITY_SOURCE_KINDS = {"PS": RegionCategory.PROVINCIE, "AB": RegionCategory.WATERSCHAP}
 
-# Document information keys under which a stored PV carries what it is.
+# Document information keys under which a stored PV carries the fields of its PvIdentity.
 PDF_METADATA_KEYS = {
     "election": "/PvElection",
     "election_date": "/PvElectionDate",
@@ -338,6 +338,20 @@ class ClassificationResult:
     text: str = ""
     region: PvRegion = field(default_factory=PvRegion)
     election: PvElection = field(default_factory=PvElection)
+
+
+@dataclass
+class PvIdentity:
+    """What a classified PV is, for its file name and metadata; empty values are unknown."""
+
+    election: str
+    election_date: str
+    model: str
+    csb: str
+    region_code: str
+    region_name: str
+    stembureau: str
+    matched_on: str
 
 
 @dataclass
@@ -446,14 +460,18 @@ class PvClassifier:
     @staticmethod
     def find_region(text: str) -> PvRegion:
         region = PvRegion()
-        # An explicit "Gemeente 0888" wins over the header.
+        # The gemeente is read from a "Gemeente 0888" line first, then from the header above the stembureau.
         matches = [m for m in (GEMEENTE_RE.search(text), GEMEENTE_HEADER_RE.search(text)) if m]
+        # The gemeente code from the found texts, padded to four digits.
         if code := next((m.group(1) for m in matches if m.group(1)), None):
             region.code = code.zfill(4)
+        # The gemeente name from the found texts
         if name := next((m.group(2) for m in matches if m.group(2)), None):
             region.name = name
+        # The stembureau number from the first "Stembureau [number]" in the text.
         if match := STEMBUREAU_RE.search(text):
             region.stembureau = match.group(1)
+        # The kieskring number from the first "Kieskring [number]" in the text.
         if match := KIESKRING_RE.search(text):
             region.kieskring = match.group(1)
         return region
@@ -469,14 +487,18 @@ class PvClassifier:
 
     @staticmethod
     def find_header_election(text: str) -> PvElection | None:
-        """Read the election from the header lines above the model code, or None if they don't name one.
+        """
+        Read the election from the header lines above the model code, or None if they don't name one.
 
         The label naming the election runs from the last line saying "verkiezing" (or else naming an election type) up
         to the date, which may be on a following line. Only its authority is kept, as labels are worded in many ways.
         """
+        # The header is the non-blank lines above the model code.
         if not (code := MODEL_RE.search(text)):
             return None
         lines = [line for line in text[: code.start()].splitlines() if line.strip()]
+
+        # Find the line the label starts on, comparing lines without spaces as OCR splits words ("Gemeentera ad").
         compacts = ["".join(line.split()).lower() for line in lines]
         start = next((i for i in reversed(range(len(lines))) if "verkiezing" in compacts[i]), None)
         if start is None:
@@ -484,18 +506,21 @@ class PvClassifier:
         if start is None:
             return None
 
-        # The label and the date itself may wrap: "…gemeenteraad van 18\nmaart 2026".
+        # Cut the label at the date, searched for in the start line and the two after it, as the label and the date
+        # itself may wrap: "…gemeenteraad van 18\nmaart 2026". Without a date, the label is the start line.
         block = "\n".join(lines[start : start + 3])
         if date_match := HEADER_DATE_RE.search("".join(block.split()).lower()):
             label = uncompact(block, date_match.start())
         else:
             label = lines[start]
 
+        # Trim the label to run from "verkiezing" or the election type up to the weekday and debris before the date.
         label = " ".join(label.split())
         if match := HEADER_LABEL_START_RE.search(label):
             label = label[match.start() :]
         label = HEADER_LABEL_TAIL_RE.sub("", label)
 
+        # Read the election type from the label, and the year from the date or else from the label.
         compact_label = "".join(label.split()).lower()
         if not (election_type := ELECTION_TYPE_RE.search(compact_label)):
             return None
@@ -506,6 +531,7 @@ class PvClassifier:
         else:
             return None
 
+        # Keep the full date only when its day was read and it is a valid date.
         date = None
         if date_match and date_match.group("day"):
             month = next(i for i in range(len(MONTHS)) if date_match.group(f"m{i}")) + 1
@@ -519,13 +545,18 @@ class PvClassifier:
     @staticmethod
     def find_authority(election_type: str, label: str) -> str:
         """The gemeente, province or waterschap a label names the election for, or empty."""
+        # Find the name after the election's body, in the label without OCR's form lines; TK and EP name none.
         pattern = AUTHORITY_RES.get(election_type)
         if not pattern or not (match := pattern.search(" ".join(OCR_STRAY_RE.sub(" ", label).split()))):
             return ""
+
+        # Cut the name at the year or date and the words before it, and strip the punctuation around it.
         name = HEADER_LABEL_TAIL_RE.sub("", AUTHORITY_END_RE.sub("", match.group("name")))
         name = name.strip(" ,.:;-–—")
         if not letters_only(name) or "verkiezing" in letters_only(name):
             return ""
+
+        # A province or waterschap is corrected to its known spelling; a gemeente is kept as read.
         if election_type in AUTHORITIES:
             return PvClassifier.known_authority(election_type, name)
         return name
@@ -537,15 +568,21 @@ class PvClassifier:
 
     def find_election(self, text: str) -> PvElection:
         """Return the election, preferring the header over the rest of the text, and the text over the file name."""
+        # The header above the model code, which also gives the date and authority.
         if election := self.find_header_election(text):
             return election
+
+        # The first election type anywhere in the text with a year shortly after it, line breaks read as spaces.
         flat = " ".join(text.split())
         for match in ELECTION_TYPE_RE.finditer(flat):
             if year := ELECTION_YEAR_RE.search(flat, match.end(), match.end() + ELECTION_YEAR_WINDOW):
                 return PvElection(f"{match.lastgroup}{year.group(1)}", found_in="pdf")
+
+        # An abbreviation such as "TK25" in the text.
         if match := ELECTION_CODE_TEXT_RE.search(flat):
             return PvElection(election_code(*match.groups()), found_in="pdf")
-        # Bijlagen don't name the election on their first page.
+
+        # An abbreviation such as "gr26" in the file name, as bijlagen don't name the election on their first page.
         if match := ELECTION_CODE_NAME_RE.search(self.file.stem):
             return PvElection(election_code(*match.groups()), found_in="name")
         return PvElection()
@@ -623,16 +660,13 @@ class PvClassifier:
         match = match or next((row for row in rows if cls.authority_matches(row[1], name)), None)
         return match or (code, name)
 
-    def region_is_csb(self) -> bool:
+    def is_csb_pv(self) -> bool:
         """Whether the PV is about a CSB rather than a gemeente: a CSB model of an election other than GR."""
         election_type = self.result.election.id[:2]
         return self.result.model in CSB_MODELS and (election_type in AUTHORITIES or election_type in NATIONAL_CSBS)
 
-    def identity(self, csb: str = "", region_code: str = "", region_name: str = "") -> dict[str, str]:
-        """
-        What the PV is, for its file name and metadata; empty values are unknown. The arguments override what was
-        read from the PV.
-        """
+    def identity(self, csb: str = "", region_code: str = "", region_name: str = "") -> PvIdentity:
+        """What the PV is; the arguments override what was read from the PV."""
         result = self.result
         if result is None or not result.model or not result.election.id:
             raise PvClassificationException("Cannot name file: model or election not known")
@@ -642,12 +676,15 @@ class PvClassifier:
             csb = NATIONAL_CSBS[election_type]
         else:
             csb = (csb or result.election.authority) if election_type in AUTHORITIES else ""
-        if self.region_is_csb():
+
+        # Check if PV is a CSB PV (but not a municipality PV)
+        if self.is_csb_pv():
             if not csb:
                 raise PvClassificationException("Cannot name file: CSB not known")
             code, name = "", csb
         else:
             code, name = self.complete_gemeente(region_code or result.region.code, region_name or result.region.name)
+
         if not code and not name:
             raise PvClassificationException("Cannot name file: region not known")
 
@@ -658,16 +695,16 @@ class PvClassifier:
                 f"Cannot name file: stembureau {stembureau} in the PV but {in_name} in its file name"
             )
 
-        return {
-            "election": result.election.id,
-            "election_date": result.election.date.isoformat() if result.election.date else "",
-            "model": model_token(result.model),
-            "csb": csb,
-            "region_code": code.zfill(4) if code else "",
-            "region_name": name,
-            "stembureau": stembureau,
-            "matched_on": str(result.matched_on),
-        }
+        return PvIdentity(
+            election=result.election.id,
+            election_date=result.election.date.isoformat() if result.election.date else "",
+            model=pv_model_short_form(result.model),
+            csb=csb,
+            region_code=code.zfill(4) if code else "",
+            region_name=name,
+            stembureau=stembureau,
+            matched_on=str(result.matched_on),
+        )
 
     def storage_name(self, csb: str = "", region_code: str = "", region_name: str = "") -> str:
         """
@@ -679,15 +716,15 @@ class PvClassifier:
         """
         pv = self.identity(csb, region_code, region_name)
         parts = [
-            pv["election"],
-            pv["model"],
-            self.slug(pv["csb"]) if pv["election"][:2] in AUTHORITIES and not self.region_is_csb() else "",
-            "-".join(filter(None, [pv["region_code"], self.slug(pv["region_name"])])),
-            f"SB{pv['stembureau']}" if pv["stembureau"] else "",
+            pv.election,
+            pv.model,
+            self.slug(pv.csb) if pv.election[:2] in AUTHORITIES and not self.is_csb_pv() else "",
+            "-".join(filter(None, [pv.region_code, self.slug(pv.region_name)])),
+            f"SB{pv.stembureau}" if pv.stembureau else "",
         ]
         return "_".join(filter(None, parts)) + ".pdf"
 
-    def with_metadata(self, csb: str = "", region_code: str = "", region_name: str = "") -> NamedBytesIO:
+    def add_metadata_to_pv(self, csb: str = "", region_code: str = "", region_name: str = "") -> NamedBytesIO:
         """
         The PDF with what the PV is in its document information, added as an incremental update.
 
@@ -695,11 +732,11 @@ class PvClassifier:
         recovered. Title and subject show in any viewer; the "/Pv…" keys are for software.
         """
         pv = self.identity(csb, region_code, region_name)
-        stembureau = f"stembureau {pv['stembureau']}" if pv["stembureau"] else ""
+        stembureau = f"stembureau {pv.stembureau}" if pv.stembureau else ""
         metadata = {
-            "/Title": " ".join(filter(None, [pv["model"], pv["region_name"] or pv["region_code"], stembureau])),
-            "/Subject": " ".join(filter(None, [pv["election"], pv["csb"]])),
-            **{PDF_METADATA_KEYS[key]: value for key, value in pv.items() if value},
+            "/Title": " ".join(filter(None, [pv.model, pv.region_name or pv.region_code, stembureau])),
+            "/Subject": " ".join(filter(None, [pv.election, pv.csb])),
+            **{PDF_METADATA_KEYS[key]: value for key, value in asdict(pv).items() if value},
         }
         self.file.seek(0)
         writer = PdfWriter(self.file, incremental=True)
@@ -719,26 +756,30 @@ class PvClassifier:
         if self.result is None:
             raise PvClassificationException("Cannot save file: not classified")
 
+        # What the source tells about the PV overrides what was read from it; empty keeps what was read.
         election, region = self.result.election, self.result.region
         csb = region_code = region_name = ""
 
-        if source.kind == RegionCategory.GEMEENTE and not self.region_is_csb():
+        # A gemeente's website gives the gemeente, which the gemeente read from the PV must match by code or name.
+        if source.kind == RegionCategory.GEMEENTE and not self.is_csb_pv():
             region_code, region_name = source.code.removeprefix("gm"), source.name
             if region.code != region_code and not self.authority_matches(source.name, region.name):
                 raise PvClassificationException(f"Cannot save file: PV is not from {source}")
 
-            # Check the authority (parsed from the election header) against the source name
+            # The gemeenteraad a GR header names must be that gemeente's too.
             if election.id.startswith("GR") and election.authority:
                 if not self.authority_matches(source.name, election.authority):
                     raise PvClassificationException(f"Cannot save file: PV is from {election.authority}")
 
+        # A province's or waterschap's website gives the CSB of a PS or AB election, spelled as in AUTHORITIES.
         elif source.kind == AUTHORITY_SOURCE_KINDS.get(election.id[:2]):
             csb = self.known_authority(election.id[:2], source.name)
 
+        # Name the PV and add what it is to its PDF metadata.
         key = f"{folder}/{self.storage_name(csb, region_code, region_name)}"
-        content = self.with_metadata(csb, region_code, region_name)
+        content = self.add_metadata_to_pv(csb, region_code, region_name)
 
-        # Overwrite existing files
+        # Replace a file of the same name, which storage would otherwise keep, saving this one under a suffixed name.
         storage = storages["default"]
         if storage.exists(key):
             storage.delete(key)
