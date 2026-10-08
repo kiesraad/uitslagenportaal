@@ -52,13 +52,15 @@ Tesseract on the first page or two. To try it on a folder of PDFs, use
 `docker compose run --rm backend-scripts python manage.py classify_pvs <folder>`
 or `docker compose run --rm backend-scripts python manage.py classify_pv <path>`.
 
-- **Model:** a model counts as identified when its title is on the page, with or without its code. Only the models
-  in `MODELS` are recognized; other files are discarded.
+- **Model:** a model counts as identified when its title is on the page, with or without its code. A title that
+  several models share, such as "Verslag, uitslag en zetelverdeling" of the 2027 P 22-1 and P 22-2, only counts with
+  the code of one of them. Only the models in `MODELS` are recognized; other files are discarded.
 - **Election:** the OSV forms name the election and its date in the header, just above the model code, worded in many
   ways ("Verkiezing Gemeenteraad 2026", "De verkiezing van de leden van het algemeen bestuur van het hoogheemraadschap
   van Delfland", "Gemeenteraad Purmerend 2026"). The Kiesraad's own models, such as O 7 and P 22-1, name it just below
-  the model code and title instead, always as "De verkiezing van de leden van …". The classifier reads the id and date
-  from there first, falling back
+  the model code and title instead, always as "De verkiezing van de leden van …". When a running header prints the
+  code above the header, as in the Kiesraad's 2027 models, the label is read above the next code. The classifier reads
+  the id and date from there first, falling back
   to the rest of the text and then the file name. Of the wording it keeps only the authority: the gemeente,
   province or waterschap the header names ("Purmerend", "Delfland"), or nothing when it names none, as TK, EP and most
   GR headers. A province or waterschap is corrected to its name in `AUTHORITIES`, or dropped when it is none of them;
@@ -80,7 +82,7 @@ so another platform delivering PVs can follow it too.
 |----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------|
 | election | election id, as in the EML                                                                                                                                                      | `GR2026`, `AB2027`               |
 | model    | model code without spaces; a bijlage as `-B<n>`                                                                                                                                 | `N10-2`, `Na31-2-B1`             |
-| csb      | slug of the province or waterschap, for PS and AB elections only; left out when not known or when it is the region                                                              | `vallei-en-veluwe`               |
+| csb      | slug of the province or waterschap of a PS or AB election, or `nederland` of TK and EP; left out when not known, for GR, and when it is the region                              | `vallei-en-veluwe`               |
 | region   | the gemeente as `<code>-<slug of its name>`, or either one when only that is known; for a CSB model the CSB; for a hoofdstembureau model `kieskring[-<n>][-<slug of its name>]` | `0228-ede`, `kieskring-1-arnhem` |
 | SB\<n\>  | the stembureau, for the models of one stembureau only                                                                                                                           | `SB12`                           |
 
@@ -88,8 +90,7 @@ The gemeente's name is taken from the gemeenten of the most recent election that
 by the name read, which may have one misread letter or a mangled accent (an exact match wins); the code is then taken
 from there too. A gemeente not found keeps what the PV and its source say.
 
-The CSB of TK and EP is `Nederland`. It is in the metadata of every PV of those elections, but not in the file name,
-where it would be the same for all of them.
+The CSB of TK and EP is `Nederland`, in the file name and the metadata of every PV of those elections.
 
 The models of a centraal stembureau (P 22-1, P 22-2) name no gemeente. Of a PS, AB, TK or EP election, their region is
 the CSB, named once and without a code, and a PS or AB PV without a known CSB is not stored. Of a GR election, the CSB
@@ -102,7 +103,8 @@ only one of them is named by that one ("Kieskring 's-Gravenhage"); one without e
 holds the kieskring's number (`1`) and `/PvRegionName` its name (`Arnhem`).
 
 For example `GR2026_N10-2_0228-ede_SB12.pdf`, `AB2027_Na31-1_vallei-en-veluwe_0228-ede.pdf`,
-`AB2027_P22-2_vallei-en-veluwe.pdf`, `TK2025_P22-2_nederland.pdf`, `PS2023_O7_gelderland_kieskring-1-arnhem.pdf`. Slugs
+`AB2027_P22-2_vallei-en-veluwe.pdf`, `TK2025_N10-2_nederland_0363-amsterdam_SB1.pdf`,
+`PS2023_O7_gelderland_kieskring-1-arnhem.pdf`. Slugs
 consist of
 `[a-z0-9-]`, so `_` only separates parts. To read a name back: the first two parts are election and model, a last part
 `SB<n>` is the stembureau, then the last remaining part is the region and one before it the CSB.

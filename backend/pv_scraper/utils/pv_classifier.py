@@ -49,16 +49,17 @@ MODELS = {
     "P 22-2": "centraal stembureau, uitslag en zetelverdeling",
 }
 
-# Texts that appear on one model only, from the forms the Kiesraad published on 27 November 2025 as OSV fills them in;
-# the O 7, P 1f-1 and P 22-1 forms have no newer version. Forms of earlier elections word and number things
-# differently, so they are left unidentified. OSV headers such as "Verslag en telresultaten per lijst en kandidaat"
-# and "Details van het stembureau" are shared by several models.
+# Model titles, from the forms the Kiesraad published on 27 November 2025 as OSV fills them in, and from the older
+# O 7, P 1f-1 and P 22-1 forms. Forms of earlier elections word and number things differently, so they are left
+# unidentified. A title listed for several models only counts with the code of one of them; OSV headers such as
+# "Verslag en telresultaten per lijst en kandidaat" and "Details van het stembureau" are shared too widely to list.
 TITLES = [
     ("hoeveel stemmen elke lijst en elke kandidaat hebben gekregen", "N 10-1"),
     ("hoeveel stemmen elke lijst heeft gekregen", "N 10-2"),
     ("Corrigendum van een proces-verbaal van een stembureau", "Na 14-1"),
     ("Verslag van telling van een door het gemeentelijk stembureau herteld stembureau", "Na 14-1"),
     ("Corrigendum van een gemeentelijk stembureau", "Na 14-2"),
+    ("Gecorrigeerde telresultaten per lijst en kandidaat", "Na 14-2"),
     ("Verslagen van tellingen van stembureaus die zijn herteld door het gemeentelijk stembureau", "Na 14-2 Bijlage 1"),
     ("hoeveel stemmen elke lijst en elke kandidaat kreeg", "Na 31-1"),
     ("Het gemeentelijk stembureau telt de stemmen per kandidaat", "Na 31-2"),
@@ -67,8 +68,12 @@ TITLES = [
     ("Bezwaren van aanwezigen op stembureaus", "Na 31-2 Bijlage 2"),
     ("Proces-verbaal van een hoofdstembureau", "O 7"),
     ("Corrigendum bij het proces-verbaal van een hoofdstembureau", "P 1f-1"),
+    ("Gecorrigeerde telresultaten per lijst en kandidaat", "P 1f-1"),
     ("Verslag en gecorrigeerde telresultaten", "P 2a"),
+    # Longer than the title above, so it wins where that one is found inside it.
+    ("Verslag en gecorrigeerde telresultaten per lijst en kandidaat", "P 2a"),
     ("Proces-verbaal van het centraal stembureau met de uitslag van de verkiezing", "P 22-1"),
+    ("Verslag, uitslag en zetelverdeling", "P 22-1"),
     ("Verslag, uitslag en zetelverdeling", "P 22-2"),
 ]
 
@@ -83,6 +88,12 @@ TITLE_ERRORS = 2
 TITLE_KEYS = [
     (key, regex.compile(f"(?e)(?:{key}){{e<={TITLE_ERRORS}}}"), model)
     for key, model in ((letters_only(title), model) for title, model in TITLES)
+]
+# The models of each title that several models share.
+SHARED_TITLES = [
+    models
+    for key in {key for key, _, _ in TITLE_KEYS}
+    if len(models := {model for other, _, model in TITLE_KEYS if other == key}) > 1
 ]
 
 
@@ -227,7 +238,8 @@ YEAR_IN_COMPACT_RE = re.compile(r"(?<!\d)(20\d\d)(?!\d)")
 # "Model O 7\nProces-verbaal van een hoofdstembureau\nDe verkiezing van de leden van provinciale staten van
 # Gelderland\nop 15 maart 2023". The P 22-1 title runs over three lines, after a running header with the code.
 HEADER_BELOW_START = "deverkiezingvandeledenvan"
-HEADER_BELOW_LINES = 10
+# How many lines below a code, or above a code that isn't the first, may hold the label.
+HEADER_LINES = 10
 # The authority an election is for follows its body in the label: "de gemeenteraad van Ede", "Provinciale Staten
 # Drenthe 2027", "het algemeen bestuur van het hoogheemraadschap van Delfland". TK and EP have one election per id.
 AUTHORITY_RES = {
@@ -460,6 +472,9 @@ class PvClassifier:
         known = [code for code in codes if code in PV_CODES]
         # A bijlage page often repeats its PV's title; the bijlage title then decides.
         titles = [title for title in titles if not any(other != title and pv_code(other) == title for other in titles)]
+        # A shared title is found for each of its models; the code picks one.
+        if any(set(titles) <= models for models in SHARED_TITLES):
+            titles = [title for title in titles if pv_code(title) in known] or titles
         # Titles of different models on one page contradict each other, so a model is only decided by a single one.
         if len(titles) > 1:
             return ClassificationResult(None, ResultMatch.CONFLICT, codes, titles)
@@ -511,22 +526,18 @@ class PvClassifier:
         election type) up to the date, which may be on a following line. The Kiesraad's own models put it below the
         code and title instead (HEADER_BELOW_START). Only the label's authority is kept, as labels are worded in many
         ways.
-        """
-        # The header is the non-blank lines above the model code.
-        if not (code := MODEL_RE.search(text)):
-            return None
-        lines = [line for line in text[: code.start()].splitlines() if line.strip()]
 
-        # Find the line the label starts on, comparing lines without spaces as OCR splits words ("Gemeentera ad").
-        compacts = ["".join(line.split()).lower() for line in lines]
-        start = next((i for i in reversed(range(len(lines))) if "verkiezing" in compacts[i]), None)
-        if start is None:
-            start = next((i for i in reversed(range(len(lines))) if ELECTION_TYPE_RE.search(compacts[i])), None)
-        if start is None:
-            lines = [line for line in text[code.end() :].splitlines() if line.strip()][:HEADER_BELOW_LINES]
-            compacts = ["".join(line.split()).lower() for line in lines]
-            start = next((i for i in range(len(lines)) if compacts[i].startswith(HEADER_BELOW_START)), None)
-        if start is None:
+        A running header may print the code above the real header, as in the Kiesraad's 2027 models. The label is then
+        read around a later code, from the lines between it and the previous code.
+        """
+        codes = list(MODEL_RE.finditer(text))
+        ends = [0] + [code.end() for code in codes]
+        for index, code in enumerate(codes):
+            above = [line for line in text[ends[index] : code.start()].splitlines() if line.strip()]
+            if found := PvClassifier.find_header_label(above[-HEADER_LINES:] if index else above, text[code.end() :]):
+                lines, start = found
+                break
+        else:
             return None
 
         # Cut the label at the date, searched for in the start line and the two after it, as the label and the date
@@ -564,6 +575,22 @@ class PvClassifier:
                 pass
         authority = PvClassifier.find_authority(election_type.lastgroup, label)
         return PvElection(f"{election_type.lastgroup}{year}", date, authority, "header")
+
+    @staticmethod
+    def find_header_label(above: list[str], below: str) -> tuple[list[str], int] | None:
+        """The header lines around a model code and the index of the line the label starts on, or None."""
+        # Find the line the label starts on, comparing lines without spaces as OCR splits words ("Gemeentera ad").
+        compacts = ["".join(line.split()).lower() for line in above]
+        start = next((i for i in reversed(range(len(above))) if "verkiezing" in compacts[i]), None)
+        if start is None:
+            start = next((i for i in reversed(range(len(above))) if ELECTION_TYPE_RE.search(compacts[i])), None)
+        if start is not None:
+            return above, start
+
+        lines = [line for line in below.splitlines() if line.strip()][:HEADER_LINES]
+        compacts = ["".join(line.split()).lower() for line in lines]
+        start = next((i for i in range(len(lines)) if compacts[i].startswith(HEADER_BELOW_START)), None)
+        return (lines, start) if start is not None else None
 
     @staticmethod
     def find_authority(election_type: str, label: str) -> str:
@@ -746,16 +773,16 @@ class PvClassifier:
         """
         The file name of the PV: "<election>_<model>[_<csb>]_<region>[_SB<n>].pdf".
 
-        The CSB is the province or waterschap of a PS or AB election; "Nederland" of TK and EP is the same for every PV
-        and left out. The region is the gemeente as "<code>-<name>", the CSB itself for a CSB model, or the kieskring as
-        "kieskring-<number>-<name>" for a hoofdstembureau model. They are slugs,
-        so "_" only separates parts, and a last part "SB<n>" is the stembureau of a stembureau model.
+        The CSB is the province or waterschap of a PS or AB election, or "Nederland" of TK and EP, whenever it is known;
+        a CSB model names it once, as its region. The region is the gemeente as "<code>-<name>", the CSB itself for a
+        CSB model, or the kieskring as "kieskring-<number>-<name>" for a hoofdstembureau model. They are slugs, so "_"
+        only separates parts, and a last part "SB<n>" is the stembureau of a stembureau model.
         """
         pv = self.identity(csb, region_code, region_name)
         parts = [
             pv.election,
             pv.model,
-            self.slug(pv.csb) if pv.election[:2] in AUTHORITIES and not self.is_csb_pv() else "",
+            "" if self.is_csb_pv() else self.slug(pv.csb),
             "-".join(filter(None, [self.region_prefix(), pv.region_code, self.slug(pv.region_name)])),
             f"SB{pv.stembureau}" if pv.stembureau else "",
         ]

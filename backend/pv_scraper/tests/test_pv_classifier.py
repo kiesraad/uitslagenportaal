@@ -115,6 +115,13 @@ def test_find_titles(text, expected):
             ResultMatch.CODE_TITLE,
         ),
         ("Model N 10-1\n" + N_10_2_TITLE, None, ResultMatch.CONFLICT),
+        # A title several models share counts with the code of one of them.
+        ("Verslag, uitslag en zetelverdeling - Model P 22-1", "P 22-1", ResultMatch.CODE_TITLE),
+        ("Verslag, uitslag en zetelverdeling - Model P 22-2", "P 22-2", ResultMatch.CODE_TITLE),
+        ("Verslag, uitslag en zetelverdeling", None, ResultMatch.CONFLICT),
+        ("Verslag, uitslag en zetelverdeling - Model O 7", None, ResultMatch.CONFLICT),
+        ("Gecorrigeerde telresultaten per lijst en kandidaat - Model P 1f-1", "P 1f-1", ResultMatch.CODE_TITLE),
+        ("Verslag en gecorrigeerde telresultaten per lijst en kandidaat - Model P 2a", "P 2a", ResultMatch.CODE_TITLE),
         (N_10_2_TITLE + "\n" + NA_31_2_TITLE, None, ResultMatch.CONFLICT),
         ("Model X 99", None, ResultMatch.UNKNOWN),
         ("Geen model", None, ResultMatch.NONE),
@@ -371,6 +378,18 @@ MARCH_15_2023 = datetime.date(2023, 3, 15)
             "verkiezing van de Tweede Kamer / het Europees Parlement /\nprovinciale staten\n\n"
             "De verkiezing van de leden van provinciale staten van Gelderland\nop 15 maart 2023\n",
             PvElection("PS2023", MARCH_15_2023, "Gelderland", "header"),
+        ),
+        # The 2027 models print the code in a running header above the header with the election.
+        (
+            "Proces-verbaal van een hoofdstembureau\nModel O 7\n\nKieskring 3\nHoofdstembureau\n"
+            "Provinciale Staten Zuid-Holland 2023 woensdag 15\nmaart 2023\n"
+            "Verslag en telresultaten per lijst en kandidaat —\nModel O 7\nVersie 2027",
+            PvElection("PS2023", MARCH_15_2023, "Zuid-Holland", "header"),
+        ),
+        # Above a later code, only the last lines count.
+        (
+            "Model O 7\nProvinciale Staten Zuid-Holland 2023\n" + "regel\n" * 10 + "Model O 7",
+            None,
         ),
         # A blank model names no election.
         (
@@ -663,7 +682,7 @@ EDE_12 = PvRegion(code="228", name="Ede", stembureau="12")
         ("Na 31-2 Bijlage 1", PvElection("GR2026"), EDE_12, "GR2026_Na31-2-B1_0228-ede_SB12.pdf"),
         ("N 10-1", PvElection("AB2027", authority="Fryslân"), EDE_12, "AB2027_N10-1_fryslan_0228-ede_SB12.pdf"),
         ("Na 31-1", PvElection("PS2027"), PvRegion(name="Bergen (NH)"), "PS2027_Na31-1_bergen-nh.pdf"),
-        ("Na 31-1", PvElection("TK2025"), PvRegion(code="1680"), "TK2025_Na31-1_1680.pdf"),
+        ("Na 31-1", PvElection("TK2025"), PvRegion(code="1680"), "TK2025_Na31-1_nederland_1680.pdf"),
         (
             "N 10-2",
             PvElection("AB2027", authority="Fryslân"),
@@ -836,10 +855,10 @@ def test_storage_name_of_a_csb_model_names_the_csb(election, region, name):
 
 
 @pytest.mark.django_db
-def test_the_csb_of_a_national_election_is_left_out_of_the_name_of_a_gemeente_pv():
+def test_the_csb_of_a_national_election_is_nederland():
     pv = classified("N 10-2", PvElection("TK2025"), EDE_12)
 
-    assert pv.storage_name() == "TK2025_N10-2_0228-ede_SB12.pdf"
+    assert pv.storage_name() == "TK2025_N10-2_nederland_0228-ede_SB12.pdf"
     assert PdfReader(pv.add_metadata_to_pv()).metadata["/PvCsb"] == "Nederland"
 
 
@@ -857,15 +876,15 @@ def test_the_csb_of_a_national_election_is_left_out_of_the_name_of_a_gemeente_pv
             "O 7",
             PvElection("TK2025"),
             PvRegion(kieskring="9", kieskring_name="'s-Hertogenbosch"),
-            "TK2025_O7_kieskring-9-s-hertogenbosch.pdf",
+            "TK2025_O7_nederland_kieskring-9-s-hertogenbosch.pdf",
         ),
         # Without its name the kieskring is named by its number, and without its number by its name.
-        ("P 1f-1", PvElection("EP2024"), PvRegion(kieskring="20"), "EP2024_P1f-1_kieskring-20.pdf"),
+        ("P 1f-1", PvElection("EP2024"), PvRegion(kieskring="20"), "EP2024_P1f-1_nederland_kieskring-20.pdf"),
         (
             "P 1f-1",
             PvElection("TK2025"),
             PvRegion(kieskring_name="‘s-Gravenhage"),
-            "TK2025_P1f-1_kieskring-s-gravenhage.pdf",
+            "TK2025_P1f-1_nederland_kieskring-s-gravenhage.pdf",
         ),
     ],
 )
