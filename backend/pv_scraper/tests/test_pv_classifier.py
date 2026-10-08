@@ -15,6 +15,7 @@ from mainsite.models import RegionCategory
 from pv_scraper.tests.factories import ScrapeSourceFactory
 from pv_scraper.utils.pv_classifier import (
     DPI,
+    HEADER_LABEL_TAIL_RE,
     ClassificationResult,
     PvClassificationException,
     PvClassifier,
@@ -254,6 +255,14 @@ MARCH_18 = datetime.date(2026, 3, 18)
             PvElection("GR2026", MARCH_18, "Helmond", "header"),
         ),
         ("Gemeenteraad Purmerend 2026 18 maart 2026", PvElection("GR2026", MARCH_18, "Purmerend", "header")),
+        # A name ending in "men" before the year is no misread "mei".
+        *(
+            (
+                f"Verkiezing Gemeenteraad {name} 2026 woensdag 18 maart 2026",
+                PvElection("GR2026", MARCH_18, name, "header"),
+            )
+            for name in ("Emmen", "Brummen", "Ommen")
+        ),
         # The date may wrap.
         (
             "De verkiezing van de leden van de gemeenteraad van Ede van 18\nmaart 2026",
@@ -351,6 +360,10 @@ def test_find_header_election(header, expected):
 )
 def test_find_authority(election_type, label, authority):
     assert PvClassifier.find_authority(election_type, label) == authority
+
+
+def test_label_tail_of_many_short_words_is_matched_without_backtracking():
+    assert HEADER_LABEL_TAIL_RE.sub("", "verkiezing" + " 0" * 40 + " ab") == "verkiezing" + " 0" * 40 + " ab"
 
 
 def test_find_header_election_needs_a_model_code():
@@ -785,7 +798,9 @@ def test_slug(name, slug):
 def test_storage_name_takes_the_names_it_is_given():
     pv = classified("N 10-2", PvElection("AB2027"), PvRegion(code="0229", name="Edde", stembureau="12"))
 
-    assert pv.storage_name("Vallei en Veluwe", "0228", "Ede") == "AB2027_N10-2_vallei-en-veluwe_0228-ede_SB12.pdf"
+    name = pv.storage_name(pv.identity("Vallei en Veluwe", "0228", "Ede"))
+
+    assert name == "AB2027_N10-2_vallei-en-veluwe_0228-ede_SB12.pdf"
 
 
 @pytest.mark.parametrize(
@@ -794,8 +809,11 @@ def test_storage_name_takes_the_names_it_is_given():
         (None, PvElection("GR2026"), EDE_12),
         ("N 10-2", PvElection(), EDE_12),
         ("N 10-2", PvElection("GR2026"), PvRegion()),
+        # Without its stembureau, a stembureau model's PV would replace those of the gemeente's other stembureaus.
+        ("N 10-2", PvElection("GR2026"), PvRegion(code="0228", name="Ede")),
     ],
 )
+@pytest.mark.django_db
 def test_storage_name_needs_model_election_and_region(model, election, region):
     with pytest.raises(PvClassificationException):
         classified(model, election, region).storage_name()
@@ -846,6 +864,12 @@ def test_save_to_storage_refuses_a_pv_of_another_gemeente(election, region):
 
     with pytest.raises(PvClassificationException):
         classified("N 10-2", election, region).save_to_storage(source, "pvs")
+
+
+@pytest.mark.django_db
+def test_save_to_storage_needs_a_classified_pv():
+    with pytest.raises(PvClassificationException):
+        PvClassifier(NamedBytesIO(BLANK_PDF, "pv.pdf")).save_to_storage(ScrapeSourceFactory(), "pvs")
 
 
 @pytest.mark.django_db

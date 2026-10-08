@@ -47,8 +47,11 @@ afterwards, by `PvClassifier`.
 
 ### Classification
 
-`run_scrape_for_source` hands each downloaded file to `PvClassifier` (`pv_scraper/utils/pv_classifier.py`), which runs
-Tesseract on the first page or two. To try it on a folder of PDFs, use
+`run_scrape_for_source` stores each downloaded file under `pv_scraper/<source code>/` and queues
+`classify_scraped_file` for it on the `scraper` queue, whose worker has Tesseract; the browser does not wait on OCR.
+That
+task hands the file to `PvClassifier` (`pv_scraper/utils/pv_classifier.py`), which runs Tesseract on the first page or
+two. To try it on a folder of PDFs, use
 `docker compose run --rm backend-scripts python manage.py classify_pvs <folder>`
 or `docker compose run --rm backend-scripts python manage.py classify_pv <path>`.
 
