@@ -197,7 +197,7 @@ msgid "de staat"
 msgstr "the state"
 
 #: src/components/ResultsPage/ResultsNotPublished.tsx
-msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra de {regionLabel} ze publiceert."
+msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra {regionLabel} ze publiceert."
 msgstr "The counting results and certified election results for {regionLabel} will appear here as soon as {regionLabel} publishes them."
 
 #: src/components/ResultsPage/ResultsSourceBox.tsx

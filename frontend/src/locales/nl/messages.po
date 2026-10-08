@@ -197,8 +197,8 @@ msgid "de staat"
 msgstr "de staat"
 
 #: src/components/ResultsPage/ResultsNotPublished.tsx
-msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra de {regionLabel} ze publiceert."
-msgstr "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra de {regionLabel} ze publiceert."
+msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra {regionLabel} ze publiceert."
+msgstr "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra {regionLabel} ze publiceert."
 
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen."

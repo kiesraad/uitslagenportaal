@@ -89,7 +89,8 @@ export default function PollingStationResultsPage() {
                timelineVariant={pollingStation.timeline_variant}
                timelineEntries={pollingStation.timeline_entries ?? []}
                issueReportDeadline={electionConfig.issue_report_deadline}
-               notPublishedRegionLabel={region.region_name}
+               notPublishedRegionName={pollingStation.region_name}
+               notPublishedRegionCategory={pollingStation.region_category}
             />
          </ResultsPageColumns>
       </LayoutMain>

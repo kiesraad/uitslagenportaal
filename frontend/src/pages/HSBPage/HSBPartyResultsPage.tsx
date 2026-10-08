@@ -106,7 +106,11 @@ export function HSBPartyResultsPage() {
          />
          <div className="page-main">
             <div className="party-vote-matrix-page flex flex-col gap-4 sm:gap-12">
-               {!hasResults ? <ResultsNotPublished regionLabel={region.region_name} /> : resultsPageContent}
+               {!hasResults ? (
+                  <ResultsNotPublished regionName={region.region_name} regionCategory={region.region_category} />
+               ) : (
+                  resultsPageContent
+               )}
                <ResultsTimeline variant={region.timeline_variant} entries={electionConfig.timeline_entries ?? []} />
                <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
             </div>
