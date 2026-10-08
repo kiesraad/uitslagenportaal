@@ -56,7 +56,9 @@ or `docker compose run --rm backend-scripts python manage.py classify_pv <path>`
   in `MODELS` are recognized; other files are discarded.
 - **Election:** the OSV forms name the election and its date in the header, just above the model code, worded in many
   ways ("Verkiezing Gemeenteraad 2026", "De verkiezing van de leden van het algemeen bestuur van het hoogheemraadschap
-  van Delfland", "Gemeenteraad Purmerend 2026"). The classifier reads the id and date from there first, falling back
+  van Delfland", "Gemeenteraad Purmerend 2026"). The Kiesraad's own models, such as O 7 and P 22-1, name it just below
+  the model code and title instead, always as "De verkiezing van de leden van …". The classifier reads the id and date
+  from there first, falling back
   to the rest of the text and then the file name. Of the wording it keeps only the authority: the gemeente,
   province or waterschap the header names ("Purmerend", "Delfland"), or nothing when it names none, as TK, EP and most
   GR headers. A province or waterschap is corrected to its name in `AUTHORITIES`, or dropped when it is none of them;
@@ -74,13 +76,13 @@ An identified PV is stored in default storage under `pvs/` as `<election>_<model
 name is built from what the PV and its source say, and the application's database only corrects the gemeente's name,
 so another platform delivering PVs can follow it too.
 
-| Part       | Contents                                                                   | Example            |
-|------------|----------------------------------------------------------------------------|--------------------|
-| election   | election id, as in the EML                                                 | `GR2026`, `AB2027` |
-| model      | model code without spaces; a bijlage as `-B<n>`                            | `N10-2`, `Na31-2-B1` |
-| csb        | slug of the province or waterschap, for PS and AB elections only; left out when not known or when it is the region | `vallei-en-veluwe` |
-| region     | the gemeente as `<code>-<slug of its name>`, or either one when only that is known; for a CSB model the CSB | `0228-ede` |
-| SB\<n\>    | the stembureau, for the models of one stembureau only                      | `SB12`             |
+| Part     | Contents                                                                                                                                                                        | Example                          |
+|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------|
+| election | election id, as in the EML                                                                                                                                                      | `GR2026`, `AB2027`               |
+| model    | model code without spaces; a bijlage as `-B<n>`                                                                                                                                 | `N10-2`, `Na31-2-B1`             |
+| csb      | slug of the province or waterschap, for PS and AB elections only; left out when not known or when it is the region                                                              | `vallei-en-veluwe`               |
+| region   | the gemeente as `<code>-<slug of its name>`, or either one when only that is known; for a CSB model the CSB; for a hoofdstembureau model `kieskring[-<n>][-<slug of its name>]` | `0228-ede`, `kieskring-1-arnhem` |
+| SB\<n\>  | the stembureau, for the models of one stembureau only                                                                                                                           | `SB12`                           |
 
 The gemeente's name is taken from the gemeenten of the most recent election that has it: by its code when known, or else
 by the name read, which may have one misread letter or a mangled accent (an exact match wins); the code is then taken
@@ -93,8 +95,15 @@ The models of a centraal stembureau (P 22-1, P 22-2) name no gemeente. Of a PS, 
 the CSB, named once and without a code, and a PS or AB PV without a known CSB is not stored. Of a GR election, the CSB
 is the gemeente itself.
 
+The models of a hoofdstembureau (O 7, P 1f-1), of TK, EP and PS with more than one kieskring, are about a kieskring.
+Their region is the kieskring, by the number and name the PV gives it: "Kieskring 1 Arnhem", "Kieskring 12 (
+'s-Gravenhage)", or with an arrow after it as OSV writes it ("Kieskring 2 Nijmegen → Gemeente …"). A PV that names
+only one of them is named by that one ("Kieskring 's-Gravenhage"); one without either is not stored. `/PvRegionCode`
+holds the kieskring's number (`1`) and `/PvRegionName` its name (`Arnhem`).
+
 For example `GR2026_N10-2_0228-ede_SB12.pdf`, `AB2027_Na31-1_vallei-en-veluwe_0228-ede.pdf`,
-`AB2027_P22-2_vallei-en-veluwe.pdf`, `TK2025_P22-2_nederland.pdf`. Slugs consist of
+`AB2027_P22-2_vallei-en-veluwe.pdf`, `TK2025_P22-2_nederland.pdf`, `PS2023_O7_gelderland_kieskring-1-arnhem.pdf`. Slugs
+consist of
 `[a-z0-9-]`, so `_` only separates parts. To read a name back: the first two parts are election and model, a last part
 `SB<n>` is the stembureau, then the last remaining part is the region and one before it the CSB.
 
@@ -107,7 +116,8 @@ readable and unique.
 
 A file of the same name is replaced, since it holds the same PV. So that a misread stembureau doesn't replace another
 stembureau's PV, a PV whose stembureau differs from the one in its file name is not stored. A PV found on a gemeente's website must be about that
-gemeente by code or name, unless its region is a province or waterschap, and a GR header naming another gemeente is refused; the source then gives the gemeente's code
+gemeente by code or name, unless its region is a CSB or a kieskring, and a GR header naming another gemeente is refused;
+the source then gives the gemeente's code
 and name. A waterschap's or province's website gives the CSB when the header doesn't name it.
 
 #### Election pages

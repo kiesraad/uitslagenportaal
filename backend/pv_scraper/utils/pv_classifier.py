@@ -140,12 +140,22 @@ GEMEENTE_HEADER_RE = re.compile(
     re.MULTILINE,
 )
 STEMBUREAU_RE = re.compile(r"(?i:stembureau(?:nummer)?|nummer\s*stembureau)[-:\s]*(?i:nr\.?|nummer)?[:\s]*(\d{1,4})\b")
-KIESKRING_RE = re.compile(r"(?i:kieskring)[:\s]*(\d{1,2})\b")
+# A hoofdstembureau's PV names its kieskring by number and name ("Kieskring 1 Arnhem", "Kieskring 12 ('s-Gravenhage)")
+# or by name only ("Kieskring 's-Gravenhage"). OSV forms follow it with an arrow: "Kieskring 2 → Gemeente 0268". A name
+# only counts on the same line, ending there or at an arrow, so prose after "kieskring" is no name.
+KIESKRING_NAME_END = r"\)?(?=[ \t]*(?:→|$))"
+KIESKRING_RE = re.compile(
+    rf"(?i:kieskring)(?:[:\s]*(\d{{1,2}})\b(?:[ \t]+\(?({GEMEENTE_NAME}){KIESKRING_NAME_END})?"
+    rf"|[: \t]+({GEMEENTE_NAME}){KIESKRING_NAME_END})",
+    re.MULTILINE,
+)
 
 # Models that belong to one stembureau; only for these does a number in the filename name the stembureau.
 STEMBUREAU_MODELS = {"N 10-1", "N 10-2", "Na 14-1", "Na 31-2 Bijlage 1"}
 # Models of a centraal stembureau. They name no gemeente; their region is the CSB, which for GR is the gemeente.
 CSB_MODELS = {"P 22-1", "P 22-2"}
+# Models of a hoofdstembureau, of TK, EP and PS with more than one kieskring. Their region is the kieskring.
+KIESKRING_MODELS = {"O 7", "P 1f-1"}
 # A stembureau in a file name: the common "<gemeente>_<nummer>_<locatie>_GR26" ("Brunssum_10_…") first, as the location
 # may itself contain "stembureau 1"; else "stembureau_7_…", "sb35_1", "1680_Bijlagen 1 en 2_Stembureau_22_…". Other
 # numbers, such as dates or a leading gemeente code, are left alone, and stembureaus are numbered from 1.
@@ -213,6 +223,11 @@ HEADER_LABEL_TAIL_RE = re.compile(
     r"(?:\s+(?:(?:maan|dins|woens|donder|vrij|zater|zon)dag|van|op|in|\S?\d\S?|\S))*[\s,.\-–—]*$", re.IGNORECASE
 )
 YEAR_IN_COMPACT_RE = re.compile(r"(?<!\d)(20\d\d)(?!\d)")
+# The Kiesraad's own models (O 7, P 22-1, P 22-2) name the election below the model code and title, in fixed words:
+# "Model O 7\nProces-verbaal van een hoofdstembureau\nDe verkiezing van de leden van provinciale staten van
+# Gelderland\nop 15 maart 2023". The P 22-1 title runs over three lines, after a running header with the code.
+HEADER_BELOW_START = "deverkiezingvandeledenvan"
+HEADER_BELOW_LINES = 10
 # The authority an election is for follows its body in the label: "de gemeenteraad van Ede", "Provinciale Staten
 # Drenthe 2027", "het algemeen bestuur van het hoogheemraadschap van Delfland". TK and EP have one election per id.
 AUTHORITY_RES = {
@@ -312,6 +327,7 @@ class PvRegion:
     name: str = ""
     stembureau: str = ""
     kieskring: str = ""
+    kieskring_name: str = ""
 
 
 @dataclass
@@ -471,9 +487,10 @@ class PvClassifier:
         # The stembureau number from the first "Stembureau [number]" in the text.
         if match := STEMBUREAU_RE.search(text):
             region.stembureau = match.group(1)
-        # The kieskring number from the first "Kieskring [number]" in the text.
+        # The kieskring number and name, either of which may be missing, from the first "Kieskring" line in the text.
         if match := KIESKRING_RE.search(text):
-            region.kieskring = match.group(1)
+            region.kieskring = match.group(1) or ""
+            region.kieskring_name = match.group(2) or match.group(3) or ""
         return region
 
     @staticmethod
@@ -488,10 +505,12 @@ class PvClassifier:
     @staticmethod
     def find_header_election(text: str) -> PvElection | None:
         """
-        Read the election from the header lines above the model code, or None if they don't name one.
+        Read the election from the header lines around the model code, or None if they don't name one.
 
-        The label naming the election runs from the last line saying "verkiezing" (or else naming an election type) up
-        to the date, which may be on a following line. Only its authority is kept, as labels are worded in many ways.
+        The label naming the election runs from the last line above the code saying "verkiezing" (or else naming an
+        election type) up to the date, which may be on a following line. The Kiesraad's own models put it below the
+        code and title instead (HEADER_BELOW_START). Only the label's authority is kept, as labels are worded in many
+        ways.
         """
         # The header is the non-blank lines above the model code.
         if not (code := MODEL_RE.search(text)):
@@ -503,6 +522,10 @@ class PvClassifier:
         start = next((i for i in reversed(range(len(lines))) if "verkiezing" in compacts[i]), None)
         if start is None:
             start = next((i for i in reversed(range(len(lines))) if ELECTION_TYPE_RE.search(compacts[i])), None)
+        if start is None:
+            lines = [line for line in text[code.end() :].splitlines() if line.strip()][:HEADER_BELOW_LINES]
+            compacts = ["".join(line.split()).lower() for line in lines]
+            start = next((i for i in range(len(lines)) if compacts[i].startswith(HEADER_BELOW_START)), None)
         if start is None:
             return None
 
@@ -665,6 +688,14 @@ class PvClassifier:
         election_type = self.result.election.id[:2]
         return self.result.model in CSB_MODELS and (election_type in AUTHORITIES or election_type in NATIONAL_CSBS)
 
+    def is_kieskring_pv(self) -> bool:
+        """Whether the PV is about a kieskring: a model of a hoofdstembureau."""
+        return self.result.model in KIESKRING_MODELS
+
+    def region_prefix(self) -> str:
+        """The word that starts the region of a kieskring PV, before its number and name: "kieskring"."""
+        return "kieskring" if self.is_kieskring_pv() else ""
+
     def identity(self, csb: str = "", region_code: str = "", region_name: str = "") -> PvIdentity:
         """What the PV is; the arguments override what was read from the PV."""
         result = self.result
@@ -682,6 +713,10 @@ class PvClassifier:
             if not csb:
                 raise PvClassificationException("Cannot name file: CSB not known")
             code, name = "", csb
+        elif self.is_kieskring_pv():
+            code, name = result.region.kieskring, result.region.kieskring_name
+            if not code and not name:
+                raise PvClassificationException("Cannot name file: kieskring not known")
         else:
             code, name = self.complete_gemeente(region_code or result.region.code, region_name or result.region.name)
 
@@ -700,7 +735,8 @@ class PvClassifier:
             election_date=result.election.date.isoformat() if result.election.date else "",
             model=pv_model_short_form(result.model),
             csb=csb,
-            region_code=code.zfill(4) if code else "",
+            # A gemeente code has four digits; a kieskring number stays as it is.
+            region_code=code.zfill(4) if code and not self.is_kieskring_pv() else code,
             region_name=name,
             stembureau=stembureau,
             matched_on=str(result.matched_on),
@@ -711,7 +747,8 @@ class PvClassifier:
         The file name of the PV: "<election>_<model>[_<csb>]_<region>[_SB<n>].pdf".
 
         The CSB is the province or waterschap of a PS or AB election; "Nederland" of TK and EP is the same for every PV
-        and left out. The region is the gemeente as "<code>-<name>", or the CSB itself for a CSB model. Both are slugs,
+        and left out. The region is the gemeente as "<code>-<name>", the CSB itself for a CSB model, or the kieskring as
+        "kieskring-<number>-<name>" for a hoofdstembureau model. They are slugs,
         so "_" only separates parts, and a last part "SB<n>" is the stembureau of a stembureau model.
         """
         pv = self.identity(csb, region_code, region_name)
@@ -719,7 +756,7 @@ class PvClassifier:
             pv.election,
             pv.model,
             self.slug(pv.csb) if pv.election[:2] in AUTHORITIES and not self.is_csb_pv() else "",
-            "-".join(filter(None, [pv.region_code, self.slug(pv.region_name)])),
+            "-".join(filter(None, [self.region_prefix(), pv.region_code, self.slug(pv.region_name)])),
             f"SB{pv.stembureau}" if pv.stembureau else "",
         ]
         return "_".join(filter(None, parts)) + ".pdf"
@@ -733,8 +770,11 @@ class PvClassifier:
         """
         pv = self.identity(csb, region_code, region_name)
         stembureau = f"stembureau {pv.stembureau}" if pv.stembureau else ""
+        region = [pv.region_name or pv.region_code]
+        if self.is_kieskring_pv():
+            region = [self.region_prefix(), pv.region_code, pv.region_name]
         metadata = {
-            "/Title": " ".join(filter(None, [pv.model, pv.region_name or pv.region_code, stembureau])),
+            "/Title": " ".join(filter(None, [pv.model, *region, stembureau])),
             "/Subject": " ".join(filter(None, [pv.election, pv.csb])),
             **{PDF_METADATA_KEYS[key]: value for key, value in asdict(pv).items() if value},
         }
@@ -750,8 +790,8 @@ class PvClassifier:
         """Store the PV with its metadata under its name in a folder, replacing a file of that name, and return the
         storage key.
 
-        A PV found on a gemeente's website must be about that gemeente, unless its region is a province or waterschap;
-        the source then also gives the gemeente's name, and that of a waterschap or province the CSB.
+        A PV found on a gemeente's website must be about that gemeente, unless its region is a CSB or a kieskring; the
+        source then also gives the gemeente's name, and that of a waterschap or province the CSB.
         """
         if self.result is None:
             raise PvClassificationException("Cannot save file: not classified")
@@ -761,7 +801,7 @@ class PvClassifier:
         csb = region_code = region_name = ""
 
         # A gemeente's website gives the gemeente, which the gemeente read from the PV must match by code or name.
-        if source.kind == RegionCategory.GEMEENTE and not self.is_csb_pv():
+        if source.kind == RegionCategory.GEMEENTE and not (self.is_csb_pv() or self.is_kieskring_pv()):
             region_code, region_name = source.code.removeprefix("gm"), source.name
             if region.code != region_code and not self.authority_matches(source.name, region.name):
                 raise PvClassificationException(f"Cannot save file: PV is not from {source}")

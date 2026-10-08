@@ -140,6 +140,19 @@ def test_identify_model_keeps_what_ocr_found():
             "Gemeente: 888\nStembureau: 12\nKieskring 19",
             {"code": "0888", "stembureau": "12", "kieskring": "19"},
         ),
+        # A hoofdstembureau's PV names the kieskring; an OSV form follows its number with an arrow.
+        ("Kieskring 1 Arnhem\nWaarom dit proces-verbaal?", {"kieskring": "1", "kieskring_name": "Arnhem"}),
+        ("Kieskring 9 's-Hertogenbosch", {"kieskring": "9", "kieskring_name": "'s-Hertogenbosch"}),
+        ("Kieskring 2 → Gemeente 0268 Nijmegen", {"code": "0268", "name": "Nijmegen", "kieskring": "2"}),
+        (
+            "Kieskring 2 Nijmegen → Gemeente 0268 Nijmegen",
+            {"code": "0268", "name": "Nijmegen", "kieskring": "2", "kieskring_name": "Nijmegen"},
+        ),
+        ("Kieskring ‘s-Gravenhage → Gemeente 0518", {"code": "0518", "kieskring_name": "‘s-Gravenhage"}),
+        ("Kieskring 12 ('s-Gravenhage)", {"kieskring": "12", "kieskring_name": "'s-Gravenhage"}),
+        ("Kieskring ‘s-Gravenhage\n\nWaarom dit corrigendum?", {"kieskring_name": "‘s-Gravenhage"}),
+        # Prose after "kieskring" is no name.
+        ("bij de in deze kieskring\nHet hoofdstembureau", {}),
         ("Nummer stembureau 602", {"stembureau": "602"}),
         ("Stembureaunummer: nr. 7", {"stembureau": "7"}),
         ("Stembureau-nr. 210", {"stembureau": "210"}),
@@ -335,6 +348,44 @@ def test_find_authority(election_type, label, authority):
 
 def test_find_header_election_needs_a_model_code():
     assert PvClassifier.find_header_election("Verkiezing Gemeenteraad 2026 woensdag 18 maart 2026") is None
+
+
+MARCH_15_2023 = datetime.date(2023, 3, 15)
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (
+            "Model O 7\nProces-verbaal van een hoofdstembureau\n\n"
+            "De verkiezing van de leden van provinciale staten van Gelderland\nop 15 maart 2023\nKieskring 1 Arnhem\n\n"
+            "Met dit proces-verbaal stelt het hoofdstembureau de uitkomst voor een kieskring vast van de verkiezing\n"
+            "voor de Tweede Kamer, het Europees Parlement, of de provinciale staten van een provincie",
+            PvElection("PS2023", MARCH_15_2023, "Gelderland", "header"),
+        ),
+        # The running header repeats the code above a title naming three election types.
+        (
+            "Model P 22-1: Proces-verbaal van het centraal stembureau met de uitslag van de verkiezing van de Tweede\n"
+            "Kamer / het Europees Parlement / provinciale staten\n\nModel P 22-1\n\n"
+            "Proces-verbaal van het centraal stembureau met de uitslag van de\n"
+            "verkiezing van de Tweede Kamer / het Europees Parlement /\nprovinciale staten\n\n"
+            "De verkiezing van de leden van provinciale staten van Gelderland\nop 15 maart 2023\n",
+            PvElection("PS2023", MARCH_15_2023, "Gelderland", "header"),
+        ),
+        # A blank model names no election.
+        (
+            "Model O 7\nProces-verbaal van een hoofdstembureau\nDe verkiezing van de leden van [aanduiding verkiezing]",
+            None,
+        ),
+        # Only the first lines below the code count.
+        (
+            "Model O 7\n" + "regel\n" * 10 + "De verkiezing van de leden van provinciale staten van Gelderland 2023",
+            None,
+        ),
+    ],
+)
+def test_find_header_election_below_the_model_code(text, expected):
+    assert PvClassifier.find_header_election(text) == expected
 
 
 @pytest.mark.parametrize(
@@ -790,6 +841,59 @@ def test_the_csb_of_a_national_election_is_left_out_of_the_name_of_a_gemeente_pv
 
     assert pv.storage_name() == "TK2025_N10-2_0228-ede_SB12.pdf"
     assert PdfReader(pv.add_metadata_to_pv()).metadata["/PvCsb"] == "Nederland"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("model", "election", "region", "name"),
+    [
+        (
+            "O 7",
+            PvElection("PS2023", authority="Gelderland"),
+            PvRegion(name="Arnhem", kieskring="1", kieskring_name="Arnhem"),
+            "PS2023_O7_gelderland_kieskring-1-arnhem.pdf",
+        ),
+        (
+            "O 7",
+            PvElection("TK2025"),
+            PvRegion(kieskring="9", kieskring_name="'s-Hertogenbosch"),
+            "TK2025_O7_kieskring-9-s-hertogenbosch.pdf",
+        ),
+        # Without its name the kieskring is named by its number, and without its number by its name.
+        ("P 1f-1", PvElection("EP2024"), PvRegion(kieskring="20"), "EP2024_P1f-1_kieskring-20.pdf"),
+        (
+            "P 1f-1",
+            PvElection("TK2025"),
+            PvRegion(kieskring_name="‘s-Gravenhage"),
+            "TK2025_P1f-1_kieskring-s-gravenhage.pdf",
+        ),
+    ],
+)
+def test_storage_name_of_a_hoofdstembureau_model_names_the_kieskring(model, election, region, name):
+    assert classified(model, election, region).storage_name() == name
+
+
+def test_storage_name_of_a_hoofdstembureau_model_needs_the_kieskring():
+    with pytest.raises(PvClassificationException):
+        classified("O 7", PvElection("TK2025"), EDE_12).storage_name()
+
+
+@pytest.mark.django_db
+def test_save_to_storage_stores_a_hoofdstembureau_model_under_its_kieskring():
+    # The gemeente where the hoofdstembureau sits publishes the PV of its kieskring.
+    source = ScrapeSourceFactory(code="gm0202", name="Arnhem")
+    region = PvRegion(kieskring="1", kieskring_name="Arnhem")
+
+    key = classified("O 7", PvElection("PS2023", authority="Gelderland"), region).save_to_storage(source, "pvs")
+
+    assert key == "pvs/PS2023_O7_gelderland_kieskring-1-arnhem.pdf"
+    metadata = PdfReader(default_storage.open(key)).metadata
+    # The region code is the kieskring's number, its name the kieskring's name.
+    assert (metadata["/Title"], metadata["/PvRegionCode"], metadata["/PvRegionName"]) == (
+        "O7 kieskring 1 Arnhem",
+        "1",
+        "Arnhem",
+    )
 
 
 def test_storage_name_of_a_csb_model_needs_the_csb():
