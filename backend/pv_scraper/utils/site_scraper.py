@@ -260,7 +260,7 @@ class SiteScraper:
                 self.push(Visit(link, FILES_ONLY, root, root), 0)
 
     def keep_file(self, link: Link, result: CrawledPage) -> FileResult:
-        """Record a downloaded file and store it when it may be a PV; return whether it is one."""
+        """Record a downloaded file; return whether it may be a PV, with its content when it is new."""
         assert result.file is not None, "Call keep_file() only if result has a file"
 
         known: ScrapedFile | None = self.known_files.get(link.href)
@@ -285,7 +285,8 @@ class SiteScraper:
                 known.save(update_fields=["etag", "last_modified", "updated_at"])
             return FileResult(sha256 in self.pv_hashes, scraped_file=known)
 
-        # A changed file at a known URL is a new version; the earlier one stays.
+        # A changed file at a known URL is a new version; the earlier one stays. Rejected files are recorded too, so an
+        # unchanged one is not downloaded again.
         scraped_file = ScrapedFile.objects.create(
             source=self.source,
             url=link.href,
@@ -299,15 +300,13 @@ class SiteScraper:
         )
         self.known_files[link.href] = scraped_file
         self.known_hashes.add(sha256)
+        pause(0.5, 1)
 
-        # Yield only non-rejected files
-        # Rejected files are recorded to prevent re-downloads but not returned for processing
-        if not rejected_reason:
-            logger.info("Downloaded file from %s", self.source)
-            self.pv_hashes.add(sha256)
-            return FileResult(True, NamedBytesIO(body, file_name), scraped_file)
-
-        return FileResult(not rejected_reason, scraped_file=scraped_file)
+        if rejected_reason:
+            return FileResult(False, scraped_file=scraped_file)
+        logger.info("Downloaded file from %s", self.source)
+        self.pv_hashes.add(sha256)
+        return FileResult(True, NamedBytesIO(body, file_name), scraped_file)
 
     def hubs(self) -> list[str]:
         """The pages to start the next scrape from, one for each page with PV files."""

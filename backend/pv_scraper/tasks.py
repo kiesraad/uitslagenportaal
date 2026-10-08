@@ -1,5 +1,6 @@
 import logging
 from datetime import timedelta
+from typing import TYPE_CHECKING
 
 from celery import Celery
 from celery.schedules import crontab
@@ -10,6 +11,9 @@ from django.utils import timezone
 from mainsite.celery import app
 from pv_scraper.models import ScrapeSource, ScrapeStatus
 from pv_scraper.utils.pv_classifier import PvClassificationException, PvClassifier
+
+if TYPE_CHECKING:
+    from pv_scraper.utils.site_scraper import FileResult
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +61,22 @@ def dispatch_scrape_tasks():
         run_scrape_for_source.apply_async((source_id,), queue=SCRAPER_QUEUE)
 
 
+def classify_and_store(file: "FileResult") -> None:
+    """Classify a scraped file and store it under pvs/ when its model is certain."""
+    logger.info(f"Classifying {file.content.name}...")
+    classifier = PvClassifier(file.content)
+    classification = classifier.classify()
+    if not classification or not classification.matched_on.is_certain():
+        logger.info("Classification not certain, discarding file")
+        return
+
+    logger.info(f"Classified as {classification.model} for {classification.region}, saving file")
+    try:
+        classifier.save_to_storage(file.scraped_file.source, "pvs")
+    except PvClassificationException as e:
+        logger.info(str(e))
+
+
 @app.task
 def run_scrape_for_source(source_id: int):
     # Only the scraper worker image has Playwright, and every worker imports this module.
@@ -73,19 +93,11 @@ def run_scrape_for_source(source_id: int):
             for file in SiteScraper(source, crawler).run():
                 if file.scraped_file is None:
                     continue
-
-                logger.info(f"Classifying {file.content.name}...")
-                classifier = PvClassifier(file.content)
-                classification = classifier.classify()
-                if not classification or not classification.matched_on.is_certain():
-                    logger.info("Classification not certain, discarding file")
-                    continue
-
-                logger.info(f"Classified as {classification.model} for {classification.region}, saving file")
+                # One bad file must not end the scrape: the rest of the queue and the scrape state still count.
                 try:
-                    classifier.save_to_storage(file.scraped_file.source, "pvs")
-                except PvClassificationException as e:
-                    logger.info(str(e))
+                    classify_and_store(file)
+                except Exception:
+                    logger.exception("Classifying %s failed", file.content.name)
     except Exception:
         # A failure outside the scrape itself, such as the browser not starting, still ends the run.
         if source.last_run_status == ScrapeStatus.RUNNING:
