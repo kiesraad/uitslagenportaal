@@ -57,6 +57,7 @@ def test_election_config_serializer_includes_csb_type_without_imported_regions()
     data = ElectionConfigSerializer(config).data
 
     assert data["csb_type"] == RegionCategory.WATERSCHAP
+    assert data["category"] == ElectionCategory.WS.value
 
 
 @pytest.mark.django_db

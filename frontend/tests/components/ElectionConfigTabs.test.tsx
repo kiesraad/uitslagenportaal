@@ -10,6 +10,7 @@ const electionConfig: ElectionConfig = {
    date: "2023-12-15T11:00:00",
    issue_report_opens_at: "2026-12-08T09:00:00",
    issue_report_deadline: "2026-12-14T10:00:00",
+   category: "WS",
    csb_type: "WATERSCHAP",
    has_hsb: false,
    report_error_url: "https://example.test/melding",
@@ -35,5 +36,29 @@ describe("ElectionConfigTabs", () => {
 
       expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("href", "/ws2023/hsb");
       expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("aria-current", "page");
+   });
+
+   it("names the CSB tab Nederland and links to its results for a Tweede Kamer election", () => {
+      renderWithProviders(
+         <ElectionConfigTabs electionConfig={{ ...electionConfig, slug: "tk2025", category: "TK", csb_type: "STAAT" }} />,
+         { initialEntries: ["/tk2025/gsb"] },
+      );
+
+      expect(screen.getByRole("link", { name: "Nederland" })).toHaveAttribute(
+         "href",
+         "/tk2025/csb/nederland/resultaten",
+      );
+   });
+
+   it("names the CSB tab Europees Parlement for a European Parliament election", () => {
+      renderWithProviders(
+         <ElectionConfigTabs electionConfig={{ ...electionConfig, slug: "ep2024", category: "EP", csb_type: "STAAT" }} />,
+         { initialEntries: ["/ep2024/gsb"] },
+      );
+
+      expect(screen.getByRole("link", { name: "Europees Parlement" })).toHaveAttribute(
+         "href",
+         "/ep2024/csb/nederland/resultaten",
+      );
    });
 });

@@ -264,6 +264,10 @@ msgstr "EML_NL tellingbestand 510d"
 msgid "Er is een fout opgetreden"
 msgstr "Er is een fout opgetreden"
 
+#: src/utils/election.ts
+msgid "Europees Parlement"
+msgstr "Europees Parlement"
+
 #: src/pages/ErrorBoundaryPage.tsx
 msgid "Fout"
 msgstr "Fout"
@@ -276,9 +280,7 @@ msgstr "Fout melden"
 msgid "Ga dan naar"
 msgstr "Ga dan naar"
 
-#: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
-#: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
-#: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/components/ElectionConfigTabs.tsx
 #: src/utils/region.ts
 msgid "Gemeente"
 msgstr "Gemeente"
@@ -528,6 +530,10 @@ msgstr "Naar hoofdinhoud"
 #: src/pages/ReportIssuePage.tsx
 msgid "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is. Als dat nodig is, nemen we contact op met de gemeente of het stembureau. In sommige gevallen kan er een hertelling plaatsvinden. Als blijkt dat er inderdaad een fout is gemaakt, bijvoorbeeld bij het tellen van de stemmen, dan wordt die fout hersteld. De correctie wordt vastgelegd in een corrigendum en openbaar gemaakt door dit te publiceren. Je ontvangt geen persoonlijk bericht over wat er met je melding is gedaan."
 msgstr "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is. Als dat nodig is, nemen we contact op met de gemeente of het stembureau. In sommige gevallen kan er een hertelling plaatsvinden. Als blijkt dat er inderdaad een fout is gemaakt, bijvoorbeeld bij het tellen van de stemmen, dan wordt die fout hersteld. De correctie wordt vastgelegd in een corrigendum en openbaar gemaakt door dit te publiceren. Je ontvangt geen persoonlijk bericht over wat er met je melding is gedaan."
+
+#: src/utils/election.ts
+msgid "Nederland"
+msgstr "Nederland"
 
 #: src/components/Timeline.tsx
 msgid "nog niet gestart"
