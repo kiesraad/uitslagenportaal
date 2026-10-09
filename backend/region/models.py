@@ -58,6 +58,14 @@ class Region(BaseModel):
     # and the region type to retrieve it as opposed to only using the slug
     slug = models.SlugField(unique=False, db_index=True)
 
+    @property
+    def station_number(self) -> int | None:
+        """Polling-station number from region_number (`0203::SB1` → 1); otherwise None."""
+        if self.region_category != RegionCategory.STEMBUREAU or not self.region_number:
+            return None
+        station = str(self.region_number).split("::")[-1].removeprefix("SB")
+        return int(station) if station.isdigit() else None
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = build_region_slug(self.region_number, self.region_name)

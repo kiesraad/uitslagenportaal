@@ -508,6 +508,62 @@ def test_region_detail_disambiguates_waterschap_polling_station_by_csb_and_paren
     assert response.data["slug"] == stembureau.slug
     assert response.data["csb_slug"] == waterschap.slug
     assert response.data["csb_name"] == waterschap.region_name
+    assert response.data["station_number"] == 1
+
+
+@pytest.mark.django_db
+def test_region_list_includes_station_number_for_stembureaus():
+    election = ElectionFactory()
+    gemeente = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, slug="borsele")
+    RegionFactory(
+        election=election,
+        parent=gemeente,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name="De Regenboog",
+        region_number="0203::SB1",
+    )
+    RegionFactory(
+        election=election,
+        parent=gemeente,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name="De Regenboog",
+        region_number="SB2",
+    )
+
+    response = list_regions(election, {"parent_region": gemeente.slug, "region_category": RegionCategory.STEMBUREAU})
+
+    assert response.status_code == 200
+    assert {(region["region_name"], region["station_number"]) for region in response.data} == {
+        ("De Regenboog", 1),
+        ("De Regenboog", 2),
+    }
+
+
+@pytest.mark.django_db
+def test_region_detail_includes_station_number_for_a_stembureau():
+    gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE, slug="borsele")
+    station = RegionFactory(
+        election=gemeente.election,
+        parent=gemeente,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name="De Regenboog",
+        region_number="0484::SB6",
+        slug="SB6-de-regenboog",
+    )
+
+    response = get_region(station.election, station.slug, {"level": "sb", "parent_region": gemeente.slug})
+
+    assert response.status_code == 200
+    assert response.data["station_number"] == 6
+
+
+@pytest.mark.django_db
+def test_region_detail_station_number_is_none_for_a_gemeente():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+
+    data = region_detail(region, "gsb")
+
+    assert data["station_number"] is None
 
 
 @pytest.mark.django_db

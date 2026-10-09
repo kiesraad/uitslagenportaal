@@ -6,7 +6,7 @@ import { Link, useNavigate } from "react-router";
 import { twMerge } from "tailwind-merge";
 import type { ElectionConfig, Region, RegionCategory } from "../../api/types";
 import { useFormatters } from "../../utils/format";
-import { getRegionLabels } from "../../utils/region";
+import { formatStationLabel, getRegionLabels } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
 import { lowercaseFirst } from "../../utils/text";
 import type { SearchListOption } from "../SearchAutocomplete";
@@ -88,12 +88,13 @@ export function RegionList({
 
       return visibleRegions.map((region) => {
          const isAmbiguous = nameCounts[region.region_name] > 1 && Boolean(region.csb_name);
-         const label = isAmbiguous ? `${region.region_name} - ${region.csb_name}` : region.region_name;
+         const name = isAmbiguous ? `${region.region_name} - ${region.csb_name}` : region.region_name;
+         const stationNumber = isPollingStationList ? (region.station_number ?? undefined) : undefined;
          return {
             id: region.slug,
-            label,
+            label: formatStationLabel(name, stationNumber),
             sortName: region.region_name,
-            stationNumber: isPollingStationList ? (region.station_number ?? undefined) : undefined,
+            stationNumber,
             csbSlug: region.csb_slug ?? undefined,
          };
       });
@@ -174,6 +175,7 @@ function SearchList({ children }: PropsWithChildren) {
 }
 
 function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: string }) {
+   const name = listOption.stationNumber != null ? (listOption.sortName ?? listOption.label) : listOption.label;
    return (
       <li className="col-span-3 grid grid-cols-subgrid odd:bg-blue-50">
          <Link
@@ -185,7 +187,7 @@ function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: 
                {/* Grid items have no whitespace between them, so screen readers would glue the number to the name. */}
                {listOption.stationNumber !== undefined && <span className="sr-only">&nbsp;</span>}
             </span>
-            <span className="underline">{listOption.label}</span>
+            <span className="underline">{name}</span>
             <span>
                <FontAwesomeIcon icon={faChevronRight} />
             </span>

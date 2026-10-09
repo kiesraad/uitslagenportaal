@@ -6,7 +6,7 @@ import PageTop from "../../components/PageTop";
 import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCandidatesResultsContent";
 import ResultsPageColumns from "../../components/ResultsPage/ResultsPageColumns";
 import { useFormatters } from "../../utils/format";
-import { getCsbCrumb } from "../../utils/region";
+import { formatStationLabel, getCsbCrumb } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
 import { getPartyVoteCount, hasParty } from "../../utils/voteCounts";
 import { NotFoundPage } from "../NotFoundPage";
@@ -38,6 +38,7 @@ export default function PollingStationPartyResultsPage() {
 
    const partyName = getPartyVoteCount(pollingStation.vote_counts, partySlug)?.party.registered_name ?? t`Lijst`;
    const stationName = pollingStation.region_name;
+   const stationLabel = formatStationLabel(stationName, pollingStation.station_number);
    // No publication date until the region's results have been imported; the line is then omitted.
    const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
    const pageTitle = `${t`Telresultaten stembureau`}\n${stationName}`;
@@ -59,7 +60,7 @@ export default function PollingStationPartyResultsPage() {
                { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
                getCsbCrumb(region, electionConfig.slug),
                { href: municipalityPollingstationListRoute, label: t`Gemeente ${region.region_name}` },
-               { href: pollingStationResultsRoute, label: pollingStation.region_name },
+               { href: pollingStationResultsRoute, label: stationLabel },
             ]}
          />
          <ResultsPageColumns
