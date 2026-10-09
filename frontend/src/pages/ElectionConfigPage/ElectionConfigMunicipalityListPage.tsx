@@ -1,14 +1,12 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import ElectionConfigTabs from "@/components/ElectionConfigTabs.tsx";
 import { electionConfigQuery, regionsQuery } from "@/hooks/queries.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
 import PageTop from "../../components/PageTop.tsx";
-import SharedTabs from "../../components/SharedTabs.tsx";
 import { useFormatters } from "../../utils/format.ts";
-import { getRegionLabels } from "../../utils/region.ts";
-import { appRoutes } from "../../utils/routes.ts";
 
 export function electionConfigMunicipalityListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
@@ -51,27 +49,7 @@ export function ElectionConfigMunicipalityListPage() {
                   label: electionConfig.label,
                },
             ]}
-            tabs={
-               <SharedTabs
-                  tabs={[
-                     {
-                        label: t`Gemeente`,
-                        value: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
-                        activePatterns: ["/:electionConfigSlug/gsb"],
-                     },
-                     electionConfig.has_hsb && {
-                        label: t(getRegionLabels("KIESKRING").plural),
-                        value: appRoutes.electionConfigHSBList(electionConfig.slug),
-                        activePatterns: ["/:electionConfigSlug/hsb"],
-                     },
-                     {
-                        label: t(getRegionLabels(electionConfig.csb_type).plural),
-                        value: appRoutes.electionConfigCSBList(electionConfig.slug),
-                        activePatterns: ["/:electionConfigSlug/csb"],
-                     },
-                  ].filter((tab) => tab !== false)}
-               />
-            }
+            tabs={<ElectionConfigTabs electionConfig={electionConfig} />}
          />
          <RegionList electionConfig={electionConfig} regions={regions} regionCategory="GEMEENTE" emptyPlaceholder />
       </LayoutMain>
