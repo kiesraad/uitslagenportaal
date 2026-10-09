@@ -49,7 +49,7 @@ function seedPollingStationQueries() {
       {
          electionConfigSlug: electionConfig.slug,
          regionSlug: gemeente.slug,
-         csbSlug: gemeente.csb_slug,
+         csbSlug: gemeente.csb_slug ?? undefined,
       },
       "gsb",
    );
@@ -57,7 +57,7 @@ function seedPollingStationQueries() {
       {
          electionConfigSlug: electionConfig.slug,
          regionSlug: pollingStation.slug,
-         csbSlug: gemeente.csb_slug,
+         csbSlug: gemeente.csb_slug ?? undefined,
          parentRegionSlug: gemeente.slug,
       },
       "sb",
