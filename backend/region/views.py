@@ -1,4 +1,8 @@
+from django.core.files.storage import default_storage
 from django.db.models import Prefetch
+from django.http import HttpResponseRedirect
+from django.utils.http import content_disposition_header
+from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
@@ -7,6 +11,7 @@ from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, EmlType, ReportingLevel
 from region.models import Region
+from region.polling_station_pv_archive import polling_station_pv_zip_storage_key
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
 _OWN_RESULTS_EML_TYPE = {
@@ -122,7 +127,12 @@ class RegionDetailView(RetrieveAPIView):
                 ),
                 # ElectionDocument uses CurrentManager; explicit Prefetch ensures prefetched
                 # rows match obj.documents.all(), not all_objects.
-                Prefetch("documents", queryset=ElectionDocument.objects.filter(file_type__in=document_file_type)),
+                Prefetch(
+                    "documents",
+                    queryset=ElectionDocument.objects.filter(file_type__in=document_file_type).order_by(
+                        "file_type", "created_at", "pk"
+                    ),
+                ),
                 "election__election_config__timeline_entries",
             )
             .filter(
@@ -145,3 +155,45 @@ class RegionDetailView(RetrieveAPIView):
             raise ValidationError(
                 {"detail": "Multiple regions match this slug. Specify the 'parent_region' or 'csb' query parameter."}
             )
+
+
+def _visible_municipality(request, election_config_slug, region_slug):
+    queryset = Region.objects.select_related("election__election_config").filter(
+        election__election_config__slug=election_config_slug,
+        election__election_config__date__gte=visibility_cutoff(),
+        slug=region_slug,
+        region_category=RegionCategory.GEMEENTE,
+    )
+    parent_region_slug = request.GET.get("parent_region")
+    csb_slug = request.GET.get("csb")
+    if parent_region_slug:
+        queryset = queryset.filter(parent__slug=parent_region_slug)
+    if csb_slug:
+        queryset = queryset.filter(csb__slug=csb_slug)
+    try:
+        return queryset.get()
+    except Region.DoesNotExist:
+        raise NotFound({"detail": "Region not found for this election."}) from None
+    except Region.MultipleObjectsReturned:
+        raise ValidationError(
+            {"detail": "Multiple regions match this slug. Specify the 'parent_region' or 'csb' query parameter."}
+        ) from None
+
+
+@api_view(["GET"])
+def polling_station_pv_archive(request, election_config, region):
+    municipality = _visible_municipality(request, election_config, region)
+    key = polling_station_pv_zip_storage_key(municipality)
+    if not default_storage.exists(key):
+        raise NotFound({"detail": "No polling-station reports."})
+
+    filename = f"processen-verbaal-{municipality.slug}.zip"
+    return HttpResponseRedirect(
+        default_storage.url(
+            key,
+            parameters={
+                "ResponseContentType": "application/zip",
+                "ResponseContentDisposition": content_disposition_header(True, filename),
+            },
+        )
+    )

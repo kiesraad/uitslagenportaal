@@ -4,6 +4,7 @@ from django.core.files.storage import default_storage
 from django.db.models import Q
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.utils.http import content_disposition_header
 from rest_framework import viewsets
 
 from election.models import Contest, ElectionConfig, ElectionDocument
@@ -54,7 +55,10 @@ def download_document(request, pk):
 
     # Instruct browser to download the file using content-disposition header
     return HttpResponseRedirect(
-        default_storage.url(document.storage_key, parameters={"ResponseContentDisposition": "attachment"})
+        default_storage.url(
+            document.storage_key,
+            parameters={"ResponseContentDisposition": content_disposition_header(True, document.download_filename)},
+        )
     )
 
 
@@ -73,8 +77,15 @@ def certified_document(request, pk):
     if not default_storage.exists(document.storage_key):
         raise Http404("Document not found")
 
+    # Shown in a new tab, so inline; the name only matters once the visitor saves it.
     return HttpResponseRedirect(
-        default_storage.url(document.storage_key, parameters={"ResponseContentType": "application/pdf"})
+        default_storage.url(
+            document.storage_key,
+            parameters={
+                "ResponseContentType": "application/pdf",
+                "ResponseContentDisposition": content_disposition_header(False, document.download_filename),
+            },
+        )
     )
 
 
