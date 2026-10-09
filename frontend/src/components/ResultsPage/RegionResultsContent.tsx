@@ -2,8 +2,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import type {
    ElectionDocument,
-   RegionCategory,
    PollingStationPvArchive,
+   RegionCategory,
    TimelineEntry,
    TimelineVariant,
    VoteCount,
