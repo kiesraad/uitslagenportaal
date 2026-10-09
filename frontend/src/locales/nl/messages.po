@@ -197,8 +197,12 @@ msgid "de staat"
 msgstr "de staat"
 
 #: src/components/ResultsPage/ResultsNotPublished.tsx
-msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra de {regionLabel} ze publiceert."
-msgstr "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra de {regionLabel} ze publiceert."
+msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra {regionLabel} ze publiceert."
+msgstr "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra {regionLabel} ze publiceert."
+
+#: src/components/ResultsPage/ResultsNotPublished.tsx
+msgid "De telresultaten en processen-verbaal van Nederland zijn hier te zien zodra de Kiesraad ze publiceert."
+msgstr "De telresultaten en processen-verbaal van Nederland zijn hier te zien zodra de Kiesraad ze publiceert."
 
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen."
@@ -211,6 +215,10 @@ msgstr "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
 #: src/pages/HomePage.tsx
 msgid "De telresultaten van alle stembureaus in Nederland."
 msgstr "De telresultaten van alle stembureaus in Nederland."
+
+#: src/components/ResultsPage/ResultsNotPublished.tsx
+msgid "De telresultaten van Nederland zijn nog niet gepubliceerd"
+msgstr "De telresultaten van Nederland zijn nog niet gepubliceerd"
 
 #: src/pages/ReportIssuePage.tsx
 msgid "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."

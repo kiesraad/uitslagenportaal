@@ -85,7 +85,9 @@ def test_stembureau_party_results_have_no_axe_violations(page: Page):
 def test_unpublished_gemeente_has_no_axe_violations(page: Page):
     page.goto(CSB)
     page.get_by_role("link", name="Goes").click()
-    expect(page.get_by_role("heading", name="De telresultaten van Goes zijn nog niet gepubliceerd")).to_be_visible()
+    expect(
+        page.get_by_role("heading", name="De telresultaten van de gemeente Goes zijn nog niet gepubliceerd")
+    ).to_be_visible()
     assert_no_axe_violations(page)
 
 

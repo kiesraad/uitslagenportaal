@@ -105,7 +105,8 @@ export function HSBResultsPage() {
                timelineVariant={region.timeline_variant}
                timelineEntries={electionConfig.timeline_entries ?? []}
                issueReportDeadline={electionConfig.issue_report_deadline}
-               notPublishedRegionLabel={region.region_name}
+               notPublishedRegionName={region.region_name}
+               notPublishedRegionCategory={region.region_category}
             />
          </ResultsPageColumns>
       </LayoutMain>

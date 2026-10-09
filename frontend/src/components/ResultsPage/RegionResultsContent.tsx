@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type {
    ElectionDocument,
    PollingStationPvArchive,
+   RegionCategory,
    TimelineEntry,
    TimelineVariant,
    VoteCount,
@@ -30,7 +31,8 @@ type Props = {
    timelineVariant?: TimelineVariant;
    timelineEntries: TimelineEntry[];
    issueReportDeadline: string;
-   notPublishedRegionLabel: string;
+   notPublishedRegionName: string;
+   notPublishedRegionCategory: RegionCategory;
 };
 
 export default function RegionResultsContent({
@@ -41,7 +43,8 @@ export default function RegionResultsContent({
    timelineVariant,
    timelineEntries,
    issueReportDeadline,
-   notPublishedRegionLabel,
+   notPublishedRegionName,
+   notPublishedRegionCategory,
 }: Props) {
    const { t } = useLingui();
    const hasResults = Array.isArray(voteCounts) && voteCounts.length > 0;
@@ -90,7 +93,11 @@ export default function RegionResultsContent({
 
    return (
       <>
-         {!hasResults ? <ResultsNotPublished regionLabel={notPublishedRegionLabel} /> : resultsContent}
+         {!hasResults ? (
+            <ResultsNotPublished regionName={notPublishedRegionName} regionCategory={notPublishedRegionCategory} />
+         ) : (
+            resultsContent
+         )}
          <ResultsTimeline variant={timelineVariant} entries={timelineEntries} />
          <IssueNotice issueReportDeadline={issueReportDeadline} />
       </>
