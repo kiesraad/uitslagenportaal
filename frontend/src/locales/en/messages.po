@@ -200,6 +200,10 @@ msgstr "the state"
 msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra {regionLabel} ze publiceert."
 msgstr "The counting results and certified election results for {regionLabel} will appear here as soon as {regionLabel} publishes them."
 
+#: src/components/ResultsPage/ResultsNotPublished.tsx
+msgid "De telresultaten en processen-verbaal van Nederland zijn hier te zien zodra de Kiesraad ze publiceert."
+msgstr "The counting results and certified election results will appear here as soon as the Electoral Council publishes them."
+
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen."
 msgstr "The counting results on this page come from the results software. They were transcribed from the certified election results drawn up after the votes were counted."
@@ -211,6 +215,10 @@ msgstr "The counting results for {regionLabel} have not been published yet"
 #: src/pages/HomePage.tsx
 msgid "De telresultaten van alle stembureaus in Nederland."
 msgstr "The counting results of every polling station in the Netherlands."
+
+#: src/components/ResultsPage/ResultsNotPublished.tsx
+msgid "De telresultaten van Nederland zijn nog niet gepubliceerd"
+msgstr "The counting results have not been published yet"
 
 #: src/pages/ReportIssuePage.tsx
 msgid "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."

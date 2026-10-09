@@ -10,6 +10,24 @@ type Props = {
 
 export default function ResultsNotPublished({ regionName, regionCategory }: Props) {
    const { t } = useLingui();
+   if (regionCategory === "STAAT") {
+      return (
+         <div>
+            <h2 className="result-unpublished">
+               <Trans>De telresultaten van Nederland zijn nog niet gepubliceerd</Trans>
+            </h2>
+            <InfoBox disableMargin>
+               <span>
+                  <Trans>
+                     De telresultaten en processen-verbaal van Nederland zijn hier te zien zodra de Kiesraad ze
+                     publiceert.
+                  </Trans>
+               </span>
+            </InfoBox>
+         </div>
+      );
+   }
+
    const regionLabel = `${t(getRegionLabels(regionCategory).withArticle)} ${regionName}`;
    return (
       <div>

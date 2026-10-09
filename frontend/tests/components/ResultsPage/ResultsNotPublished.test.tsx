@@ -31,6 +31,30 @@ describe("ResultsNotPublished", () => {
       expect(screen.getByRole("heading", { name: /het stembureau De Regenboog/ })).toBeInTheDocument();
    });
 
+   it("Uses Nederland and the Kiesraad for a STAAT CSB", () => {
+      renderBox("Nederland", "STAAT");
+
+      expect(
+         screen.getByRole("heading", { name: "De telresultaten van Nederland zijn nog niet gepubliceerd" }),
+      ).toBeInTheDocument();
+      expect(
+         screen.getByText(
+            "De telresultaten en processen-verbaal van Nederland zijn hier te zien zodra de Kiesraad ze publiceert.",
+         ),
+      ).toBeInTheDocument();
+   });
+
+   it("Uses the Electoral Council in English for a STAAT CSB", () => {
+      renderBox("Nederland", "STAAT", "en");
+
+      expect(screen.queryByText(/Nederland/)).not.toBeInTheDocument();
+      expect(
+         screen.getByText(
+            "The counting results and certified election results will appear here as soon as the Electoral Council publishes them.",
+         ),
+      ).toBeInTheDocument();
+   });
+
    it("Renders the English infobox with the region type", () => {
       renderBox("Blaricum", "GEMEENTE", "en");
 
