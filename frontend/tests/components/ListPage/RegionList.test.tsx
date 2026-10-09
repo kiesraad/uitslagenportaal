@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { describe, expect, it } from "vitest";
 import type { ElectionConfig, Region } from "@/api/types";
@@ -64,5 +64,61 @@ describe("RegionList", () => {
       expect(screen.getByRole("heading", { name: "Vind een gemeente van A tot Z" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /Zoetermeer/ })).toBeInTheDocument();
       expect(screen.queryByRole("heading", { name: "De gemeenten zijn nog niet beschikbaar" })).not.toBeInTheDocument();
+   });
+
+   it("prefixes stembureau search suggestions with a zero-padded station number", () => {
+      const stations: Region[] = [
+         {
+            region_name: "De Regenboog",
+            slug: "sb1-de-regenboog",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            station_number: 1,
+         },
+         {
+            region_name: "De Regenboog",
+            slug: "sb2-de-regenboog",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            station_number: 2,
+         },
+      ];
+      renderRegionList({ regionCategory: "STEMBUREAU", regions: stations, parentRegionSlug: "borsele" });
+
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: "regenboog" } });
+
+      expect(screen.getByRole("option", { name: "001 - De Regenboog" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "002 - De Regenboog" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "1De Regenboog" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "2De Regenboog" })).toBeInTheDocument();
+   });
+
+   it("finds a stembureau by its padded station number", () => {
+      const stations: Region[] = [
+         {
+            region_name: "De Regenboog",
+            slug: "sb1-de-regenboog",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            station_number: 1,
+         },
+         {
+            region_name: "Basisschool de Piratenboot",
+            slug: "sb3-piratenboot",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            station_number: 3,
+         },
+      ];
+      renderRegionList({ regionCategory: "STEMBUREAU", regions: stations, parentRegionSlug: "borsele" });
+
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: "001" } });
+
+      expect(screen.getByRole("option", { name: "001 - De Regenboog" })).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: "003 - Basisschool de Piratenboot" })).not.toBeInTheDocument();
    });
 });

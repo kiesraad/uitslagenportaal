@@ -7,7 +7,7 @@ import RegionResultsContent from "../../components/ResultsPage/RegionResultsCont
 import ResultsPageColumns from "../../components/ResultsPage/ResultsPageColumns";
 import { electionConfigQuery, regionQuery } from "../../hooks/queries";
 import { useFormatters } from "../../utils/format";
-import { getCsbCrumb } from "../../utils/region";
+import { formatStationLabel, getCsbCrumb } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
 
 /** The stembureau and the gemeente it belongs to, for both stembureau pages. */
@@ -59,6 +59,7 @@ export default function PollingStationResultsPage() {
    );
 
    const stationName = pollingStation.region_name;
+   const stationLabel = formatStationLabel(stationName, pollingStation.station_number);
    const regionName = region.region_name;
    // No publication date until the region's results have been imported; the line is then omitted.
    const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
@@ -75,7 +76,7 @@ export default function PollingStationResultsPage() {
                { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
                getCsbCrumb(region, electionConfig.slug),
                { href: municipalityPollingstationListRoute, label: t`Gemeente ${regionName}` },
-               { label: pollingStation.region_name },
+               { label: stationLabel },
             ]}
          />
          <ResultsPageColumns

@@ -8,6 +8,30 @@ from region.models import Region
 from region.tests.factories import RegionFactory
 
 
+def test_region_station_number_strips_parent_id_and_sb_prefix():
+    region = Region(region_category=RegionCategory.STEMBUREAU, region_number="0484::SB6")
+
+    assert region.station_number == 6
+
+
+def test_region_station_number_parses_a_bare_sb_number():
+    region = Region(region_category=RegionCategory.STEMBUREAU, region_number="SB1")
+
+    assert region.station_number == 1
+
+
+def test_region_station_number_is_none_outside_stembureau():
+    region = Region(region_category=RegionCategory.GEMEENTE, region_number="654")
+
+    assert region.station_number is None
+
+
+def test_region_station_number_is_none_when_unparseable():
+    region = Region(region_category=RegionCategory.STEMBUREAU, region_number="SB")
+
+    assert region.station_number is None
+
+
 @pytest.mark.django_db
 def test_region_slug_is_generated_from_number_and_name():
     region = RegionFactory(region_number="7", region_name="Café Île")

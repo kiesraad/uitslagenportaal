@@ -1,8 +1,31 @@
 import pytest
 
 from mainsite.models import CountingMethod, RegionCategory
-from region.serializers import RegionDetailSerializer
+from region.models import Region
+from region.serializers import RegionDetailSerializer, RegionListSerializer
 from region.tests.factories import RegionFactory
+
+
+def test_list_serializer_exposes_station_number():
+    region = Region(
+        region_category=RegionCategory.STEMBUREAU,
+        region_number="0203::SB1",
+        region_name="De Regenboog",
+        slug="sb1-de-regenboog",
+    )
+
+    assert RegionListSerializer(region).data["station_number"] == 1
+
+
+def test_list_serializer_station_number_is_none_for_a_gemeente():
+    region = Region(
+        region_category=RegionCategory.GEMEENTE,
+        region_number="654",
+        region_name="Borsele",
+        slug="654-borsele",
+    )
+
+    assert RegionListSerializer(region).data["station_number"] is None
 
 
 @pytest.mark.django_db

@@ -77,6 +77,13 @@ export function getRegionLabels(regionType?: RegionCategory): RegionLabels {
    return regionTypeMapping[regionType] ?? FALLBACK_LABELS;
 }
 
+export function formatStationLabel(name: string, stationNumber?: number | null): string {
+   if (stationNumber == null) {
+      return name;
+   }
+   return `${String(stationNumber).padStart(3, "0")} - ${name}`;
+}
+
 export function getCsbCrumb(
    region: { csb_name?: string | null; csb_slug?: string | null } | undefined,
    electionConfigSlug: string,
