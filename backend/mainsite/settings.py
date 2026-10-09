@@ -224,27 +224,44 @@ GITHUB_INGRESS_REPO = os.environ.get("GITHUB_INGRESS_REPO")  # "owner/repo"
 
 # Object storage
 # S3-compatible: RustFS locally (see docker-compose.yml), Scaleway in production.
+_OBJECT_STORAGE_OPTIONS = {
+    "bucket_name": os.environ.get("S3_BUCKET_NAME", "uitslagenportaal"),
+    "endpoint_url": os.environ.get("S3_ENDPOINT_URL", "http://localhost:9000"),
+    "access_key": os.environ.get("S3_ACCESS_KEY", "uitslagenportaal"),
+    "secret_key": os.environ.get("S3_SECRET_KEY", "password"),
+    "region_name": os.environ.get("S3_REGION", "nl-ams"),
+    "custom_domain": os.environ.get("S3_PUBLIC_DOMAIN", "localhost:9000/uitslagenportaal"),
+    "url_protocol": os.environ.get("S3_URL_PROTOCOL", "http:"),
+    # RustFS is reached by hostname, so virtual-host style addressing
+    # (bucket.object-storage:9000) would not resolve.
+    "addressing_style": os.environ.get("S3_ADDRESSING_STYLE", "path"),
+    "querystring_auth": True,
+    "file_overwrite": True,
+}
 STORAGES = {
     "default": {
         "BACKEND": "mainsite.utils.custom_s3_storage.SignedCustomDomainS3Storage",
-        "OPTIONS": {
-            "bucket_name": os.environ.get("S3_BUCKET_NAME", "uitslagenportaal"),
-            "endpoint_url": os.environ.get("S3_ENDPOINT_URL", "http://localhost:9000"),
-            "access_key": os.environ.get("S3_ACCESS_KEY", "uitslagenportaal"),
-            "secret_key": os.environ.get("S3_SECRET_KEY", "password"),
-            "region_name": os.environ.get("S3_REGION", "nl-ams"),
-            "custom_domain": os.environ.get("S3_PUBLIC_DOMAIN", "localhost:9000/uitslagenportaal"),
-            "url_protocol": os.environ.get("S3_URL_PROTOCOL", "http:"),
-            # RustFS is reached by hostname, so virtual-host style addressing
-            # (bucket.object-storage:9000) would not resolve.
-            "addressing_style": os.environ.get("S3_ADDRESSING_STYLE", "path"),
-            "querystring_auth": True,
-            "file_overwrite": True,
-        },
+        "OPTIONS": _OBJECT_STORAGE_OPTIONS,
     },
     # Assigning STORAGES replaces Django's default dict, so staticfiles has to
     # be restated here or collectstatic and the admin lose their backend.
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    # import_pvs reads this storage, PV_IMPORT_SOURCE picks which one it is.
+    "pv_import": (
+        {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+            "OPTIONS": {"location": str(BASE_DIR / os.environ.get("PV_IMPORT_FOLDER", ".data"))},
+        }
+        if os.environ.get("PV_IMPORT_SOURCE", "s3") == "folder"
+        else {
+            "BACKEND": "mainsite.utils.custom_s3_storage.SignedCustomDomainS3Storage",
+            "OPTIONS": {
+                **_OBJECT_STORAGE_OPTIONS,
+                "bucket_name": os.environ.get("PV_IMPORT_BUCKET", "pvs"),
+                "custom_domain": "",
+            },
+        }
+    ),
 }
 
 

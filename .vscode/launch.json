@@ -21,6 +21,23 @@
             "justMyCode": true
         },
         {
+            "name": "Django: import_pvs",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/manage.py",
+            "args": [
+                "import_pvs"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}/backend",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "env": {
+                "DJANGO_SETTINGS_MODULE": "mainsite.settings"
+            },
+            "justMyCode": true
+        },
+        {
             // Attach to debugpy inside the backend container (docker compose up).
             // For runserver
             "name": "Runserver deubugger attach",

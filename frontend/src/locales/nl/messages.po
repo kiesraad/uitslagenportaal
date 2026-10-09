@@ -304,6 +304,10 @@ msgstr "Gemeenten"
 msgid "Geplaatst op: {publishedAt}"
 msgstr "Geplaatst op: {publishedAt}"
 
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Handgeschreven verslagen van {presentCount} van de {totalCount} stembureaus"
+msgstr "Handgeschreven verslagen van {presentCount} van de {totalCount} stembureaus"
+
 #: src/utils/region.ts
 msgid "Heel stembureau"
 msgstr "Heel stembureau"
@@ -616,6 +620,10 @@ msgstr "Proces-verbaal stembureau"
 #: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Proces-verbaal stembureau in een gemeente die CSB is"
 msgstr "Proces-verbaal stembureau in een gemeente die CSB is"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Processen-verbaal van alle stembureaus"
+msgstr "Processen-verbaal van alle stembureaus"
 
 #: src/utils/region.ts
 msgid "Provincie"

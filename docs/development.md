@@ -134,6 +134,35 @@ docker compose run --rm backend-scripts python manage.py validate_election_confi
 This checks required fields, the `category` enum, ISO 8601 datetimes and the timeline entry shape,
 and reports every problem it finds rather than stopping at the first one.
 
+### Importing proces-verbalen
+
+`import_pvs` reads proces-verbaal PDFs from the `pv_import` storage. A Celery beat task
+(`eml_import.tasks.import_pvs`) runs that same import every 5 minutes. After a PDF is
+copied into default storage, or skipped as a duplicate, it is deleted from `pv_import`;
+a file that fails to import is left for the next sweep. After each sweep it queues one
+zip rebuild per gemeente that received a polling-station form in that sweep; the zip is
+stored in object storage and the download endpoint redirects to it.
+
+| `PV_IMPORT_SOURCE` | `pv_import` is |
+| --- | --- |
+| `s3` (default) | The `PV_IMPORT_BUCKET` bucket (default `pvs`), on the same connection as `default` |
+| `folder` | A `FileSystemStorage` on `PV_IMPORT_FOLDER` under `backend/` (default `.data`) |
+
+To read the local folder instead of the bucket, put this in `backend/.env`, or in the
+`backend` service environment in `docker-compose.yml`:
+
+```
+PV_IMPORT_SOURCE=folder
+```
+
+Identity is read from PDF Info keys. `PvElection`, `PvModel` and `PvRegionName` are required.
+`PvStembureau` is required for N10-1, N10-2 and NA14-1 (`PvRegionName` is then the gemeente). `PvCsb` is required
+only for those forms in a waterschapsverkiezing. Subfolders are included.
+
+```bash
+docker compose run --rm backend-scripts python manage.py import_pvs
+```
+
 ### One-off commands
 
 The `backend-scripts` service can run management commands while the stack keeps running:
@@ -254,6 +283,7 @@ Run these from `backend/` with `uv run manage.py <command>`, or against the runn
 | `wipe_db` | Wipes all election data, keeps the super user |
 | `seed` | Seeds the `ElectionConfig` |
 | `import_election` | Imports all EML files in the `.data` folder |
+| `import_pvs` | Imports proces-verbaal PDFs from the `pv_import` storage |
 | `reset_and_import` | Wipe, seed & import in one |
 | `import_next_github_commits [election identifier]` | Runs the GitHub importer for the next batch of commits |
 | `import_election_configs` | Imports new/changed election_config JSON files from object storage (`election_configs/*.json`) |
@@ -279,6 +309,9 @@ Docker. Outside Docker, set these in `backend/.env`:
 | `S3_SECRET_KEY` | `password` | Secret key |
 | `S3_REGION` | `nl-ams` | Region (Scaleway Amsterdam; ignored by RustFS) |
 | `S3_ADDRESSING_STYLE` | `path` | `path` for RustFS, `auto` for real S3 providers |
+| `PV_IMPORT_SOURCE` | `s3` | Where `import_pvs` reads PDFs: `s3` or `folder` |
+| `PV_IMPORT_BUCKET` | `pvs` | Bucket read when `PV_IMPORT_SOURCE` is `s3` |
+| `PV_IMPORT_FOLDER` | `.data` | Folder under `backend/` read when `PV_IMPORT_SOURCE` is `folder` |
 
 The bucket is never public: the URLs handed to the browser are presigned and
 expire after an hour, the `django-storages` default. For Scaleway, configure:

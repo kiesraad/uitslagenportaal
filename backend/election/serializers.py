@@ -22,6 +22,7 @@ class ElectionDocumentSerializer(serializers.ModelSerializer):
     content_type = serializers.CharField(read_only=True)
     size = serializers.IntegerField(read_only=True)
     file_type = serializers.CharField(read_only=True)
+    correction_number = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = ElectionDocument
@@ -31,6 +32,7 @@ class ElectionDocumentSerializer(serializers.ModelSerializer):
             "content_type",
             "size",
             "file_type",
+            "correction_number",
         )
 
     @staticmethod

@@ -10,7 +10,8 @@ from requests import RequestException
 from election.tests.factories import ElectionConfigFactory
 from election.utils import visibility_cutoff
 from eml_import import tasks
-from eml_import.tasks import import_election_eml_commits, import_next_eml_commits, setup_periodic_tasks
+from eml_import.tasks import import_election_eml_commits, import_next_eml_commits, import_pvs, setup_periodic_tasks
+from region.tasks import build_polling_station_pv_zip
 
 
 @pytest.mark.django_db
@@ -81,10 +82,39 @@ def test_import_task_lets_file_handler_failures_escape_so_celery_can_retry(githu
         import_election_eml_commits(election_config.id)
 
 
-def test_setup_periodic_tasks_schedules_the_import_every_ten_minutes():
+@patch.object(build_polling_station_pv_zip, "delay")
+@patch.object(tasks, "PDFFileHandler", autospec=True)
+def test_import_pvs_runs_the_pdf_importer(pdf_file_handler, delay):
+    handler = pdf_file_handler.return_value
+    handler.run.return_value = 2
+    handler.archive_municipality_ids = set()
+
+    assert import_pvs() == 2
+
+    pdf_file_handler.assert_called_once_with(tasks.storages["pv_import"])
+    handler.run.assert_called_once_with()
+    delay.assert_not_called()
+
+
+@patch.object(build_polling_station_pv_zip, "delay")
+@patch.object(tasks, "PDFFileHandler", autospec=True)
+def test_import_pvs_queues_one_zip_rebuild_per_gemeente_that_got_a_polling_station_form(pdf_file_handler, delay):
+    handler = pdf_file_handler.return_value
+    handler.run.return_value = 4
+    handler.archive_municipality_ids = {19, 17}
+
+    assert import_pvs() == 4
+
+    assert delay.call_args_list == [call(17), call(19)]
+
+
+def test_setup_periodic_tasks_schedules_the_eml_and_pv_imports():
     sender = create_autospec(Celery, instance=True)
 
     setup_periodic_tasks(sender)
 
     # The name only shows up in beat's logs, so it is not worth pinning
-    sender.add_periodic_task.assert_called_once_with(crontab(minute="*/10"), import_next_eml_commits.s(), name=ANY)
+    assert sender.add_periodic_task.call_args_list == [
+        call(crontab(minute="*/10"), import_next_eml_commits.s(), name=ANY),
+        call(crontab(minute="*/5"), import_pvs.s(), name=ANY),
+    ]

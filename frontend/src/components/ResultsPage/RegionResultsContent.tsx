@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type {
    ElectionDocument,
    RegionCategory,
+   PollingStationPvArchive,
    TimelineEntry,
    TimelineVariant,
    VoteCount,
@@ -25,6 +26,7 @@ type Props = {
    reports?: {
       description: string;
       documents: ElectionDocument[] | undefined;
+      pollingStationPvArchive?: PollingStationPvArchive | null;
    };
    timelineVariant?: TimelineVariant;
    timelineEntries: TimelineEntry[];
@@ -83,6 +85,7 @@ export default function RegionResultsContent({
                title={t`Brondocumenten`}
                description={reports.description}
                documents={reports.documents}
+               pollingStationPvArchive={reports.pollingStationPvArchive}
             />
          )}
       </>

@@ -1,5 +1,7 @@
+import re
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Self
 from zoneinfo import ZoneInfo
 
@@ -224,6 +226,10 @@ class CurrentManager(models.Manager.from_queryset(CurrentQuerySet)):
         return super().get_queryset().filter(is_current=True)
 
 
+# Spelled as raw values because a model's Meta cannot reach its own class attributes.
+_CORRECTION_FILE_TYPES = ("PDF_NA14-1", "PDF_NA14-2")
+
+
 class ElectionDocument(BaseModel):
     """
     Archivable ElectionDoc
@@ -250,7 +256,7 @@ class ElectionDocument(BaseModel):
 
         @classmethod
         def from_form_code(cls, form_code: str) -> Self | None:
-            """Map a filename form code (N10-1) to its PDF_ file type."""
+            """Map a form code (N10-1) to its PDF_ file type."""
             form_code = form_code.upper()
             return next(
                 (
@@ -276,6 +282,10 @@ class ElectionDocument(BaseModel):
         }
     )
 
+    # The results box shows a correction ahead of the proces-verbaal it corrects. A region can
+    # have several of them at once: each corrects the one before it, so none replaces the other.
+    CORRECTION_FILE_TYPES = frozenset(_CORRECTION_FILE_TYPES)
+
     storage_key = models.CharField(max_length=512, unique=True)
     size = models.PositiveIntegerField()
 
@@ -300,12 +310,37 @@ class ElectionDocument(BaseModel):
     objects = CurrentManager()
     all_objects = models.Manager()
 
+    @property
+    def correction_number(self) -> int:
+        """Position of this correction among those on the same form, counted from one."""
+        if self.file_type not in self.CORRECTION_FILE_TYPES or not self.created_at:
+            return 1
+        earlier = ElectionDocument.all_objects.filter(region=self.region, file_type=self.file_type).filter(
+            Q(created_at__lt=self.created_at) | Q(created_at=self.created_at, pk__lt=self.pk)
+        )
+        return earlier.count() + 1
+
+    @property
+    def download_filename(self) -> str:
+        """Storage keys carry the raw EML region id (0638::SB001); browsers get a readable name."""
+        if self.file_type not in self.CERTIFIED_FILE_TYPES or self.region is None:
+            return Path(self.storage_key).name
+        parts = [self.region.election.election_config.identifier]
+        if self.region.region_category == RegionCategory.STEMBUREAU and self.region.parent:
+            parts += [self.region.parent.region_name, (self.region.region_number or "").split("::")[-1]]
+        parts += [self.region.region_name, str(self.file_type).removeprefix("PDF_")]
+        # Corrections on one form share every part above, so the later ones are numbered.
+        number = self.correction_number
+        if number > 1:
+            parts.append(str(number))
+        return re.sub(r"[^\w .-]", "-", " ".join(filter(None, parts))) + ".pdf"
+
     class Meta:
         base_manager_name = "all_objects"
         constraints = [
             models.UniqueConstraint(
                 fields=["region", "file_type"],
-                condition=Q(is_current=True),
+                condition=Q(is_current=True) & ~Q(file_type__in=_CORRECTION_FILE_TYPES),
                 name="unique_current_document_per_region_and_file_type",
             )
         ]
