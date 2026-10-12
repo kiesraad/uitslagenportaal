@@ -23,7 +23,7 @@ def warnings_of(caplog) -> list[str]:
 @pytest.mark.django_db
 def test_imports_a_municipal_certified_document_onto_the_gemeente():
     region = barneveld()
-    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    key = write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
 
     handler = PDFFileHandler(storages["pv_import"])
     handler.run()
@@ -37,33 +37,32 @@ def test_imports_a_municipal_certified_document_onto_the_gemeente():
     assert default_storage.open(document.storage_key).read() == PDF_BYTES
     preview_key = Path(document.storage_key).with_suffix(".png").as_posix()
     assert default_storage.open(preview_key).read().startswith(b"\x89PNG\r\n\x1a\n")
-    assert not storages["pv_import"].exists("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    assert not storages["pv_import"].exists(key)
 
 
 @pytest.mark.django_db
 def test_records_the_hash_and_skips_bytes_that_were_already_imported():
     region = barneveld()
     name = "TK2025_Nederland_NA31-2_Barneveld.pdf"
-    write_pdf(name)
+    key = write_pdf(name)
     handler = PDFFileHandler(storages["pv_import"])
 
     assert handler.run() == 1
     recorded = ImportedFileHash.objects.get()
     assert recorded.election == region.election
     assert recorded.sha256 == hashlib.sha256(PDF_BYTES).hexdigest()
-    assert not storages["pv_import"].exists(name)
+    assert not storages["pv_import"].exists(key)
 
     write_pdf(name)
     assert handler.run() == 0
     assert ElectionDocument.objects.count() == 1
-    assert not storages["pv_import"].exists(name)
+    assert not storages["pv_import"].exists(key)
 
 
 @pytest.mark.django_db
 def test_deletes_a_processed_pdf_from_a_subfolder_of_the_import_storage():
     barneveld()
-    key = "nested/TK2025_Nederland_NA31-2_Barneveld.pdf"
-    write_pdf(key)
+    key = write_pdf("nested/TK2025_Nederland_NA31-2_Barneveld.pdf")
 
     PDFFileHandler(storages["pv_import"]).run()
 
@@ -72,9 +71,33 @@ def test_deletes_a_processed_pdf_from_a_subfolder_of_the_import_storage():
 
 
 @pytest.mark.django_db
+def test_imports_only_from_the_import_queue_directory():
+    barneveld()
+    outside = write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf", directory="classification_queue")
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf", pv_pdf(b"queued"))
+
+    assert PDFFileHandler(storages["pv_import"]).run() == 1
+
+    assert default_storage.open(ElectionDocument.objects.get().storage_key).read() == pv_pdf(b"queued")
+    assert storages["pv_import"].exists(outside)
+
+
+@pytest.mark.django_db
+def test_imports_from_the_directory_it_is_given():
+    barneveld()
+    key = write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf", directory="inbox")
+    queued = write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf", pv_pdf(b"queued"))
+
+    assert PDFFileHandler(storages["pv_import"], "inbox").run() == 1
+
+    assert not storages["pv_import"].exists(key)
+    assert storages["pv_import"].exists(queued)
+
+
+@pytest.mark.django_db
 def test_keeps_the_imported_document_when_the_inbox_delete_fails(monkeypatch, caplog):
     barneveld()
-    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    key = write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
     handler = PDFFileHandler(storages["pv_import"])
 
     def fail_delete(_name):
@@ -86,7 +109,7 @@ def test_keeps_the_imported_document_when_the_inbox_delete_fails(monkeypatch, ca
         assert handler.run() == 1
 
     assert ElectionDocument.objects.count() == 1
-    assert storages["pv_import"].exists("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    assert storages["pv_import"].exists(key)
     assert "Failed to delete processed proces-verbaal" in caplog.text
 
 
@@ -187,6 +210,7 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies():
         ("NA14-1", "Alpha", "1"),
         ("NA31-1", "Alpha", ""),
         ("NA31-2", "Alpha", ""),
+        ("NA31-2-B1", "Alpha", "1"),
         ("NA14-2", "Alpha", ""),
         ("O7", "North", ""),
     ):
@@ -213,6 +237,7 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies():
         (station.id, file_type.PDF_NA14_1),
         (gemeente.id, file_type.PDF_NA31_1),
         (gemeente.id, file_type.PDF_NA31_2),
+        (station.id, file_type.PDF_NA31_2_B1),
         (gemeente.id, file_type.PDF_NA14_2),
         (kieskring.id, file_type.PDF_O7),
     }
@@ -321,21 +346,23 @@ def test_csb_name_picks_the_region_when_it_also_serves_another_board():
 def test_logs_a_waterschap_polling_station_form_without_csb(caplog):
     config = ElectionConfigFactory(identifier="AB2023", category=ElectionCategory.WS.value)
     _board_with_shared_station(config, "Rijnland", "13")
-    write_pdf("n10.pdf", pv_pdf(PvElection="AB2023", PvModel="N10-1", PvRegionName="Haarlemmermeer", PvStembureau="1"))
+    key = write_pdf(
+        "n10.pdf", pv_pdf(PvElection="AB2023", PvModel="N10-1", PvRegionName="Haarlemmermeer", PvStembureau="1")
+    )
 
     with caplog.at_level(logging.ERROR):
         imported = PDFFileHandler(storages["pv_import"]).run()
 
     assert imported == 0
     assert "needs PvCsb" in caplog.text
-    assert storages["pv_import"].exists("n10.pdf")
+    assert storages["pv_import"].exists(key)
 
 
 @pytest.mark.django_db
 def test_logs_a_pdf_missing_identity_and_imports_the_rest(caplog):
     barneveld()
-    write_pdf("blank.pdf", one_page_pdf(b"blank"))
-    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    blank_key = write_pdf("blank.pdf", one_page_pdf(b"blank"))
+    key = write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
 
     with caplog.at_level(logging.ERROR):
         imported = PDFFileHandler(storages["pv_import"]).run()
@@ -343,8 +370,8 @@ def test_logs_a_pdf_missing_identity_and_imports_the_rest(caplog):
     assert imported == 1
     assert ElectionDocument.objects.count() == 1
     assert "blank.pdf" in caplog.text
-    assert storages["pv_import"].exists("blank.pdf")
-    assert not storages["pv_import"].exists("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    assert storages["pv_import"].exists(blank_key)
+    assert not storages["pv_import"].exists(key)
 
 
 @pytest.mark.django_db
