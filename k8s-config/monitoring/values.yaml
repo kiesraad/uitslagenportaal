@@ -9,10 +9,13 @@
 kube-prometheus-stack:
   # Prometheus, Alertmanager, Grafana, node-exporter and kube-state-metrics.
   #
-  # Alertmanager is installed but delivers nowhere: no receiver is configured until a
-  # notification channel is settled. Alerts are grouped and visible in its UI, and go no
-  # further.
+  # Alertmanager mails alerts once its configuration secret exists; see alertmanagerSpec.
   fullnameOverride: kube-prometheus-stack
+
+  # Watchdog fires permanently to feed a dead man's switch, and there is none to send it to.
+  defaultRules:
+    disabled:
+      Watchdog: true
 
   prometheus:
     prometheusSpec:
@@ -61,6 +64,12 @@ kube-prometheus-stack:
     alertmanagerSpec:
       routePrefix: /alertmanager
       externalUrl: http://localhost:9090/alertmanager
+
+      # The configuration holds the SMTP details, so it is a secret created by hand (see
+      # docs/deployments.md) rather than values in git. While the secret is missing the
+      # operator falls back to an empty receiver and nothing is sent.
+      useExistingSecret: true
+      configSecret: alertmanager-config
 
       # Silences and the notification log live on disk. Without a volume a restart
       # forgets every silence, including one placed deliberately mid-incident.
