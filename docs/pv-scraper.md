@@ -19,6 +19,11 @@ A separate Django app is added for the code to download the PVs from municipalit
 It runs a Celery task which uses its own queue, and the task is handled by a specific worker, with access to Playwright.
 This allows us to separate the scraping process from the other tasks while still using Celery's task handling logic.
 
+Run the following to start the local docker compose stack with the worker for the scraper queue:
+```bash
+docker compose up -d --build --profile with-scraper
+```
+
 ### List of authorities
 
 The scraper is based on a list of authorities, which lists municipalities, water authorities, provinces and the state with their main website.

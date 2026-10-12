@@ -1,24 +1,36 @@
 import logging
 from datetime import timedelta
 
+from botocore.exceptions import ConnectionError as S3ConnectionError
 from celery import Celery
+from celery.exceptions import BackendError
 from celery.schedules import crontab
 from django.conf import settings
-from django.core.files.storage import default_storage
+from django.core.files.storage import storages
+from django.db import DatabaseError
 from django.db.models import F, Q
 from django.utils import timezone
 
 from eml_import.utils.named_bytes_io import NamedBytesIO
+from eml_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
 from mainsite.celery import app
 from pv_scraper.models import ScrapedFile, ScrapeSource, ScrapeStatus
-from pv_scraper.utils.pv_classifier import PvClassificationException, PvClassifier
+from pv_scraper.utils.pv_classifier import STORAGE_ENTRY, PvClassificationException, PvClassifier
 
 logger = logging.getLogger(__name__)
 
 SCRAPE_INTERVAL = timedelta(hours=24)
-# Consumed only by the worker with Playwright and Tesseract (`-Q scraper` in prod.dockerfile), which also classifies.
-SCRAPER_QUEUE = "scraper"
+"""
+Interval after which a source is due to be queued for scraping
+"""
 
+SCRAPER_QUEUE = "scraper"
+"""
+Consumed only by the worker with Playwright and Tesseract (`-Q scraper` in prod.dockerfile).
+"""
+
+CLASSIFICATION_QUEUE_FOLDER = "classification_queue"
+""" Folder on storage to store temp files waiting for classification """
 
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender: Celery, **_) -> None:
@@ -59,36 +71,17 @@ def dispatch_scrape_tasks():
         run_scrape_for_source.apply_async((source_id,), queue=SCRAPER_QUEUE)
 
 
-@app.task
-def classify_scraped_file(scraped_file_id: int, key: str, file_name: str) -> None:
-    """Classify a scraped file stored under a key and store it under pvs/ when its model is certain.
-
-    The file name is the one it was published under, which storage may have suffixed in the key; the classifier reads
-    the election and stembureau from it.
-    """
-    source = ScrapedFile.objects.select_related("source").get(pk=scraped_file_id).source
-    with default_storage.open(key) as stored:
-        content = NamedBytesIO(stored.read(), file_name)
-
-    logger.info(f"Classifying {key}...")
-    classifier = PvClassifier(content)
-    classification = classifier.classify()
-    if not classification or not classification.matched_on.is_certain():
-        logger.info("Classification not certain, discarding file")
-        return
-
-    logger.info(f"Classified as {classification.model} for {classification.region}, saving file")
-    try:
-        classifier.save_to_storage(source, "pvs")
-    except PvClassificationException as e:
-        logger.info(str(e))
-
-
-@app.task
+@app.task(
+    autoretry_for=[DatabaseError, S3ConnectionError, BackendError],
+    retry_backoff=5,
+    max_retries=2,
+)
 def run_scrape_for_source(source_id: int):
     # Only the scraper worker image has Playwright, and every worker imports this module.
     from pv_scraper.utils.site_crawler import SiteCrawler
     from pv_scraper.utils.site_scraper import SiteScraper
+
+    storage = storages[STORAGE_ENTRY]
 
     source = ScrapeSource.objects.get(pk=source_id)
     source.last_run_started_at = timezone.now()
@@ -97,9 +90,8 @@ def run_scrape_for_source(source_id: int):
 
     try:
         with SiteCrawler(source.cookie_banner_label) as crawler:
-            # Classified in a task of its own, so the browser does not wait on OCR.
             for file in SiteScraper(source, crawler).run():
-                key = default_storage.save(f"pv_scraper/{source.code}/{file.content.name}", file.content)
+                key = storage.save(f"{CLASSIFICATION_QUEUE_FOLDER}/{source.code}_{file.content.name}", file.content)
                 classify_scraped_file.apply_async((file.scraped_file.pk, key, file.content.name), queue=SCRAPER_QUEUE)
     except Exception:
         # A failure outside the scrape itself, such as the browser not starting, still ends the run.
@@ -108,3 +100,36 @@ def run_scrape_for_source(source_id: int):
             source.last_run_finished_at = timezone.now()
             source.save(update_fields=["last_run_status", "last_run_finished_at", "updated_at"])
         raise
+
+
+@app.task(
+    autoretry_for=[DatabaseError, S3ConnectionError],
+    retry_backoff=5,
+    max_retries=2,
+)
+def classify_scraped_file(scraped_file_id: int, key: str, file_name: str) -> None:
+    """
+    Classify a scraped file stored under a key and store it under pvs/ when its model is certain.
+
+    The file name is the one it was published under, which storage may have suffixed in the key; the classifier reads
+    the election and stembureau from it.
+    """
+    storage = storages[STORAGE_ENTRY]
+    source = ScrapedFile.objects.select_related("source").get(pk=scraped_file_id).source
+    with storage.open(key) as stored:
+        content = NamedBytesIO(stored.read(), file_name)
+
+    logger.info(f"Classifying {key}...")
+    classifier = PvClassifier(content)
+    classification = classifier.classify()
+    if not classification or not classification.matched_on.is_certain():
+        logger.info("Classification not certain, discarding file")
+        storage.delete(key)
+        return
+
+    logger.info(f"Classified as {classification.model} for {classification.region}, saving file")
+    try:
+        classifier.save_to_storage(source, DEFAULT_PV_DIRECTORY)
+        storage.delete(key)
+    except PvClassificationException as e:
+        logger.info(str(e))

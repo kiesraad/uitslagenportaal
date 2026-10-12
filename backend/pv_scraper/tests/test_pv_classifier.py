@@ -5,7 +5,7 @@ from unittest import mock
 import pypdfium2 as pdfium
 import pytesseract
 import pytest
-from django.core.files.storage import default_storage
+from django.core.files.storage import storages
 from PIL import Image
 from pypdf import PdfReader
 
@@ -16,6 +16,7 @@ from pv_scraper.tests.factories import ScrapeSourceFactory
 from pv_scraper.utils.pv_classifier import (
     DPI,
     HEADER_LABEL_TAIL_RE,
+    STORAGE_ENTRY,
     ClassificationResult,
     PvClassificationException,
     PvClassifier,
@@ -847,7 +848,7 @@ def test_save_to_storage_names_the_gemeente_as_its_source_does(region):
     key = classified("N 10-2", PvElection("GR2026"), region).save_to_storage(source, "pvs")
 
     assert key == "pvs/GR2026_N10-2_0228-ede_SB12.pdf"
-    assert PdfReader(default_storage.open(key)).metadata["/PvRegionName"] == "Ede"
+    assert PdfReader(storages[STORAGE_ENTRY].open(key)).metadata["/PvRegionName"] == "Ede"
 
 
 @pytest.mark.django_db
@@ -950,7 +951,7 @@ def test_save_to_storage_stores_a_hoofdstembureau_model_under_its_kieskring():
     key = classified("O 7", PvElection("PS2023", authority="Gelderland"), region).save_to_storage(source, "pvs")
 
     assert key == "pvs/PS2023_O7_gelderland_kieskring-1-arnhem.pdf"
-    metadata = PdfReader(default_storage.open(key)).metadata
+    metadata = PdfReader(storages[STORAGE_ENTRY].open(key)).metadata
     # The region code is the kieskring's number, its name the kieskring's name.
     assert (metadata["/Title"], metadata["/PvRegionCode"], metadata["/PvRegionName"]) == (
         "O7 kieskring 1 Arnhem",
@@ -979,7 +980,7 @@ def test_save_to_storage_stores_a_csb_model_under_its_csb(kind, code, name, elec
     key = classified("P 22-2", election, PvRegion()).save_to_storage(source, "pvs")
 
     assert key == "pvs/AB2027_P22-2_vallei-en-veluwe.pdf"
-    metadata = PdfReader(default_storage.open(key)).metadata
+    metadata = PdfReader(storages[STORAGE_ENTRY].open(key)).metadata
     assert (metadata["/Title"], metadata["/PvCsb"], metadata["/PvRegionName"]) == (
         "P22-2 Vallei en Veluwe",
         "Vallei en Veluwe",
@@ -998,8 +999,8 @@ def test_save_to_storage_replaces_a_file_of_the_same_name():
 
     key = newer.save_to_storage(source, "pvs")
 
-    assert default_storage.listdir("pvs")[1] == ["GR2026_N10-2_0228-ede_SB12.pdf"]
-    assert default_storage.open(key).read().startswith(newer_pdf)
+    assert storages[STORAGE_ENTRY].listdir("pvs")[1] == ["GR2026_N10-2_0228-ede_SB12.pdf"]
+    assert storages[STORAGE_ENTRY].open(key).read().startswith(newer_pdf)
 
 
 @pytest.mark.django_db

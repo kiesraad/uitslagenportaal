@@ -26,6 +26,11 @@ from mainsite.models import RegionCategory
 from pv_scraper.models import ScrapeSource
 from region.models import Region
 
+STORAGE_ENTRY = "pv_import"
+"""
+The storage config entry from which the PVs are imported
+"""
+
 DPI = 300
 # OCR of the top 40% first is fastest overall, although OSV forms, whose titles sit lower, then need a full page.
 CROP_FRACTION = 0.4
@@ -862,7 +867,7 @@ class PvClassifier:
         content = self.add_metadata_to_pv(pv)
 
         # Replace a file of the same name, which storage would otherwise keep, saving this one under a suffixed name.
-        storage = storages["default"]
+        storage = storages[STORAGE_ENTRY]
         if storage.exists(key):
             storage.delete(key)
         return storage.save(key, content)

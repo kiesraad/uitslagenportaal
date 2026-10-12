@@ -3,6 +3,7 @@ from django.core.files.storage import Storage, storages
 
 from election.models import ElectionCategory
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
+from eml_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
 from mainsite.models import RegionCategory
 from region.models import Region
 from region.tests.factories import RegionFactory
@@ -36,11 +37,15 @@ def pv_pdf(mark: bytes = b"a", **pv: str) -> bytes:
 PDF_BYTES = pv_pdf()
 
 
-def write_pdf(name: str, content: bytes = PDF_BYTES, storage: Storage | None = None) -> str:
+def write_pdf(
+    name: str, content: bytes = PDF_BYTES, storage: Storage | None = None, directory: str = DEFAULT_PV_DIRECTORY
+) -> str:
+    """Store a PDF in the import queue and return its key."""
     storage = storage or storages["pv_import"]
-    if storage.exists(name):
-        storage.delete(name)
-    return storage.save(name, ContentFile(content))
+    key = f"{directory}/{name}"
+    if storage.exists(key):
+        storage.delete(key)
+    return storage.save(key, ContentFile(content))
 
 
 def barneveld() -> Region:
