@@ -32,6 +32,7 @@ Consumed only by the worker with Playwright and Tesseract (`-Q scraper` in prod.
 CLASSIFICATION_QUEUE_FOLDER = "classification_queue"
 """ Folder on storage to store temp files waiting for classification """
 
+
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender: Celery, **_) -> None:
     sender.add_periodic_task(

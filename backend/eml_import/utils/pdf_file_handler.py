@@ -87,9 +87,9 @@ class PDFFileHandler:
             try:
                 if self._import_pv(_StoragePdf(self.storage, name)):
                     imported += 1
-            except IntegrityError, PDFImporterException:
+            except (IntegrityError, PDFImporterException) as exc:
                 # A bad file must not stop the rest of this sweep.
-                logger.error("Failed to import proces-verbaal %s", name)
+                logger.error("Failed to import proces-verbaal %s: %s", name, exc)
         return imported
 
     def _pdf_names(self, directory: str):
