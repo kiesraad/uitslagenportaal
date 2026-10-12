@@ -1,3 +1,4 @@
+import hashlib
 import logging
 from contextlib import closing
 from datetime import timedelta
@@ -15,7 +16,7 @@ from django.utils import timezone
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from eml_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
 from mainsite.celery import app
-from pv_scraper.models import ScrapeSource, ScrapeStatus
+from pv_scraper.models import ScrapedFile, ScrapeSource, ScrapeStatus
 from pv_scraper.utils.pv_classifier import STORAGE_ENTRY, PvClassificationException, PvClassifier
 
 logger = logging.getLogger(__name__)
@@ -94,7 +95,9 @@ def run_scrape_for_source(source_id: int):
         # Closing the scrape saves its state before the failure of a hand-off is handled below.
         with SiteCrawler(source.cookie_banner_label) as crawler, closing(SiteScraper(source, crawler).run()) as files:
             for file in files:
-                key = storage.save(f"{CLASSIFICATION_QUEUE_FOLDER}/{source.code}_{file.content.name}", file.content)
+                # Named after the content, as one source may publish several files under one name.
+                name = f"{source.code}_{file.scraped_file.sha256}.pdf"
+                key = storage.save(f"{CLASSIFICATION_QUEUE_FOLDER}/{name}", file.content)
                 classify_scraped_file.apply_async((source.pk, key, file.content.name), queue=SCRAPER_QUEUE)
     except Exception:
         # A failure outside the scrape itself, such as the browser not starting, still ends the run.
@@ -114,8 +117,8 @@ def classify_scraped_file(source_id: int, key: str, file_name: str) -> None:
     """
     Classify a scraped file stored under a key and store it for the PV import when its model is certain.
 
-    The file name is the one it was published under, which storage may have suffixed in the key; the classifier reads
-    the election and stembureau from it.
+    The file name is the one it was published under; the classifier reads the election and stembureau from it. The
+    file leaves the classification queue whatever the outcome, unless the task is retried.
     """
     storage = storages[STORAGE_ENTRY]
     source = ScrapeSource.objects.get(pk=source_id)
@@ -124,15 +127,27 @@ def classify_scraped_file(source_id: int, key: str, file_name: str) -> None:
 
     logger.info(f"Classifying {key}...")
     classifier = PvClassifier(content)
-    classification = classifier.classify()
-    if not classification or not classification.matched_on.is_certain():
-        logger.info("Classification not certain, discarding file")
-        storage.delete(key)
-        return
-
-    logger.info(f"Classified as {classification.model} for {classification.region}, saving file")
+    rejected_reason = None
     try:
-        classifier.save_to_storage(source, DEFAULT_PV_DIRECTORY)
-        storage.delete(key)
+        classification = classifier.classify()
+        if classification and classification.matched_on.is_certain():
+            logger.info(f"Classified as {classification.model} for {classification.region}, saving file")
+            classifier.save_to_storage(source, DEFAULT_PV_DIRECTORY)
+        else:
+            logger.info("Classification not certain, discarding file")
     except PvClassificationException as e:
-        logger.info(str(e))
+        logger.warning(str(e))
+        rejected_reason = str(e)
+    except DatabaseError, S3ConnectionError:
+        raise
+    except Exception as ex:
+        logger.exception("Classification of %s failed", key)
+        rejected_reason = f"Classification failed: {ex}"
+
+    # A PV that cannot be stored or read is recorded as rejected, with the reason cut to what the field holds.
+    if rejected_reason:
+        max_length = ScrapedFile._meta.get_field("rejected_reason").max_length
+        ScrapedFile.objects.filter(source=source, sha256=hashlib.sha256(content.getvalue()).hexdigest()).update(
+            rejected_reason=rejected_reason[:max_length]
+        )
+    storage.delete(key)

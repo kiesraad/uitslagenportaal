@@ -38,7 +38,9 @@ _REGION_CATEGORY_BY_FILE_TYPE = {
     ElectionDocument.FileType.PDF_NA31_1: RegionCategory.GEMEENTE,
     ElectionDocument.FileType.PDF_NA31_2: RegionCategory.GEMEENTE,
     ElectionDocument.FileType.PDF_NA31_2_B1: RegionCategory.STEMBUREAU,
+    ElectionDocument.FileType.PDF_NA31_2_B2: RegionCategory.STEMBUREAU,
     ElectionDocument.FileType.PDF_NA14_2: RegionCategory.GEMEENTE,
+    ElectionDocument.FileType.PDF_NA14_2_B1: RegionCategory.STEMBUREAU,
     ElectionDocument.FileType.PDF_O7: RegionCategory.KIESKRING,
 }
 

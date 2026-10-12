@@ -302,10 +302,12 @@ AUTHORITIES = {
         "Zuiderzeeland",
     ],
 }
-# The source kind whose name is the authority of an election type, when the header doesn't name it.
 # The CSB of a national election, which has one for the whole country.
 NATIONAL_CSBS = {"TK": "Nederland", "EP": "Nederland"}
+# The source kind whose name is the authority of an election type, when the header doesn't name it.
 AUTHORITY_SOURCE_KINDS = {"PS": RegionCategory.PROVINCIE, "AB": RegionCategory.WATERSCHAP}
+# What such a source's name may put before the authority: "Provincie Drenthe", "Hoogheemraadschap van Delfland".
+SOURCE_NAME_PREFIX_RE = re.compile(r"^(?:provincie|waterschap|hoogheemraadschap|wetterskip)\s+(?:van\s+)?", re.I)
 
 # Document information keys under which a stored PV carries the fields of its PvIdentity.
 PDF_METADATA_KEYS = {
@@ -508,9 +510,9 @@ class PvClassifier:
         # The gemeente name from the found texts
         if name := next((m.group(2) for m in matches if m.group(2)), None):
             region.name = name
-        # The stembureau number from the first "Stembureau [number]" in the text.
+        # The stembureau number from the first "Stembureau [number]" in the text, without leading zeros.
         if match := STEMBUREAU_RE.search(text):
-            region.stembureau = match.group(1)
+            region.stembureau = match.group(1).lstrip("0")
         # The kieskring number and name, either of which may be missing, from the first "Kieskring" line in the text.
         if match := KIESKRING_RE.search(text):
             region.kieskring = match.group(1) or ""
@@ -519,7 +521,7 @@ class PvClassifier:
 
     @staticmethod
     def find_section_stembureau(text: str) -> str:
-        return match.group(1) if (match := SECTION_STEMBUREAU_RE.search(text)) else ""
+        return match.group(1).lstrip("0") if (match := SECTION_STEMBUREAU_RE.search(text)) else ""
 
     @staticmethod
     def find_stembureau_in_name(stem: str) -> str:
@@ -751,10 +753,12 @@ class PvClassifier:
         else:
             csb = (csb or result.election.authority) if election_type in AUTHORITIES else ""
 
+        # A gemeente may lie in several waterschappen, so its AB PVs are only told apart by their CSB.
+        if not csb and (self.is_csb_pv() or election_type == "AB"):
+            raise PvClassificationException("Cannot name file: CSB not known")
+
         # A CSB PV, not a gemeente PV.
         if self.is_csb_pv():
-            if not csb:
-                raise PvClassificationException("Cannot name file: CSB not known")
             code, name = "", csb
         elif self.is_kieskring_pv():
             code, name = result.region.kieskring, result.region.kieskring_name
@@ -847,20 +851,22 @@ class PvClassifier:
         election, region = self.result.election, self.result.region
         csb = region_code = region_name = ""
 
-        # A gemeente's website gives the gemeente, which the gemeente read from the PV must match by code or name.
+        # A gemeente's website gives the gemeente, which the PV must name too: as its region, by code or name, or as
+        # the gemeenteraad in a GR header. Each of the two it names must match.
         if source.kind == RegionCategory.GEMEENTE and not (self.is_csb_pv() or self.is_kieskring_pv()):
             region_code, region_name = source.code.removeprefix("gm"), source.name
-            if region.code != region_code and not self.authority_matches(source.name, region.name):
-                raise PvClassificationException(f"Cannot save file: PV is not from {source}")
-
-            # The gemeenteraad a GR header names must be that gemeente's too.
-            if election.id.startswith("GR") and election.authority:
-                if not self.authority_matches(source.name, election.authority):
-                    raise PvClassificationException(f"Cannot save file: PV is from {election.authority}")
+            gemeenteraad = election.authority if election.id.startswith("GR") else ""
+            if not (region.code or region.name or gemeenteraad):
+                raise PvClassificationException("Cannot save file: PV does not name its gemeente")
+            if (region.code or region.name) and region.code != region_code:
+                if not self.authority_matches(source.name, region.name):
+                    raise PvClassificationException(f"Cannot save file: PV is not from {source}")
+            if gemeenteraad and not self.authority_matches(source.name, gemeenteraad):
+                raise PvClassificationException(f"Cannot save file: PV is from {gemeenteraad}")
 
         # A province's or waterschap's website gives the CSB of a PS or AB election, spelled as in AUTHORITIES.
         elif source.kind == AUTHORITY_SOURCE_KINDS.get(election.id[:2]):
-            csb = self.known_authority(election.id[:2], source.name)
+            csb = self.known_authority(election.id[:2], SOURCE_NAME_PREFIX_RE.sub("", source.name))
 
         # Name the PV and add what it is to its PDF metadata.
         pv = self.identity(csb, region_code, region_name)

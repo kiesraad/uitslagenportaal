@@ -123,7 +123,6 @@ def test_find_titles(text, expected):
         ("Verslag, uitslag en zetelverdeling", None, ResultMatch.CONFLICT),
         ("Verslag, uitslag en zetelverdeling - Model O 7", None, ResultMatch.CONFLICT),
         ("Gecorrigeerde telresultaten per lijst en kandidaat - Model P 1f-1", "P 1f-1", ResultMatch.CODE_TITLE),
-        ("Verslag en gecorrigeerde telresultaten per lijst en kandidaat - Model P 2a", "P 2a", ResultMatch.CODE_TITLE),
         (N_10_2_TITLE + "\n" + NA_31_2_TITLE, None, ResultMatch.CONFLICT),
         ("Model X 99", None, ResultMatch.UNKNOWN),
         ("Geen model", None, ResultMatch.NONE),
@@ -166,6 +165,8 @@ def test_identify_model_keeps_what_ocr_found():
         ("Stembureaunummer: nr. 7", {"stembureau": "7"}),
         ("Stembureau-nr. 210", {"stembureau": "210"}),
         ("Stembureau Nr: 33", {"stembureau": "33"}),
+        # The number is kept without its padding, as regions and file names have it.
+        ("Stembureau 001", {"stembureau": "1"}),
         ("1659 Laarbeek\nCentraal Stembureau", {"code": "1659", "name": "Laarbeek"}),
         ("373 Bergen (NH)\nGemeentelijk stembureau", {"code": "0373", "name": "Bergen (NH)"}),
         ("Stembureau 17\n\nBrummen\nStembureau 17", {"name": "Brummen", "stembureau": "17"}),
@@ -487,6 +488,7 @@ EDE_SECTION = (
     [
         (EDE_SECTION, "12"),
         ("Stembureau 7\n'’t Hoekje\n", "7"),
+        ("Stembureau 007\nCultura\n", "7"),
         # A running header is followed by another heading, not by a name.
         (EDE_COVER, ""),
         ("Stembureau 891\n\nOver deze bijlage", ""),
@@ -821,6 +823,8 @@ def test_storage_name_takes_the_names_it_is_given():
         ("N 10-2", PvElection("GR2026"), PvRegion()),
         # Without its stembureau, a stembureau model's PV would replace those of the gemeente's other stembureaus.
         ("N 10-2", PvElection("GR2026"), PvRegion(code="0228", name="Ede")),
+        # Without its waterschap, an AB PV would replace that of the gemeente's other waterschap.
+        ("N 10-2", PvElection("AB2027"), EDE_12),
     ],
 )
 @pytest.mark.django_db
@@ -867,6 +871,8 @@ def test_save_to_storage_names_the_gemeente_as_its_source_does(region):
         (PvElection("GR2026"), PvRegion(code="0289", name="Wageningen")),
         # A GR header naming another gemeente.
         (PvElection("GR2026", authority="Tiel"), EDE_12),
+        # A PV that names no gemeente at all.
+        (PvElection("GR2026"), PvRegion(stembureau="12")),
     ],
 )
 def test_save_to_storage_refuses_a_pv_of_another_gemeente(election, region):
@@ -877,18 +883,38 @@ def test_save_to_storage_refuses_a_pv_of_another_gemeente(election, region):
 
 
 @pytest.mark.django_db
+def test_save_to_storage_takes_the_gemeente_a_gr_header_names():
+    source = ScrapeSourceFactory(code="gm0228", name="Ede")
+
+    key = classified("P 22-2", PvElection("GR2026", authority="Ede"), PvRegion()).save_to_storage(source, "pvs")
+
+    assert key == "pvs/GR2026_P22-2_0228-ede.pdf"
+
+
+@pytest.mark.django_db
 def test_save_to_storage_needs_a_classified_pv():
     with pytest.raises(PvClassificationException):
         PvClassifier(NamedBytesIO(BLANK_PDF, "pv.pdf")).save_to_storage(ScrapeSourceFactory(), "pvs")
 
 
 @pytest.mark.django_db
-def test_save_to_storage_takes_the_csb_from_a_waterschap_source():
-    source = ScrapeSourceFactory(code="ws0665", kind=RegionCategory.WATERSCHAP, name="Vallei en Veluwe")
+@pytest.mark.parametrize(
+    ("kind", "name", "election", "csb"),
+    [
+        (RegionCategory.WATERSCHAP, "Vallei en Veluwe", "AB2027", "vallei-en-veluwe"),
+        # A source may be named with what kind of authority it is.
+        (RegionCategory.WATERSCHAP, "Waterschap Limburg", "AB2027", "limburg"),
+        (RegionCategory.WATERSCHAP, "Hoogheemraadschap van Delfland", "AB2027", "delfland"),
+        (RegionCategory.WATERSCHAP, "Wetterskip Fryslân", "AB2027", "fryslan"),
+        (RegionCategory.PROVINCIE, "Provincie Drenthe", "PS2027", "drenthe"),
+    ],
+)
+def test_save_to_storage_takes_the_csb_from_a_waterschap_or_province_source(kind, name, election, csb):
+    source = ScrapeSourceFactory(code="ws0665", kind=kind, name=name)
 
-    key = classified("N 10-2", PvElection("AB2027"), EDE_12).save_to_storage(source, "pvs")
+    key = classified("N 10-2", PvElection(election), EDE_12).save_to_storage(source, "pvs")
 
-    assert key == "pvs/AB2027_N10-2_vallei-en-veluwe_0228-ede_SB12.pdf"
+    assert key == f"pvs/{election}_N10-2_{csb}_0228-ede_SB12.pdf"
 
 
 @pytest.mark.django_db

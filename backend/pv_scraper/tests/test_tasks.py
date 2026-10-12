@@ -1,9 +1,11 @@
+import hashlib
 import logging
 from unittest.mock import MagicMock, call, patch
 
 import pytest
 from django.core.files.base import ContentFile
 from django.core.files.storage import storages
+from django.db import DatabaseError
 from django.utils import timezone
 
 from eml_import.utils.named_bytes_io import NamedBytesIO
@@ -85,22 +87,20 @@ def test_scrape_that_fails_to_start_ends_in_error(_):
 @patch.object(tasks.classify_scraped_file, "apply_async")
 def test_scrape_stores_each_file_and_queues_its_classification(apply_async, *_):
     source = ScrapeSourceFactory(code="gm0228")
+    # Two files published under one name are both kept.
     files = [
-        FileResult(True, NamedBytesIO(b"%PDF", name), ScrapedFileFactory(source=source))
-        for name in ("first.pdf", "next.pdf")
+        FileResult(True, NamedBytesIO(content, name), ScrapedFileFactory(source=source))
+        for name, content in (("Download.pdf", b"%PDF first"), ("Download.pdf", b"%PDF next"), ("other.pdf", b"%PDF"))
     ]
+    keys = [f"classification_queue/gm0228_{file.scraped_file.sha256}.pdf" for file in files]
 
     with patch.object(SiteScraper, "crawl", return_value=iter(files)):
         run_scrape_for_source(source.id)
 
     assert apply_async.call_args_list == [
-        call(
-            (source.pk, f"classification_queue/gm0228_{file.content.name}", file.content.name),
-            queue="scraper",
-        )
-        for file in files
+        call((source.pk, key, file.content.name), queue="scraper") for key, file in zip(keys, files)
     ]
-    assert storages[STORAGE_ENTRY].open("classification_queue/gm0228_first.pdf").read() == b"%PDF"
+    assert [storages[STORAGE_ENTRY].open(key).read() for key in keys] == [b"%PDF first", b"%PDF next", b"%PDF"]
     source.refresh_from_db()
     assert source.last_run_status != ScrapeStatus.ERROR
 
@@ -124,6 +124,7 @@ def test_scrape_whose_hand_off_fails_ends_in_error(*_):
 @pytest.fixture
 def stored_file():
     source = ScrapeSourceFactory()
+    ScrapedFileFactory(source=source, sha256=hashlib.sha256(b"%PDF").hexdigest())
     key = storages[STORAGE_ENTRY].save("classification_queue/gm0228_pv_suffix.pdf", ContentFile(b"%PDF"))
     return source, key
 
@@ -151,7 +152,7 @@ def test_classify_scraped_file_stores_only_a_certain_pv(stored_file, matched_on,
 
 
 @pytest.mark.django_db
-def test_classify_scraped_file_logs_a_pv_it_cannot_store(stored_file, caplog):
+def test_classify_scraped_file_rejects_a_pv_it_cannot_store(stored_file, caplog):
     source, key = stored_file
     with (
         caplog.at_level(logging.INFO, logger="pv_scraper.tasks"),
@@ -161,4 +162,27 @@ def test_classify_scraped_file_logs_a_pv_it_cannot_store(stored_file, caplog):
         classify_scraped_file(source.pk, key, "pv.pdf")
 
     assert "region not known" in caplog.text
+    assert not storages[STORAGE_ENTRY].exists(key)
+    assert source.scraped_files.get().rejected_reason == "region not known"
+
+
+@pytest.mark.django_db
+def test_classify_scraped_file_rejects_a_file_it_cannot_read(stored_file):
+    source, key = stored_file
+    with patch.object(PvClassifier, "classify", side_effect=RuntimeError("no pages " * 20)):
+        classify_scraped_file(source.pk, key, "pv.pdf")
+
+    assert not storages[STORAGE_ENTRY].exists(key)
+    # The reason is cut to what the field holds.
+    reason = source.scraped_files.get().rejected_reason
+    assert reason.startswith("Classification failed: no pages") and len(reason) == 128
+
+
+@pytest.mark.django_db
+def test_classify_scraped_file_keeps_the_file_for_a_retry(stored_file):
+    source, key = stored_file
+    with patch.object(PvClassifier, "classify", side_effect=DatabaseError("gone")), pytest.raises(DatabaseError):
+        classify_scraped_file(source.pk, key, "pv.pdf")
+
     assert storages[STORAGE_ENTRY].exists(key)
+    assert source.scraped_files.exists()
