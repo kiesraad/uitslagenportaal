@@ -21,7 +21,7 @@ This allows us to separate the scraping process from the other tasks while still
 
 Run the following to start the local docker compose stack with the worker for the scraper queue:
 ```bash
-docker compose up -d --build --profile with-scraper
+docker compose --profile with-scraper up -d --build
 ```
 
 ### List of authorities
@@ -40,23 +40,29 @@ that is due. One scrape is split over three modules in `pv_scraper/utils/`:
 - `SiteScraper` holds the state of the run. It keeps the queue of pages to visit, and pages about results go first.
   It decides which links to follow or download, and yields each new PDF that may be a PV for classification. Every
   downloaded file becomes a `ScrapedFile`; files that are no PV are only recorded, with a `rejected_reason`, so that
-  an unchanged one is not downloaded again. Every visited page becomes a `ScrapedPage`, with the page that led to it.
+  an unchanged one is not downloaded again. A file that may be a PV is recorded once it has been handed on for
+  classification, so one whose hand-off failed is downloaded again on the next run. Every visited page becomes a
+  `ScrapedPage`, with the page that led to it.
 - `SiteCrawler` requests one link at a time with the browser's cookies. The response tells a page from a file: an HTML
   page is rendered in Playwright, where it accepts the cookie banner, expands collapsed content and collects the links;
   any other response is returned as a file.
 - `link_rules` contains the patterns that pick out pages worth following and documents that may be PVs.
 
-The scraper downloads every PDF that may be a PV of any election and year. It only skips documents that are clearly
-something else, such as kandidatenlijsten, instructions and folders. The election and model of a file are decided
-afterwards, by `PvClassifier`.
+The scraper downloads every PDF that may be a PV of any election. It only skips documents that are clearly something
+else, such as kandidatenlijsten, instructions and folders, and those that name only an earlier year: archives keep the
+PVs of elections long past. In the first months of a year the previous year still counts. The election and model of a
+file are decided afterwards, by `PvClassifier`.
 
 ### Classification
 
-`run_scrape_for_source` stores each downloaded file under `pv_scraper/<source code>/` and queues
-`classify_scraped_file` for it on the `scraper` queue, whose worker has Tesseract; the browser does not wait on OCR.
-That
-task hands the file to `PvClassifier` (`pv_scraper/utils/pv_classifier.py`), which runs Tesseract on the first page or
-two. To try it on a folder of PDFs, use
+`run_scrape_for_source` stores each downloaded file in the `pv_import` storage (the `pvs` bucket by default) under
+`classification_queue/<source code>_<file name>.pdf` and queues `classify_scraped_file` for it on the `scraper` queue,
+whose worker has Tesseract; the browser does not wait on OCR. That task hands the file to `PvClassifier`
+(`pv_scraper/utils/pv_classifier.py`), which runs Tesseract on the first page or two. Classified files of known models
+are stored in the same storage at `pv_import_queue/<generated file name>.pdf`, where the PV import picks them up, and
+leave the classification queue. A file whose model is not certain is deleted; one that is classified but cannot be
+named or is refused (see the naming convention) stays in the classification queue.
+To try it on a folder of PDFs, use
 `docker compose run --rm backend-scripts python manage.py classify_pvs <folder>`
 or `docker compose run --rm backend-scripts python manage.py classify_pv <path>`.
 
@@ -78,11 +84,14 @@ or `docker compose run --rm backend-scripts python manage.py classify_pv <path>`
   stembureau from the heading that starts the stembureau's section, on page 1 or behind a cover page on page 2, as
   the running header of some gemeenten repeats one stembureau on every page. When OCR misses the stembureau of a
   model that belongs to one stembureau, the number is taken from the file name (`Brunssum_10_…_GR26`,
-  `stembureau_7`).
+  `stembureau_7`). A number there counts only when it has at most three digits and, in the `<gemeente>_<nummer>_`
+  form, follows a name of at least three characters, so a year (`GR_2026_…`) or a model (`I_4_…`) is not read as a
+  stembureau. A number followed by a month is the day of a date and is skipped, in the file name and in the text
+  (`Uitslag_18_maart_2026_SB3`, "stembureau\n18 maart 2026").
 
 #### Naming convention
 
-An identified PV is stored in default storage under `pvs/` as `<election>_<model>[_<csb>]_<region>[_SB<n>].pdf`. The
+An identified PV is stored under `pv_import_queue/` as `<election>_<model>[_<csb>]_<region>[_SB<n>].pdf`. The
 name is built from what the PV and its source say, and the application's database only corrects the gemeente's name,
 so another platform delivering PVs can follow it too.
 
@@ -126,11 +135,9 @@ readable and unique.
 
 A file of the same name is replaced, since it holds the same PV. So that a misread stembureau doesn't replace another
 stembureau's PV, a PV whose stembureau differs from the one in its file name is not stored. A PV found on a gemeente's
-website must be about that
-gemeente by code or name, unless its region is a CSB or a kieskring, and a GR header naming another gemeente is
-refused;
-the source then gives the gemeente's code
-and name. A waterschap's or province's website gives the CSB when the header doesn't name it.
+website must be about that gemeente by code or name, unless its region is a CSB or a kieskring, and a GR header naming
+another gemeente is refused; the source then gives the gemeente's code and name. A waterschap's or province's website
+gives the CSB when the header doesn't name it.
 
 #### Election pages
 

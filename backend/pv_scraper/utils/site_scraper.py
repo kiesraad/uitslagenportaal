@@ -106,6 +106,7 @@ class SiteScraper:
         self.errors: list[dict] = []
 
     def run(self) -> Generator[FileResult, None, ScrapeStatus]:
+        status = ScrapeStatus.ERROR
         try:
             for url in self.start_urls:
                 self.push(Visit(Link(url), 0, None, url), 0)
@@ -121,8 +122,9 @@ class SiteScraper:
         except Exception as exc:
             logger.exception("Scrape of %s failed", self.source)
             self.errors.append({"url": None, "error": repr(exc)})
-            status = ScrapeStatus.ERROR
-        self.save_state(status)
+        finally:
+            self.save_state(status)
+
         return status
 
     def status(self) -> ScrapeStatus:
@@ -161,6 +163,8 @@ class SiteScraper:
 
                 if file_result.content:
                     yield file_result
+                    # Recorded only once the file is handed on, so a failed hand-off is downloaded again next run.
+                    file_result.scraped_file.save()
 
                 continue
 
@@ -260,7 +264,7 @@ class SiteScraper:
                 self.push(Visit(link, FILES_ONLY, root, root), 0)
 
     def keep_file(self, link: Link, result: CrawledPage) -> FileResult:
-        """Record a downloaded file; return whether it may be a PV, with its content when it is new."""
+        """Return whether a downloaded file may be a PV, with its content when it is new; record it unless it is."""
         assert result.file is not None, "Call keep_file() only if result has a file"
 
         known: ScrapedFile | None = self.known_files.get(link.href)
@@ -287,7 +291,7 @@ class SiteScraper:
 
         # A changed file at a known URL is a new version; the earlier one stays. Rejected files are recorded too, so an
         # unchanged one is not downloaded again.
-        scraped_file = ScrapedFile.objects.create(
+        scraped_file = ScrapedFile(
             source=self.source,
             url=link.href,
             sha256=sha256,
@@ -303,6 +307,7 @@ class SiteScraper:
         pause(0.5, 1)
 
         if rejected_reason:
+            scraped_file.save()
             return FileResult(False, scraped_file=scraped_file)
         logger.info("Downloaded file from %s", self.source)
         self.pv_hashes.add(sha256)

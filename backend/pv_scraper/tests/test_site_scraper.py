@@ -101,6 +101,27 @@ def test_pv_links_of_any_election_are_downloaded_for_classification():
 
 
 @pytest.mark.django_db
+def test_file_whose_hand_off_failed_is_downloaded_again():
+    source = ScrapeSourceFactory(website=WEBSITE)
+    url = "https://www.gm0001.nl/media/pv-stembureau-1.pdf"
+    crawler = FakeCrawler({WEBSITE: page(WEBSITE, Link(url, "Proces-verbaal stembureau 1"))}, {url: PDF})
+
+    # Whoever takes the file fails on it, and so never asks for the next one.
+    run = SiteScraper(source, crawler).run()
+    next(run)
+    run.close()
+
+    assert not ScrapedFile.objects.filter(source=source).exists()
+    source.refresh_from_db()
+    assert source.last_run_status == ScrapeStatus.ERROR
+
+    _, files = scrape_files(source, crawler)
+
+    assert [file.content.getvalue() for file in files] == [PDF]
+    assert ScrapedFile.objects.filter(source=source).count() == 1
+
+
+@pytest.mark.django_db
 def test_link_is_a_file_when_its_response_is_not_a_page():
     source = ScrapeSourceFactory(website=WEBSITE)
     url = "https://www.gm0001.nl/dsresource?objectid=1&type=pdf"

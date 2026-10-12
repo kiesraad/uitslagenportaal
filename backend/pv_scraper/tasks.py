@@ -1,4 +1,5 @@
 import logging
+from contextlib import closing
 from datetime import timedelta
 
 from botocore.exceptions import ConnectionError as S3ConnectionError
@@ -14,7 +15,7 @@ from django.utils import timezone
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from eml_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
 from mainsite.celery import app
-from pv_scraper.models import ScrapedFile, ScrapeSource, ScrapeStatus
+from pv_scraper.models import ScrapeSource, ScrapeStatus
 from pv_scraper.utils.pv_classifier import STORAGE_ENTRY, PvClassificationException, PvClassifier
 
 logger = logging.getLogger(__name__)
@@ -90,10 +91,11 @@ def run_scrape_for_source(source_id: int):
     source.save(update_fields=["last_run_started_at", "last_run_status", "updated_at"])
 
     try:
-        with SiteCrawler(source.cookie_banner_label) as crawler:
-            for file in SiteScraper(source, crawler).run():
+        # Closing the scrape saves its state before the failure of a hand-off is handled below.
+        with SiteCrawler(source.cookie_banner_label) as crawler, closing(SiteScraper(source, crawler).run()) as files:
+            for file in files:
                 key = storage.save(f"{CLASSIFICATION_QUEUE_FOLDER}/{source.code}_{file.content.name}", file.content)
-                classify_scraped_file.apply_async((file.scraped_file.pk, key, file.content.name), queue=SCRAPER_QUEUE)
+                classify_scraped_file.apply_async((source.pk, key, file.content.name), queue=SCRAPER_QUEUE)
     except Exception:
         # A failure outside the scrape itself, such as the browser not starting, still ends the run.
         if source.last_run_status == ScrapeStatus.RUNNING:
@@ -108,15 +110,15 @@ def run_scrape_for_source(source_id: int):
     retry_backoff=5,
     max_retries=2,
 )
-def classify_scraped_file(scraped_file_id: int, key: str, file_name: str) -> None:
+def classify_scraped_file(source_id: int, key: str, file_name: str) -> None:
     """
-    Classify a scraped file stored under a key and store it under pvs/ when its model is certain.
+    Classify a scraped file stored under a key and store it for the PV import when its model is certain.
 
     The file name is the one it was published under, which storage may have suffixed in the key; the classifier reads
     the election and stembureau from it.
     """
     storage = storages[STORAGE_ENTRY]
-    source = ScrapedFile.objects.select_related("source").get(pk=scraped_file_id).source
+    source = ScrapeSource.objects.get(pk=source_id)
     with storage.open(key) as stored:
         content = NamedBytesIO(stored.read(), file_name)
 

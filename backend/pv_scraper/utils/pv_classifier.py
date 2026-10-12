@@ -49,7 +49,6 @@ MODELS = {
     "Na 31-2 Bijlage 2": "gemeentelijk stembureau, bezwaren van aanwezigen op stembureaus",
     "O 7": "hoofdstembureau",
     "P 1f-1": "corrigendum hoofdstembureau",
-    "P 2a": "nieuwe zitting gemeentelijk stembureau, gecorrigeerde telresultaten",
     "P 22-1": "centraal stembureau, uitslag TK, EP en PS met meer dan één kieskring",
     "P 22-2": "centraal stembureau, uitslag en zetelverdeling",
 }
@@ -74,9 +73,6 @@ TITLES = [
     ("Proces-verbaal van een hoofdstembureau", "O 7"),
     ("Corrigendum bij het proces-verbaal van een hoofdstembureau", "P 1f-1"),
     ("Gecorrigeerde telresultaten per lijst en kandidaat", "P 1f-1"),
-    ("Verslag en gecorrigeerde telresultaten", "P 2a"),
-    # Longer than the title above, so it wins where that one is found inside it.
-    ("Verslag en gecorrigeerde telresultaten per lijst en kandidaat", "P 2a"),
     ("Proces-verbaal van het centraal stembureau met de uitslag van de verkiezing", "P 22-1"),
     ("Verslag, uitslag en zetelverdeling", "P 22-1"),
     ("Verslag, uitslag en zetelverdeling", "P 22-2"),
@@ -155,7 +151,25 @@ GEMEENTE_HEADER_RE = re.compile(
     r"(?:(?:Centraal|Gemeentelijk)[ \t]+[Ss]|S)tembureau\b",
     re.MULTILINE,
 )
-STEMBUREAU_RE = re.compile(r"(?i:stembureau(?:nummer)?|nummer\s*stembureau)[-:\s]*(?i:nr\.?|nummer)?[:\s]*(\d{1,4})\b")
+MONTHS = [
+    "januari",
+    "februari",
+    "maart",
+    "april",
+    "mei",
+    "juni",
+    "juli",
+    "augustus",
+    "september",
+    "oktober",
+    "november",
+    "december",
+]
+# A number with a month after it is the day of a date: "stembureau\n18 maart 2026", "Uitslag_18_maart_2026_SB3".
+NOT_A_DAY = rf"(?![-_\s]*(?i:(?:{'|'.join(MONTHS)})(?![a-z])))"
+STEMBUREAU_RE = re.compile(
+    r"(?i:stembureau(?:nummer)?|nummer\s*stembureau)[-:\s]*(?i:nr\.?|nummer)?[:\s]*(\d{1,4})\b" + NOT_A_DAY
+)
 # A hoofdstembureau's PV names its kieskring by number and name ("Kieskring 1 Arnhem", "Kieskring 12 ('s-Gravenhage)")
 # or by name only ("Kieskring 's-Gravenhage"). OSV forms follow it with an arrow: "Kieskring 2 → Gemeente 0268". A name
 # only counts on the same line, ending there or at an arrow, so prose after "kieskring" is no name.
@@ -174,9 +188,10 @@ CSB_MODELS = {"P 22-1", "P 22-2"}
 KIESKRING_MODELS = {"O 7", "P 1f-1"}
 # A stembureau in a file name: the common "<gemeente>_<nummer>_<locatie>_GR26" ("Brunssum_10_…") first, as the location
 # may itself contain "stembureau 1"; else "stembureau_7_…", "sb35_1", "1680_Bijlagen 1 en 2_Stembureau_22_…". Other
-# numbers, such as dates or a leading gemeente code, are left alone, and stembureaus are numbered from 1.
-STEMBUREAU_CONVENTION_RE = re.compile(r"^(?!(?i:bijlage|model|pv)_)[A-Za-z][^_\d]*_+0*([1-9]\d{0,3})_")
-STEMBUREAU_NAME_RE = re.compile(r"(?i)(?<![a-z])(?:stembureau|sb)[-_ ]*0*([1-9]\d{0,3})(?!\d)")
+# numbers are left alone: a date, a leading gemeente code, a year ("GR_2026_…", so at most three digits) and a model
+# ("I_4_…", so a name of at least three characters). Stembureaus are numbered from 1.
+STEMBUREAU_CONVENTION_RE = re.compile(r"^(?!(?i:bijlage|model|pv)_)[A-Za-z][^_\d]{2,}_+0*([1-9]\d{0,2})_" + NOT_A_DAY)
+STEMBUREAU_NAME_RE = re.compile(r"(?i)(?<![a-z])(?:stembureau|sb)[-_ ]*0*([1-9]\d{0,2})(?!\d)" + NOT_A_DAY)
 # The heading that starts a stembureau's section in a Na 31-2 bijlage 1: "Stembureau 12" on a line of its own, with the
 # stembureau's name on the next. The running header at the top of the page is no heading.
 SECTION_STEMBUREAU_RE = re.compile(
@@ -215,20 +230,6 @@ def election_code(abbreviation: str, year: str) -> str:
 # splits words and misreads letters there ("Gemeentera ad", "ma art", "maarl2o26"), so the date is read with the
 # spaces removed and a month of five letters or more may have one misread letter after its first. A shorter month
 # would match too much that way: "mei" matches the "men" of "Emmen2026".
-MONTHS = [
-    "januari",
-    "februari",
-    "maart",
-    "april",
-    "mei",
-    "juni",
-    "juli",
-    "augustus",
-    "september",
-    "oktober",
-    "november",
-    "december",
-]
 MONTH_PATTERNS = [f"{m[0]}(?:{m[1:]}){{e<=1}}" if len(m) >= 5 else m for m in MONTHS]
 HEADER_DATE_RE = regex.compile(
     rf"(?e)(?P<day>[0-3]?\d)?(?:{'|'.join(f'(?P<m{i}>{m})' for i, m in enumerate(MONTH_PATTERNS))})"

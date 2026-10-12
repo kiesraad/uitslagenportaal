@@ -193,6 +193,7 @@ def test_identify_model_keeps_what_ocr_found():
         ),
         ("verslag van het gemeentelijk\nstembureau.", {}),
         ("Details van het stembureau\nStembureau 32", {"stembureau": "32"}),
+        ("Proces-verbaal van een stembureau\n18 maart 2026\nStembureau 5", {"stembureau": "5"}),
         ("1659 Laarbeek", {}),
         ("5741 AB Beek en Donk", {}),
         ("73E9 F1DD A095\n3372 3063 B838 CF21", {}),
@@ -458,6 +459,14 @@ def test_uncompact(line, index, expected):
         ("Hoorn_24_MFA De Kreek stembureau 1 GR26", "24"),
         # Stembureaus are numbered from 1.
         ("gr2026_18032026_n10-2_23._mobiel_stembureau_0", ""),
+        # A year, a model number and the day of a date are no stembureau.
+        ("GR_2026_Centraal_Stembureau_PV_P22-2", ""),
+        ("GR_2026_stembureau_7", "7"),
+        ("Proces-verbaal-van-een-gemeentelijk-stembureau-2025", ""),
+        ("I_4_zonder_handtekeningen", ""),
+        ("pv_gemeentelijk_stembureau_19_maart_2026", ""),
+        ("Uitslag_18_maart_2026_SB3", "3"),
+        ("Heiloo_14_Jan_van_Rijckenborghschool_GR26", "14"),
     ],
 )
 def test_find_stembureau_in_name(stem, expected):

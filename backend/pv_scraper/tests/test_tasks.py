@@ -95,7 +95,7 @@ def test_scrape_stores_each_file_and_queues_its_classification(apply_async, *_):
 
     assert apply_async.call_args_list == [
         call(
-            (file.scraped_file.pk, f"classification_queue/gm0228_{file.content.name}", file.content.name),
+            (source.pk, f"classification_queue/gm0228_{file.content.name}", file.content.name),
             queue="scraper",
         )
         for file in files
@@ -105,11 +105,27 @@ def test_scrape_stores_each_file_and_queues_its_classification(apply_async, *_):
     assert source.last_run_status != ScrapeStatus.ERROR
 
 
+@pytest.mark.django_db
+@patch("pv_scraper.utils.site_crawler.SiteCrawler.__exit__", return_value=False)
+@patch("pv_scraper.utils.site_crawler.SiteCrawler.__enter__", return_value=MagicMock())
+@patch.object(tasks.classify_scraped_file, "apply_async", side_effect=RuntimeError("no broker"))
+def test_scrape_whose_hand_off_fails_ends_in_error(*_):
+    source = ScrapeSourceFactory(code="gm0228")
+    file = FileResult(True, NamedBytesIO(b"%PDF", "pv.pdf"), ScrapedFileFactory(source=source))
+
+    with patch.object(SiteScraper, "crawl", return_value=iter([file])), pytest.raises(RuntimeError):
+        run_scrape_for_source(source.id)
+
+    source.refresh_from_db()
+    assert source.last_run_status == ScrapeStatus.ERROR
+    assert source.last_run_finished_at is not None
+
+
 @pytest.fixture
 def stored_file():
-    scraped_file = ScrapedFileFactory()
+    source = ScrapeSourceFactory()
     key = storages[STORAGE_ENTRY].save("classification_queue/gm0228_pv_suffix.pdf", ContentFile(b"%PDF"))
-    return scraped_file, key
+    return source, key
 
 
 @pytest.mark.django_db
@@ -118,31 +134,31 @@ def stored_file():
     [(ResultMatch.CODE_TITLE, True), (ResultMatch.CODE, False)],
 )
 def test_classify_scraped_file_stores_only_a_certain_pv(stored_file, matched_on, saved):
-    scraped_file, key = stored_file
+    source, key = stored_file
     with (
         patch.object(PvClassifier, "classify", return_value=ClassificationResult("N 10-2", matched_on)),
         patch.object(PvClassifier, "save_to_storage", autospec=True) as save_to_storage,
     ):
-        classify_scraped_file(scraped_file.pk, key, "pv.pdf")
+        classify_scraped_file(source.pk, key, "pv.pdf")
 
     assert save_to_storage.called == saved
     if saved:
-        classifier, source, folder = save_to_storage.call_args.args
+        classifier, saved_for, folder = save_to_storage.call_args.args
         assert (classifier.file.name, classifier.file.getvalue()) == ("pv.pdf", b"%PDF")
-        assert (source, folder) == (scraped_file.source, DEFAULT_PV_DIRECTORY)
+        assert (saved_for, folder) == (source, DEFAULT_PV_DIRECTORY)
     # Classified or discarded, the file has left the classification queue.
     assert not storages[STORAGE_ENTRY].exists(key)
 
 
 @pytest.mark.django_db
 def test_classify_scraped_file_logs_a_pv_it_cannot_store(stored_file, caplog):
-    scraped_file, key = stored_file
+    source, key = stored_file
     with (
         caplog.at_level(logging.INFO, logger="pv_scraper.tasks"),
         patch.object(PvClassifier, "classify", return_value=ClassificationResult("N 10-2", ResultMatch.CODE_TITLE)),
         patch.object(PvClassifier, "save_to_storage", side_effect=PvClassificationException("region not known")),
     ):
-        classify_scraped_file(scraped_file.pk, key, "pv.pdf")
+        classify_scraped_file(source.pk, key, "pv.pdf")
 
     assert "region not known" in caplog.text
     assert storages[STORAGE_ENTRY].exists(key)
