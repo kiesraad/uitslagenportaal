@@ -61,7 +61,8 @@ That's why the values-files are not part of the chart.
    kubectl create namespace monitoring
    helm upgrade --install monitoring monitoring -n monitoring --wait --timeout 15m
    ```
-   For local deploys, skip the Loki secret and add `-f monitoring/values-local.yaml`.
+   For local deploys, skip the Loki secret and add `-f monitoring/values-local.yaml`. The chart refuses that file
+   on a Scaleway cluster, where it would move Loki's logs off object storage.
 
 4. Install Traefik as an ingress controller and Gateway API implementation:
    ```bash

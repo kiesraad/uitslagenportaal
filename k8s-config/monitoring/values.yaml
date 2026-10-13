@@ -6,6 +6,9 @@
 # fullnameOverrides below fix the names, because monitoring-proxy, the Loki data source
 # and Alloy's push URL all address services by name.
 
+# Set by values-local.yaml only; templates/local-values-guard.yaml refuses it on Scaleway.
+localCluster: false
+
 kube-prometheus-stack:
   # Prometheus, Alertmanager, Grafana, node-exporter and kube-state-metrics.
   #
