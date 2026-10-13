@@ -2,32 +2,12 @@ import { useLingui } from "@lingui/react/macro";
 import type { ElectionConfig } from "@/api/types";
 import SharedTabs from "@/components/SharedTabs.tsx";
 import { getRegionLabels } from "@/utils/region.ts";
+import { getSingleCsbTab } from "@/utils/election.ts";
 import { appRoutes } from "@/utils/routes.ts";
-import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
-import type { ElectionCategory } from "../api/types";
-
 
 type Props = {
    electionConfig: Pick<ElectionConfig, "slug" | "category" | "csb_type" | "has_hsb">;
 };
-
-
-export type SingleCsbTab = {
-   label: MessageDescriptor;
-   regionSlug: string;
-};
-
-// TK and EP always have one CSB; the tab uses that name and skips the list.
-const SINGLE_CSB_TABS: Partial<Record<ElectionCategory, SingleCsbTab>> = (() => ({
-   TK: { label: msg`Nederland`, regionSlug: "nederland" },
-   EP: { label: msg`Europees Parlement`, regionSlug: "nederland" },
-}))();
-
-export function getSingleCsbTab(category: ElectionCategory): SingleCsbTab | undefined {
-   return SINGLE_CSB_TABS[category];
-}
-
 
 export default function ElectionConfigTabs({ electionConfig }: Props) {
    const { t } = useLingui();
