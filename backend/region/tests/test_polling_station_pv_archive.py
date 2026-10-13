@@ -43,8 +43,10 @@ def _pdf(region, file_type, body, size):
 
 def _detail(municipality, params=None):
     slug = municipality.election.election_config.slug
-    request = factory.get(f"/api/{slug}/regions/{municipality.slug}", {"level": "gsb", **(params or {})})
-    return RegionDetailView.as_view()(request, election_config=slug, region=municipality.slug)
+    request = factory.get(
+        f"/api/{slug}/regions/detail", {"level": "gsb", "region_slug": municipality.slug, **(params or {})}
+    )
+    return RegionDetailView.as_view()(request, election_config=slug)
 
 
 def _download(municipality, params=None):
