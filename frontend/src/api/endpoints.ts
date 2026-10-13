@@ -58,7 +58,7 @@ export function getRegion(
    }
 
    const url = new URL(`/api/${electionConfigSlug}/regions/detail`, window.location.origin);
-   
+
    url.searchParams.append("level", level);
    if (csbSlug) {
       url.searchParams.append("csb", csbSlug);

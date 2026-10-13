@@ -5,12 +5,11 @@ import ElectionConfigTabs from "@/components/ElectionConfigTabs.tsx";
 import { LayoutMain } from "@/components/LayoutMain.tsx";
 import { RegionList } from "@/components/ListPage/RegionList.tsx";
 import PageTop from "@/components/PageTop.tsx";
-import { electionConfigQuery, regionsQuery, regionQuery } from "@/hooks/queries.ts";
-import { useFormatters } from "@/utils/format.ts";
 import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
+import { electionConfigQuery, regionQuery, regionsQuery } from "@/hooks/queries.ts";
 import { getSingleCsbTab } from "@/utils/election.ts";
+import { useFormatters } from "@/utils/format.ts";
 import type { ElectionConfig } from "../../api/types";
-
 
 export function electionConfigCSBListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
@@ -18,7 +17,7 @@ export function electionConfigCSBListLoader(queryClient: QueryClient) {
       const electionConfig = await queryClient.query(electionConfigQueryOptions);
 
       const regionsQueryOptions = regionsQuery(params, electionConfig?.csb_type);
-      const singleCSB = getSingleCsbTab(electionConfig.category) 
+      const singleCSB = getSingleCsbTab(electionConfig.category);
 
       const regionQueryOptions = singleCSB
          ? regionQuery({ ...params, regionSlug: singleCSB.regionSlug }, "csb")
@@ -27,7 +26,6 @@ export function electionConfigCSBListLoader(queryClient: QueryClient) {
       if (regionQueryOptions) {
          await queryClient.query(regionQueryOptions);
       }
-      
 
       return {
          electionConfigQuery: electionConfigQueryOptions,
@@ -50,8 +48,6 @@ function SingleCsbResults({ electionConfig, regionQuery }: SingleCsbResultsProps
    return <CSBResultsComponent electionConfig={electionConfig} region={csbRegion} />;
 }
 
-
-
 export function ElectionConfigCSBListPage() {
    const { electionConfigQuery, regionsQuery, regionQuery } = useLoaderData<LoaderData>();
    const { t } = useLingui();
@@ -60,9 +56,8 @@ export function ElectionConfigCSBListPage() {
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
    const { data: regions } = useSuspenseQuery(regionsQuery);
 
-   const singleCSB = getSingleCsbTab(electionConfig.category) 
-   console.log('singleCSB ', singleCSB)
-
+   const singleCSB = getSingleCsbTab(electionConfig.category);
+   console.log("singleCSB ", singleCSB);
 
    const electionLabel = electionConfig.label;
    const electionDay = electionConfig.date ? formatElectionDate(electionConfig.date) : "";

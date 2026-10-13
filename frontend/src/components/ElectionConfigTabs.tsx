@@ -1,8 +1,8 @@
 import { useLingui } from "@lingui/react/macro";
 import type { ElectionConfig } from "@/api/types";
 import SharedTabs from "@/components/SharedTabs.tsx";
-import { getRegionLabels } from "@/utils/region.ts";
 import { getSingleCsbTab } from "@/utils/election.ts";
+import { getRegionLabels } from "@/utils/region.ts";
 import { appRoutes } from "@/utils/routes.ts";
 
 type Props = {

@@ -40,7 +40,9 @@ describe("ElectionConfigTabs", () => {
 
    it("names the CSB tab Nederland and links to its results for a Tweede Kamer election", () => {
       renderWithProviders(
-         <ElectionConfigTabs electionConfig={{ ...electionConfig, slug: "tk2025", category: "TK", csb_type: "STAAT" }} />,
+         <ElectionConfigTabs
+            electionConfig={{ ...electionConfig, slug: "tk2025", category: "TK", csb_type: "STAAT" }}
+         />,
          { initialEntries: ["/tk2025/gsb"] },
       );
 
@@ -52,7 +54,9 @@ describe("ElectionConfigTabs", () => {
 
    it("names the CSB tab Europees Parlement for a European Parliament election", () => {
       renderWithProviders(
-         <ElectionConfigTabs electionConfig={{ ...electionConfig, slug: "ep2024", category: "EP", csb_type: "STAAT" }} />,
+         <ElectionConfigTabs
+            electionConfig={{ ...electionConfig, slug: "ep2024", category: "EP", csb_type: "STAAT" }}
+         />,
          { initialEntries: ["/ep2024/gsb"] },
       );
 

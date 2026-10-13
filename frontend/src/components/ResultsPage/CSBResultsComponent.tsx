@@ -24,8 +24,8 @@ export function CSBResultsComponent({ electionConfig, region }: Props) {
             intro={
                <Trans>
                   Het hoofdstembureau heeft de telresultaten van alle gemeentes in {region.region_name} gecontroleerd,
-                  overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in
-                  het proces-verbaal van het hoofdstembureau.
+                  overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het
+                  proces-verbaal van het hoofdstembureau.
                </Trans>
             }
             voteCounts={region.vote_counts}

@@ -1,6 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent.tsx";
@@ -10,8 +11,6 @@ import { electionConfigQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
-import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
-
 
 export function csbResultsLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
