@@ -45,9 +45,6 @@ export function CSBResultsPage() {
    const regionName = region.region_name;
    // No publication date until the region's results have been imported; the line is then omitted.
    const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
-   // "de gemeente" / "het waterschap": article and noun as one translated
-   // phrase, because which article a noun takes is language-specific.
-   const regionWithArticle = t(regionLabels.withArticle);
 
    return (
       <LayoutMain title={t`Telresultaten ${regionType} ${regionName}`}>
@@ -79,11 +76,7 @@ export function CSBResultsPage() {
                />
             }
          />
-         <CSBResultsComponent
-            electionConfig={electionConfig}
-            region={region}
-            regionWithArticle={regionWithArticle}
-         />
+         <CSBResultsComponent electionConfig={electionConfig} region={region} />
       </LayoutMain>
    );
 }

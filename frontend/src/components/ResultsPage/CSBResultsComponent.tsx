@@ -1,16 +1,19 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ElectionConfig, Region } from "../../api/types";
+import { getRegionLabels } from "../../utils/region.ts";
 import RegionResultsContent from "./RegionResultsContent.tsx";
 import ResultsPageColumns from "./ResultsPageColumns.tsx";
 
 type Props = {
    electionConfig: ElectionConfig;
    region: Region;
-   regionWithArticle: string;
 };
 
-export function CSBResultsComponent({ electionConfig, region, regionWithArticle }: Props) {
+export function CSBResultsComponent({ electionConfig, region }: Props) {
    const { t } = useLingui();
+   // "de gemeente" / "het waterschap": article and noun as one translated
+   // phrase, because which article a noun takes is language-specific.
+   const regionWithArticle = t(getRegionLabels(electionConfig.csb_type).withArticle);
 
    return (
       <ResultsPageColumns

@@ -8,7 +8,6 @@ import PageTop from "@/components/PageTop.tsx";
 import { electionConfigQuery, regionsQuery, regionQuery } from "@/hooks/queries.ts";
 import { useFormatters } from "@/utils/format.ts";
 import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
-import { getRegionLabels } from "../../utils/region.ts";
 import { getSingleCsbTab } from "@/utils/election.ts";
 import type { ElectionConfig } from "../../api/types";
 
@@ -43,19 +42,12 @@ type LoaderData = Awaited<ReturnType<ReturnType<typeof electionConfigCSBListLoad
 type SingleCsbResultsProps = {
    electionConfig: ElectionConfig;
    regionQuery: NonNullable<LoaderData["regionQuery"]>;
-   regionWithArticle: string;
 };
 
-function SingleCsbResults({ electionConfig, regionQuery, regionWithArticle }: SingleCsbResultsProps) {
+function SingleCsbResults({ electionConfig, regionQuery }: SingleCsbResultsProps) {
    const { data: csbRegion } = useSuspenseQuery(regionQuery);
 
-   return (
-      <CSBResultsComponent
-         electionConfig={electionConfig}
-         region={csbRegion}
-         regionWithArticle={regionWithArticle}
-      />
-   );
+   return <CSBResultsComponent electionConfig={electionConfig} region={csbRegion} />;
 }
 
 
@@ -72,9 +64,6 @@ export function ElectionConfigCSBListPage() {
    console.log('singleCSB ', singleCSB)
 
 
-   const regionLabels = getRegionLabels(electionConfig.csb_type);
-   const regionWithArticle = t(regionLabels.withArticle);
-   
    const electionLabel = electionConfig.label;
    const electionDay = electionConfig.date ? formatElectionDate(electionConfig.date) : "";
 
@@ -95,11 +84,7 @@ export function ElectionConfigCSBListPage() {
             tabs={<ElectionConfigTabs electionConfig={electionConfig} />}
          />
          {regionQuery ? (
-            <SingleCsbResults
-               electionConfig={electionConfig}
-               regionQuery={regionQuery}
-               regionWithArticle={regionWithArticle}
-            />
+            <SingleCsbResults electionConfig={electionConfig} regionQuery={regionQuery} />
          ) : (
             <RegionList
                electionConfig={electionConfig}
