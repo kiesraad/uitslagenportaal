@@ -65,6 +65,10 @@ PS_ELECTION_ID = "PS2023_Limburg"
 PS_CONFIG_IDENTIFIER = "PS2023"
 PS_ELECTION_NAME = "Provinciale Staten Limburg 2023"
 
+TK_ELECTION_ID = "TK2025"
+TK_CONFIG_IDENTIFIER = "TK2025"
+TK_ELECTION_NAME = "Tweede Kamer der Staten-Generaal 2025"
+
 TotalVotes = Count.Election.Contests.Contest.TotalVotes
 
 
@@ -223,6 +227,20 @@ def make_ps_510d_eml(*, contests):
         category=ElectionCategoryType.PS,
         subcategory=ElectionSubcategoryType.PS2,
         domain=ElectionDomain(value="Limburg"),
+    )
+
+
+def make_tk_510d_eml(*, contests):
+    """A Totaaltelling published by the Kiesraad; TK has no election domain."""
+    return make_eml(
+        eml_id="510d",
+        authority_id="CSB",
+        authority_name="De Kiesraad",
+        contests=contests,
+        election_id=TK_ELECTION_ID,
+        election_name=TK_ELECTION_NAME,
+        category=ElectionCategoryType.TK,
+        subcategory=ElectionSubcategoryType.TK,
     )
 
 
@@ -1138,3 +1156,73 @@ def test_510c_stores_document_on_the_kieskring(ps_maastricht_gemeenten, ps_regio
 
     doc = ElectionDocument.objects.get()
     assert doc.region == ps_regions["Maastricht"]
+
+
+@pytest.fixture
+def tk_election(db):
+    config = ElectionConfigFactory(identifier=TK_CONFIG_IDENTIFIER, category=ElectionCategory.TK.value)
+    return ElectionFactory(
+        election_config=config,
+        name=TK_ELECTION_NAME,
+        subcategory="TK",
+        date=ELECTION_DATE,
+    )
+
+
+@pytest.fixture
+def tk_regions(tk_election):
+    """staat -> two kieskringen, so the Totaaltelling breaks down per kieskring."""
+    staat = RegionFactory(
+        election=tk_election,
+        region_category=RegionCategory.STAAT,
+        region_number=None,
+        region_name="Nederland",
+    )
+    kieskringen = {
+        name: RegionFactory(
+            election=tk_election,
+            parent=staat,
+            csb=staat,
+            region_category=RegionCategory.KIESKRING,
+            region_number=str(number),
+            region_name=name,
+        )
+        for number, name in enumerate(("Amsterdam", "Rotterdam"), start=9)
+    }
+    return {"staat": staat, **kieskringen}
+
+
+def test_510d_resolves_staat_csb_without_election_domain(tk_regions, tk_election):
+    """TK (and EP) CSB totaaltellingen have no kr:ElectionDomain; the CSB is Nederland."""
+    PartyFactory(election=tk_election, list_number=1, registered_name="CDA")
+    ContestFactory(election=tk_election, identifier="alle")
+    ContestFactory(election=tk_election, identifier="9", name="Amsterdam")
+    ContestFactory(election=tk_election, identifier="13", name="Rotterdam")
+
+    units = [
+        make_reporting_unit(
+            "HSB9",
+            "Kieskring Amsterdam",
+            [party_selection(ReportingUnitVotes.Selection, 1, "CDA", 100)],
+        ),
+        make_reporting_unit(
+            "HSB13",
+            "Kieskring Rotterdam",
+            [party_selection(ReportingUnitVotes.Selection, 1, "CDA", 150)],
+        ),
+    ]
+    totals = make_total_votes([party_selection(TotalVotes.Selection, 1, "CDA", 250)])
+    EML510dImporter(
+        fake_eml_file(), eml=make_tk_510d_eml(contests=[make_contest("alle", total_votes=totals, units=units)])
+    ).parse()
+
+    staat = tk_regions["staat"]
+    staat.refresh_from_db()
+    rows = VoteCount.objects.filter(result_level=VoteCount.RESULT_LEVEL_PARTY).order_by("valid_votes")
+
+    assert staat.results_available_at == timezone.make_aware(CREATION_DATE_TIME)
+    assert [(row.region, row.valid_votes) for row in rows] == [
+        (tk_regions["Amsterdam"], 100),
+        (tk_regions["Rotterdam"], 150),
+        (staat, 250),
+    ]
