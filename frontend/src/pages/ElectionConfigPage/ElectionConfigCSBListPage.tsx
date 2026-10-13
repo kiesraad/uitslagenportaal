@@ -11,26 +11,30 @@ import { getSingleCsbTab } from "@/utils/election.ts";
 import { useFormatters } from "@/utils/format.ts";
 import type { ElectionConfig } from "../../api/types";
 
+
 export function electionConfigCSBListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
       const electionConfig = await queryClient.query(electionConfigQueryOptions);
 
-      const regionsQueryOptions = regionsQuery(params, electionConfig?.csb_type);
       const singleCSB = getSingleCsbTab(electionConfig.category);
 
-      const regionQueryOptions = singleCSB
-         ? regionQuery({ ...params, regionSlug: singleCSB.regionSlug }, "csb")
-         : undefined;
-      await queryClient.query(regionsQueryOptions);
-      if (regionQueryOptions) {
+      if (singleCSB) {
+         const regionQueryOptions = regionQuery({ ...params, regionSlug: singleCSB.regionSlug }, "csb");
          await queryClient.query(regionQueryOptions);
+         return {
+            electionConfigQuery: electionConfigQueryOptions,
+            regionsQuery: undefined,
+            regionQuery: regionQueryOptions,
+         };
       }
 
+      const regionsQueryOptions = regionsQuery(params, electionConfig.csb_type);
+      await queryClient.query(regionsQueryOptions);
       return {
          electionConfigQuery: electionConfigQueryOptions,
          regionsQuery: regionsQueryOptions,
-         regionQuery: regionQueryOptions,
+         regionQuery: undefined,
       };
    };
 }
@@ -44,20 +48,32 @@ type SingleCsbResultsProps = {
 
 function SingleCsbResults({ electionConfig, regionQuery }: SingleCsbResultsProps) {
    const { data: csbRegion } = useSuspenseQuery(regionQuery);
-
    return <CSBResultsComponent electionConfig={electionConfig} region={csbRegion} />;
+}
+
+type CsbRegionListProps = {
+   electionConfig: ElectionConfig;
+   regionsQuery: NonNullable<LoaderData["regionsQuery"]>;
+};
+
+function CsbRegionList({ electionConfig, regionsQuery }: CsbRegionListProps) {
+   const { data: regions } = useSuspenseQuery(regionsQuery);
+
+   return (
+      <RegionList
+         electionConfig={electionConfig}
+         regions={regions}
+         regionCategory={electionConfig.csb_type}
+         emptyPlaceholder
+      />
+   );
 }
 
 export function ElectionConfigCSBListPage() {
    const { electionConfigQuery, regionsQuery, regionQuery } = useLoaderData<LoaderData>();
    const { t } = useLingui();
    const { formatElectionDate } = useFormatters();
-   // The loader has already resolved both queries, so the data is never pending here.
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
-   const { data: regions } = useSuspenseQuery(regionsQuery);
-
-   const singleCSB = getSingleCsbTab(electionConfig.category);
-   console.log("singleCSB ", singleCSB);
 
    const electionLabel = electionConfig.label;
    const electionDay = electionConfig.date ? formatElectionDate(electionConfig.date) : "";
@@ -78,16 +94,8 @@ export function ElectionConfigCSBListPage() {
             ]}
             tabs={<ElectionConfigTabs electionConfig={electionConfig} />}
          />
-         {regionQuery ? (
-            <SingleCsbResults electionConfig={electionConfig} regionQuery={regionQuery} />
-         ) : (
-            <RegionList
-               electionConfig={electionConfig}
-               regions={regions}
-               regionCategory={electionConfig.csb_type}
-               emptyPlaceholder
-            />
-         )}
+         {regionQuery && <SingleCsbResults electionConfig={electionConfig} regionQuery={regionQuery} />}
+         {regionsQuery && <CsbRegionList electionConfig={electionConfig} regionsQuery={regionsQuery} />}
       </LayoutMain>
    );
 }
