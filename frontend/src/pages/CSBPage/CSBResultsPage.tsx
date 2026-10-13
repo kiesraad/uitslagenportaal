@@ -10,6 +10,8 @@ import { electionConfigQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
+import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
+
 
 export function csbResultsLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
@@ -77,31 +79,12 @@ export function CSBResultsPage() {
                />
             }
          />
-         <ResultsPageColumns
-            previewUrl={region.certified_document_preview_url}
-            documentUrl={region.certified_document_url}
-         >
-            <RegionResultsContent
-               intro={
-                  <Trans>
-                     Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd,
-                     overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in
-                     het proces-verbaal van het hoofdstembureau.
-                  </Trans>
-               }
-               voteCounts={region.vote_counts}
-               turnoutVotes={region.voter_turnout_counts}
-               reports={{
-                  description: t`Onderstaande documenten bevatten de laatste telresultaten van ${regionWithArticle}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`,
-                  documents: region.documents,
-               }}
-               timelineVariant={region.timeline_variant}
-               timelineEntries={electionConfig.timeline_entries ?? []}
-               issueReportDeadline={electionConfig.issue_report_deadline}
-               notPublishedRegionName={region.region_name}
-               notPublishedRegionCategory={region.region_category}
-            />
-         </ResultsPageColumns>
+         <CSBResultsComponent
+            electionConfig={electionConfig}
+            region={region}
+            regionName={region.region_name}
+            regionWithArticle={regionWithArticle}
+         />
       </LayoutMain>
    );
 }
