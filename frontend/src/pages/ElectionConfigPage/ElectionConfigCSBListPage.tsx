@@ -5,8 +5,34 @@ import ElectionConfigTabs from "@/components/ElectionConfigTabs.tsx";
 import { LayoutMain } from "@/components/LayoutMain.tsx";
 import { RegionList } from "@/components/ListPage/RegionList.tsx";
 import PageTop from "@/components/PageTop.tsx";
-import { electionConfigQuery, regionsQuery } from "@/hooks/queries.ts";
+import { electionConfigQuery, regionsQuery, regionQuery } from "@/hooks/queries.ts";
 import { useFormatters } from "@/utils/format.ts";
+import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
+import { getRegionLabels } from "../../utils/region.ts";
+
+
+
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import type { ElectionCategory, ElectionConfig } from "../../api/types";
+
+
+export type SingleCsbTab = {
+   label: MessageDescriptor;
+   regionSlug: string;
+};
+
+// TK and EP always have one CSB; the tab uses that name and skips the list.
+const SINGLE_CSB_TABS: Partial<Record<ElectionCategory, SingleCsbTab>> = (() => ({
+   TK: { label: msg`Nederland`, regionSlug: "nederland" },
+   EP: { label: msg`Europees Parlement`, regionSlug: "nederland" },
+}))();
+
+export function getSingleCsbTab(category: ElectionCategory): SingleCsbTab | undefined {
+   return SINGLE_CSB_TABS[category];
+}
+
+
 
 export function electionConfigCSBListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
@@ -14,25 +40,63 @@ export function electionConfigCSBListLoader(queryClient: QueryClient) {
       const electionConfig = await queryClient.query(electionConfigQueryOptions);
 
       const regionsQueryOptions = regionsQuery(params, electionConfig?.csb_type);
+      const singleCSB = getSingleCsbTab(electionConfig.category) 
+
+      const regionQueryOptions = singleCSB
+         ? regionQuery({ ...params, regionSlug: singleCSB.regionSlug }, "csb")
+         : undefined;
       await queryClient.query(regionsQueryOptions);
+      if (regionQueryOptions) {
+         await queryClient.query(regionQueryOptions);
+      }
+      
 
       return {
          electionConfigQuery: electionConfigQueryOptions,
          regionsQuery: regionsQueryOptions,
+         regionQuery: regionQueryOptions,
       };
    };
 }
 
 type LoaderData = Awaited<ReturnType<ReturnType<typeof electionConfigCSBListLoader>>>;
 
+type SingleCsbResultsProps = {
+   electionConfig: ElectionConfig;
+   regionQuery: NonNullable<LoaderData["regionQuery"]>;
+   regionWithArticle: string;
+};
+
+function SingleCsbResults({ electionConfig, regionQuery, regionWithArticle }: SingleCsbResultsProps) {
+   const { data: csbRegion } = useSuspenseQuery(regionQuery);
+
+   return (
+      <CSBResultsComponent
+         electionConfig={electionConfig}
+         region={csbRegion}
+         regionName={csbRegion.region_name}
+         regionWithArticle={regionWithArticle}
+      />
+   );
+}
+
+
+
 export function ElectionConfigCSBListPage() {
-   const { electionConfigQuery, regionsQuery } = useLoaderData<LoaderData>();
+   const { electionConfigQuery, regionsQuery, regionQuery } = useLoaderData<LoaderData>();
    const { t } = useLingui();
    const { formatElectionDate } = useFormatters();
    // The loader has already resolved both queries, so the data is never pending here.
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
    const { data: regions } = useSuspenseQuery(regionsQuery);
 
+   const singleCSB = getSingleCsbTab(electionConfig.category) 
+   console.log('singleCSB ', singleCSB)
+
+
+   const regionLabels = getRegionLabels(electionConfig.csb_type);
+   const regionWithArticle = t(regionLabels.withArticle);
+   
    const electionLabel = electionConfig.label;
    const electionDay = electionConfig.date ? formatElectionDate(electionConfig.date) : "";
 
@@ -52,12 +116,20 @@ export function ElectionConfigCSBListPage() {
             ]}
             tabs={<ElectionConfigTabs electionConfig={electionConfig} />}
          />
-         <RegionList
-            electionConfig={electionConfig}
-            regions={regions}
-            regionCategory={electionConfig.csb_type}
-            emptyPlaceholder
-         />
+         {regionQuery ? (
+            <SingleCsbResults
+               electionConfig={electionConfig}
+               regionQuery={regionQuery}
+               regionWithArticle={regionWithArticle}
+            />
+         ) : (
+            <RegionList
+               electionConfig={electionConfig}
+               regions={regions}
+               regionCategory={electionConfig.csb_type}
+               emptyPlaceholder
+            />
+         )}
       </LayoutMain>
    );
 }
