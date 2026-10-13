@@ -2,11 +2,11 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
 import { twMerge } from "tailwind-merge";
 import { tw } from "@/utils/tw.ts";
 
-const buttonClasses = tw`hover:no-underline! flex w-fit cursor-pointer flex-row items-center gap-2 rounded-xs border border-blue-500 px-4 py-3 focus-visible:outline-2 focus-visible:outline-blue-400 disabled:cursor-default disabled:opacity-75`;
+const buttonClasses = tw`flex w-fit cursor-pointer flex-row items-center gap-2 rounded-xs border border-blue-500 px-4 py-3 hover:no-underline focus-visible:outline-2 focus-visible:outline-blue-400 disabled:cursor-default disabled:opacity-75`;
 
 const variantClasses = {
-   default: tw`bg-white text-blue-500! not-disabled:hover:bg-blue-500 not-disabled:hover:text-white! disabled:bg-gray-100 disabled:text-blue-500!`,
-   inverted: tw`bg-blue-500 text-white! not-disabled:hover:bg-blue-600 disabled:bg-blue-400`,
+   default: tw`bg-white text-blue-500 not-disabled:hover:bg-blue-500 not-disabled:hover:text-white disabled:bg-gray-100 disabled:text-blue-500`,
+   inverted: tw`bg-blue-500 text-white not-disabled:hover:bg-blue-600 disabled:bg-blue-400`,
 };
 
 type ButtonVariant = keyof typeof variantClasses;

@@ -45,7 +45,7 @@ export default function ResultsTimeline({ description, variant, entries }: Props
 
    return (
       <div id="results-timeline">
-         <h2 className="result-how-title">
+         <h2 className="mb-4.5">
             <Trans>Hoe zijn de resultaten tot stand gekomen?</Trans>
          </h2>
          {resolvedDescription ? <p className={"mb-4"}>{resolvedDescription}</p> : null}

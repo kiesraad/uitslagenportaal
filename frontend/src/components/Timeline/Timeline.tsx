@@ -94,7 +94,7 @@ export function TimelineEntry({ status, title, date, body, link, files }: Timeli
             </div>
          </div>
          <div className="min-w-0 flex-1 pb-6">
-            <h3 className="mb-0.5 font-sans! text-lg! text-text leading-normal!">
+            <h3 className="mb-0.5 font-sans leading-normal">
                {title[locale]}
                <span className="sr-only">, {i18n._(STATUS_LABELS[status])}</span>
             </h3>
@@ -110,7 +110,7 @@ export function TimelineEntry({ status, title, date, body, link, files }: Timeli
             {files ? (
                <div className="mt-3 flex flex-col gap-2 text-xs">
                   {files.map((file) => (
-                     <a href={file.url} key={file.url} className="hover:no-underline! flex gap-2 bg-box-bg p-3">
+                     <a href={file.url} key={file.url} className="flex gap-2 bg-box-bg p-3 hover:no-underline">
                         <FontAwesomeIcon icon={faFile} />
                         <div className="flex flex-col">
                            <span className="mb-1 text-blue">

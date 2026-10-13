@@ -66,7 +66,7 @@ export function CSBPartyResultsPage() {
       <>
          <ResultsPageIndex />
          <section id="telresultaten" className="party-vote-matrix-section">
-            <h2 className="mb-4.5 font-medium text-lg">
+            <h2 className="mb-4.5">
                <Trans>Telresultaten lijst {listNumber}</Trans>
             </h2>
             <h3 className="party-level-title mb-2">{partyName}</h3>

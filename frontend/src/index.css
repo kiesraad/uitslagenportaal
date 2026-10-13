@@ -110,32 +110,47 @@ body {
    -webkit-font-smoothing: antialiased;
 }
 
-a {
-   color: var(--c-blue);
-   text-decoration: none;
-}
+@layer base {
+   a {
+      color: var(--c-blue);
+      text-decoration: none;
+   }
 
-a:hover {
-   text-decoration: underline;
+   a:hover {
+      text-decoration: underline;
+   }
 }
 
 /* Base heading styles (as defined in Figma) */
-h1,
-.h1 {
-   @apply font-bold text-3xl font-title;
-}
-h2,
-.h2 {
-   @apply font-bold text-2xl font-title;
-}
-h3,
-.h3 {
-   @apply font-bold text-xl font-title;
+@layer base {
+   h1 {
+      @apply font-bold text-3xl font-title;
+   }
+   h2 {
+      @apply font-bold text-2xl font-title;
+   }
+   h3 {
+      @apply font-bold text-xl font-title;
+   }
+   h4 {
+      @apply font-semibold text-base font-title;
+   }
 }
 
-h4,
-.h4 {
-   @apply font-semibold text-base font-title;
+/* Give a heading the look of another level */
+@layer components {
+   .h1 {
+      @apply font-bold text-3xl font-title;
+   }
+   .h2 {
+      @apply font-bold text-2xl font-title;
+   }
+   .h3 {
+      @apply font-bold text-xl font-title;
+   }
+   .h4 {
+      @apply font-semibold text-base font-title;
+   }
 }
 
 /* Header */
@@ -363,13 +378,6 @@ main h1:focus {
 
 .result-info-box a {
    text-decoration: underline;
-}
-
-.result-how-title {
-   font-size: 1.15rem;
-   font-weight: 700;
-   color: var(--c-text);
-   margin-bottom: 18px;
 }
 
 .result-order-hint {

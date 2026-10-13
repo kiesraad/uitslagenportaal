@@ -137,8 +137,8 @@ with NVDA (Dutch voice, automatic language switching on): Tab, `H` for headings,
 
 - **Structure.** Each page has one `h1` inside `LayoutMain`'s `<main>`; `RouteFocus` moves focus
   there after navigation. Headings never skip a level: pick the right level and keep the look with
-  the `.h2`–`.h4` classes. The base heading styles in `index.css` sit outside Tailwind's layers,
-  so a utility needs `!` to override them (`font-sans!`).
+  the `.h2`–`.h4` classes. The heading styles in `index.css` sit in Tailwind's base and components
+  layers, so a utility overrides them (`font-sans`).
 - **Titles.** Pass a unique `title` to `LayoutMain` (or `HtmlHead`) naming the region and party.
 - **Semantics before ARIA.** Lists are `ul`/`ol`; a data table gets a `<caption>` and
   `th scope="col"`/`scope="row"`. A list that reads well as one line per row stays a list
