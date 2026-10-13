@@ -46,18 +46,18 @@ export default function ElectionConfigTabs({ electionConfig }: Props) {
                value: appRoutes.electionConfigHSBList(electionConfig.slug),
                activePatterns: ["/:electionConfigSlug/hsb"],
             },
-            {
-               label: singleCsb ? t(singleCsb.label) : t(getRegionLabels(electionConfig.csb_type).plural),
-               value: singleCsb
-                  ? appRoutes.csbResults(electionConfig.slug, singleCsb.regionSlug)
-                  : appRoutes.electionConfigCSBList(electionConfig.slug),
-               activePatterns: ["/:electionConfigSlug/csb"],
-            },
             // {
-            //    label: t(getRegionLabels(electionConfig.csb_type).plural),
-            //    value: appRoutes.electionConfigCSBList(electionConfig.slug),
+            //    label: singleCsb ? t(singleCsb.label) : t(getRegionLabels(electionConfig.csb_type).plural),
+            //    value: singleCsb
+            //       ? appRoutes.csbResults(electionConfig.slug, singleCsb.regionSlug)
+            //       : appRoutes.electionConfigCSBList(electionConfig.slug),
             //    activePatterns: ["/:electionConfigSlug/csb"],
             // },
+            {
+               label: singleCsb ? t(singleCsb.label) : t(getRegionLabels(electionConfig.csb_type).plural),
+               value: appRoutes.electionConfigCSBList(electionConfig.slug),
+               activePatterns: ["/:electionConfigSlug/csb"],
+            },
          ].filter((tab) => tab !== false)}
       />
    );
