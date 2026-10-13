@@ -9,7 +9,7 @@ import PageSection from "@/elements/PageSection.tsx";
 import type { ElectionConfig } from "../api/types.ts";
 import { HeroGrid } from "../components/HomePage/HeroGrid.tsx";
 import { LayoutMain } from "../components/LayoutMain.tsx";
-import Timeline, { type TimelineEntry } from "../components/Timeline.tsx";
+import { Timeline, type TimelineEntryProps } from "../components/Timeline/Timeline.tsx";
 import { useElectionConfigs } from "../hooks/queries.ts";
 import { appRoutes } from "../utils/routes.ts";
 
@@ -20,7 +20,7 @@ export function HomePage() {
    const hasResult = election_configs.length > 0;
 
    // If there is only one election and it has timeline entries, build the timeline
-   let timelineEntries: TimelineEntry[] = [];
+   let timelineEntries: TimelineEntryProps[] = [];
    if (election_configs.length === 1 && election_configs[0]?.timeline_entries?.length) {
       timelineEntries = election_configs[0].timeline_entries
          .slice()

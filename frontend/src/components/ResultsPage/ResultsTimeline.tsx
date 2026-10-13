@@ -6,8 +6,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { type MouseEvent, useMemo } from "react";
 import type { TimelineVariant } from "@/api/types.ts";
 import { usePersistedState } from "@/hooks/usePersistedState";
-import type { TimelineEntry } from "../Timeline";
-import Timeline from "../Timeline";
+import type { TimelineEntryProps } from "../Timeline/Timeline.tsx";
+import { Timeline } from "../Timeline/Timeline.tsx";
 
 type SortDirection = "desc" | "asc";
 
@@ -24,7 +24,7 @@ const VARIANT_DESCRIPTIONS: Record<TimelineVariant, MessageDescriptor | null> = 
 type Props = {
    description?: string;
    variant?: TimelineVariant;
-   entries: TimelineEntry[];
+   entries: TimelineEntryProps[];
 };
 export default function ResultsTimeline({ description, variant, entries }: Props) {
    // 'desc' shows the most recent entry on top ("Laatste stap bovenaan"); the choice is kept across pages.

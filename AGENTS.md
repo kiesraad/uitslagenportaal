@@ -61,7 +61,7 @@ docker-compose.yml  full stack: db, redis, backend, celery, frontend, proxy, obj
 | App          | Contents                                                                                                       |
 |--------------|----------------------------------------------------------------------------------------------------------------|
 | `mainsite`   | Django project: settings, root urls, `BaseModel`, `EmlType` enum, management commands                          |
-| `election`   | `ElectionConfig`, `Election`, `Contest`, `VoteCount`, `VoterTurnoutCount`, `TimelineEntry`, `ElectionDocument` |
+| `election`   | `ElectionConfig`, `Election`, `Contest`, `VoteCount`, `VoterTurnoutCount`, `TimelineEntryProps`, `ElectionDocument` |
 | `region`     | `Region` — self-referencing tree (CSB → HSB/kieskring → gemeente → stembureau)                                 |
 | `party`      | `Party`, `Candidate`                                                                                           |
 | `eml_import` | EML parsing/import, the GitHub ingress importer, `ImportedCommit`, and the Celery tasks         |

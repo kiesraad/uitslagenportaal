@@ -1,10 +1,10 @@
 import { fireEvent, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import ResultsTimeline from "@/components/ResultsPage/ResultsTimeline";
-import type { TimelineEntry } from "@/components/Timeline";
+import type { TimelineEntryProps } from "@/components/Timeline/Timeline";
 import { renderWithProviders } from "../../testUtils";
 
-const entries: TimelineEntry[] = [
+const entries: TimelineEntryProps[] = [
    {
       status: "done",
       title: { nl: "Stemmen tellen", en: "Counting votes" },
