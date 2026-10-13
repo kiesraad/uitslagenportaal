@@ -142,7 +142,7 @@ class RegionDetailView(RetrieveAPIView):
             )
         )
         if region_slug:
-            queryset.filter(slug=region_slug)
+            queryset = queryset.filter(slug=region_slug)
         if parent_region_slug:
             queryset = queryset.filter(parent__slug=parent_region_slug)
         if csb_slug:
