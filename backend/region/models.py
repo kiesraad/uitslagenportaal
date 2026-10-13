@@ -11,6 +11,10 @@ def build_region_slug(region_number, region_name: str) -> str:
     Kept separate from Region.save() so bulk_create() callers can precompute the
     exact same slug instead of duplicating the logic.
     """
+    if not region_number:
+        # State Netherlands has no region number
+        return f"{name_to_slug(region_name)}"[:49]
+
     number_slug = str(region_number)
     if "::" in number_slug:
         # region_number can contain "::" (e.g. stembureau ids); keep URL-safe
