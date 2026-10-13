@@ -38,7 +38,7 @@ describe("ElectionConfigTabs", () => {
       expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("aria-current", "page");
    });
 
-   it("names the CSB tab Nederland and links to its results for a Tweede Kamer election", () => {
+   it("names the CSB tab Nederland for a Tweede Kamer election", () => {
       renderWithProviders(
          <ElectionConfigTabs
             electionConfig={{ ...electionConfig, slug: "tk2025", category: "TK", csb_type: "STAAT" }}
@@ -46,10 +46,7 @@ describe("ElectionConfigTabs", () => {
          { initialEntries: ["/tk2025/gsb"] },
       );
 
-      expect(screen.getByRole("link", { name: "Nederland" })).toHaveAttribute(
-         "href",
-         "/tk2025/csb/nederland/resultaten",
-      );
+      expect(screen.getByRole("link", { name: "Nederland" })).toHaveAttribute("href", "/tk2025/csb");
    });
 
    it("names the CSB tab Europees Parlement for a European Parliament election", () => {
@@ -60,9 +57,6 @@ describe("ElectionConfigTabs", () => {
          { initialEntries: ["/ep2024/gsb"] },
       );
 
-      expect(screen.getByRole("link", { name: "Europees Parlement" })).toHaveAttribute(
-         "href",
-         "/ep2024/csb/nederland/resultaten",
-      );
+      expect(screen.getByRole("link", { name: "Europees Parlement" })).toHaveAttribute("href", "/ep2024/csb");
    });
 });
