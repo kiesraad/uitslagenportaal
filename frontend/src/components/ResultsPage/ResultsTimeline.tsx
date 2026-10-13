@@ -1,19 +1,10 @@
-import { faArrowDown, faArrowUp } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { type MouseEvent, useMemo } from "react";
-import type { TimelineVariant } from "@/api/types.ts";
-import { usePersistedState } from "@/hooks/usePersistedState";
-import type { TimelineEntryProps } from "../Timeline/Timeline.tsx";
+import { useLingui } from "@lingui/react/macro";
+import type { LocalizedText, TimelineVariant } from "@/api/types.ts";
+import TimelineEntry, { type TimelineEntryProps } from "@/components/Timeline/TimelineEntry.tsx";
+import { resolveLocale } from "@/i18n";
 import { Timeline } from "../Timeline/Timeline.tsx";
-
-type SortDirection = "desc" | "asc";
-
-const TIMELINE_ORDER_KEY = "timelineOrder";
-
-const isSortDirection = (value: unknown): value is SortDirection => value === "asc" || value === "desc";
 
 const VARIANT_DESCRIPTIONS: Record<TimelineVariant, MessageDescriptor | null> = (() => ({
    CSO: msg`Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam.`,
@@ -27,44 +18,24 @@ type Props = {
    entries: TimelineEntryProps[];
 };
 export default function ResultsTimeline({ description, variant, entries }: Props) {
-   // 'desc' shows the most recent entry on top ("Laatste stap bovenaan"); the choice is kept across pages.
-   const [direction, setDirection] = usePersistedState<SortDirection>(TIMELINE_ORDER_KEY, "desc", isSortDirection);
    const { t } = useLingui();
+   const { i18n } = useLingui();
+   const locale = resolveLocale(i18n.locale);
 
    const variantDescription = variant ? VARIANT_DESCRIPTIONS[variant] : null;
    const resolvedDescription = description ?? (variantDescription ? t(variantDescription) : "");
-   const sortedEntries = useMemo(() => {
-      const factor = direction === "desc" ? -1 : 1;
-      return [...entries].sort((a, b) => factor * (new Date(a.date).getTime() - new Date(b.date).getTime()));
-   }, [entries, direction]);
-
-   const toggleDirection = (event: MouseEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      setDirection((current) => (current === "desc" ? "asc" : "desc"));
-   };
 
    return (
-      <div id="results-timeline">
-         <h2 className="mb-4.5">
-            <Trans>Hoe zijn de resultaten tot stand gekomen?</Trans>
-         </h2>
-         {resolvedDescription ? <p className={"mb-4"}>{resolvedDescription}</p> : null}
-         <button type="button" onClick={toggleDirection} className="result-order-hint">
-            <span>
-               <FontAwesomeIcon icon={faArrowUp} color={direction === "desc" ? "Black" : "Grey"} />
-               <FontAwesomeIcon icon={faArrowDown} color={direction === "asc" ? "Black" : "Grey"} />
-            </span>
-            <span className="text-blue-500">
-               {/* The visible text is the current order; this says what pressing the button does. */}
-               <span className="sr-only">
-                  <Trans>Volgorde omdraaien, nu:</Trans>{" "}
-               </span>
-               {direction === "desc" ? t`Laatste stap bovenaan` : t`Eerste stap bovenaan`}
-            </span>
-         </button>
-
-         {/* Timeline */}
-         <Timeline entries={sortedEntries} />
-      </div>
+      <Timeline description={resolvedDescription}>
+         {entries.map((entry, i) => (
+            <TimelineEntry
+               // biome-ignore lint/suspicious/noArrayIndexKey: temp key
+               key={i}
+               {...entry}
+               title={(entry.title as unknown as LocalizedText)?.[locale]}
+               body={(entry.body as unknown as LocalizedText)?.[locale]}
+            />
+         ))}
+      </Timeline>
    );
 }
