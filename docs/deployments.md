@@ -344,3 +344,4 @@ E.g. on a Kubernetes cluster from Docker Desktop or kind
    ```bash
    helm upgrade --install uitslagenportaal application -n uitslagenportaal-local --create-namespace -f application/values-local.yaml
    ```
+   Like the monitoring chart, the application chart refuses `values-local.yaml` on a Scaleway cluster.

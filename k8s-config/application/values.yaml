@@ -1,5 +1,8 @@
 debug: false
 
+# Set by values-local.yaml only; templates/local-values-guard.yaml refuses it on Scaleway.
+localCluster: false
+
 app:
   hostname: "uitslagen.kiesraad.nl"
   site_name: "Uitslagenportaal"
