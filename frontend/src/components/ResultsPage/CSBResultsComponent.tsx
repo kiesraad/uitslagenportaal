@@ -14,6 +14,7 @@ export function CSBResultsComponent({ electionConfig, region }: Props) {
    // "de gemeente" / "het waterschap": article and noun as one translated
    // phrase, because which article a noun takes is language-specific.
    const regionWithArticle = t(getRegionLabels(electionConfig.csb_type).withArticle);
+   const regionName = region.region_name;
 
    return (
       <ResultsPageColumns
@@ -23,7 +24,7 @@ export function CSBResultsComponent({ electionConfig, region }: Props) {
          <RegionResultsContent
             intro={
                <Trans>
-                  Het hoofdstembureau heeft de telresultaten van alle gemeentes in {region.region_name} gecontroleerd,
+                  Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd,
                   overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het
                   proces-verbaal van het hoofdstembureau.
                </Trans>
