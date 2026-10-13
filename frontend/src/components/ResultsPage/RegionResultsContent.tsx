@@ -4,18 +4,15 @@ import type {
    ElectionDocument,
    PollingStationPvArchive,
    RegionCategory,
-   TimelineEntry,
-   TimelineVariant,
    VoteCount,
    VoteCounts,
    VoterTurnoutCount,
-} from "../../api/types";
-import { getPartyLevelVoteCounts } from "../../utils/voteCounts";
+} from "@/api/types.ts";
+import { getPartyLevelVoteCounts } from "@/utils/voteCounts.ts";
 import IssueNotice from "./IssueNotice";
 import ReportsWithResults from "./ReportsWithResults";
 import ResultsNotPublished from "./ResultsNotPublished";
 import ResultsPageIndex from "./ResultsPageIndex";
-import ResultsTimeline from "./ResultsTimeline";
 import VotesList, { VotesListItem } from "./VotesList";
 import VotesResume from "./VotesResume";
 
@@ -28,8 +25,7 @@ type Props = {
       documents: ElectionDocument[] | undefined;
       pollingStationPvArchive?: PollingStationPvArchive | null;
    };
-   timelineVariant?: TimelineVariant;
-   timelineEntries: TimelineEntry[];
+   timeline?: ReactNode;
    issueReportDeadline: string;
    notPublishedRegionName: string;
    notPublishedRegionCategory: RegionCategory;
@@ -40,8 +36,7 @@ export default function RegionResultsContent({
    voteCounts,
    turnoutVotes,
    reports,
-   timelineVariant,
-   timelineEntries,
+   timeline,
    issueReportDeadline,
    notPublishedRegionName,
    notPublishedRegionCategory,
@@ -98,7 +93,7 @@ export default function RegionResultsContent({
          ) : (
             resultsContent
          )}
-         <ResultsTimeline variant={timelineVariant} entries={timelineEntries} />
+         {timeline}
          <IssueNotice issueReportDeadline={issueReportDeadline} />
       </>
    );

@@ -3,22 +3,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
-import type { ReactNode } from "react";
-import { useFormatters } from "@/utils/format.ts";
+import { type PropsWithChildren, type ReactNode, useMemo } from "react";
+import { electionDay, useFormatters } from "@/utils/format.ts";
 
 export type TimelineEntryStatus = "pending" | "in-progress" | "done";
+
 export interface TimelineEntryProps {
-   status: TimelineEntryStatus;
    title: ReactNode;
    date: string;
-   body: ReactNode;
-   files?: {
-      name: string;
-      url: string;
-      type: string;
-      size: string;
-      description: string;
-   }[];
 }
 
 // The marker shows the status visually; this is the text screen readers get instead.
@@ -45,9 +37,23 @@ const STATUS_CLASSES: Record<TimelineEntryStatus, { line: string; marker: string
    },
 };
 
-export default function TimelineEntry({ status, title, date, body, files }: TimelineEntryProps) {
+export default function TimelineEntry({ children, title, date }: PropsWithChildren<TimelineEntryProps>) {
    const { formatTimelineDate } = useFormatters();
    const { i18n } = useLingui();
+
+   const status = useMemo((): TimelineEntryStatus => {
+      const entryDate = new Date(date);
+      if (Number.isNaN(entryDate.getTime())) {
+         return "pending";
+      }
+      const today = electionDay(new Date());
+      const entryDay = electionDay(entryDate);
+
+      if (entryDay === today) {
+         return "in-progress";
+      }
+      return entryDay < today ? "done" : "pending";
+   }, [date]);
 
    const classes = STATUS_CLASSES[status];
 
@@ -74,23 +80,32 @@ export default function TimelineEntry({ status, title, date, body, files }: Time
                <span className="sr-only">, {i18n._(STATUS_LABELS[status])}</span>
             </h3>
             <div className="mb-1.5 text-muted">{formatTimelineDate(date)}</div>
-            <div className="flex flex-col gap-4.5 leading-6">{body}</div>
-            {files ? (
-               <div className="mt-3 flex flex-col gap-2 text-xs">
-                  {files.map((file) => (
-                     <a href={file.url} key={file.url} className="flex gap-2 bg-box-bg p-3 hover:no-underline">
-                        <FontAwesomeIcon icon={faFile} />
-                        <div className="flex flex-col">
-                           <span className="mb-1 text-blue">
-                              <span className="font-semibold">{file.name}</span> ({file.type}, {file.size})
-                           </span>
-                           <span className="text-muted">{file.description}</span>
-                        </div>
-                     </a>
-                  ))}
-               </div>
-            ) : null}
+            <div className="flex flex-col gap-4 leading-6">{children}</div>
          </div>
       </li>
+   );
+}
+
+export interface TimelineFileProps {
+   file: {
+      name: string;
+      url: string;
+      type: string;
+      size: string;
+      description: string;
+   };
+}
+
+export function TimelineFile({ file }: TimelineFileProps) {
+   return (
+      <a href={file.url} key={file.url} className="flex gap-2 bg-box-bg p-3 text-xs hover:no-underline">
+         <FontAwesomeIcon icon={faFile} />
+         <div className="flex flex-col">
+            <span className="mb-1 text-blue">
+               <span className="font-semibold">{file.name}</span> ({file.type}, {file.size})
+            </span>
+            <span className="text-muted">{file.description}</span>
+         </div>
+      </a>
    );
 }

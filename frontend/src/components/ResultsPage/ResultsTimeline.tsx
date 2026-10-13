@@ -1,12 +1,12 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
-import type { LocalizedText, TimelineVariant } from "@/api/types.ts";
-import TimelineEntry, { type TimelineEntryProps } from "@/components/Timeline/TimelineEntry.tsx";
+import type { LocalizedText, TimelineEntry as TimelineEntryApiProps, TimelineVariant } from "@/api/types.ts";
+import TimelineEntry from "@/components/Timeline/TimelineEntry.tsx";
 import { resolveLocale } from "@/i18n";
 import { Timeline } from "../Timeline/Timeline.tsx";
 
-const VARIANT_DESCRIPTIONS: Record<TimelineVariant, MessageDescriptor | null> = (() => ({
+export const VARIANT_DESCRIPTIONS: Record<TimelineVariant, MessageDescriptor | null> = (() => ({
    CSO: msg`Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam.`,
    DSO: msg`Het stembureau doet een uitgebreide telling op het stembureau. Het gemeentelijk stembureau telt de volgende dag de uitkomsten bij elkaar op. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam.`,
    DEFAULT: null,
@@ -15,7 +15,7 @@ const VARIANT_DESCRIPTIONS: Record<TimelineVariant, MessageDescriptor | null> = 
 type Props = {
    description?: string;
    variant?: TimelineVariant;
-   entries: TimelineEntryProps[];
+   entries: TimelineEntryApiProps[];
 };
 export default function ResultsTimeline({ description, variant, entries }: Props) {
    const { t } = useLingui();
@@ -33,8 +33,9 @@ export default function ResultsTimeline({ description, variant, entries }: Props
                key={i}
                {...entry}
                title={(entry.title as unknown as LocalizedText)?.[locale]}
-               body={(entry.body as unknown as LocalizedText)?.[locale]}
-            />
+            >
+               {(entry.body as unknown as LocalizedText)?.[locale]}
+            </TimelineEntry>
          ))}
       </Timeline>
    );

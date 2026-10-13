@@ -108,6 +108,19 @@ export function formatDate(locale: Locale, isoDate: string): string {
    return `${datePart} - ${timePart}`;
 }
 
+// en-CA writes dates as YYYY-MM-DD, so two days compare as strings.
+const electionDayFormatter = new Intl.DateTimeFormat("en-CA", {
+   year: "numeric",
+   month: "2-digit",
+   day: "2-digit",
+   timeZone: ELECTION_TIME_ZONE,
+});
+
+/** The calendar day a moment falls on in Dutch local time, as "2026-03-20". */
+export function electionDay(date: Date): string {
+   return electionDayFormatter.format(date);
+}
+
 /** Formats an election day without a time, e.g. "20 maart 2026". */
 export function formatElectionDate(locale: Locale, isoDate: string): string {
    const date = new Date(isoDate);

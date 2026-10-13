@@ -1,6 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import ResultsTimeline from "@/components/ResultsPage/ResultsTimeline.tsx";
 import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -102,11 +103,12 @@ export function HSBResultsPage() {
                   description: t`Onderstaande documenten bevatten de laatste telresultaten van ${regionWithArticle}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`,
                   documents: region.documents,
                }}
-               timelineVariant={region.timeline_variant}
-               timelineEntries={electionConfig.timeline_entries ?? []}
                issueReportDeadline={electionConfig.issue_report_deadline}
                notPublishedRegionName={region.region_name}
                notPublishedRegionCategory={region.region_category}
+               timeline={
+                  <ResultsTimeline variant={region.timeline_variant} entries={electionConfig.timeline_entries ?? []} />
+               }
             />
          </ResultsPageColumns>
       </LayoutMain>
