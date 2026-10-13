@@ -24,7 +24,6 @@ urlpatterns = [
     path("api/", include("election.urls")),
     path("api/<str:election_config>/regions/", include("region.urls")),
     path("api/", include("party.urls")),
-    path("admin/", admin.site.urls),
     # Neither of these is reachable from the internet: the Gateway routes only /api to
     # the backend and everything else to the frontend. Probes and metric scrapes come
     # from inside the cluster and address the pod directly.

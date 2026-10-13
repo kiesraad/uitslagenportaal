@@ -32,7 +32,6 @@ INSTALLED_APPS = [
     "party.apps.PartyConfig",
     "eml_import.apps.EmlImportConfig",
     "pv_scraper.apps.PvScraperConfig",
-    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
