@@ -60,12 +60,20 @@ services:
     command: >
       watchfiles --filter python --sigint-timeout 30
       "celery -A mainsite worker --beat --loglevel=INFO"
-      election eml_import mainsite party region
     environment:
       WATCHFILES_POLL_DELAY_MS: "1000"
     depends_on: !reset []
     ports: !reset []
     post_start: !reset []
+
+  celery-pv-scraper:
+    extends:
+      service: celery
+    profiles:
+      - with-scraper
+    command: >
+      watchfiles --filter python --sigint-timeout 30
+      "celery -A mainsite worker -Q scraper --loglevel=INFO"
 
   frontend:
     build:

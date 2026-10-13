@@ -1,12 +1,27 @@
-from unittest.mock import call, patch
+import hashlib
+import logging
+from unittest.mock import MagicMock, call, patch
 
 import pytest
+from django.core.files.base import ContentFile
+from django.core.files.storage import storages
+from django.db import DatabaseError
 from django.utils import timezone
 
+from eml_import.utils.named_bytes_io import NamedBytesIO
+from eml_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
 from pv_scraper import tasks
 from pv_scraper.models import ScrapeStatus
-from pv_scraper.tasks import dispatch_scrape_tasks, run_scrape_for_source
-from pv_scraper.tests.factories import ScrapeSourceFactory
+from pv_scraper.tasks import classify_scraped_file, dispatch_scrape_tasks, run_scrape_for_source
+from pv_scraper.tests.factories import ScrapedFileFactory, ScrapeSourceFactory
+from pv_scraper.utils.pv_classifier import (
+    STORAGE_ENTRY,
+    ClassificationResult,
+    PvClassificationException,
+    PvClassifier,
+    ResultMatch,
+)
+from pv_scraper.utils.site_scraper import FileResult, SiteScraper
 
 
 @pytest.mark.django_db
@@ -64,3 +79,110 @@ def test_scrape_that_fails_to_start_ends_in_error(_):
     source.refresh_from_db()
     assert source.last_run_status == ScrapeStatus.ERROR
     assert source.last_run_finished_at is not None
+
+
+@pytest.mark.django_db
+@patch("pv_scraper.utils.site_crawler.SiteCrawler.__exit__")
+@patch("pv_scraper.utils.site_crawler.SiteCrawler.__enter__", return_value=MagicMock())
+@patch.object(tasks.classify_scraped_file, "apply_async")
+def test_scrape_stores_each_file_and_queues_its_classification(apply_async, *_):
+    source = ScrapeSourceFactory(code="gm0228")
+    # Two files published under one name are both kept.
+    files = [
+        FileResult(True, NamedBytesIO(content, name), ScrapedFileFactory(source=source))
+        for name, content in (("Download.pdf", b"%PDF first"), ("Download.pdf", b"%PDF next"), ("other.pdf", b"%PDF"))
+    ]
+    keys = [f"classification_queue/gm0228_{file.scraped_file.sha256}.pdf" for file in files]
+
+    with patch.object(SiteScraper, "crawl", return_value=iter(files)):
+        run_scrape_for_source(source.id)
+
+    assert apply_async.call_args_list == [
+        call((source.pk, key, file.content.name), queue="scraper") for key, file in zip(keys, files)
+    ]
+    assert [storages[STORAGE_ENTRY].open(key).read() for key in keys] == [b"%PDF first", b"%PDF next", b"%PDF"]
+    source.refresh_from_db()
+    assert source.last_run_status != ScrapeStatus.ERROR
+
+
+@pytest.mark.django_db
+@patch("pv_scraper.utils.site_crawler.SiteCrawler.__exit__", return_value=False)
+@patch("pv_scraper.utils.site_crawler.SiteCrawler.__enter__", return_value=MagicMock())
+@patch.object(tasks.classify_scraped_file, "apply_async", side_effect=RuntimeError("no broker"))
+def test_scrape_whose_hand_off_fails_ends_in_error(*_):
+    source = ScrapeSourceFactory(code="gm0228")
+    file = FileResult(True, NamedBytesIO(b"%PDF", "pv.pdf"), ScrapedFileFactory(source=source))
+
+    with patch.object(SiteScraper, "crawl", return_value=iter([file])), pytest.raises(RuntimeError):
+        run_scrape_for_source(source.id)
+
+    source.refresh_from_db()
+    assert source.last_run_status == ScrapeStatus.ERROR
+    assert source.last_run_finished_at is not None
+
+
+@pytest.fixture
+def stored_file():
+    source = ScrapeSourceFactory()
+    ScrapedFileFactory(source=source, sha256=hashlib.sha256(b"%PDF").hexdigest())
+    key = storages[STORAGE_ENTRY].save("classification_queue/gm0228_pv_suffix.pdf", ContentFile(b"%PDF"))
+    return source, key
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("matched_on", "saved"),
+    [(ResultMatch.CODE_TITLE, True), (ResultMatch.CODE, False)],
+)
+def test_classify_scraped_file_stores_only_a_certain_pv(stored_file, matched_on, saved):
+    source, key = stored_file
+    with (
+        patch.object(PvClassifier, "classify", return_value=ClassificationResult("N 10-2", matched_on)),
+        patch.object(PvClassifier, "save_to_storage", autospec=True) as save_to_storage,
+    ):
+        classify_scraped_file(source.pk, key, "pv.pdf")
+
+    assert save_to_storage.called == saved
+    if saved:
+        classifier, saved_for, folder = save_to_storage.call_args.args
+        assert (classifier.file.name, classifier.file.getvalue()) == ("pv.pdf", b"%PDF")
+        assert (saved_for, folder) == (source, DEFAULT_PV_DIRECTORY)
+    # Classified or discarded, the file has left the classification queue.
+    assert not storages[STORAGE_ENTRY].exists(key)
+
+
+@pytest.mark.django_db
+def test_classify_scraped_file_rejects_a_pv_it_cannot_store(stored_file, caplog):
+    source, key = stored_file
+    with (
+        caplog.at_level(logging.INFO, logger="pv_scraper.tasks"),
+        patch.object(PvClassifier, "classify", return_value=ClassificationResult("N 10-2", ResultMatch.CODE_TITLE)),
+        patch.object(PvClassifier, "save_to_storage", side_effect=PvClassificationException("region not known")),
+    ):
+        classify_scraped_file(source.pk, key, "pv.pdf")
+
+    assert "region not known" in caplog.text
+    assert not storages[STORAGE_ENTRY].exists(key)
+    assert source.scraped_files.get().rejected_reason == "region not known"
+
+
+@pytest.mark.django_db
+def test_classify_scraped_file_rejects_a_file_it_cannot_read(stored_file):
+    source, key = stored_file
+    with patch.object(PvClassifier, "classify", side_effect=RuntimeError("no pages " * 20)):
+        classify_scraped_file(source.pk, key, "pv.pdf")
+
+    assert not storages[STORAGE_ENTRY].exists(key)
+    # The reason is cut to what the field holds.
+    reason = source.scraped_files.get().rejected_reason
+    assert reason.startswith("Classification failed: no pages") and len(reason) == 128
+
+
+@pytest.mark.django_db
+def test_classify_scraped_file_keeps_the_file_for_a_retry(stored_file):
+    source, key = stored_file
+    with patch.object(PvClassifier, "classify", side_effect=DatabaseError("gone")), pytest.raises(DatabaseError):
+        classify_scraped_file(source.pk, key, "pv.pdf")
+
+    assert storages[STORAGE_ENTRY].exists(key)
+    assert source.scraped_files.exists()

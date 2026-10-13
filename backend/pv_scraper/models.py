@@ -96,7 +96,7 @@ class ScrapedFile(BaseModel):
     link_text = models.TextField(blank=True)
     heading_text = models.TextField(blank=True)
     # Why the file is not a PV, such as "excluded" or "not-pdf (HTTP 200)"; kept so it is not downloaded again.
-    rejected_reason = models.CharField(max_length=64, null=True, blank=True)
+    rejected_reason = models.CharField(max_length=128, null=True, blank=True)
     downloaded_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

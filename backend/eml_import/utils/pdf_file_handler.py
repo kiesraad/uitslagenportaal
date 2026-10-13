@@ -28,6 +28,8 @@ LOCK_TIMEOUT = 30 * 60
 # The results box shows one page. Twice the PDF point size stays sharp at that width.
 _PREVIEW_SCALE = 2
 
+DEFAULT_PV_DIRECTORY = "pv_import_queue"
+
 # P22 is the centraal stembureau; that region's category comes from the election.
 _REGION_CATEGORY_BY_FILE_TYPE = {
     ElectionDocument.FileType.PDF_N10_1: RegionCategory.STEMBUREAU,
@@ -35,7 +37,10 @@ _REGION_CATEGORY_BY_FILE_TYPE = {
     ElectionDocument.FileType.PDF_NA14_1: RegionCategory.STEMBUREAU,
     ElectionDocument.FileType.PDF_NA31_1: RegionCategory.GEMEENTE,
     ElectionDocument.FileType.PDF_NA31_2: RegionCategory.GEMEENTE,
+    ElectionDocument.FileType.PDF_NA31_2_B1: RegionCategory.STEMBUREAU,
+    ElectionDocument.FileType.PDF_NA31_2_B2: RegionCategory.GEMEENTE,
     ElectionDocument.FileType.PDF_NA14_2: RegionCategory.GEMEENTE,
+    ElectionDocument.FileType.PDF_NA14_2_B1: RegionCategory.GEMEENTE,
     ElectionDocument.FileType.PDF_O7: RegionCategory.KIESKRING,
 }
 
@@ -51,9 +56,10 @@ class _StoragePdf:
 
 
 class PDFFileHandler:
-    def __init__(self, storage: Storage):
+    def __init__(self, storage: Storage, directory: str | None = None):
         super().__init__()
         self.storage = storage
+        self.root_directory = directory or DEFAULT_PV_DIRECTORY
         self.archive_municipality_ids: set[int] = set()
 
     @staticmethod
@@ -79,13 +85,13 @@ class PDFFileHandler:
 
     def _run_import(self) -> int:
         imported = 0
-        for name in sorted(self._pdf_names("")):
+        for name in sorted(self._pdf_names(self.root_directory)):
             try:
                 if self._import_pv(_StoragePdf(self.storage, name)):
                     imported += 1
-            except IntegrityError, PDFImporterException:
+            except (IntegrityError, PDFImporterException) as exc:
                 # A bad file must not stop the rest of this sweep.
-                logger.exception("Failed to import proces-verbaal %s", name)
+                logger.error("Failed to import proces-verbaal %s: %s", name, exc)
         return imported
 
     def _pdf_names(self, directory: str):
@@ -126,7 +132,9 @@ class PDFFileHandler:
         except Exception:
             logger.exception("Failed to delete processed proces-verbaal %s from import storage", file.key)
 
-    def _parse_metadata(self, content: BytesIO, filename: str) -> tuple[str, str, str, str | None, str | None]:
+    def _parse_metadata(
+        self, content: BytesIO, filename: str
+    ) -> tuple[str, ElectionDocument.FileType, str, str | None, str | None]:
         try:
             document = pdfium.PdfDocument(content.getvalue())
         except Exception as exc:
