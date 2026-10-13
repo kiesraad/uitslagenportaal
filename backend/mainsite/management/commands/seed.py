@@ -361,7 +361,7 @@ TK2025_ELECTION_SEED = {
         "id": "TK2025",
         "label": "Tweede Kamer Verkiezingen 2025",
         "category": "TK",
-        "date": "2025-04-12T10:00:00",
+        "date": "2026-09-12T10:00:00",
         "issue_report_opens_at": "2025-08-18T11:00:00",
         "issue_report_deadline": "2025-09-12T10:00:00",
         "gh_counting_results_branch": "auto-tk2025-tel",
