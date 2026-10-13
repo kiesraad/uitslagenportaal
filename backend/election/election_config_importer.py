@@ -6,17 +6,11 @@ from django.core.cache import cache
 from django.db import transaction
 from redis.exceptions import LockError
 
-from election.models import ElectionConfig, ElectionDocument, TimelineEntry, TimelineVariant
+from election.models import ElectionConfig, ElectionDocument, TimelineDate
 from election.utils import delete_stored_documents, folder_prefixes, tz_aware_from_isoformat
 from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
 
 logger = logging.getLogger(__name__)
-
-_TIMELINE_VARIANTS = {
-    "timeline_entries_cso": TimelineVariant.CSO,
-    "timeline_entries_dso": TimelineVariant.DSO,
-    "timeline_entries_default": TimelineVariant.DEFAULT,
-}
 
 # Changing either of these invalidates everything already imported for the election.
 _BRANCH_FIELDS = ("gh_exchange_branch", "gh_counting_results_branch")
@@ -129,17 +123,13 @@ def _save_election_config(
     election_config.source_hash = source_hash
     election_config.save()
 
-    election_config.timeline_entries.all().delete()
-    for seed_key, variant in _TIMELINE_VARIANTS.items():
-        for entry_data in data.get(seed_key, []):
-            TimelineEntry.objects.create(
-                election_config=election_config,
-                variant=variant,
-                title_nl=entry_data["title"]["nl"],
-                title_en=entry_data["title"]["en"],
-                date=tz_aware_from_isoformat(entry_data["date"]),
-                body_nl=entry_data["body"]["nl"],
-                body_en=entry_data["body"]["en"],
-            )
+    election_config.timeline_dates.all().delete()
+    for entry_data in data.get("timeline_dates", []):
+        TimelineDate.objects.create(
+            election_config=election_config,
+            event=entry_data["event"],
+            date=tz_aware_from_isoformat(entry_data["date"]),
+            date_qualifier=entry_data.get("date_qualifier", "all_day"),
+        )
 
     return election_config

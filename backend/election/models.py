@@ -115,42 +115,45 @@ class Election(BaseModel):
         return f"<Election {self.name} ({self.pk})>"
 
 
-class TimelineEntryStatus(models.TextChoices):
-    PENDING = "pending", "Pending"
-    IN_PROGRESS = "in-progress", "In progress"
-    DONE = "done", "Done"
+class TimelineEvent(models.TextChoices):
+    SB_VOTE_COUNT = "sb_vote_count", "SB Vote count"
+    CANDIDATE_VOTE_COUNT = "candidate_vote_count", "CandidateSB Vote count"
+    MUNICIPALITY_VOTE_COUNT = "municipality_vote_count", "Municipality Vote count"
+    ELECTORAL_DISTRICT_VOTE_COUNT = "electoral_district_vote_count", "Electoral district Vote count"
+    CSB_CHECK = "csb_check", "CSB Check"
+    CSB_RESULT_PUBLISH = "csb_result_publish", "CSB Result publish"
+
+    @classmethod
+    def required(cls) -> set[str]:
+        return {cls.SB_VOTE_COUNT, cls.MUNICIPALITY_VOTE_COUNT, cls.CSB_CHECK, cls.CSB_RESULT_PUBLISH}
+
+
+class TimelineDateQualifier(models.TextChoices):
+    ALL_DAY = "all_day", "All day"
+    FROM = "from", "From"
+    UNTIL = "until", "Until"
+    EXPECTED = "expected", "Expected"
+
+
+class TimelineDate(BaseModel):
+    election_config = models.ForeignKey(
+        "election.ElectionConfig",
+        on_delete=models.CASCADE,
+        related_name="timeline_dates",
+    )
+    event = models.CharField(max_length=128, choices=TimelineEvent.choices)
+    date = models.DateTimeField()
+    date_qualifier = models.CharField(
+        max_length=8,
+        choices=TimelineDateQualifier.choices,
+        default=TimelineDateQualifier.ALL_DAY,
+    )
 
 
 class TimelineVariant(models.TextChoices):
     CSO = "CSO", "Centrale Stemopname"
     DSO = "DSO", "Decentrale Stemopname"
     DEFAULT = "DEFAULT", "Default"
-
-
-class TimelineEntry(BaseModel):
-    election_config = models.ForeignKey(
-        "election.ElectionConfig",
-        on_delete=models.CASCADE,
-        related_name="timeline_entries",
-    )
-    variant = models.CharField(
-        max_length=8,
-        choices=TimelineVariant.choices,
-        default=TimelineVariant.DEFAULT,
-    )
-    status = models.CharField(max_length=16, choices=TimelineEntryStatus.choices)
-    title_nl = models.CharField(max_length=255)
-    title_en = models.CharField(max_length=255, blank=True)
-    date = models.DateTimeField()
-    body_nl = models.TextField()
-    body_en = models.TextField(blank=True)
-
-    class Meta:
-        # Entries are ordered chronologically by date.
-        ordering = ("date",)
-
-    def __str__(self):
-        return f"{self.election_config.identifier} [{self.variant}]: {self.title_nl}"
 
 
 class Contest(BaseModel):

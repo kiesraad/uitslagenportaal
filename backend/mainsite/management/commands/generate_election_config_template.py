@@ -2,16 +2,15 @@ import json
 
 from django.core.management.base import BaseCommand
 
-_TIMELINE_ENTRY_TEMPLATE = {
-    "title": {
-        "nl": "string, Dutch title, e.g. Voorlopige uitslag",
-        "en": "string, English title, e.g. Provisional result",
-    },
+from election.models import TimelineDateQualifier, TimelineEvent
+
+_TIMELINE_DATE_TEMPLATE = {
+    "event": (
+        f"string, one of {', '.join(TimelineEvent.values)}; "
+        f"an entry is required for each of {', '.join(sorted(TimelineEvent.required()))}"
+    ),
     "date": "ISO 8601 datetime, e.g. 2025-12-15T11:00:00",
-    "body": {
-        "nl": "string, Dutch body text, markdown allowed, e.g. Meer informatie volgt.",
-        "en": "string, English body text, markdown allowed, e.g. More information to follow.",
-    },
+    "date_qualifier": f"string, optional, one of {', '.join(TimelineDateQualifier.values)}, defaults to all_day",
 }
 
 ELECTION_CONFIG_TEMPLATE = {
@@ -28,9 +27,7 @@ ELECTION_CONFIG_TEMPLATE = {
         "gh_counting_results_branch": "string, optional, GitHub branch name, e.g. auto-tk2025-tel",
         "gh_exchange_branch": "string, optional, GitHub branch name, e.g. auto-tk2025-uit",
     },
-    "timeline_entries_cso": [_TIMELINE_ENTRY_TEMPLATE],
-    "timeline_entries_dso": [_TIMELINE_ENTRY_TEMPLATE],
-    "timeline_entries_default": [_TIMELINE_ENTRY_TEMPLATE],
+    "timeline_dates": [_TIMELINE_DATE_TEMPLATE],
 }
 
 

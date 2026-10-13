@@ -29,22 +29,22 @@ def test_list_serializer_station_number_is_none_for_a_gemeente():
 
 
 @pytest.mark.django_db
-def test_effective_variant_prefers_own_counting_method():
+def test_timeline_variant_prefers_own_counting_method():
     region = RegionFactory(counting_method=CountingMethod.DSO)
 
-    assert RegionDetailSerializer()._effective_variant(region) == CountingMethod.DSO
+    assert RegionDetailSerializer().get_timeline_variant(region) == CountingMethod.DSO
 
 
 @pytest.mark.django_db
-def test_effective_variant_falls_back_to_parent_counting_method():
+def test_timeline_variant_falls_back_to_parent_counting_method():
     parent = RegionFactory(region_category=RegionCategory.WATERSCHAP, counting_method=CountingMethod.CSO)
     child = RegionFactory(election=parent.election, parent=parent, counting_method=None)
 
-    assert RegionDetailSerializer()._effective_variant(child) == CountingMethod.CSO
+    assert RegionDetailSerializer().get_timeline_variant(child) == CountingMethod.CSO
 
 
 @pytest.mark.django_db
-def test_effective_variant_defaults_when_no_counting_method_available():
+def test_timeline_variant_defaults_when_no_counting_method_available():
     region = RegionFactory(counting_method=None)
 
-    assert RegionDetailSerializer()._effective_variant(region) == "DEFAULT"
+    assert RegionDetailSerializer().get_timeline_variant(region) == "DEFAULT"

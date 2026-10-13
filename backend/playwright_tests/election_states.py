@@ -11,7 +11,7 @@ from election.models import (
     ElectionCategory,
     ElectionConfig,
     ElectionDocument,
-    TimelineVariant,
+    TimelineEvent,
     VoteCount,
 )
 from election.tests.factories import (
@@ -19,7 +19,7 @@ from election.tests.factories import (
     ElectionConfigFactory,
     ElectionDocumentFactory,
     ElectionFactory,
-    TimelineEntryFactory,
+    TimelineDateFactory,
 )
 from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
@@ -54,12 +54,7 @@ def expired_config(*, identifier: str, label: str, category: str) -> ElectionCon
 
 
 def add_home_timeline(config: ElectionConfig) -> None:
-    TimelineEntryFactory(
-        election_config=config,
-        variant=TimelineVariant.DEFAULT,
-        title_nl="Telling in de stembureaus",
-        title_en="Count at the polling stations",
-    )
+    TimelineDateFactory(election_config=config, event=TimelineEvent.SB_VOTE_COUNT)
 
 
 def _party_count(contest: Contest, region: Region, party: Party, votes: int, eml_type: EmlType) -> None:
@@ -113,12 +108,7 @@ def ws_definition() -> WsPortal:
         category=ElectionCategory.WS.value,
         date=timezone.now() - timedelta(days=1),
     )
-    TimelineEntryFactory(
-        election_config=config,
-        variant=TimelineVariant.DEFAULT,
-        title_nl="Telling in de stembureaus",
-        title_en="Count at the polling stations",
-    )
+    TimelineDateFactory(election_config=config, event=TimelineEvent.SB_VOTE_COUNT)
     election = ElectionFactory(election_config=config, name="Scheldestromen", subcategory="AB2")
     waterschap = RegionFactory(
         election=election,
