@@ -53,7 +53,6 @@ function SingleCsbResults({ electionConfig, regionQuery, regionWithArticle }: Si
       <CSBResultsComponent
          electionConfig={electionConfig}
          region={csbRegion}
-         regionName={csbRegion.region_name}
          regionWithArticle={regionWithArticle}
       />
    );

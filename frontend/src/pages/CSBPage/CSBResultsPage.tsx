@@ -82,7 +82,6 @@ export function CSBResultsPage() {
          <CSBResultsComponent
             electionConfig={electionConfig}
             region={region}
-            regionName={region.region_name}
             regionWithArticle={regionWithArticle}
          />
       </LayoutMain>

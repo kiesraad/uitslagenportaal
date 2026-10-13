@@ -6,11 +6,10 @@ import ResultsPageColumns from "./ResultsPageColumns.tsx";
 type Props = {
    electionConfig: ElectionConfig;
    region: Region;
-   regionName: string;
    regionWithArticle: string;
 };
 
-export function CSBResultsComponent({ electionConfig, region, regionName, regionWithArticle }: Props) {
+export function CSBResultsComponent({ electionConfig, region, regionWithArticle }: Props) {
    const { t } = useLingui();
 
    return (
@@ -21,7 +20,7 @@ export function CSBResultsComponent({ electionConfig, region, regionName, region
          <RegionResultsContent
             intro={
                <Trans>
-                  Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd,
+                  Het hoofdstembureau heeft de telresultaten van alle gemeentes in {region.region_name} gecontroleerd,
                   overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in
                   het proces-verbaal van het hoofdstembureau.
                </Trans>
