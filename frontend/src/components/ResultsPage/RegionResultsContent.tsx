@@ -33,6 +33,7 @@ type Props = {
    issueReportDeadline: string;
    notPublishedRegionName: string;
    notPublishedRegionCategory: RegionCategory;
+   partyHref?: (partySlug: string) => string;
 };
 
 export default function RegionResultsContent({
@@ -45,6 +46,7 @@ export default function RegionResultsContent({
    issueReportDeadline,
    notPublishedRegionName,
    notPublishedRegionCategory,
+   partyHref = (partySlug) => `${location.pathname}/${partySlug}`,
 }: Props) {
    const { t } = useLingui();
    const hasResults = Array.isArray(voteCounts) && voteCounts.length > 0;
@@ -74,7 +76,7 @@ export default function RegionResultsContent({
                      number={voteCount.party.list_number}
                      title={voteCount.party.registered_name}
                      voteCount={voteCount.valid_votes}
-                     href={`${location.pathname}/${voteCount.party.slug}`}
+                     href={partyHref(voteCount.party.slug)}
                   />
                ))}
             </VotesList>

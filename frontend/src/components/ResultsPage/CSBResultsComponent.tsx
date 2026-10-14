@@ -1,6 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ElectionConfig, Region } from "../../api/types";
 import { getRegionLabels } from "../../utils/region.ts";
+import { appRoutes } from "../../utils/routes.ts";
 import RegionResultsContent from "./RegionResultsContent.tsx";
 import ResultsPageColumns from "./ResultsPageColumns.tsx";
 
@@ -40,6 +41,7 @@ export function CSBResultsComponent({ electionConfig, region }: Props) {
             issueReportDeadline={electionConfig.issue_report_deadline}
             notPublishedRegionName={region.region_name}
             notPublishedRegionCategory={region.region_category}
+            partyHref={(partySlug) => appRoutes.csbPartyResults(electionConfig.slug, region.slug, partySlug)}
          />
       </ResultsPageColumns>
    );
