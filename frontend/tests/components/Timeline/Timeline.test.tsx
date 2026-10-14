@@ -57,6 +57,23 @@ describe("Timeline", () => {
       expect(headingTexts()[0]).toMatch(/^Stemmen tellen/);
    });
 
+   it("puts a step with an unparseable date last in chronological order", () => {
+      localStorage.setItem("timeline-order-desc", JSON.stringify(false));
+      renderWithProviders(
+         <Timeline>
+            <TimelineEntry key="unknown" date={{ ...checked, date: "later" }} title="Uitslag controleren" />
+            <TimelineEntry key="published" date={published} title="Uitslag publiceren" />
+            <TimelineEntry key="counted" date={counted} title="Stemmen tellen" />
+         </Timeline>,
+      );
+
+      expect(headingTexts()).toEqual([
+         expect.stringMatching(/^Stemmen tellen/),
+         expect.stringMatching(/^Uitslag publiceren/),
+         expect.stringMatching(/^Uitslag controleren/),
+      ]);
+   });
+
    it("stores the order when it is flipped", () => {
       renderTimeline();
 

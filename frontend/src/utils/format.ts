@@ -186,10 +186,9 @@ export function formatFileSize(locale: Locale, bytes: number): string {
 /**
  * Formatters bound to the active locale.
  *
- * Note the `i18n.locale` dependency: the `i18n` object itself is a stable
- * reference that does not change when the language does, so memoising on it
- * would silently keep the old locale's formatting forever. Is added as useMemo
- * dependency to silence Biome.
+ * Note the `locale` dependency: the `i18n` object is a stable reference that
+ * does not change when the language does, so memoising on it alone would
+ * silently keep the old locale's formatting forever.
  */
 export function useFormatters() {
    const { i18n } = useLingui();

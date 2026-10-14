@@ -117,7 +117,7 @@ class Election(BaseModel):
 
 class TimelineEvent(models.TextChoices):
     SB_VOTE_COUNT = "sb_vote_count", "SB Vote count"
-    CANDIDATE_VOTE_COUNT = "candidate_vote_count", "CandidateSB Vote count"
+    CANDIDATE_VOTE_COUNT = "candidate_vote_count", "Candidate Vote count"
     MUNICIPALITY_VOTE_COUNT = "municipality_vote_count", "Municipality Vote count"
     ELECTORAL_DISTRICT_VOTE_COUNT = "electoral_district_vote_count", "Electoral district Vote count"
     CSB_CHECK = "csb_check", "CSB Check"

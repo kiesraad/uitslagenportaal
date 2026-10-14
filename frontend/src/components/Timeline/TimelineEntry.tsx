@@ -59,7 +59,6 @@ export default function TimelineEntry({ children, title, date }: PropsWithChildr
    const { t } = useLingui();
 
    const status = useMemo((): TimelineEntryStatus => {
-      // If no date is given, we fall back to today
       const entryDate = new Date(date.date);
       if (Number.isNaN(entryDate.getTime())) {
          return "pending";

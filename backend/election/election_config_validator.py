@@ -31,11 +31,11 @@ def _check_timeline_dates(data: dict, errors: list[str]) -> None:
         errors.append(f"timeline_dates: expected a list, got {type(entries).__name__}")
         return
 
-    events = {e.get("event") for e in entries if isinstance(e, dict)}
+    # Only strings can name an event; anything else is reported per entry below.
+    events = {e.get("event") for e in entries if isinstance(e, dict) and isinstance(e.get("event"), str)}
     missing = TimelineEvent.required() - events
     if missing:
         errors.append(f"timeline_dates: some events are missing: {', '.join(sorted(missing))}")
-        return
 
     for index, entry in enumerate(entries):
         path = f"timeline_dates[{index}]"

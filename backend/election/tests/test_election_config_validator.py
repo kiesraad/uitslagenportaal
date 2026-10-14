@@ -71,6 +71,7 @@ def test_missing_required_event_is_reported_next_to_an_optional_event():
             "timeline_dates[4].qualifier: is not one of",
         ),
         ("candidate_vote_count", "timeline_dates[4]: expected an object, got str"),
+        ({"event": ["candidate_vote_count"], "date": "2025-12-16T09:00:00"}, "timeline_dates[4].event: is not one of"),
     ],
 )
 def test_malformed_timeline_date_is_reported(extra, expected_error):
@@ -78,3 +79,21 @@ def test_malformed_timeline_date_is_reported(extra, expected_error):
 
     assert len(errors) == 1
     assert errors[0].startswith(expected_error)
+
+
+def test_missing_required_event_and_malformed_date_are_both_reported():
+    extra = [{"event": "candidate_vote_count", "date": "16 december"}]
+
+    errors = validate_election_config(_config(without=TimelineEvent.CSB_CHECK, extra=extra))
+
+    assert errors[0] == "timeline_dates: some events are missing: csb_check"
+    assert errors[1].startswith("timeline_dates[3].date: '16 december' is not")
+    assert len(errors) == 2
+
+
+def test_unhashable_required_event_is_reported_as_missing_and_invalid():
+    errors = validate_election_config(_config(event=["csb_check"]))
+
+    assert errors[0] == "timeline_dates: some events are missing: csb_check"
+    assert errors[1].startswith("timeline_dates[0].event: is not one of")
+    assert len(errors) == 2

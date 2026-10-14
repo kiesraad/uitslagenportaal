@@ -66,7 +66,6 @@ export type Region = {
    slug: string;
    vote_counts: VoteCounts;
    voter_turnout_counts?: VoterTurnoutCount[];
-   timeline_entries?: TimelineDate[];
    timeline_variant?: TimelineVariant;
    documents?: ElectionDocument[];
    polling_station_pv_archive?: PollingStationPvArchive | null;
