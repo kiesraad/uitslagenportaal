@@ -1,5 +1,8 @@
 debug: false
 
+# Set by values-local.yaml only; templates/local-values-guard.yaml refuses it on Scaleway.
+localCluster: false
+
 app:
   hostname: "uitslagen.kiesraad.nl"
   site_name: "Uitslagenportaal"
@@ -93,7 +96,7 @@ celery:
         # Parsing EML is CPU-bound; starved of CPU an import holds its peak memory for
         # longer. Requesting far less memory than the pod uses makes it evict first.
         cpu: 500m
-        memory: 1Gi
+        memory: 512Mi
       limits:
         memory: 2Gi
   beat:

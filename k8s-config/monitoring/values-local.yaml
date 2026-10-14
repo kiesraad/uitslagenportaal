@@ -1,5 +1,7 @@
 # Overrides for a local cluster such as Docker Desktop. See docs/deployments.md.
 
+localCluster: true
+
 kube-prometheus-stack:
   prometheus-node-exporter:
     hostRootFsMount:

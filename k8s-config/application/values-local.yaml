@@ -1,5 +1,7 @@
 # See docs/deployments.md on how to use this for local deployments.
 
+localCluster: true
+
 debug: true
 
 app:
