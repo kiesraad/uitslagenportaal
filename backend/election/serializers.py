@@ -43,7 +43,7 @@ class TimelineDateSerializer(serializers.ModelSerializer):
         fields = (
             "event",
             "date",
-            "date_qualifier",
+            "qualifier",
         )
 
 

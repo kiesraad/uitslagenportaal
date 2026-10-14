@@ -1,5 +1,8 @@
+import type { I18n, MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { useMemo } from "react";
+import type { TimelineDate } from "@/api/types.ts";
 import { type Locale, resolveLocale } from "../i18n";
 
 /**
@@ -21,11 +24,9 @@ const INTL_LOCALES: Record<Locale, string> = {
    en: "en-GB",
 };
 
-const TIMELINE_DATE_FORMAT: Intl.DateTimeFormatOptions = {
+const DAY_MONTH_FORMAT: Intl.DateTimeFormatOptions = {
    day: "numeric",
    month: "long",
-   hour: "2-digit",
-   minute: "2-digit",
    timeZone: ELECTION_TIME_ZONE,
 };
 
@@ -40,6 +41,24 @@ const TIME_FORMAT: Intl.DateTimeFormatOptions = {
    hour: "2-digit",
    minute: "2-digit",
    timeZone: ELECTION_TIME_ZONE,
+};
+
+// Intl offers no way to pick the word between date and time, and its own choice
+// differs between ICU versions, so the two are joined here instead.
+const DATE_TIME_DELIMITERS = {
+   dash: "-",
+   at: msg({ message: "om", comment: "Between a date and a time: 8 december om 21:00" }),
+   after: msg({ message: "na", comment: "Between a date and a time: 8 december na 21:00" }),
+   until: msg({ message: "tot", comment: "Between a date and a time: 8 december tot 21:00" }),
+   none: "",
+} satisfies Record<string, string | MessageDescriptor>;
+
+export type DateTimeDelimiter = keyof typeof DATE_TIME_DELIMITERS;
+
+export type DateTimeOptions = {
+   delimiter?: DateTimeDelimiter;
+   withYear?: boolean;
+   withTime?: boolean;
 };
 
 // Building an Intl formatter is expensive relative to using one, and the vote
@@ -83,29 +102,40 @@ export function formatNumber(locale: Locale, value: number, options?: Intl.Numbe
 }
 
 /**
- * Formats an ISO date string as a readable date with time, e.g. "8 december om
- * 21:00". Returns the input unchanged if it cannot be parsed.
+ * Formats an ISO date string with time, "10 december 2025 - 12:17" by default, or
+ * e.g. "8 december om 21:00" with `options`. Returns the input unchanged if it cannot be parsed.
  */
-export function formatTimelineDate(locale: Locale, isoDate: string): string {
+export function formatDate(
+   i18n: I18n,
+   locale: Locale,
+   isoDate: string,
+   { delimiter = "dash", withYear = true, withTime = true }: DateTimeOptions = {},
+): string {
    const date = new Date(isoDate);
    if (Number.isNaN(date.getTime())) {
       return isoDate;
    }
-   return dateFormatter(locale, TIMELINE_DATE_FORMAT).format(date);
+   const datePart = dateFormatter(locale, withYear ? FULL_DATE_FORMAT : DAY_MONTH_FORMAT).format(date);
+   const timePart = dateFormatter(locale, TIME_FORMAT).format(date);
+   const separator = DATE_TIME_DELIMITERS[delimiter];
+   const separatorText = typeof separator === "string" ? separator : i18n._(separator);
+   if (!withTime) {
+      return datePart;
+   }
+   return [datePart, separatorText, timePart].filter(Boolean).join(" ");
 }
 
-/**
- * Formats an ISO date string as "10 december 2025 - 12:17". Returns the input
- * unchanged if it cannot be parsed.
- */
-export function formatDate(locale: Locale, isoDate: string): string {
-   const date = new Date(isoDate);
-   if (Number.isNaN(date.getTime())) {
-      return isoDate;
+export function formatTimelineDate(i18n: I18n, locale: Locale, date: TimelineDate): string {
+   switch (date.qualifier) {
+      case "all_day":
+         return formatDate(i18n, locale, date.date, { withYear: false, withTime: false });
+      case "from":
+         return formatDate(i18n, locale, date.date, { delimiter: "after", withYear: false });
+      case "until":
+         return formatDate(i18n, locale, date.date, { delimiter: "until", withYear: false });
+      case "expected":
+         return `${i18n._(msg`Verwacht:`)} ${formatDate(i18n, locale, date.date, { delimiter: "at", withYear: false })}`;
    }
-   const datePart = dateFormatter(locale, FULL_DATE_FORMAT).format(date);
-   const timePart = dateFormatter(locale, TIME_FORMAT).format(date);
-   return `${datePart} - ${timePart}`;
 }
 
 // en-CA writes dates as YYYY-MM-DD, so two days compare as strings.
@@ -156,7 +186,8 @@ export function formatFileSize(locale: Locale, bytes: number): string {
  *
  * Note the `i18n.locale` dependency: the `i18n` object itself is a stable
  * reference that does not change when the language does, so memoising on it
- * would silently keep the old locale's formatting forever.
+ * would silently keep the old locale's formatting forever. Is added as useMemo
+ * dependency to silence Biome.
  */
 export function useFormatters() {
    const { i18n } = useLingui();
@@ -166,12 +197,12 @@ export function useFormatters() {
       () => ({
          locale,
          formatNumber: (value: number, options?: Intl.NumberFormatOptions) => formatNumber(locale, value, options),
-         formatDate: (isoDate: string) => formatDate(locale, isoDate),
+         formatDate: (isoDate: string, options?: DateTimeOptions) => formatDate(i18n, locale, isoDate, options),
          formatElectionDate: (isoDate: string) => formatElectionDate(locale, isoDate),
-         formatTimelineDate: (isoDate: string) => formatTimelineDate(locale, isoDate),
+         formatTimelineDate: (date: TimelineDate) => formatTimelineDate(i18n, locale, date),
          formatFileSize: (bytes: number) => formatFileSize(locale, bytes),
          collator: getCollator(locale),
       }),
-      [locale],
+      [locale, i18n],
    );
 }

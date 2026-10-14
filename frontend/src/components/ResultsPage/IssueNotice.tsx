@@ -12,8 +12,8 @@ type IssueNoticeProps = {
 
 export default function IssueNotice({ issueReportDeadline }: IssueNoticeProps) {
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
-   const { formatTimelineDate } = useFormatters();
-   const deadline = formatTimelineDate(issueReportDeadline);
+   const { formatDate } = useFormatters();
+   const deadline = formatDate(issueReportDeadline, { delimiter: "at", withYear: false });
 
    return (
       <section id="fout-melden">

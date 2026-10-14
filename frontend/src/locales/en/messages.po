@@ -553,6 +553,11 @@ msgstr "Report a mistake or something that is not right"
 msgid "Melding maken"
 msgstr "Report an issue"
 
+#. Between a date and a time: 8 december na 21:00
+#: src/utils/format.ts
+msgid "na"
+msgstr "after"
+
 #: src/components/Header.tsx
 msgid "Naar hoofdinhoud"
 msgstr "Skip to main content"
@@ -564,6 +569,11 @@ msgstr "After we receive your report, we investigate what is going on. If necess
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "nog niet gestart"
 msgstr "not started yet"
+
+#. Between a date and a time: 8 december om 21:00
+#: src/utils/format.ts
+msgid "om"
+msgstr "at"
 
 #: src/pages/CSBPage/CSBResultsPage.tsx
 #: src/pages/HSBPage/HSBResultsPage.tsx
@@ -821,6 +831,11 @@ msgstr "Counting results coming soon"
 msgid "Toegelaten kiezers"
 msgstr "Admitted voters"
 
+#. Between a date and a time: 8 december tot 21:00
+#: src/utils/format.ts
+msgid "tot"
+msgstr "until"
+
 #: src/components/ResultsPage/PartyVoteMatrixTable.tsx
 msgid "Totaal"
 msgstr "Total"
@@ -874,6 +889,10 @@ msgstr "Polling day: {electionDay}"
 #: src/pages/ReportIssuePage.tsx
 msgid "Vermeld geen persoonsgegevens in uw melding; dat is niet nodig."
 msgstr "Do not include personal data in your report; that is not necessary."
+
+#: src/utils/format.ts
+msgid "Verwacht:"
+msgstr "Expected:"
 
 #: src/components/ListPage/RegionList.tsx
 msgid "Vind een {regionInline} van A tot Z"

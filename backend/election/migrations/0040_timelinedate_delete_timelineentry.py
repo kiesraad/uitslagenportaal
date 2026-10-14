@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('event', models.CharField(choices=[('sb_vote_count', 'SB Vote count'), ('candidate_vote_count', 'CandidateSB Vote count'), ('municipality_vote_count', 'Municipality Vote count'), ('electoral_district_vote_count', 'Electoral district Vote count'), ('csb_check', 'CSB Check'), ('csb_result_publish', 'CSB Result publish')], max_length=128)),
                 ('date', models.DateTimeField()),
-                ('date_qualifier', models.CharField(choices=[('all_day', 'All day'), ('from', 'From'), ('until', 'Until'), ('expected', 'Expected')], default='all_day', max_length=8)),
+                ('qualifier', models.CharField(choices=[('all_day', 'All day'), ('from', 'From'), ('until', 'Until'), ('expected', 'Expected')], default='all_day', max_length=8)),
                 ('election_config', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='timeline_dates', to='election.electionconfig')),
             ],
             options={

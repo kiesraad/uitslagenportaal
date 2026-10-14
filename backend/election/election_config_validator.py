@@ -48,7 +48,7 @@ def _check_timeline_dates(data: dict, errors: list[str]) -> None:
         else:
             errors.append(f"{path}.date: required")
 
-        for key, enum, required in [("event", TimelineEvent, True), ("date_qualifier", TimelineDateQualifier, False)]:
+        for key, enum, required in [("event", TimelineEvent, True), ("qualifier", TimelineDateQualifier, False)]:
             if key not in entry and required:
                 errors.append(f"{path}.{key}: required")
             elif key in entry:

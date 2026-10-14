@@ -34,7 +34,7 @@ MINIMAL_DATA = {
     },
     "timeline_dates": [
         {"event": "sb_vote_count", "date": "2025-12-15T11:00:00"},
-        {"event": "csb_result_publish", "date": "2025-12-18T16:00:00", "date_qualifier": "expected"},
+        {"event": "csb_result_publish", "date": "2025-12-18T16:00:00", "qualifier": "expected"},
     ],
 }
 
@@ -47,7 +47,7 @@ def test_import_creates_a_new_election_config_with_its_timeline_dates():
     assert config.category == "TK"
     assert config.label == "Tweede Kamer Verkiezingen 2025"
     assert config.source_hash == hash_election_config_data(MINIMAL_DATA)
-    assert set(config.timeline_dates.values_list("event", "date", "date_qualifier")) == {
+    assert set(config.timeline_dates.values_list("event", "date", "qualifier")) == {
         (TimelineEvent.SB_VOTE_COUNT, tz_aware_from_isoformat("2025-12-15T11:00:00"), TimelineDateQualifier.ALL_DAY),
         (
             TimelineEvent.CSB_RESULT_PUBLISH,

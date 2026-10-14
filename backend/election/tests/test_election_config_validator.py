@@ -25,7 +25,7 @@ def _config(*, without: str | None = None, extra: list | None = None, **override
 
 
 def test_config_with_a_date_for_every_required_event_is_valid():
-    assert validate_election_config(_config(date_qualifier="expected")) == []
+    assert validate_election_config(_config(qualifier="expected")) == []
 
 
 def test_optional_events_are_accepted():
@@ -67,8 +67,8 @@ def test_missing_required_event_is_reported_next_to_an_optional_event():
             "timeline_dates[4].date: '2025-12-16T09:00:00+01:00' must be a naive datetime",
         ),
         (
-            {"event": "candidate_vote_count", "date": "2025-12-16T09:00:00", "date_qualifier": "around"},
-            "timeline_dates[4].date_qualifier: is not one of",
+            {"event": "candidate_vote_count", "date": "2025-12-16T09:00:00", "qualifier": "around"},
+            "timeline_dates[4].qualifier: is not one of",
         ),
         ("candidate_vote_count", "timeline_dates[4]: expected an object, got str"),
     ],

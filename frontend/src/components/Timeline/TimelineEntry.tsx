@@ -4,14 +4,8 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { type PropsWithChildren, type ReactNode, useMemo } from "react";
+import type { TimelineDate, TimelineDateEvent } from "@/api/types.ts";
 import { electionDay, useFormatters } from "@/utils/format.ts";
-
-export type TimelineEntryStatus = "pending" | "in-progress" | "done";
-
-export interface TimelineEntryProps {
-   title: ReactNode;
-   date: string;
-}
 
 // The marker shows the status visually; this is the text screen readers get instead.
 const STATUS_LABELS: Record<TimelineEntryStatus, MessageDescriptor> = (() => ({
@@ -37,12 +31,36 @@ const STATUS_CLASSES: Record<TimelineEntryStatus, { line: string; marker: string
    },
 };
 
+/**
+ * Get the TimelineDate object for the given event or default to now if it's not found.
+ * @param dates
+ * @param event
+ */
+export function getTimelineDate(dates: TimelineDate[], event: TimelineDateEvent) {
+   return (
+      dates.find((date) => date.event === event) ??
+      ({
+         date: new Date().toISOString(),
+         event: event,
+         qualifier: "all_day",
+      } as TimelineDate)
+   );
+}
+
+export type TimelineEntryStatus = "pending" | "in-progress" | "done";
+
+export interface TimelineEntryProps {
+   title: ReactNode;
+   date: TimelineDate;
+}
+
 export default function TimelineEntry({ children, title, date }: PropsWithChildren<TimelineEntryProps>) {
    const { formatTimelineDate } = useFormatters();
    const { i18n } = useLingui();
 
    const status = useMemo((): TimelineEntryStatus => {
-      const entryDate = new Date(date);
+      // If no date is given, we fall back to today
+      const entryDate = new Date(date.date);
       if (Number.isNaN(entryDate.getTime())) {
          return "pending";
       }

@@ -6,7 +6,7 @@ export type ElectionConfig = {
    issue_report_deadline: string;
    csb_type: RegionCategory;
    has_hsb: boolean;
-   timeline_entries?: TimelineEntry[];
+   timeline_dates: TimelineDate[];
    report_error_url: string;
    counting_info_url: string;
    voting_url: string;
@@ -14,20 +14,22 @@ export type ElectionConfig = {
 
 export type ElectionConfigsResponse = ElectionConfig[];
 
-export type TimelineEntryStatus = "pending" | "in-progress" | "done";
-
 export type TimelineVariant = "CSO" | "DSO" | "DEFAULT";
 
-export type LocalizedText = {
-   nl: string;
-   en: string;
-};
+export type TimelineDateEvent =
+   | "sb_vote_count"
+   | "candidate_vote_count"
+   | "municipality_vote_count"
+   | "electoral_district_vote_count"
+   | "csb_check"
+   | "csb_result_publish";
 
-export type TimelineEntry = {
-   status: TimelineEntryStatus;
-   title: LocalizedText;
+export type TimelineDateQualifier = "all_day" | "from" | "until" | "expected";
+
+export type TimelineDate = {
+   event: TimelineDateEvent;
    date: string;
-   body: LocalizedText;
+   qualifier: TimelineDateQualifier;
 };
 
 export type ElectionDocument = {
@@ -64,7 +66,7 @@ export type Region = {
    slug: string;
    vote_counts: VoteCounts;
    voter_turnout_counts?: VoterTurnoutCount[];
-   timeline_entries?: TimelineEntry[];
+   timeline_entries?: TimelineDate[];
    timeline_variant?: TimelineVariant;
    documents?: ElectionDocument[];
    polling_station_pv_archive?: PollingStationPvArchive | null;

@@ -10,7 +10,7 @@ _TIMELINE_DATE_TEMPLATE = {
         f"an entry is required for each of {', '.join(sorted(TimelineEvent.required()))}"
     ),
     "date": "ISO 8601 datetime, e.g. 2025-12-15T11:00:00",
-    "date_qualifier": f"string, optional, one of {', '.join(TimelineDateQualifier.values)}, defaults to all_day",
+    "qualifier": f"string, optional, one of {', '.join(TimelineDateQualifier.values)}, defaults to all_day",
 }
 
 ELECTION_CONFIG_TEMPLATE = {

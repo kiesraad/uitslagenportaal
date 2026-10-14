@@ -23,7 +23,7 @@ export function Timeline({ children, description }: TimelineProps) {
 
    const sorted = useMemo(() => {
       return [...children].sort(
-         (a, b) => factor * (new Date(a.props.date).getTime() - new Date(b.props.date).getTime()),
+         (a, b) => factor * (new Date(a.props.date.date).getTime() - new Date(b.props.date.date).getTime()),
       );
    }, [children, factor]);
 

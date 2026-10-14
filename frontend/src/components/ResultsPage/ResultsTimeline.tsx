@@ -1,7 +1,7 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
-import type { LocalizedText, TimelineEntry as TimelineEntryApiProps, TimelineVariant } from "@/api/types.ts";
+import type { LocalizedText, TimelineDate as TimelineEntryApiProps, TimelineVariant } from "@/api/types.ts";
 import TimelineEntry from "@/components/Timeline/TimelineEntry.tsx";
 import { resolveLocale } from "@/i18n";
 import { Timeline } from "../Timeline/Timeline.tsx";

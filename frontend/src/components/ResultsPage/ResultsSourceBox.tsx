@@ -18,8 +18,8 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
    const { t } = useLingui();
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(electionConfigSlug));
-   const { formatTimelineDate } = useFormatters();
-   const deadline = formatTimelineDate(electionConfig.issue_report_deadline);
+   const { formatDate } = useFormatters();
+   const deadline = formatDate(electionConfig.issue_report_deadline, { delimiter: "at", withYear: false });
 
    return (
       <div className="counting-results-infobox">

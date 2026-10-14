@@ -129,7 +129,7 @@ def _save_election_config(
             election_config=election_config,
             event=entry_data["event"],
             date=tz_aware_from_isoformat(entry_data["date"]),
-            date_qualifier=entry_data.get("date_qualifier", "all_day"),
+            qualifier=entry_data.get("qualifier", "all_day"),
         )
 
     return election_config

@@ -143,7 +143,7 @@ class TimelineDate(BaseModel):
     )
     event = models.CharField(max_length=128, choices=TimelineEvent.choices)
     date = models.DateTimeField()
-    date_qualifier = models.CharField(
+    qualifier = models.CharField(
         max_length=8,
         choices=TimelineDateQualifier.choices,
         default=TimelineDateQualifier.ALL_DAY,

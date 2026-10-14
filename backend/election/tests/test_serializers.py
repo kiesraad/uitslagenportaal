@@ -17,12 +17,12 @@ def test_timeline_date_serializer_returns_event_date_and_qualifier():
     timeline_date = TimelineDateFactory(
         event=TimelineEvent.CSB_CHECK,
         date=datetime(2026, 9, 26, 9, 0, tzinfo=UTC),
-        date_qualifier=TimelineDateQualifier.FROM,
+        qualifier=TimelineDateQualifier.FROM,
     )
 
     data = TimelineDateSerializer(timeline_date).data
 
-    assert data == {"event": "csb_check", "date": "2026-09-26T11:00:00+02:00", "date_qualifier": "from"}
+    assert data == {"event": "csb_check", "date": "2026-09-26T11:00:00+02:00", "qualifier": "from"}
 
 
 @pytest.mark.django_db
