@@ -13,7 +13,7 @@ type TimelineProps = {
    description?: string;
 };
 
-export function Timeline({ children, description }: TimelineProps) {
+export function Timeline({ children }: TimelineProps) {
    const [sortDesc, setSortDesc] = usePersistedState<boolean>(
       TIMELINE_ORDER_KEY,
       true,
@@ -28,11 +28,7 @@ export function Timeline({ children, description }: TimelineProps) {
    }, [children, factor]);
 
    return (
-      <div id="results-timeline">
-         <h2 className="mb-4.5">
-            <Trans>Hoe zijn de resultaten tot stand gekomen?</Trans>
-         </h2>
-         {description && <p className={"mb-4"}>{description}</p>}
+      <>
          <button type="button" onClick={() => setSortDesc((prev) => !prev)} className="result-order-hint">
             <span>
                <FontAwesomeIcon icon={faArrowUp} color={sortDesc ? "Black" : "Grey"} />
@@ -47,6 +43,6 @@ export function Timeline({ children, description }: TimelineProps) {
             </span>
          </button>
          <ol className="flex flex-col">{sorted}</ol>
-      </div>
+      </>
    );
 }
