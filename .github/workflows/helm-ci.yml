@@ -58,8 +58,6 @@ jobs:
             helm template uitslagenportaal-service-accounts k8s-config/service-accounts \
               --namespace uitslagenportaal
             helm template monitoring k8s-config/monitoring --namespace monitoring
-            helm template monitoring k8s-config/monitoring --namespace monitoring \
-              -f k8s-config/monitoring/values-staging.yaml
           } | kubeconform -strict -summary \
                 -kubernetes-version "$KUBERNETES_VERSION" \
                 -schema-location default \

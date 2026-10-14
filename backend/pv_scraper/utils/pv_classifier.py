@@ -870,7 +870,7 @@ class PvClassifier:
 
         # Name the PV and add what it is to its PDF metadata.
         pv = self.identity(csb, region_code, region_name)
-        key = f"{folder}/{election}/{self.storage_name(pv)}"
+        key = f"{folder}/{self.storage_name(pv)}"
         content = self.add_metadata_to_pv(pv)
 
         # Replace a file of the same name, which storage would otherwise keep, saving this one under a suffixed name.
