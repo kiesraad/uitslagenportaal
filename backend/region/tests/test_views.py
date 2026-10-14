@@ -31,8 +31,8 @@ def list_regions(election, params):
 
 def get_region(election, region_slug, params):
     slug = election.election_config.slug
-    request = factory.get(f"/api/{slug}/regions/detail", {"region_slug": region_slug, **params})
-    return RegionDetailView.as_view()(request, election_config=slug)
+    request = factory.get(f"/api/{slug}/regions/{region_slug}", params)
+    return RegionDetailView.as_view()(request, election_config=slug, region=region_slug)
 
 
 @pytest.mark.django_db
@@ -287,9 +287,9 @@ def test_region_detail_has_no_preview_when_the_png_is_missing():
 
 @pytest.mark.django_db
 def test_csb_region_detail_returns_404_for_unknown_election_config():
-    request = factory.get("/api/unknown/regions/detail", {"level": "csb", "region_slug": "anywhere"})
+    request = factory.get("/api/unknown/regions/anywhere", {"level": "csb"})
 
-    response = RegionDetailView.as_view()(request, election_config="unknown")
+    response = RegionDetailView.as_view()(request, election_config="unknown", region="anywhere")
 
     assert response.status_code == 404
 

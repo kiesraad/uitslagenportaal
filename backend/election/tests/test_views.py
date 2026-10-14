@@ -76,7 +76,6 @@ def test_election_config_detail_includes_csb_type(client):
 
     assert response.status_code == 200
     assert response.json()["csb_type"] == RegionCategory.WATERSCHAP
-    assert response.json()["category"] == ElectionCategory.WS.value
 
 
 @pytest.mark.django_db

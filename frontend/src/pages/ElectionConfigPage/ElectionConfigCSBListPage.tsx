@@ -7,20 +7,18 @@ import { RegionList } from "@/components/ListPage/RegionList.tsx";
 import PageTop from "@/components/PageTop.tsx";
 import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
 import { electionConfigQuery, regionQuery, regionsQuery } from "@/hooks/queries.ts";
-import { getSingleCsbTab } from "@/utils/election.ts";
 import { useFormatters } from "@/utils/format.ts";
 import type { ElectionConfig } from "../../api/types";
-
 
 export function electionConfigCSBListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
       const electionConfig = await queryClient.query(electionConfigQueryOptions);
 
-      const singleCSB = getSingleCsbTab(electionConfig.category);
+      const singleCSB = electionConfig.single_csb;
 
       if (singleCSB) {
-         const regionQueryOptions = regionQuery({ ...params, regionSlug: singleCSB.regionSlug }, "csb");
+         const regionQueryOptions = regionQuery({ ...params, regionSlug: singleCSB.slug }, "csb");
          await queryClient.query(regionQueryOptions);
          return {
             electionConfigQuery: electionConfigQueryOptions,

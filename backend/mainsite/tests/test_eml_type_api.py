@@ -66,10 +66,8 @@ def ws_election(ab2023_config, ws_import_folder):
 
 
 def _region_detail(election_config_slug: str, region_slug: str, level: str, **extra):
-    request = factory.get(
-        f"/api/{election_config_slug}/regions/detail", {"level": level, "region_slug": region_slug, **extra}
-    )
-    response = RegionDetailView.as_view()(request, election_config=election_config_slug)
+    request = factory.get(f"/api/{election_config_slug}/regions/{region_slug}", {"level": level, **extra})
+    response = RegionDetailView.as_view()(request, election_config=election_config_slug, region=region_slug)
     assert response.status_code == 200, response.data
     return response.data
 

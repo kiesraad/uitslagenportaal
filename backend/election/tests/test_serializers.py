@@ -9,8 +9,14 @@ from election.serializers import (
     ElectionDocumentSerializer,
     TimelineEntrySerializer,
 )
-from election.tests.factories import ElectionConfigFactory, ElectionDocumentFactory, TimelineEntryFactory
+from election.tests.factories import (
+    ElectionConfigFactory,
+    ElectionDocumentFactory,
+    ElectionFactory,
+    TimelineEntryFactory,
+)
 from mainsite.models import RegionCategory
+from region.tests.factories import RegionFactory
 
 
 @pytest.mark.django_db
@@ -57,7 +63,29 @@ def test_election_config_serializer_includes_csb_type_without_imported_regions()
     data = ElectionConfigSerializer(config).data
 
     assert data["csb_type"] == RegionCategory.WATERSCHAP
-    assert data["category"] == ElectionCategory.WS.value
+    assert data["single_csb"] is None
+
+
+@pytest.mark.django_db
+def test_election_config_serializer_returns_the_single_csb():
+    election = ElectionFactory(election_config=ElectionConfigFactory(category=ElectionCategory.TK.value))
+    staat = RegionFactory(election=election, region_category=RegionCategory.STAAT, region_name="Nederland")
+    RegionFactory(election=election, region_category=RegionCategory.KIESKRING, region_name="Amsterdam")
+
+    data = ElectionConfigSerializer(election.election_config).data
+
+    assert data["single_csb"] == {"region_name": "Nederland", "slug": staat.slug}
+
+
+@pytest.mark.django_db
+def test_election_config_serializer_has_no_single_csb_when_there_are_several():
+    election = ElectionFactory(election_config=ElectionConfigFactory(category=ElectionCategory.WS.value))
+    RegionFactory(election=election, region_category=RegionCategory.WATERSCHAP, region_name="Scheldestromen")
+    RegionFactory(election=election, region_category=RegionCategory.WATERSCHAP, region_name="Rivierenland")
+
+    data = ElectionConfigSerializer(election.election_config).data
+
+    assert data["single_csb"] is None
 
 
 @pytest.mark.django_db

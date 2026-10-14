@@ -14,6 +14,7 @@ from mainsite.serializers import (
     ElectionSummarySerializer,
     RegionSummarySerializer,
 )
+from region.models import Region
 
 
 class ElectionDocumentSerializer(serializers.ModelSerializer):
@@ -74,6 +75,7 @@ class TimelineEntrySerializer(serializers.ModelSerializer):
 
 class ElectionConfigSerializer(serializers.ModelSerializer):
     timeline_entries = serializers.SerializerMethodField()
+    single_csb = serializers.SerializerMethodField()
 
     class Meta:
         model = ElectionConfig
@@ -84,8 +86,8 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
             "issue_report_opens_at",
             "issue_report_deadline",
             "timeline_entries",
-            "category",
             "csb_type",
+            "single_csb",
             "has_hsb",
             "report_error_url",
             "counting_info_url",
@@ -95,6 +97,15 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
     def get_timeline_entries(self, obj):
         entries = [entry for entry in obj.timeline_entries.all() if entry.variant == TimelineVariant.DEFAULT]
         return TimelineEntrySerializer(entries, many=True).data
+
+    def get_single_csb(self, obj):
+        """The CSB region when there is exactly one (TK, EP), so the frontend can skip the CSB list."""
+        csbs = list(
+            Region.objects.filter(election__election_config=obj, region_category=obj.csb_type).values(
+                "region_name", "slug"
+            )[:2]
+        )
+        return csbs[0] if len(csbs) == 1 else None
 
 
 class ContestListSerializer(serializers.ModelSerializer):

@@ -53,18 +53,14 @@ export function getRegion(
    parentRegionSlug?: string,
    level?: ReportingLevel,
 ) {
-   if (!electionConfigSlug || !level) {
+   if (!electionConfigSlug || !regionSlug || !level) {
       throw new Error("getRegion: electionConfigSlug, regionSlug and level are required.");
    }
 
-   const url = new URL(`/api/${electionConfigSlug}/regions/detail`, window.location.origin);
-
+   const url = new URL(`/api/${electionConfigSlug}/regions/${regionSlug}`, window.location.origin);
    url.searchParams.append("level", level);
    if (csbSlug) {
       url.searchParams.append("csb", csbSlug);
-   }
-   if (regionSlug) {
-      url.searchParams.append("region_slug", regionSlug);
    }
    if (parentRegionSlug) {
       url.searchParams.append("parent_region", parentRegionSlug);

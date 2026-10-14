@@ -1,13 +1,11 @@
-export type ElectionCategory = "TK" | "PS" | "WS" | "GR" | "EP";
-
 export type ElectionConfig = {
    slug: string;
    label: string;
    date: string;
    issue_report_opens_at: string;
    issue_report_deadline: string;
-   category: ElectionCategory;
    csb_type: RegionCategory;
+   single_csb: { region_name: string; slug: string } | null;
    has_hsb: boolean;
    timeline_entries?: TimelineEntry[];
    report_error_url: string;

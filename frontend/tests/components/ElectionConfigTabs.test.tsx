@@ -10,8 +10,8 @@ const electionConfig: ElectionConfig = {
    date: "2023-12-15T11:00:00",
    issue_report_opens_at: "2026-12-08T09:00:00",
    issue_report_deadline: "2026-12-14T10:00:00",
-   category: "WS",
    csb_type: "WATERSCHAP",
+   single_csb: null,
    has_hsb: false,
    report_error_url: "https://example.test/melding",
    counting_info_url: "https://example.test/telproces",
@@ -38,25 +38,19 @@ describe("ElectionConfigTabs", () => {
       expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("aria-current", "page");
    });
 
-   it("names the CSB tab Nederland for a Tweede Kamer election", () => {
+   it("names the CSB tab after the election's only CSB", () => {
       renderWithProviders(
          <ElectionConfigTabs
-            electionConfig={{ ...electionConfig, slug: "tk2025", category: "TK", csb_type: "STAAT" }}
+            electionConfig={{
+               ...electionConfig,
+               slug: "tk2025",
+               csb_type: "STAAT",
+               single_csb: { region_name: "Nederland", slug: "None-nederland" },
+            }}
          />,
          { initialEntries: ["/tk2025/gsb"] },
       );
 
       expect(screen.getByRole("link", { name: "Nederland" })).toHaveAttribute("href", "/tk2025/csb");
-   });
-
-   it("names the CSB tab Europees Parlement for a European Parliament election", () => {
-      renderWithProviders(
-         <ElectionConfigTabs
-            electionConfig={{ ...electionConfig, slug: "ep2024", category: "EP", csb_type: "STAAT" }}
-         />,
-         { initialEntries: ["/ep2024/gsb"] },
-      );
-
-      expect(screen.getByRole("link", { name: "Europees Parlement" })).toHaveAttribute("href", "/ep2024/csb");
    });
 });

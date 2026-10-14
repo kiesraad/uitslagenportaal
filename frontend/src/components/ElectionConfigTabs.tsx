@@ -1,17 +1,16 @@
 import { useLingui } from "@lingui/react/macro";
 import type { ElectionConfig } from "@/api/types";
 import SharedTabs from "@/components/SharedTabs.tsx";
-import { getSingleCsbTab } from "@/utils/election.ts";
 import { getRegionLabels } from "@/utils/region.ts";
 import { appRoutes } from "@/utils/routes.ts";
 
 type Props = {
-   electionConfig: Pick<ElectionConfig, "slug" | "category" | "csb_type" | "has_hsb">;
+   electionConfig: Pick<ElectionConfig, "slug" | "csb_type" | "single_csb" | "has_hsb">;
 };
 
 export default function ElectionConfigTabs({ electionConfig }: Props) {
    const { t } = useLingui();
-   const singleCsb = getSingleCsbTab(electionConfig.category);
+   const singleCsb = electionConfig.single_csb;
 
    return (
       <SharedTabs
@@ -34,7 +33,7 @@ export default function ElectionConfigTabs({ electionConfig }: Props) {
             //    activePatterns: ["/:electionConfigSlug/csb"],
             // },
             {
-               label: singleCsb ? t(singleCsb.label) : t(getRegionLabels(electionConfig.csb_type).plural),
+               label: singleCsb ? singleCsb.region_name : t(getRegionLabels(electionConfig.csb_type).plural),
                value: appRoutes.electionConfigCSBList(electionConfig.slug),
                activePatterns: ["/:electionConfigSlug/csb"],
             },

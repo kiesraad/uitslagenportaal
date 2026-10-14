@@ -80,8 +80,8 @@ class RegionDetailView(RetrieveAPIView):
 
     def get_object(self):
         election_config_slug = self.kwargs.get("election_config")
+        region_slug = self.kwargs.get("region")
         level = self.request.query_params.get("level")
-        region_slug = self.request.query_params.get("region_slug")
         # optional
         csb_slug = self.request.query_params.get("csb")
         parent_region_slug = self.request.query_params.get("parent_region")
@@ -138,11 +138,10 @@ class RegionDetailView(RetrieveAPIView):
             .filter(
                 election__election_config__slug=election_config_slug,
                 election__election_config__date__gte=visibility_cutoff(),
+                slug=region_slug,
                 region_category=region_category,
             )
         )
-        if region_slug:
-            queryset = queryset.filter(slug=region_slug)
         if parent_region_slug:
             queryset = queryset.filter(parent__slug=parent_region_slug)
         if csb_slug:

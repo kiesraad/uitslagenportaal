@@ -24,7 +24,7 @@ export function regionQuery(
    level: ReportingLevel,
 ) {
    return queryOptions({
-      queryKey: ["region", electionConfigSlug, regionSlug ?? null, csbSlug ?? null, parentRegionSlug ?? null, level],
+      queryKey: ["region", electionConfigSlug, regionSlug, csbSlug ?? null, parentRegionSlug ?? null, level],
       queryFn: () => getRegion(electionConfigSlug, regionSlug, csbSlug, parentRegionSlug, level),
    });
 }
