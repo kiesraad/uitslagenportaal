@@ -47,8 +47,8 @@ issuer:
   email: "kiesraad@kiesraad.nl"
   server: "production" # "staging" or "production"
 
-# The three image values below hold a moving tag, which is what a manual or local deploy
-# gets. CD overrides all three with the digest it just built, so on the cluster the tag
+# The image values below hold a moving tag, which is what a manual or local deploy
+# gets. CD overrides each with the digest it just built, so on the cluster the tag
 # says nothing about what is running — read the Deployment, not this file.
 backend:
   image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
@@ -107,6 +107,26 @@ celery:
         memory: 128Mi
       limits:
         memory: 256Mi
+
+# The PV scraper's worker, see docs/pv-scraper.md. Off unless an environment enables it.
+scraper:
+  enabled: false
+  image: "ghcr.io/kiesraad/uitslagenportaal-playwright-worker:dev"
+  pullPolicy: "Always"
+  replicas: 1
+  # A scrape takes one to three minutes, so one at a time gets through every source well
+  # within the day; each concurrent scrape adds a browser of about 400Mi.
+  concurrency: 1
+  # Sources queued per dispatch, which beat runs every 10 minutes.
+  dispatchMaxTasks: 5
+  terminationGracePeriodSeconds: 300
+  resources:
+    # A scrape peaks at about 700Mi, the idle worker uses 130Mi; OCR stays under 300Mi.
+    requests:
+      cpu: 250m
+      memory: 768Mi
+    limits:
+      memory: 1536Mi
 
 services:
   enabled: false

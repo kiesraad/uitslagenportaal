@@ -42,6 +42,7 @@ FROM python:3.14-slim AS celery-playwright-worker
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DEBUG=false
+ENV LOG_FORMAT=json
 ENV PATH="/app/.venv/bin:$PATH"
 # Outside root's home, so the backend user finds the browser.
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright

@@ -1,0 +1,27 @@
+# Overrides for the cluster that runs the non-production environments. See docs/deployments.md.
+
+kube-prometheus-stack:
+  defaultRules:
+    disabled:
+      KubeMemoryOvercommit: true
+
+  additionalPrometheusRulesMap:
+    memory-overcommit:
+      groups:
+        - name: kubernetes-resources-overrides
+          rules:
+            # The chart's rule demands that the requests still fit when the largest node is gone. Pods here may wait
+            # out a node reboot, so this fires only once the requests exceed all nodes.
+            - alert: KubeMemoryOvercommit
+              expr: |
+                sum by (cluster) (namespace_memory:kube_pod_container_resource_requests:sum{})
+                -
+                sum by (cluster) (kube_node_status_allocatable{job="kube-state-metrics",resource="memory"})
+                > 0
+              for: 10m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Cluster has overcommitted memory resource requests."
+                description: "Cluster {{ $labels.cluster }} has overcommitted memory resource requests for Pods by {{ $value | humanize }} bytes."
+                runbook_url: "https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubememoryovercommit"
