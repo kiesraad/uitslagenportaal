@@ -24,9 +24,7 @@ export type RegionLabels = {
    withArticle: MessageDescriptor;
 };
 
-// Wrapped so a bundler may drop it when unused; module-scope `msg` calls are
-// otherwise side effects it has to keep.
-const regionTypeMapping: Record<string, RegionLabels> = (() => ({
+const regionTypeMapping: Record<string, RegionLabels> = {
    STAAT: {
       singular: msg`Staat`,
       plural: msg`Staten`,
@@ -63,14 +61,14 @@ const regionTypeMapping: Record<string, RegionLabels> = (() => ({
       whole: msg`Heel stembureau`,
       withArticle: msg`het stembureau`,
    },
-}))();
+};
 
-const FALLBACK_LABELS: RegionLabels = (() => ({
+const FALLBACK_LABELS: RegionLabels = {
    singular: msg`Regio`,
    plural: msg`Regio's`,
    whole: msg`Hele regio`,
    withArticle: msg`de regio`,
-}))();
+};
 
 export function getRegionLabels(regionType?: RegionCategory): RegionLabels {
    if (!regionType) return FALLBACK_LABELS;

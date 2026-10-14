@@ -133,8 +133,10 @@ export function formatTimelineDate(i18n: I18n, locale: Locale, date: TimelineDat
          return formatDate(i18n, locale, date.date, { delimiter: "after", withYear: false });
       case "until":
          return formatDate(i18n, locale, date.date, { delimiter: "until", withYear: false });
-      case "expected":
-         return `${i18n._(msg`Verwacht:`)} ${formatDate(i18n, locale, date.date, { delimiter: "at", withYear: false })}`;
+      case "expected": {
+         const dateText = formatDate(i18n, locale, date.date, { delimiter: "at", withYear: false });
+         return i18n._(msg`Verwacht: ${dateText}`);
+      }
    }
 }
 

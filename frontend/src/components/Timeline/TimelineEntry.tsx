@@ -2,17 +2,17 @@ import { faCheck, faFile } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react";
+import { useLingui } from "@lingui/react/macro";
 import { type PropsWithChildren, type ReactNode, useMemo } from "react";
 import type { TimelineDate, TimelineDateEvent } from "@/api/types.ts";
 import { electionDay, useFormatters } from "@/utils/format.ts";
 
 // The marker shows the status visually; this is the text screen readers get instead.
-const STATUS_LABELS: Record<TimelineEntryStatus, MessageDescriptor> = (() => ({
+const STATUS_LABELS: Record<TimelineEntryStatus, MessageDescriptor> = {
    done: msg`afgerond`,
    "in-progress": msg`bezig`,
    pending: msg`nog niet gestart`,
-}))();
+};
 
 const STATUS_CLASSES: Record<TimelineEntryStatus, { line: string; marker: string; halo?: string }> = {
    done: {
@@ -56,7 +56,7 @@ export interface TimelineEntryProps {
 
 export default function TimelineEntry({ children, title, date }: PropsWithChildren<TimelineEntryProps>) {
    const { formatTimelineDate } = useFormatters();
-   const { i18n } = useLingui();
+   const { t } = useLingui();
 
    const status = useMemo((): TimelineEntryStatus => {
       // If no date is given, we fall back to today
@@ -95,7 +95,7 @@ export default function TimelineEntry({ children, title, date }: PropsWithChildr
          <div className="min-w-0 flex-1 pb-6">
             <h3 className="mb-0.5 font-sans leading-normal">
                {title}
-               <span className="sr-only">, {i18n._(STATUS_LABELS[status])}</span>
+               <span className="sr-only">, {t(STATUS_LABELS[status])}</span>
             </h3>
             <div className="mb-1.5 text-muted">{formatTimelineDate(date)}</div>
             <div className="flex flex-col gap-4 leading-6">{children}</div>

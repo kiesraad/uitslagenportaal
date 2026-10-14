@@ -1,7 +1,6 @@
 import { faArrowDown, faArrowUp } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactElement, useMemo } from "react";
 import type { TimelineEntryProps } from "@/components/Timeline/TimelineEntry.tsx";
 import { usePersistedState } from "@/hooks/usePersistedState.ts";
@@ -14,6 +13,7 @@ type TimelineProps = {
 };
 
 export function Timeline({ children }: TimelineProps) {
+   const { t } = useLingui();
    const [sortDesc, setSortDesc] = usePersistedState<boolean>(
       TIMELINE_ORDER_KEY,
       true,

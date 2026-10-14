@@ -114,7 +114,8 @@ the election visibility/deletion rules.
 See the Internationalisation section in [development.md](docs/development.md) for the setup,
 marking text for translations and translation rules.
 
-Lingui publishes agent skills, context files and an MCP server for working with its API:
+When working on translations, use the Lingui agent skills (`lingui:lingui-best-practices`,
+`lingui:find-unwrapped-strings`). Lingui also publishes context files and an MCP server:
 <https://lingui.dev/ai-tools>.
 
 Process in short:
