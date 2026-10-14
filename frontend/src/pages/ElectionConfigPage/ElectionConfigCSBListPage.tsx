@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import type { ElectionConfig } from "@/api/types";
 import ElectionConfigTabs from "@/components/ElectionConfigTabs.tsx";
 import { LayoutMain } from "@/components/LayoutMain.tsx";
 import { RegionList } from "@/components/ListPage/RegionList.tsx";
@@ -8,7 +9,6 @@ import PageTop from "@/components/PageTop.tsx";
 import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
 import { electionConfigQuery, regionQuery, regionsQuery } from "@/hooks/queries.ts";
 import { useFormatters } from "@/utils/format.ts";
-import type { ElectionConfig } from "@/api/types";
 
 export function electionConfigCSBListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
