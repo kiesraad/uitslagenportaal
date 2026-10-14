@@ -149,6 +149,26 @@ def test_every_correction_on_one_form_stays_current():
 
 
 @pytest.mark.django_db
+def test_every_correction_of_a_hoofdstembureau_stays_current():
+    gemeente = barneveld()
+    kieskring = RegionFactory(
+        election=gemeente.election,
+        parent=gemeente.parent,
+        csb=gemeente.csb,
+        region_category=RegionCategory.KIESKRING,
+        region_name="Arnhem",
+        region_number="1",
+    )
+    for mark in (b"first correction", b"second correction"):
+        write_pdf("TK2025_P1f-1_kieskring-1-arnhem.pdf", pv_pdf(mark, PvModel="P1f-1", PvRegionName="Arnhem"))
+        assert PDFFileHandler(storages["pv_import"]).run() == 1
+
+    corrections = ElectionDocument.objects.filter(region=kieskring).order_by("created_at", "pk")
+    assert [document.file_type for document in corrections] == [ElectionDocument.FileType.PDF_P1F_1] * 2
+    assert [document.correction_number for document in corrections] == [1, 2]
+
+
+@pytest.mark.django_db
 def test_imports_a_polling_station_certified_document_by_stembureau_id():
     gemeente = barneveld()
     station = RegionFactory(
@@ -252,6 +272,7 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies():
         ("NA31-2-B1", "Alpha", "1"),
         ("NA14-2", "Alpha", ""),
         ("O7", "North", ""),
+        ("P1f-1", "North", ""),
     ):
         write_pdf(
             f"{model}.pdf",
@@ -279,6 +300,7 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies():
         (station.id, file_type.PDF_NA31_2_B1),
         (gemeente.id, file_type.PDF_NA14_2),
         (kieskring.id, file_type.PDF_O7),
+        (kieskring.id, file_type.PDF_P1F_1),
     }
 
 
