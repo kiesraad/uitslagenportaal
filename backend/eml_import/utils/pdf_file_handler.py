@@ -186,14 +186,21 @@ class PDFFileHandler:
                 | Q(csb__isnull=True, region_name__iexact=csb_name, region_category=csb_category)
             )
         if category == RegionCategory.STEMBUREAU:
-            station = (stembureau or "").removeprefix("SB")
-            regions = regions.filter(parent__region_name__iexact=region_name, region_number__iendswith=f"::SB{station}")
+            station = (stembureau or "").removeprefix("SB").lstrip("0")
+            if not station.isdigit():
+                raise PDFImporterException(f"PvStembureau {stembureau!r} is not a stembureau number")
+            # Some EML pads the stembureau number: 0770::SB08.
+            regions = regions.filter(
+                parent__region_name__iexact=region_name, region_number__iregex=rf"::SB0*{station}$"
+            )
+            missing = f"No stembureau {station} in {region_name!r}"
         else:
             regions = regions.filter(region_name__iexact=region_name)
+            missing = f"No {category} {region_name!r}"
         try:
             return regions.get()
         except Region.DoesNotExist:
-            raise PDFImporterException(f"No {category} {region_name!r} for election {config.identifier}") from None
+            raise PDFImporterException(f"{missing} for election {config.identifier}") from None
         except Region.MultipleObjectsReturned:
             raise PDFImporterException(
                 f"Several {category} regions match {region_name!r} for election {config.identifier}"

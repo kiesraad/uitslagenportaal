@@ -171,6 +171,45 @@ def test_imports_a_polling_station_certified_document_by_stembureau_id():
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("region_number", ["0203::SB01", "0203::SB001"])
+def test_imports_a_polling_station_document_onto_a_zero_padded_stembureau_id(region_number):
+    gemeente = barneveld()
+    station = RegionFactory(
+        election=gemeente.election,
+        parent=gemeente,
+        csb=gemeente.csb,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name="Gemeentehuis",
+        region_number=region_number,
+    )
+    write_pdf("TK2025_Nederland_N10-1_0203_SB1.pdf", pv_pdf(PvModel="N10-1", PvStembureau="1"))
+
+    PDFFileHandler(storages["pv_import"]).run()
+
+    assert ElectionDocument.objects.get().region == station
+
+
+@pytest.mark.django_db
+def test_does_not_import_a_polling_station_document_onto_a_stembureau_with_a_longer_number(caplog):
+    gemeente = barneveld()
+    for number in ("10", "11"):
+        RegionFactory(
+            election=gemeente.election,
+            parent=gemeente,
+            csb=gemeente.csb,
+            region_category=RegionCategory.STEMBUREAU,
+            region_name=f"Stembureau {number}",
+            region_number=f"0203::SB{number}",
+        )
+    write_pdf("TK2025_Nederland_N10-1_0203_SB1.pdf", pv_pdf(PvModel="N10-1", PvStembureau="1"))
+
+    assert PDFFileHandler(storages["pv_import"]).run() == 0
+
+    assert not ElectionDocument.objects.exists()
+    assert "No stembureau 1 in 'Barneveld'" in caplog.text
+
+
+@pytest.mark.django_db
 def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies():
     config = ElectionConfigFactory(identifier="GEN", category=ElectionCategory.TK.value)
     election = ElectionFactory(election_config=config, subcategory="TK")
