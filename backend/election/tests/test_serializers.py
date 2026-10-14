@@ -78,10 +78,9 @@ def test_election_config_serializer_returns_the_single_csb():
 
 
 @pytest.mark.django_db
-def test_election_config_serializer_has_no_single_csb_when_there_are_several():
+def test_election_config_serializer_has_no_single_csb_when_only_one_waterschap_is_imported():
     election = ElectionFactory(election_config=ElectionConfigFactory(category=ElectionCategory.WS.value))
     RegionFactory(election=election, region_category=RegionCategory.WATERSCHAP, region_name="Scheldestromen")
-    RegionFactory(election=election, region_category=RegionCategory.WATERSCHAP, region_name="Rivierenland")
 
     data = ElectionConfigSerializer(election.election_config).data
 

@@ -10,6 +10,7 @@ from election.models import (
     TimelineEntryStatus,
     TimelineVariant,
 )
+from mainsite.models import RegionCategory
 from mainsite.serializers import (
     ElectionSummarySerializer,
     RegionSummarySerializer,
@@ -99,13 +100,16 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
         return TimelineEntrySerializer(entries, many=True).data
 
     def get_single_csb(self, obj):
-        """The CSB region when there is exactly one (TK, EP), so the frontend can skip the CSB list."""
-        csbs = list(
-            Region.objects.filter(election__election_config=obj, region_category=obj.csb_type).values(
-                "region_name", "slug"
-            )[:2]
+        """The CSB region for categories whose CSB is the staat (TK, EP), so the frontend can skip the CSB list.
+        Decided by category.
+        """
+        if obj.csb_type != RegionCategory.STAAT:
+            return None
+        return (
+            Region.objects.filter(election__election_config=obj, region_category=RegionCategory.STAAT)
+            .values("region_name", "slug")
+            .first()
         )
-        return csbs[0] if len(csbs) == 1 else None
 
 
 class ContestListSerializer(serializers.ModelSerializer):
