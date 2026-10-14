@@ -15,6 +15,7 @@ const electionConfig: ElectionConfig = {
    issue_report_deadline: "2026-12-10T12:45:00+01:00",
    csb_type: "WATERSCHAP",
    has_hsb: false,
+   timeline_dates: [],
    report_error_url: "https://example.test/melding",
    counting_info_url: "https://example.test/telproces",
    voting_url: "https://example.test/stemmen",
