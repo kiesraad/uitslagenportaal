@@ -184,6 +184,12 @@ def test_region_detail_links_the_certified_document_when_one_is_imported():
             ElectionDocument.FileType.PDF_NA31_2,
             ElectionDocument.FileType.PDF_NA14_2,
         ),
+        (
+            RegionCategory.KIESKRING,
+            "hsb",
+            ElectionDocument.FileType.PDF_O7,
+            ElectionDocument.FileType.PDF_P1F_1,
+        ),
     ],
 )
 def test_region_detail_lists_each_proces_verbaal_and_previews_the_correction(

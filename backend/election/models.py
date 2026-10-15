@@ -227,7 +227,7 @@ class CurrentManager(models.Manager.from_queryset(CurrentQuerySet)):
 
 
 # Spelled as raw values because a model's Meta cannot reach its own class attributes.
-_CORRECTION_FILE_TYPES = ("PDF_NA14-1", "PDF_NA14-2")
+_CORRECTION_FILE_TYPES = ("PDF_NA14-1", "PDF_NA14-2", "PDF_P1F-1")
 
 
 class ElectionDocument(BaseModel):
@@ -254,6 +254,7 @@ class ElectionDocument(BaseModel):
         PDF_NA14_2 = "PDF_NA14-2", "Corrigendum proces-verbaal gemeentelijk stembureau"
         PDF_NA14_2_B1 = "PDF_NA14-2-B1", "Bijlage 1 van corrigendum proces-verbaal gemeentelijk stembureau"
         PDF_O7 = "PDF_O7", "Proces-verbaal hoofdstembureau"
+        PDF_P1F_1 = "PDF_P1F-1", "Corrigendum proces-verbaal hoofdstembureau"
         PDF_P22_1 = "PDF_P22-1", "Proces-verbaal centraal stembureau met meerdere kieskringen"
         PDF_P22_2 = "PDF_P22-2", "Proces-verbaal centraal stembureau met één kieskring"
 
@@ -278,8 +279,12 @@ class ElectionDocument(BaseModel):
             FileType.PDF_NA14_1,
             FileType.PDF_NA31_1,
             FileType.PDF_NA31_2,
+            FileType.PDF_NA31_2_B1,
+            FileType.PDF_NA31_2_B2,
             FileType.PDF_NA14_2,
+            FileType.PDF_NA14_2_B1,
             FileType.PDF_O7,
+            FileType.PDF_P1F_1,
             FileType.PDF_P22_1,
             FileType.PDF_P22_2,
         }

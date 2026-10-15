@@ -129,12 +129,20 @@ msgid "Corrigendum op het proces-verbaal van het gemeentelijk stembureau."
 msgstr "Corrigendum op het proces-verbaal van het gemeentelijk stembureau."
 
 #: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Corrigendum op het proces-verbaal van het hoofdstembureau."
+msgstr "Corrigendum op het proces-verbaal van het hoofdstembureau."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Corrigendum op het proces-verbaal van het stembureau."
 msgstr "Corrigendum op het proces-verbaal van het stembureau."
 
 #: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Corrigendum proces-verbaal gemeentelijk stembureau"
 msgstr "Corrigendum proces-verbaal gemeentelijk stembureau"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Corrigendum proces-verbaal hoofdstembureau"
+msgstr "Corrigendum proces-verbaal hoofdstembureau"
 
 #: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Corrigendum proces-verbaal stembureau"
