@@ -32,8 +32,20 @@ On Kubernetes the worker is the `celery-scraper` Deployment, built from the `cel
 
 The scraper is based on a list of authorities, which lists municipalities, water authorities, provinces and the state with their main website.
 The list is created by hand (or a manually run script) and will need updating if websites of municipalities change or when there are mergers.
-The list is imported using the `import_scrape_sources` command to seed the `ScrapeSource` model: 
-`docker compose run --rm backend-scripts python manage.py import_scrape_sources`.
+The list is imported using the `import_scrape_sources` command to seed the `ScrapeSource` model.
+
+Locally run it with:
+
+```bash
+docker compose run --rm backend-scripts python manage.py import_scrape_sources
+```
+
+In the k8s cluster:
+
+```bash
+kubectl -n uitslagenportaal-[env] exec deploy/uitslagenportaal-backend -c backend -- python manage.py import_scrape_sources
+```
+
 It imports `pv_scraper/authorities.json` from default storage. Election pages in the file are merged with those
 already known, so pages the scraper found since the file was exported are kept.
 

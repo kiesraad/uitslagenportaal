@@ -1,4 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
+import { SBTimeline } from "@/components/Timeline/SBTimeline.tsx";
 import type { ElectionConfig, Region } from "../../api/types";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
@@ -36,12 +37,11 @@ export function CSBResultsComponent({ electionConfig, region }: Props) {
                description: t`Onderstaande documenten bevatten de laatste telresultaten van ${regionWithArticle}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`,
                documents: region.documents,
             }}
-            timelineVariant={region.timeline_variant}
-            timelineEntries={electionConfig.timeline_entries ?? []}
             issueReportDeadline={electionConfig.issue_report_deadline}
             notPublishedRegionName={region.region_name}
             notPublishedRegionCategory={region.region_category}
             partyHref={(partySlug) => appRoutes.csbPartyResults(electionConfig.slug, region.slug, partySlug)}
+            timeline={<SBTimeline variant={region.timeline_variant} dates={electionConfig.timeline_dates ?? []} />}
          />
       </ResultsPageColumns>
    );
