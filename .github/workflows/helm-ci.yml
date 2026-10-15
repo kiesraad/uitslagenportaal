@@ -52,7 +52,9 @@ jobs:
       - name: Validate rendered manifests
         run: |
           {
-            helm template uitslagenportaal k8s-config/application --namespace uitslagenportaal
+            # The scraper is off by default; render it as it is when enabled.
+            helm template uitslagenportaal k8s-config/application --namespace uitslagenportaal \
+              --set scraper.enabled=true
             helm template uitslagenportaal-service-accounts k8s-config/service-accounts \
               --namespace uitslagenportaal
             helm template monitoring k8s-config/monitoring --namespace monitoring

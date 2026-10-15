@@ -396,7 +396,7 @@ alloy:
           forward_to = [loki.write.default.receiver]
 
           stage.match {
-            selector = `{container=~"backend|celery-worker|celery-beat|frontend"}`
+            selector = `{container=~"backend|celery-worker|celery-scraper|celery-beat|frontend"}`
 
             stage.json {
               expressions = {

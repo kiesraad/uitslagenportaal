@@ -24,6 +24,10 @@ Run the following to start the local docker compose stack with the worker for th
 docker compose --profile with-scraper up -d --build
 ```
 
+On Kubernetes the worker is the `celery-scraper` Deployment, built from the `celery-playwright-worker` target of
+`prod.dockerfile` and switched on with `scraper.enabled`; see [deployments.md](deployments.md#pv-scraper).
+`PV_SCRAPER_DISPATCH_MAX_TASKS` caps how many sources each dispatch queues, and is 0, dispatching nothing, by default.
+
 ### List of authorities
 
 The scraper is based on a list of authorities, which lists municipalities, water authorities, provinces and the state with their main website.

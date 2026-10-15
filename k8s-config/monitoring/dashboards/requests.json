@@ -229,7 +229,7 @@
          "targets": [
             {
                "refId": "A",
-               "expr": "{namespace=\"$namespace\", container=~\"backend|celery-worker|celery-beat|frontend\"} | level=~\"ERROR|CRITICAL\"",
+               "expr": "{namespace=\"$namespace\", container=~\"backend|celery-worker|celery-scraper|celery-beat|frontend\"} | level=~\"ERROR|CRITICAL\"",
                "queryType": "range"
             }
          ],

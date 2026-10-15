@@ -129,12 +129,20 @@ msgid "Corrigendum op het proces-verbaal van het gemeentelijk stembureau."
 msgstr "Correction to the certified election results of the municipal electoral committee."
 
 #: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Corrigendum op het proces-verbaal van het hoofdstembureau."
+msgstr "Correction to the certified election results of the district electoral committee."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Corrigendum op het proces-verbaal van het stembureau."
 msgstr "Correction to the certified election results of the polling station."
 
 #: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Corrigendum proces-verbaal gemeentelijk stembureau"
 msgstr "Correction to the certified election results of the municipal electoral committee"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Corrigendum proces-verbaal hoofdstembureau"
+msgstr "Correction to the certified election results of the district electoral committee"
 
 #: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Corrigendum proces-verbaal stembureau"

@@ -22,10 +22,12 @@ The application chart is divided into several yaml files, see ./k8s-config/appli
 - `03-frontend.yaml`: Frontend deployment and service.
 - `04-backend.yaml`: Backend deployment and service, incl. an init job which runs the migrations.
 - `05-celery.yaml`: Celery and Celery beat deployments.
-- `06-services.yaml`: Several `StatefulSet`s for PostgreSQL/Redis/Object storage services (local deployments only).
-- `07-exporters.yaml`: Prometheus exporters for PostgreSQL, Redis and Celery (only with `monitoring.enabled`).
-- `08-monitoring.yaml`: The `ServiceMonitor`s for the backend and the exporters, and the `PrometheusRule` with the
+- `06-monitoring.yaml`: The `ServiceMonitor`s for the backend and the exporters, and the `PrometheusRule` with the
   application's alerts (only with `monitoring.enabled`).
+- `07-exporters.yaml`: Prometheus exporters for PostgreSQL, Redis and Celery (only with `monitoring.enabled`).
+- `08-scraper.yaml`: The Celery worker for the PV scraper's `scraper` queue, in the Playwright worker image (only with
+  `scraper.enabled`).
+- `99-services.yaml`: Several `StatefulSet`s for PostgreSQL/Redis/Object storage services (local deployments only).
 
 There is one main `values.yaml` file, and a file per environment. Each environment file overrides certain values for the
 environment's deployments. Helm reads `values.yaml` itself as the chart's defaults, so only the environment file is
@@ -61,6 +63,8 @@ That's why the values-files are not part of the chart.
    kubectl create namespace monitoring
    helm upgrade --install monitoring monitoring -n monitoring --wait --timeout 15m
    ```
+   On the cluster of the non-production environments, add `-f monitoring/values-staging.yaml`: it lets
+   `KubeMemoryOvercommit` tolerate requests that won't fit while a node is down.
    For local deploys, skip the Loki secret and add `-f monitoring/values-local.yaml`. The chart refuses that file
    on a Scaleway cluster, where it would move Loki's logs off object storage.
 
@@ -167,14 +171,18 @@ kubectl -n uitslagenportaal-[env] create secret generic redis-creds \
 
 ```bash
 kubectl -n uitslagenportaal-[env] create secret generic s3-creds \
-  --from-literal=S3_BUCKET_NAME='uitslagenportaal'  \
+  --from-literal=S3_BUCKET_NAME='uitslagenportaal-[env]'  \
   --from-literal=S3_ACCESS_KEY=''  \
   --from-literal=S3_SECRET_KEY=''  \
   --from-literal=S3_ADDRESSING_STYLE='virtual'  \
   --from-literal=S3_ENDPOINT_URL='https://s3.nl-ams.scw.cloud'  \
-  --from-literal=S3_PUBLIC_DOMAIN='uitslagenportaal.s3.nl-ams.scw.cloud'  \
-  --from-literal=S3_URL_PROTOCOL='https:'
+  --from-literal=S3_PUBLIC_DOMAIN='uitslagenportaal-[env].s3.nl-ams.scw.cloud'  \
+  --from-literal=S3_URL_PROTOCOL='https:'  \
+  --from-literal=PV_IMPORT_BUCKET='uitslagenportaal-pvs-[env]'
 ```
+
+`PV_IMPORT_BUCKET` is the bucket the PV import reads and the PV scraper writes to. S3_ACCESS_KEY/S3_SECRET_KEY should 
+have access to this bucket as well, make sure the configured policy allows this. 
 
 **Application secrets**
 
@@ -251,6 +259,18 @@ kubectl -n uitslagenportaal-[env] create secret generic basic-auth-creds \
 Certificate issuance is unaffected: cert-manager attaches its own HTTP-01 route to the
 Gateway, and that route carries no auth filter.
 
+
+### PV scraper
+
+With `scraper.enabled`, the chart runs the scraper worker and beat queues up to
+`scraper.dispatchMaxTasks` due sources every 10 minutes; without it, beat queues none. See
+[pv-scraper.md](pv-scraper.md) for what it does. Before enabling it in an environment:
+
+1. Create the PV bucket named in `PV_IMPORT_BUCKET` in the `s3-creds` secret (see Secrets above).
+2. Upload the list of authorities to `pv_scraper/authorities.json` in the application's bucket, then seed the sources:
+   ```bash
+   kubectl -n uitslagenportaal-[env] exec deploy/uitslagenportaal-backend -- python manage.py import_scrape_sources
+   ```
 
 ### Automatic deploy
 
@@ -339,7 +359,7 @@ E.g. on a Kubernetes cluster from Docker Desktop or kind
    off mount propagation for node-exporter, which Docker Desktop refuses.
 2. Add a hosts value in `C:\Windows\System32\drivers\etc\hosts` or `/etc/hosts`:
    `127.0.0.1  uitslagenportaal.localdev`
-3. Set the importer secrets (services secrets are created by `06-services.yaml`).
+3. Set the importer secrets (services secrets are created by `99-services.yaml`).
 4. Install the helm chart:
    ```bash
    helm upgrade --install uitslagenportaal application -n uitslagenportaal-local --create-namespace -f application/values-local.yaml
