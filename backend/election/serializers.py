@@ -1,14 +1,11 @@
 from django.urls import reverse
-from django.utils import timezone
 from rest_framework import serializers
 
 from election.models import (
     Contest,
     ElectionConfig,
     ElectionDocument,
-    TimelineEntry,
-    TimelineEntryStatus,
-    TimelineVariant,
+    TimelineDate,
 )
 from mainsite.models import RegionCategory
 from mainsite.serializers import (
@@ -42,40 +39,18 @@ class ElectionDocumentSerializer(serializers.ModelSerializer):
         return reverse("document-download", kwargs={"pk": obj.pk})
 
 
-class TimelineEntrySerializer(serializers.ModelSerializer):
-    status = serializers.SerializerMethodField()
-    title = serializers.SerializerMethodField()
-    body = serializers.SerializerMethodField()
-
+class TimelineDateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TimelineEntry
+        model = TimelineDate
         fields = (
-            "status",
-            "title",
+            "event",
             "date",
-            "body",
+            "qualifier",
         )
-
-    def get_status(self, obj):
-        now = timezone.localtime(timezone.now())
-        entry_date = timezone.localtime(obj.date)
-
-        if entry_date.date() == now.date():
-            return TimelineEntryStatus.IN_PROGRESS
-        elif entry_date.date() < now.date():
-            return TimelineEntryStatus.DONE
-        else:
-            return TimelineEntryStatus.PENDING
-
-    def get_title(self, obj):
-        return {"nl": obj.title_nl, "en": obj.title_en or obj.title_nl}
-
-    def get_body(self, obj):
-        return {"nl": obj.body_nl, "en": obj.body_en or obj.body_nl}
 
 
 class ElectionConfigSerializer(serializers.ModelSerializer):
-    timeline_entries = serializers.SerializerMethodField()
+    timeline_dates = TimelineDateSerializer(many=True, read_only=True)
     single_csb = serializers.SerializerMethodField()
 
     class Meta:
@@ -86,7 +61,7 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
             "date",
             "issue_report_opens_at",
             "issue_report_deadline",
-            "timeline_entries",
+            "timeline_dates",
             "csb_type",
             "single_csb",
             "has_hsb",
@@ -94,10 +69,6 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
             "counting_info_url",
             "voting_url",
         )
-
-    def get_timeline_entries(self, obj):
-        entries = [entry for entry in obj.timeline_entries.all() if entry.variant == TimelineVariant.DEFAULT]
-        return TimelineEntrySerializer(entries, many=True).data
 
     def get_single_csb(self, obj):
         """The CSB region for categories whose CSB is the staat (TK, EP), so the frontend can skip the CSB list.

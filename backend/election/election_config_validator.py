@@ -1,8 +1,6 @@
 from datetime import datetime
 
-from election.models import ElectionCategory
-
-_TIMELINE_KEYS = ("timeline_entries_cso", "timeline_entries_dso", "timeline_entries_default")
+from election.models import ElectionCategory, TimelineDateQualifier, TimelineEvent
 
 _REQUIRED_ELECTION_FIELDS = (
     "id",
@@ -27,31 +25,37 @@ def _check_iso_datetime(value, path: str, errors: list[str]) -> None:
         errors.append(f"{path}: {value!r} must be a naive datetime (no timezone offset)")
 
 
-def _check_timeline_entries(data: dict, errors: list[str]) -> None:
-    for key in _TIMELINE_KEYS:
-        if key not in data:
+def _check_timeline_dates(data: dict, errors: list[str]) -> None:
+    entries = data.get("timeline_dates")
+    if not isinstance(entries, list):
+        errors.append(f"timeline_dates: expected a list, got {type(entries).__name__}")
+        return
+
+    # Only strings can name an event; anything else is reported per entry below.
+    events = {e.get("event") for e in entries if isinstance(e, dict) and isinstance(e.get("event"), str)}
+    missing = TimelineEvent.required() - events
+    if missing:
+        errors.append(f"timeline_dates: some events are missing: {', '.join(sorted(missing))}")
+
+    for index, entry in enumerate(entries):
+        path = f"timeline_dates[{index}]"
+        if not isinstance(entry, dict):
+            errors.append(f"{path}: expected an object, got {type(entry).__name__}")
             continue
-        entries = data[key]
-        if not isinstance(entries, list):
-            errors.append(f"{key}: expected a list, got {type(entries).__name__}")
-            continue
-        for index, entry in enumerate(entries):
-            path = f"{key}[{index}]"
-            if not isinstance(entry, dict):
-                errors.append(f"{path}: expected an object, got {type(entry).__name__}")
-                continue
-            for section in ("title", "body"):
-                section_value = entry.get(section)
-                if not isinstance(section_value, dict):
-                    errors.append(f"{path}.{section}: expected an object with 'nl' and 'en' keys")
-                    continue
-                for lang in ("nl", "en"):
-                    if not section_value.get(lang):
-                        errors.append(f"{path}.{section}.{lang}: required, non-empty string")
-            if "date" in entry:
-                _check_iso_datetime(entry["date"], f"{path}.date", errors)
-            else:
-                errors.append(f"{path}.date: required")
+
+        if "date" in entry:
+            _check_iso_datetime(entry["date"], f"{path}.date", errors)
+        else:
+            errors.append(f"{path}.date: required")
+
+        for key, enum, required in [("event", TimelineEvent, True), ("qualifier", TimelineDateQualifier, False)]:
+            if key not in entry and required:
+                errors.append(f"{path}.{key}: required")
+            elif key in entry:
+                try:
+                    enum(entry[key])
+                except ValueError:
+                    errors.append(f"{path}.{key}: is not one of {', '.join(enum.__members__.values())}")
 
 
 def validate_election_config(data: dict) -> list[str]:
@@ -82,6 +86,6 @@ def validate_election_config(data: dict) -> list[str]:
         if election_data.get(field):
             _check_iso_datetime(election_data[field], f"election.{field}", errors)
 
-    _check_timeline_entries(data, errors)
+    _check_timeline_dates(data, errors)
 
     return errors

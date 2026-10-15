@@ -1,7 +1,7 @@
 import pytest
 
 from election.models import ElectionCategory, ElectionConfig
-from election.tests.factories import ElectionConfigFactory, TimelineEntryFactory
+from election.tests.factories import ElectionConfigFactory
 from mainsite.models import RegionCategory
 
 
@@ -37,15 +37,6 @@ def test_election_config_slug_is_not_overwritten_if_already_set():
     )
 
     assert config.slug == "custom-slug"
-
-
-@pytest.mark.django_db
-def test_timeline_entries_are_ordered_chronologically():
-    config = ElectionConfigFactory()
-    later = TimelineEntryFactory(election_config=config, date="2023-03-20T00:00:00Z")
-    earlier = TimelineEntryFactory(election_config=config, date="2023-03-10T00:00:00Z")
-
-    assert list(config.timeline_entries.all()) == [earlier, later]
 
 
 @pytest.mark.parametrize(

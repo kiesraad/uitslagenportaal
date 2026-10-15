@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { SBTimeline } from "@/components/Timeline/SBTimeline.tsx";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent";
@@ -87,11 +88,10 @@ export default function PollingStationResultsPage() {
                intro={t`De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware.`}
                voteCounts={pollingStation.vote_counts}
                turnoutVotes={pollingStation.voter_turnout_counts}
-               timelineVariant={pollingStation.timeline_variant}
-               timelineEntries={pollingStation.timeline_entries ?? []}
                issueReportDeadline={electionConfig.issue_report_deadline}
                notPublishedRegionName={region.region_name}
                notPublishedRegionCategory={region.region_category}
+               timeline={<SBTimeline variant={pollingStation.timeline_variant} dates={electionConfig.timeline_dates} />}
             />
          </ResultsPageColumns>
       </LayoutMain>

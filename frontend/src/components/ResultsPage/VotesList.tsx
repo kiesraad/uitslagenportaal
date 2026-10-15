@@ -52,7 +52,7 @@ export function VotesListItem({ number, title, voteCount, href }: VotesListItemP
    const { formatNumber } = useFormatters();
 
    const className = twMerge(
-      "hover:no-underline! col-span-4 grid min-h-18 grid-cols-subgrid items-center pr-4 pl-6",
+      "col-span-4 grid min-h-18 grid-cols-subgrid items-center pr-4 pl-6 hover:no-underline",
       isClickable && "hover:bg-blue-100",
    );
 

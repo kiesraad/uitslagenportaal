@@ -24,7 +24,7 @@ type Props = {
 const FILE_TYPE_MAPPINGS: Record<
    string,
    { name: MessageDescriptor; fileType: string; description: MessageDescriptor; icon: IconDefinition }
-> = (() => ({
+> = {
    EML510b: {
       name: msg`EML_NL tellingbestand 510b`,
       fileType: "xml",
@@ -109,7 +109,7 @@ const FILE_TYPE_MAPPINGS: Record<
       icon: faFilePdf,
       description: msg`Het ondertekende proces-verbaal van het centraal stembureau voor een verkiezing met één kieskring.`,
    },
-}))();
+};
 
 function toReportFiles(documents: ElectionDocument[] | undefined): ReportFile[] {
    return (documents ?? []).map((document) => ({

@@ -1,6 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { SBTimeline } from "@/components/Timeline/SBTimeline.tsx";
 import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -8,7 +9,6 @@ import IssueNotice from "../../components/ResultsPage/IssueNotice.tsx";
 import PartyVoteMatrixTable from "../../components/ResultsPage/PartyVoteMatrixTable.tsx";
 import ResultsNotPublished from "../../components/ResultsPage/ResultsNotPublished.tsx";
 import ResultsPageIndex from "../../components/ResultsPage/ResultsPageIndex";
-import ResultsTimeline from "../../components/ResultsPage/ResultsTimeline.tsx";
 import { electionConfigQuery, hsbPartyVoteMatrixQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getCsbCrumb, getRegionLabels } from "../../utils/region.ts";
@@ -111,7 +111,7 @@ export function HSBPartyResultsPage() {
                ) : (
                   resultsPageContent
                )}
-               <ResultsTimeline variant={region.timeline_variant} entries={electionConfig.timeline_entries ?? []} />
+               <SBTimeline variant={region.timeline_variant} dates={electionConfig.timeline_dates ?? []} />
                <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
             </div>
          </div>

@@ -25,9 +25,7 @@ MINIMAL_DATA = {
         "issue_report_opens_at": "2099-08-18T11:00:00",
         "issue_report_deadline": "2099-09-12T10:00:00",
     },
-    "timeline_entries_cso": [],
-    "timeline_entries_dso": [],
-    "timeline_entries_default": [],
+    "timeline_dates": [],
 }
 
 EXPIRED_DATA = {**MINIMAL_DATA, "election": {**MINIMAL_DATA["election"], "date": "2000-04-12T10:00:00"}}

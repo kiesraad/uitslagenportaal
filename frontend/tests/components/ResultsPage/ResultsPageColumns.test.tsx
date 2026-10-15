@@ -15,6 +15,7 @@ const electionConfig: ElectionConfig = {
    csb_type: "WATERSCHAP",
    single_csb: null,
    has_hsb: false,
+   timeline_dates: [],
    report_error_url: "https://example.test/melding",
    counting_info_url: "https://example.test/telproces",
    voting_url: "https://example.test/stemmen",

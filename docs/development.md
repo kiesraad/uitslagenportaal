@@ -131,7 +131,7 @@ After filling in the template with real values, validate it before uploading it 
 docker compose run --rm backend-scripts python manage.py validate_election_config my_election.json
 ```
 
-This checks required fields, the `category` enum, ISO 8601 datetimes and the timeline entry shape,
+This checks required fields, the `category` enum, ISO 8601 datetimes and the timeline dates,
 and reports every problem it finds rather than stopping at the first one.
 
 ### Importing proces-verbalen
