@@ -1,5 +1,5 @@
 # Upgrades the application release in one environment. Called from branch-ci-cd.yml once
-# both images are published; the caller decides which ref maps to which environment.
+# the images are published; the caller decides which ref maps to which environment.
 name: Deploy
 
 on:
@@ -27,6 +27,10 @@ on:
         required: true
         type: string
         description: Frontend image reference including its digest
+      scraper-image:
+        required: true
+        type: string
+        description: Playwright worker image reference including its digest, run by the scraper worker
 
 permissions:
   contents: read
@@ -97,6 +101,7 @@ jobs:
           VALUES_FILE: ${{ inputs.values-file }}
           BACKEND_IMAGE: ${{ inputs.backend-image }}
           FRONTEND_IMAGE: ${{ inputs.frontend-image }}
+          SCRAPER_IMAGE: ${{ inputs.scraper-image }}
         run: |
           helm upgrade --install uitslagenportaal ./k8s-config/application \
             --namespace "$NAMESPACE" \
@@ -104,4 +109,5 @@ jobs:
             --set-string backend.image="$BACKEND_IMAGE" \
             --set-string celery.image="$BACKEND_IMAGE" \
             --set-string frontend.image="$FRONTEND_IMAGE" \
+            --set-string scraper.image="$SCRAPER_IMAGE" \
             --wait --rollback-on-failure --timeout 15m

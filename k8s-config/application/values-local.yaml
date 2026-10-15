@@ -24,6 +24,9 @@ redis:
   # The in-cluster Redis speaks plain TCP, unlike the managed cache.
   tls: false
 
+scraper:
+  enabled: true
+
 # In-cluster stand-ins for the managed database, cache and object storage.
 services:
   enabled: true
