@@ -7,10 +7,12 @@ from election.models import (
     ElectionDocument,
     TimelineDate,
 )
+from mainsite.models import RegionCategory
 from mainsite.serializers import (
     ElectionSummarySerializer,
     RegionSummarySerializer,
 )
+from region.models import Region
 
 
 class ElectionDocumentSerializer(serializers.ModelSerializer):
@@ -49,6 +51,7 @@ class TimelineDateSerializer(serializers.ModelSerializer):
 
 class ElectionConfigSerializer(serializers.ModelSerializer):
     timeline_dates = TimelineDateSerializer(many=True, read_only=True)
+    single_csb = serializers.SerializerMethodField()
 
     class Meta:
         model = ElectionConfig
@@ -60,10 +63,23 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
             "issue_report_deadline",
             "timeline_dates",
             "csb_type",
+            "single_csb",
             "has_hsb",
             "report_error_url",
             "counting_info_url",
             "voting_url",
+        )
+
+    def get_single_csb(self, obj):
+        """The CSB region for categories whose CSB is the staat (TK, EP), so the frontend can skip the CSB list.
+        Decided by category.
+        """
+        if obj.csb_type != RegionCategory.STAAT:
+            return None
+        return (
+            Region.objects.filter(election__election_config=obj, region_category=RegionCategory.STAAT)
+            .values("region_name", "slug")
+            .first()
         )
 
 

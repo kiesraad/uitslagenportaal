@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   # Every suite runs in full before anything is published: path filters apply to a
-  # workflow's own triggers, not to a call, and both images are published every run.
+  # workflow's own triggers, not to a call, and every image is published every run.
   backend-ci:
     name: Backend CI
     uses: ./.github/workflows/backend-ci.yml
@@ -88,6 +88,7 @@ jobs:
       values-file: k8s-config/application/values-dev.yaml
       backend-image: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-backend@${{ needs.backend-docker-image.outputs.digest }}
       frontend-image: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-frontend@${{ needs.frontend-docker-image.outputs.digest }}
+      scraper-image: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-playwright-worker@${{ needs.playwright-worker-docker-image.outputs.digest }}
 
   deploy-staging:
     name: Deploy to scaleway-staging
@@ -103,3 +104,4 @@ jobs:
       values-file: k8s-config/application/values-staging.yaml
       backend-image: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-backend@${{ needs.backend-docker-image.outputs.digest }}
       frontend-image: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-frontend@${{ needs.frontend-docker-image.outputs.digest }}
+      scraper-image: ghcr.io/${{ github.repository_owner }}/uitslagenportaal-playwright-worker@${{ needs.playwright-worker-docker-image.outputs.digest }}

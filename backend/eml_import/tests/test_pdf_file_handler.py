@@ -149,6 +149,26 @@ def test_every_correction_on_one_form_stays_current():
 
 
 @pytest.mark.django_db
+def test_every_correction_of_a_hoofdstembureau_stays_current():
+    gemeente = barneveld()
+    kieskring = RegionFactory(
+        election=gemeente.election,
+        parent=gemeente.parent,
+        csb=gemeente.csb,
+        region_category=RegionCategory.KIESKRING,
+        region_name="Arnhem",
+        region_number="1",
+    )
+    for mark in (b"first correction", b"second correction"):
+        write_pdf("TK2025_P1f-1_kieskring-1-arnhem.pdf", pv_pdf(mark, PvModel="P1f-1", PvRegionName="Arnhem"))
+        assert PDFFileHandler(storages["pv_import"]).run() == 1
+
+    corrections = ElectionDocument.objects.filter(region=kieskring).order_by("created_at", "pk")
+    assert [document.file_type for document in corrections] == [ElectionDocument.FileType.PDF_P1F_1] * 2
+    assert [document.correction_number for document in corrections] == [1, 2]
+
+
+@pytest.mark.django_db
 def test_imports_a_polling_station_certified_document_by_stembureau_id():
     gemeente = barneveld()
     station = RegionFactory(
@@ -168,6 +188,45 @@ def test_imports_a_polling_station_certified_document_by_stembureau_id():
     assert document.region == station
     assert document.file_type == ElectionDocument.FileType.PDF_N10_1
     assert handler.archive_municipality_ids == {gemeente.id}
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("region_number", ["0203::SB01", "0203::SB001"])
+def test_imports_a_polling_station_document_onto_a_zero_padded_stembureau_id(region_number):
+    gemeente = barneveld()
+    station = RegionFactory(
+        election=gemeente.election,
+        parent=gemeente,
+        csb=gemeente.csb,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name="Gemeentehuis",
+        region_number=region_number,
+    )
+    write_pdf("TK2025_Nederland_N10-1_0203_SB1.pdf", pv_pdf(PvModel="N10-1", PvStembureau="1"))
+
+    PDFFileHandler(storages["pv_import"]).run()
+
+    assert ElectionDocument.objects.get().region == station
+
+
+@pytest.mark.django_db
+def test_does_not_import_a_polling_station_document_onto_a_stembureau_with_a_longer_number(caplog):
+    gemeente = barneveld()
+    for number in ("10", "11"):
+        RegionFactory(
+            election=gemeente.election,
+            parent=gemeente,
+            csb=gemeente.csb,
+            region_category=RegionCategory.STEMBUREAU,
+            region_name=f"Stembureau {number}",
+            region_number=f"0203::SB{number}",
+        )
+    write_pdf("TK2025_Nederland_N10-1_0203_SB1.pdf", pv_pdf(PvModel="N10-1", PvStembureau="1"))
+
+    assert PDFFileHandler(storages["pv_import"]).run() == 0
+
+    assert not ElectionDocument.objects.exists()
+    assert "No stembureau 1 in 'Barneveld'" in caplog.text
 
 
 @pytest.mark.django_db
@@ -213,6 +272,7 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies():
         ("NA31-2-B1", "Alpha", "1"),
         ("NA14-2", "Alpha", ""),
         ("O7", "North", ""),
+        ("P1f-1", "North", ""),
     ):
         write_pdf(
             f"{model}.pdf",
@@ -240,6 +300,7 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies():
         (station.id, file_type.PDF_NA31_2_B1),
         (gemeente.id, file_type.PDF_NA14_2),
         (kieskring.id, file_type.PDF_O7),
+        (kieskring.id, file_type.PDF_P1F_1),
     }
 
 

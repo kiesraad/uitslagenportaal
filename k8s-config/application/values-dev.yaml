@@ -9,3 +9,7 @@ frontend:
 
 celery:
   image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
+
+scraper:
+  enabled: true
+  image: "ghcr.io/kiesraad/uitslagenportaal-playwright-worker:dev"

@@ -91,6 +91,12 @@ const FILE_TYPE_MAPPINGS: Record<
       icon: faFilePdf,
       description: msg`Het ondertekende proces-verbaal van het hoofdstembureau.`,
    },
+   "PDF_P1F-1": {
+      name: msg`Corrigendum proces-verbaal hoofdstembureau`,
+      fileType: "pdf",
+      icon: faFilePdf,
+      description: msg`Corrigendum op het proces-verbaal van het hoofdstembureau.`,
+   },
    "PDF_P22-1": {
       name: msg`Proces-verbaal centraal stembureau met meerdere kieskringen`,
       fileType: "pdf",

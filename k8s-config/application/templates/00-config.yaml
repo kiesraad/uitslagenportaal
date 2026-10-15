@@ -32,6 +32,9 @@ data:
   CELERY_WORKER_MAX_TASKS_PER_CHILD: "{{ .Values.celery.worker.maxTasksPerChild }}"
   CELERY_WORKER_PREFETCH_MULTIPLIER: "{{ .Values.celery.worker.prefetchMultiplier }}"
 
+  # Sources beat queues for scraping per run; none without a scraper worker to consume them.
+  PV_SCRAPER_DISPATCH_MAX_TASKS: "{{ if .Values.scraper.enabled }}{{ .Values.scraper.dispatchMaxTasks }}{{ else }}0{{ end }}"
+
   # Both default to True upstream. Unsafe when internet-facing.
   DEBUG: "{{ .Values.debug }}"
   SITE_ROOT: "https://{{ .Values.app.hostname }}"

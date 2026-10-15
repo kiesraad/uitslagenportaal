@@ -1,5 +1,7 @@
 # See docs/deployments.md on how to use this for local deployments.
 
+localCluster: true
+
 debug: true
 
 app:
@@ -21,6 +23,9 @@ db:
 redis:
   # The in-cluster Redis speaks plain TCP, unlike the managed cache.
   tls: false
+
+scraper:
+  enabled: true
 
 # In-cluster stand-ins for the managed database, cache and object storage.
 services:

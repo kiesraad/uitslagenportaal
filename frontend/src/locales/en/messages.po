@@ -134,12 +134,20 @@ msgid "Corrigendum op het proces-verbaal van het gemeentelijk stembureau."
 msgstr "Correction to the certified election results of the municipal electoral committee."
 
 #: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Corrigendum op het proces-verbaal van het hoofdstembureau."
+msgstr "Correction to the certified election results of the district electoral committee."
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Corrigendum op het proces-verbaal van het stembureau."
 msgstr "Correction to the certified election results of the polling station."
 
 #: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Corrigendum proces-verbaal gemeentelijk stembureau"
 msgstr "Correction to the certified election results of the municipal electoral committee"
+
+#: src/components/ResultsPage/ReportsWithResults.tsx
+msgid "Corrigendum proces-verbaal hoofdstembureau"
+msgstr "Correction to the certified election results of the district electoral committee"
 
 #: src/components/ResultsPage/ReportsWithResults.tsx
 msgid "Corrigendum proces-verbaal stembureau"
@@ -306,9 +314,7 @@ msgstr "Report a mistake"
 msgid "Ga dan naar"
 msgstr "Then go to"
 
-#: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
-#: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
-#: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/components/ElectionConfigTabs.tsx
 #: src/utils/region.ts
 msgid "Gemeente"
 msgstr "Municipality"
@@ -387,7 +393,7 @@ msgstr "The municipal electoral committee has checked, transcribed and added up 
 msgid "Het hoofdstembureau heeft de telresultaten van alle gemeenten in de kieskring gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
 msgstr "The district electoral committee has checked, transcribed and added up the counting results of every municipality in the electoral district. Below you can see the counting results as recorded in the certified election results of the district electoral committee."
 
-#: src/pages/CSBPage/CSBResultsPage.tsx
+#: src/components/ResultsPage/CSBResultsComponent.tsx
 #: src/pages/HSBPage/HSBResultsPage.tsx
 msgid "Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
 msgstr "The district electoral committee has checked, transcribed and added up the counting results of every municipality in {regionName}. Below you can see the counting results as recorded in the certified election results of the district electoral committee."
@@ -583,7 +589,7 @@ msgstr "not started yet"
 msgid "om"
 msgstr "at"
 
-#: src/pages/CSBPage/CSBResultsPage.tsx
+#: src/components/ResultsPage/CSBResultsComponent.tsx
 #: src/pages/HSBPage/HSBResultsPage.tsx
 msgid "Onderstaande documenten bevatten de laatste telresultaten van {regionWithArticle}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
 msgstr "The documents below contain the latest counting results for {regionWithArticle}, as they are included in the result. The figures in the overview above come from the EML_NL count file."

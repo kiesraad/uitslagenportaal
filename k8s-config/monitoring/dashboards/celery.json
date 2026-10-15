@@ -25,7 +25,7 @@
             "query": {
                "type": 1,
                "label": "namespace",
-               "stream": "{container=~\"celery-worker|celery-beat\"}",
+               "stream": "{container=~\"celery-worker|celery-scraper|celery-beat\"}",
                "refId": "LokiVariableQueryEditor-VariableQuery"
             },
             "refresh": 2,
@@ -66,7 +66,7 @@
          "targets": [
             {
                "refId": "A",
-               "expr": "sum by (task, level) (count_over_time({namespace=\"$namespace\", container=\"celery-worker\"} | logger=\"celery.app.trace\" | task=~\".*$task.*\" [$__auto]))",
+               "expr": "sum by (task, level) (count_over_time({namespace=\"$namespace\", container=~\"celery-worker|celery-scraper\"} | logger=\"celery.app.trace\" | task=~\".*$task.*\" [$__auto]))",
                "legendFormat": "{{task}} {{level}}",
                "queryType": "range"
             }
@@ -86,7 +86,7 @@
          "targets": [
             {
                "refId": "A",
-               "expr": "quantile_over_time(0.95, {namespace=\"$namespace\", container=\"celery-worker\"} | logger=\"celery.app.trace\" | runtime != \"\" | task=~\".*$task.*\" | unwrap runtime [$__auto]) by (task)",
+               "expr": "quantile_over_time(0.95, {namespace=\"$namespace\", container=~\"celery-worker|celery-scraper\"} | logger=\"celery.app.trace\" | runtime != \"\" | task=~\".*$task.*\" | unwrap runtime [$__auto]) by (task)",
                "legendFormat": "{{task}}",
                "queryType": "range"
             }
@@ -125,7 +125,7 @@
          "targets": [
             {
                "refId": "A",
-               "expr": "{namespace=\"$namespace\", container=\"celery-worker\"} | logger=\"celery.app.trace\" | task=~\".*$task.*\"",
+               "expr": "{namespace=\"$namespace\", container=~\"celery-worker|celery-scraper\"} | logger=\"celery.app.trace\" | task=~\".*$task.*\"",
                "queryType": "range",
                "maxLines": 500
             }
@@ -217,7 +217,7 @@
          "targets": [
             {
                "refId": "A",
-               "expr": "{namespace=\"$namespace\", container=~\"celery-worker|celery-beat\"} | level=~\"$level\" |~ \"(?i)$search\"",
+               "expr": "{namespace=\"$namespace\", container=~\"celery-worker|celery-scraper|celery-beat\"} | level=~\"$level\" |~ \"(?i)$search\"",
                "queryType": "range",
                "maxLines": 500
             }
