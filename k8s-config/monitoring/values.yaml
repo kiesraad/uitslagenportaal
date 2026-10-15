@@ -413,6 +413,7 @@ alloy:
                 task        = "data.name",
                 task_id     = "data.id",
                 runtime     = "data.runtime",
+                url         = "",
               }
             }
 
@@ -436,6 +437,7 @@ alloy:
                 task        = "",
                 task_id     = "",
                 runtime     = "",
+                url         = "",
               }
             }
 
