@@ -9,8 +9,11 @@ def build_region_slug(region_number, region_name: str) -> str:
     Derive a Region slug from its number and name.
 
     Kept separate from Region.save() so bulk_create() callers can precompute the
-    exact same slug instead of duplicating the logic.
+    exact same slug instead of duplicating the logic. A region without a number
+    (e.g. the CSB of a national election) gets a slug of just its name.
     """
+    if not region_number:
+        return name_to_slug(region_name)[:49]
     number_slug = str(region_number)
     if "::" in number_slug:
         # region_number can contain "::" (e.g. stembureau ids); keep URL-safe
