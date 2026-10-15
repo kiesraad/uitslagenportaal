@@ -26,13 +26,13 @@ from pv_scraper.utils.site_scraper import FileResult, SiteScraper
 
 @pytest.mark.django_db
 @patch.object(tasks.run_scrape_for_source, "apply_async")
-def test_dispatch_sends_scrapes_to_the_scraper_queue(apply_async, settings):
+def test_dispatch_sends_scrapes_to_the_scraper_queue_at_low_priority(apply_async, settings):
     settings.PV_SCRAPER_DISPATCH_MAX_TASKS = 1
     source = ScrapeSourceFactory()
 
     dispatch_scrape_tasks()
 
-    assert apply_async.call_args_list == [call((source.id,), queue="scraper")]
+    assert apply_async.call_args_list == [call((source.id,), queue="scraper", priority=9)]
 
 
 @pytest.mark.django_db
@@ -98,7 +98,7 @@ def test_scrape_stores_each_file_and_queues_its_classification(apply_async, *_):
         run_scrape_for_source(source.id)
 
     assert apply_async.call_args_list == [
-        call((source.pk, key, file.content.name), queue="scraper") for key, file in zip(keys, files)
+        call((source.pk, key, file.content.name), queue="scraper", priority=0) for key, file in zip(keys, files)
     ]
     assert [storages[STORAGE_ENTRY].open(key).read() for key in keys] == [b"%PDF first", b"%PDF next", b"%PDF"]
     source.refresh_from_db()
