@@ -40,7 +40,7 @@
         {
             // Attach to debugpy inside the backend container (docker compose up).
             // For runserver
-            "name": "Runserver deubugger attach",
+            "name": "Runserver debugger attach",
             "type": "debugpy",
             "request": "attach",
             "connect": {

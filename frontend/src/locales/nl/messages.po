@@ -284,9 +284,7 @@ msgstr "Fout melden"
 msgid "Ga dan naar"
 msgstr "Ga dan naar"
 
-#: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
-#: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
-#: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/components/ElectionConfigTabs.tsx
 #: src/utils/region.ts
 msgid "Gemeente"
 msgstr "Gemeente"
@@ -365,7 +363,7 @@ msgstr "Het gemeentelijk stembureau heeft de telresultaten van alle stembureaus 
 msgid "Het hoofdstembureau heeft de telresultaten van alle gemeenten in de kieskring gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
 msgstr "Het hoofdstembureau heeft de telresultaten van alle gemeenten in de kieskring gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
 
-#: src/pages/CSBPage/CSBResultsPage.tsx
+#: src/components/ResultsPage/CSBResultsComponent.tsx
 #: src/pages/HSBPage/HSBResultsPage.tsx
 msgid "Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
 msgstr "Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
@@ -541,7 +539,7 @@ msgstr "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand i
 msgid "nog niet gestart"
 msgstr "nog niet gestart"
 
-#: src/pages/CSBPage/CSBResultsPage.tsx
+#: src/components/ResultsPage/CSBResultsComponent.tsx
 #: src/pages/HSBPage/HSBResultsPage.tsx
 msgid "Onderstaande documenten bevatten de laatste telresultaten van {regionWithArticle}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
 msgstr "Onderstaande documenten bevatten de laatste telresultaten van {regionWithArticle}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."

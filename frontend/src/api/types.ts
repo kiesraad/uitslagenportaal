@@ -5,6 +5,7 @@ export type ElectionConfig = {
    issue_report_opens_at: string;
    issue_report_deadline: string;
    csb_type: RegionCategory;
+   single_csb: { region_name: string; slug: string } | null;
    has_hsb: boolean;
    timeline_entries?: TimelineEntry[];
    report_error_url: string;

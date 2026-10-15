@@ -538,26 +538,10 @@ class EML510dImporter(EML510BaseImporter):
         ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
 
     def _parse_data(self) -> None:
-        election_domain = self._get_election_identifier_data().election_domain
-        if not isinstance(election_domain, list):
-            election_domain = [election_domain]
-        assert len(election_domain) == 1, "More than one election domain, cannot parse"
-        region_number = int(election_domain[0].id) if election_domain[0].id else None
-        region_name = election_domain[0].value
-
-        # We're processing CSB results, but the region_category for CSBs differs per election category,
-        # so get it from the category config.
+        # Each election has exactly one CSB, whose region_category differs per election category. This also covers
+        # TK and EP, whose files have no ElectionDomain.
         election_category = ElectionCategory(self.election.election_config.category)
-        regions_qs = Region.objects.filter(election=self.election, region_category=election_category.config.csb)
-        if not region_number:
-            # Allow for the case when the election domain has no region number attached,
-            # this is the case in PS and region number is in that case not needed for retrieval
-            region = regions_qs.get(region_name=region_name)
-        else:
-            region = regions_qs.get(
-                region_number=region_number,
-                region_name=region_name,
-            )
+        region = Region.objects.get(election=self.election, region_category=election_category.config.csb)
 
         is_correction = self._is_correction(region)
 
