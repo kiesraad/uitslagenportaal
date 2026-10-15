@@ -5,7 +5,7 @@ from django.urls import reverse
 from rest_framework import serializers
 
 from election.models import ElectionDocument, TimelineVariant
-from election.serializers import ElectionDocumentSerializer, TimelineEntrySerializer
+from election.serializers import ElectionDocumentSerializer
 from mainsite.serializers import (
     VoteCountSummarySerializer,
     VoterTurnoutCountSummarySerializer,
@@ -31,7 +31,6 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     polling_station_pv_archive = serializers.SerializerMethodField()
     certified_document_url = serializers.SerializerMethodField()
     certified_document_preview_url = serializers.SerializerMethodField()
-    timeline_entries = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
     csb_name = serializers.CharField(source="csb.region_name", default=None, read_only=True)
     csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
@@ -49,7 +48,6 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "polling_station_pv_archive",
             "certified_document_url",
             "certified_document_preview_url",
-            "timeline_entries",
             "timeline_variant",
             "region_category",
             "results_available_at",
@@ -84,16 +82,6 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             return None
         return reverse("certified-document-preview", kwargs={"pk": document.pk})
 
-    def _effective_variant(self, region) -> str:
+    def get_timeline_variant(self, region) -> str:
         counting_method = region.counting_method or (region.parent.counting_method if region.parent else None)
         return counting_method or TimelineVariant.DEFAULT
-
-    def get_timeline_variant(self, region) -> str:
-        return self._effective_variant(region)
-
-    def get_timeline_entries(self, region):
-        variant = self._effective_variant(region)
-        entries = [
-            entry for entry in region.election.election_config.timeline_entries.all() if entry.variant == variant
-        ]
-        return TimelineEntrySerializer(entries, many=True).data

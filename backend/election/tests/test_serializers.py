@@ -1,59 +1,34 @@
-from datetime import timedelta
+from datetime import UTC, datetime
 
 import pytest
-from django.utils import timezone
 
-from election.models import ElectionCategory, TimelineEntryStatus, TimelineVariant
+from election.models import ElectionCategory, TimelineDateQualifier, TimelineEvent
 from election.serializers import (
     ElectionConfigSerializer,
     ElectionDocumentSerializer,
-    TimelineEntrySerializer,
+    TimelineDateSerializer,
 )
 from election.tests.factories import (
     ElectionConfigFactory,
     ElectionDocumentFactory,
     ElectionFactory,
-    TimelineEntryFactory,
+    TimelineDateFactory,
 )
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(
-    ("offset_days", "expected_status"),
-    [
-        (-2, TimelineEntryStatus.DONE),
-        (0, TimelineEntryStatus.IN_PROGRESS),
-        (2, TimelineEntryStatus.PENDING),
-    ],
-)
-def test_timeline_entry_serializer_status(offset_days, expected_status):
-    entry = TimelineEntryFactory(date=timezone.now() + timedelta(days=offset_days))
+def test_timeline_date_serializer_returns_event_date_and_qualifier():
+    timeline_date = TimelineDateFactory(
+        event=TimelineEvent.CSB_CHECK,
+        date=datetime(2026, 9, 26, 9, 0, tzinfo=UTC),
+        qualifier=TimelineDateQualifier.FROM,
+    )
 
-    data = TimelineEntrySerializer(entry).data
+    data = TimelineDateSerializer(timeline_date).data
 
-    assert data["status"] == expected_status
-
-
-@pytest.mark.django_db
-def test_timeline_entry_serializer_nests_title_and_body_by_locale():
-    entry = TimelineEntryFactory(title_nl="Titel", title_en="Title", body_nl="Tekst", body_en="Body")
-
-    data = TimelineEntrySerializer(entry).data
-
-    assert data["title"] == {"nl": "Titel", "en": "Title"}
-    assert data["body"] == {"nl": "Tekst", "en": "Body"}
-
-
-@pytest.mark.django_db
-def test_timeline_entry_serializer_falls_back_to_dutch_when_english_is_blank():
-    entry = TimelineEntryFactory(title_nl="Titel", title_en="", body_nl="Tekst", body_en="")
-
-    data = TimelineEntrySerializer(entry).data
-
-    assert data["title"] == {"nl": "Titel", "en": "Titel"}
-    assert data["body"] == {"nl": "Tekst", "en": "Tekst"}
+    assert data == {"event": "csb_check", "date": "2026-09-26T11:00:00+02:00", "qualifier": "from"}
 
 
 @pytest.mark.django_db
@@ -88,16 +63,16 @@ def test_election_config_serializer_has_no_single_csb_when_only_one_waterschap_i
 
 
 @pytest.mark.django_db
-def test_election_config_serializer_only_returns_default_variant_timeline_entries():
+def test_election_config_serializer_returns_its_own_timeline_dates():
     config = ElectionConfigFactory()
-    TimelineEntryFactory(election_config=config, variant=TimelineVariant.CSO)
-    TimelineEntryFactory(election_config=config, variant=TimelineVariant.DSO)
-    default_entry = TimelineEntryFactory(election_config=config, variant=TimelineVariant.DEFAULT)
+    TimelineDateFactory(election_config=config, event=TimelineEvent.SB_VOTE_COUNT)
+    TimelineDateFactory(election_config=config, event=TimelineEvent.CSB_RESULT_PUBLISH)
+    TimelineDateFactory(event=TimelineEvent.CSB_CHECK)
 
     data = ElectionConfigSerializer(config).data
 
-    titles = [entry["title"]["nl"] for entry in data["timeline_entries"]]
-    assert titles == [default_entry.title_nl]
+    events = {timeline_date["event"] for timeline_date in data["timeline_dates"]}
+    assert events == {TimelineEvent.SB_VOTE_COUNT, TimelineEvent.CSB_RESULT_PUBLISH}
 
 
 @pytest.mark.django_db

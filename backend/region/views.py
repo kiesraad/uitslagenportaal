@@ -133,7 +133,6 @@ class RegionDetailView(RetrieveAPIView):
                         "file_type", "created_at", "pk"
                     ),
                 ),
-                "election__election_config__timeline_entries",
             )
             .filter(
                 election__election_config__slug=election_config_slug,

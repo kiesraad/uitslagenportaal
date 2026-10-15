@@ -3,13 +3,13 @@ import { faCircleNotch, faRotateRight } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Link } from "react-router";
+import { HomePageTimeline } from "@/components/Timeline/HomePageTimeline.tsx";
 import Button from "@/elements/Button.tsx";
 import { ExternalLinkIcon } from "@/elements/ExternalLinkIcon.tsx";
 import PageSection from "@/elements/PageSection.tsx";
 import type { ElectionConfig } from "../api/types.ts";
 import { HeroGrid } from "../components/HomePage/HeroGrid.tsx";
 import { LayoutMain } from "../components/LayoutMain.tsx";
-import Timeline, { type TimelineEntry } from "../components/Timeline.tsx";
 import { useElectionConfigs } from "../hooks/queries.ts";
 import { appRoutes } from "../utils/routes.ts";
 
@@ -18,20 +18,6 @@ export function HomePage() {
    const { data, isLoading, isError, refetch } = useElectionConfigs();
    const election_configs: ElectionConfig[] = data ?? [];
    const hasResult = election_configs.length > 0;
-
-   // If there is only one election and it has timeline entries, build the timeline
-   let timelineEntries: TimelineEntry[] = [];
-   if (election_configs.length === 1 && election_configs[0]?.timeline_entries?.length) {
-      timelineEntries = election_configs[0].timeline_entries
-         .slice()
-         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-         .map((entry) => ({
-            status: entry.status,
-            title: entry.title,
-            date: entry.date,
-            body: entry.body,
-         }));
-   }
 
    return (
       <LayoutMain title={t`Home`} description={t`De telresultaten van alle stembureaus in Nederland.`}>
@@ -127,7 +113,7 @@ export function HomePage() {
                      </Trans>
                   </p>
 
-                  <Timeline entries={timelineEntries} />
+                  <HomePageTimeline dates={election_configs[0].timeline_dates} />
                </PageSection>
 
                <PageSection className="max-w-5xl pt-0!">

@@ -153,7 +153,7 @@ export function RegionList({
          ) : (
             regionsByLetter.map(([letter, municipalities]) => (
                <div key={letter} className="mb-6">
-                  <h3 className="py-2 font-sans! max-sm:sticky max-sm:top-0 max-sm:bg-white/75">{letter}</h3>
+                  <h3 className="py-2 font-sans max-sm:sticky max-sm:top-0 max-sm:bg-white/75">{letter}</h3>
                   <SearchList>
                      {municipalities.map((municipality) => (
                         <ListOptionLink
@@ -180,7 +180,7 @@ function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: 
       <li className="col-span-3 grid grid-cols-subgrid odd:bg-blue-50">
          <Link
             to={to}
-            className="hover:no-underline! col-span-3 grid min-h-18 grid-cols-subgrid items-center px-6 hover:bg-blue-100"
+            className="col-span-3 grid min-h-18 grid-cols-subgrid items-center px-6 hover:bg-blue-100 hover:no-underline"
          >
             <span className={twMerge(listOption.stationNumber && "pr-2 font-light text-gray-700")}>
                {listOption.stationNumber}

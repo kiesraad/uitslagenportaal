@@ -9,8 +9,14 @@ from django.db.models import QuerySet
 
 from election import election_config_importer
 from election.election_config_importer import ImportInProgressError, hash_election_config_data, import_election_config
-from election.models import ElectionConfig, ElectionDocument, TimelineVariant
-from election.tests.factories import ElectionConfigFactory, ElectionDocumentFactory, ElectionFactory
+from election.models import ElectionConfig, ElectionDocument, TimelineDateQualifier, TimelineEvent
+from election.tests.factories import (
+    ElectionConfigFactory,
+    ElectionDocumentFactory,
+    ElectionFactory,
+    TimelineDateFactory,
+)
+from election.utils import tz_aware_from_isoformat
 from eml_import.models import BranchType, ImportedCommit
 from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
 from region.tests.factories import RegionFactory
@@ -26,40 +32,35 @@ MINIMAL_DATA = {
         "gh_counting_results_branch": "auto-tk2025-tel",
         "gh_exchange_branch": "auto-tk2025-uit",
     },
-    "timeline_entries_cso": [
-        {
-            "title": {"nl": "CSO titel", "en": "CSO title"},
-            "date": "2025-12-15T11:00:00",
-            "body": {"nl": "CSO body", "en": "CSO body"},
-        }
-    ],
-    "timeline_entries_dso": [],
-    "timeline_entries_default": [
-        {
-            "title": {"nl": "Default titel", "en": "Default title"},
-            "date": "2025-12-15T11:00:00",
-            "body": {"nl": "Default body", "en": "Default body"},
-        }
+    "timeline_dates": [
+        {"event": "sb_vote_count", "date": "2025-12-15T11:00:00"},
+        {"event": "csb_result_publish", "date": "2025-12-18T16:00:00", "qualifier": "expected"},
     ],
 }
 
 
 @pytest.mark.django_db
-def test_import_creates_a_new_election_config_with_its_timeline_entries():
+def test_import_creates_a_new_election_config_with_its_timeline_dates():
     config = import_election_config(MINIMAL_DATA)
 
     assert config.identifier == "TK2025"
     assert config.category == "TK"
     assert config.label == "Tweede Kamer Verkiezingen 2025"
     assert config.source_hash == hash_election_config_data(MINIMAL_DATA)
-    assert config.timeline_entries.filter(variant=TimelineVariant.CSO).count() == 1
-    assert config.timeline_entries.filter(variant=TimelineVariant.DSO).count() == 0
-    assert config.timeline_entries.filter(variant=TimelineVariant.DEFAULT).count() == 1
+    assert set(config.timeline_dates.values_list("event", "date", "qualifier")) == {
+        (TimelineEvent.SB_VOTE_COUNT, tz_aware_from_isoformat("2025-12-15T11:00:00"), TimelineDateQualifier.ALL_DAY),
+        (
+            TimelineEvent.CSB_RESULT_PUBLISH,
+            tz_aware_from_isoformat("2025-12-18T16:00:00"),
+            TimelineDateQualifier.EXPECTED,
+        ),
+    }
 
 
 @pytest.mark.django_db
-def test_import_updates_an_existing_config_in_place_and_replaces_timeline_entries():
+def test_import_updates_an_existing_config_in_place_and_replaces_timeline_dates():
     existing = ElectionConfigFactory(identifier="TK2025", label="Old label")
+    TimelineDateFactory(election_config=existing, event=TimelineEvent.CSB_CHECK)
 
     config = import_election_config(MINIMAL_DATA)
 
@@ -67,6 +68,10 @@ def test_import_updates_an_existing_config_in_place_and_replaces_timeline_entrie
     assert ElectionConfig.with_expired.filter(identifier="TK2025").count() == 1
     assert config.label == "Tweede Kamer Verkiezingen 2025"
     assert config.source_hash == hash_election_config_data(MINIMAL_DATA)
+    assert set(config.timeline_dates.values_list("event", flat=True)) == {
+        TimelineEvent.SB_VOTE_COUNT,
+        TimelineEvent.CSB_RESULT_PUBLISH,
+    }
 
 
 @pytest.mark.django_db

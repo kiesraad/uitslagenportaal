@@ -61,7 +61,7 @@ docker-compose.yml  full stack: db, redis, backend, celery, frontend, proxy, obj
 | App          | Contents                                                                                                       |
 |--------------|----------------------------------------------------------------------------------------------------------------|
 | `mainsite`   | Django project: settings, root urls, `BaseModel`, `EmlType` enum, management commands                          |
-| `election`   | `ElectionConfig`, `Election`, `Contest`, `VoteCount`, `VoterTurnoutCount`, `TimelineEntry`, `ElectionDocument` |
+| `election`   | `ElectionConfig`, `Election`, `Contest`, `VoteCount`, `VoterTurnoutCount`, `TimelineDate`, `ElectionDocument`       |
 | `region`     | `Region` — self-referencing tree (CSB → HSB/kieskring → gemeente → stembureau)                                 |
 | `party`      | `Party`, `Candidate`                                                                                           |
 | `eml_import` | EML parsing/import, the GitHub ingress importer, `ImportedCommit`, and the Celery tasks         |
@@ -114,7 +114,8 @@ the election visibility/deletion rules.
 See the Internationalisation section in [development.md](docs/development.md) for the setup,
 marking text for translations and translation rules.
 
-Lingui publishes agent skills, context files and an MCP server for working with its API:
+When working on translations, use the Lingui agent skills (`lingui:lingui-best-practices`,
+`lingui:find-unwrapped-strings`). Lingui also publishes context files and an MCP server:
 <https://lingui.dev/ai-tools>.
 
 Process in short:
@@ -137,8 +138,8 @@ with NVDA (Dutch voice, automatic language switching on): Tab, `H` for headings,
 
 - **Structure.** Each page has one `h1` inside `LayoutMain`'s `<main>`; `RouteFocus` moves focus
   there after navigation. Headings never skip a level: pick the right level and keep the look with
-  the `.h2`–`.h4` classes. The base heading styles in `index.css` sit outside Tailwind's layers,
-  so a utility needs `!` to override them (`font-sans!`).
+  the `.h2`–`.h4` classes. The heading styles in `index.css` sit in Tailwind's base and components
+  layers, so a utility overrides them (`font-sans`).
 - **Titles.** Pass a unique `title` to `LayoutMain` (or `HtmlHead`) naming the region and party.
 - **Semantics before ARIA.** Lists are `ul`/`ol`; a data table gets a `<caption>` and
   `th scope="col"`/`scope="row"`. A list that reads well as one line per row stays a list
