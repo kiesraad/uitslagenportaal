@@ -82,7 +82,8 @@ def dispatch_scrape_tasks():
             Q(scrape_requested_at__gt=F("last_run_started_at"))
             | (Q(scrape_requested_at__isnull=False) & Q(last_run_started_at__isnull=True))
         )
-        .order_by("last_run_finished_at")
+        # Never-scraped sources first, then the ones whose last scrape finished longest ago.
+        .order_by(F("last_run_finished_at").asc(nulls_first=True))
         .values_list("id", flat=True)[:task_limit]
     )
 
