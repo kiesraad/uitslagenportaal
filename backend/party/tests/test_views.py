@@ -507,24 +507,25 @@ def test_hsb_party_result_matrix_supports_a_kieskring_with_a_single_gemeente():
 
 
 @pytest.mark.django_db
-def test_hsb_party_result_matrix_does_not_use_510d_without_its_own_hsb():
+def test_hsb_party_result_matrix_ignores_510d_counts():
+    """The CSB's 510d also counts per gemeente; the HSB matrix shows only the kieskring's own 510c."""
     election = ElectionFactory()
-    contest = ContestFactory(election=election)
     party = PartyFactory(election=election)
-    waterschap = RegionFactory(election=election, region_category=RegionCategory.WATERSCHAP)
+    provincie = RegionFactory(election=election, region_category=RegionCategory.PROVINCIE, region_name="Drenthe")
     kieskring = RegionFactory(
         election=election,
-        parent=waterschap,
-        csb=waterschap,
+        parent=provincie,
+        csb=provincie,
         region_category=RegionCategory.KIESKRING,
-        region_name=waterschap.region_name,
+        region_name="Assen",
     )
     gemeente = RegionFactory(
         election=election,
         parent=kieskring,
-        csb=waterschap,
+        csb=provincie,
         region_category=RegionCategory.GEMEENTE,
     )
+    contest = ContestFactory(election=election, name="Assen")
     candidate = CandidateFactory(contest=contest, party=party, position=1, last_name="Jansen")
 
     VoteCount.objects.create(
