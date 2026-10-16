@@ -29,21 +29,10 @@ export function regionQuery(
    });
 }
 
-export function regionsQuery(
-   { electionConfigSlug, regionSlug, csbSlug }: Params,
-   regionCategory?: RegionCategory,
-   hasOwnResults?: boolean,
-) {
+export function regionsQuery({ electionConfigSlug, regionSlug, csbSlug }: Params, regionCategory?: RegionCategory) {
    return queryOptions({
-      queryKey: [
-         "regions",
-         electionConfigSlug,
-         regionSlug ?? null,
-         regionCategory ?? null,
-         csbSlug ?? null,
-         hasOwnResults ?? null,
-      ],
-      queryFn: () => getRegions(electionConfigSlug, regionSlug, regionCategory, csbSlug, hasOwnResults),
+      queryKey: ["regions", electionConfigSlug, regionSlug ?? null, regionCategory ?? null, csbSlug ?? null],
+      queryFn: () => getRegions(electionConfigSlug, regionSlug, regionCategory, csbSlug),
    });
 }
 

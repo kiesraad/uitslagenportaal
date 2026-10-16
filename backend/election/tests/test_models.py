@@ -1,11 +1,8 @@
 import pytest
 
-from election.models import ElectionCategory, ElectionConfig, VoteCount
-from election.tests.factories import ContestFactory, ElectionConfigFactory, ElectionFactory
+from election.models import ElectionCategory, ElectionConfig
+from election.tests.factories import ElectionConfigFactory
 from mainsite.models import RegionCategory
-from mainsite.utils.eml_type import EmlType
-from party.tests.factories import PartyFactory
-from region.tests.factories import RegionFactory
 
 
 @pytest.mark.parametrize(
@@ -42,47 +39,18 @@ def test_election_config_slug_is_not_overwritten_if_already_set():
     assert config.slug == "custom-slug"
 
 
+@pytest.mark.parametrize(
+    ("category", "expected_has_hsb"),
+    [
+        (ElectionCategory.TK, True),
+        (ElectionCategory.EP, True),
+        (ElectionCategory.PS, True),
+        (ElectionCategory.WS, False),
+        (ElectionCategory.GR, False),
+    ],
+)
 @pytest.mark.django_db
-def test_has_hsb_false_without_any_kieskring():
-    config = ElectionConfigFactory()
+def test_has_hsb_follows_the_election_category(category, expected_has_hsb):
+    config = ElectionConfigFactory(category=category.value)
 
-    assert ElectionConfig.objects.get(pk=config.pk).has_hsb is False
-
-
-@pytest.mark.django_db
-def test_has_hsb_false_for_kieskring_without_its_own_totaaltelling():
-    """A waterschap's kieskring is a structural stand-in for the CSB, with only 510d rows."""
-    config = ElectionConfigFactory()
-    election = ElectionFactory(election_config=config)
-    kieskring = RegionFactory(election=election, region_category=RegionCategory.KIESKRING)
-    contest = ContestFactory(election=election)
-    party = PartyFactory(election=election)
-    VoteCount.objects.create(
-        contest=contest,
-        region=kieskring,
-        party=party,
-        valid_votes=100,
-        result_level=VoteCount.RESULT_LEVEL_PARTY,
-        eml_type=EmlType.EML_510d,
-    )
-
-    assert ElectionConfig.objects.get(pk=config.pk).has_hsb is False
-
-
-@pytest.mark.django_db
-def test_has_hsb_true_for_kieskring_with_its_own_totaaltelling():
-    config = ElectionConfigFactory()
-    election = ElectionFactory(election_config=config)
-    kieskring = RegionFactory(election=election, region_category=RegionCategory.KIESKRING)
-    contest = ContestFactory(election=election)
-    party = PartyFactory(election=election)
-    VoteCount.objects.create(
-        contest=contest,
-        region=kieskring,
-        party=party,
-        valid_votes=100,
-        result_level=VoteCount.RESULT_LEVEL_PARTY,
-        eml_type=EmlType.EML_510c,
-    )
-
-    assert ElectionConfig.objects.get(pk=config.pk).has_hsb is True
+    assert config.has_hsb is expected_has_hsb

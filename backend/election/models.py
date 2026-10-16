@@ -13,12 +13,13 @@ from election.utils import visibility_cutoff
 from mainsite.models import BaseModel, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from mainsite.utils.utils import name_to_slug
-from region.models import Region
 
 
 @dataclass
 class ElectionCategoryConfig:
     csb: RegionCategory
+    # Whether kieskringen have their own HSB with a Totaaltelling (EML_510c).
+    has_hsb: bool
 
 
 class ElectionCategory(Choices):
@@ -32,11 +33,11 @@ class ElectionCategory(Choices):
     def config(self):
         return self._config_
 
-    TK = "TK", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Tweede Kamerverkiezing"
-    PS = "PS", ElectionCategoryConfig(csb=RegionCategory.PROVINCIE), "Provinciale Statenverkiezing"
-    WS = "WS", ElectionCategoryConfig(csb=RegionCategory.WATERSCHAP), "Waterschapsverkiezing"
-    GR = "GR", ElectionCategoryConfig(csb=RegionCategory.GEMEENTE), "Gemeenteraadsverkiezing"
-    EP = "EP", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Europees Parlementsverkiezing"
+    TK = "TK", ElectionCategoryConfig(csb=RegionCategory.STAAT, has_hsb=True), "Tweede Kamerverkiezing"
+    PS = "PS", ElectionCategoryConfig(csb=RegionCategory.PROVINCIE, has_hsb=True), "Provinciale Statenverkiezing"
+    WS = "WS", ElectionCategoryConfig(csb=RegionCategory.WATERSCHAP, has_hsb=False), "Waterschapsverkiezing"
+    GR = "GR", ElectionCategoryConfig(csb=RegionCategory.GEMEENTE, has_hsb=False), "Gemeenteraadsverkiezing"
+    EP = "EP", ElectionCategoryConfig(csb=RegionCategory.STAAT, has_hsb=True), "Europees Parlementsverkiezing"
 
 
 class ElectionConfigManager(models.Manager):
@@ -72,19 +73,7 @@ class ElectionConfig(BaseModel):
 
     @property
     def has_hsb(self) -> bool:
-        """
-        Whether this election has kieskringen with their own HSB Totaaltelling (EML_510c).
-
-        Some election categories (e.g. waterschap) define a kieskring per CSB that is a 1:1
-        structural stand-in for it, never a real subdivision with its own results -- so a
-        KIESKRING region existing is not enough; only its own EML_510c data means there is
-        something to show.
-        """
-        return Region.objects.filter(
-            election__election_config=self,
-            region_category=RegionCategory.KIESKRING,
-            vote_counts__eml_type=EmlType.EML_510c,
-        ).exists()
+        return ElectionCategory(self.category).config.has_hsb
 
     def save(self, *args, **kwargs):
         if not self.slug:

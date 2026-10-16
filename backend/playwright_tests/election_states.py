@@ -371,3 +371,127 @@ def add_drenthe_csb(ps: PsPortal) -> None:
     _candidate_count(ps.contest, ps.aa_en_hunze, ps.vvd, ps.meeuwissen, 70, EmlType.EML_510d)
     _party_count(ps.contest, ps.emmen, ps.vvd, 43, EmlType.EML_510d)
     _candidate_count(ps.contest, ps.emmen, ps.vvd, ps.meeuwissen, 20, EmlType.EML_510d)
+
+
+@dataclass
+class TkPortal:
+    config: ElectionConfig
+    election: Election
+    nederland: Region
+    rotterdam: Region
+    leiden: Region
+    schiedam: Region
+    vvd: Party
+    cda: Party
+    rotterdam_contest: Contest | None = None
+    leiden_contest: Contest | None = None
+    # One person, with a candidate record on each kieskring's list.
+    brekelmans_rotterdam: Candidate | None = None
+    brekelmans_leiden: Candidate | None = None
+
+
+def tk_definition() -> TkPortal:
+    """Election, region tree and registered parties — as after a 110a."""
+    config = ElectionConfigFactory(
+        identifier="TK2025",
+        label=TK_LABEL,
+        category=ElectionCategory.TK.value,
+        date=timezone.now() - timedelta(days=1),
+    )
+    election = ElectionFactory(election_config=config, name="Tweede Kamer der Staten-Generaal 2025", subcategory="TK")
+    # The staat has no region number, so its slug is just "nederland".
+    nederland = RegionFactory(
+        election=election,
+        region_category=RegionCategory.STAAT,
+        region_number=None,
+        region_name="Nederland",
+    )
+    rotterdam = RegionFactory(
+        election=election,
+        parent=nederland,
+        csb=nederland,
+        region_category=RegionCategory.KIESKRING,
+        region_number="10",
+        region_name="Rotterdam",
+    )
+    leiden = RegionFactory(
+        election=election,
+        parent=nederland,
+        csb=nederland,
+        region_category=RegionCategory.KIESKRING,
+        region_number="7",
+        region_name="Leiden",
+    )
+    schiedam = RegionFactory(
+        election=election,
+        parent=rotterdam,
+        csb=nederland,
+        region_category=RegionCategory.GEMEENTE,
+        region_number="606",
+        region_name="Schiedam",
+    )
+    RegionFactory(
+        election=election,
+        parent=leiden,
+        csb=nederland,
+        region_category=RegionCategory.GEMEENTE,
+        region_number="537",
+        region_name="Katwijk",
+    )
+    vvd = PartyFactory(election=election, registered_name="VVD")
+    cda = PartyFactory(election=election, registered_name="CDA")
+    return TkPortal(
+        config=config,
+        election=election,
+        nederland=nederland,
+        rotterdam=rotterdam,
+        leiden=leiden,
+        schiedam=schiedam,
+        vvd=vvd,
+        cda=cda,
+    )
+
+
+def add_tk_candidate_lists(tk: TkPortal) -> None:
+    # HSB matrix selects candidates by contest name == kieskring name.
+    tk.rotterdam_contest = ContestFactory(election=tk.election, identifier="10", name="Rotterdam")
+    tk.leiden_contest = ContestFactory(election=tk.election, identifier="7", name="Leiden")
+    tk.vvd.list_number = 1
+    tk.vvd.save(update_fields=["list_number", "updated_at"])
+    tk.cda.list_number = 2
+    tk.cda.save(update_fields=["list_number", "updated_at"])
+    tk.brekelmans_rotterdam = CandidateFactory(
+        contest=tk.rotterdam_contest, party=tk.vvd, identifier=1, position=1, last_name="Brekelmans"
+    )
+    tk.brekelmans_leiden = CandidateFactory(
+        contest=tk.leiden_contest, party=tk.vvd, identifier=1, position=1, last_name="Brekelmans"
+    )
+
+
+def add_rotterdam_hsb(tk: TkPortal) -> None:
+    assert tk.rotterdam_contest is not None and tk.brekelmans_rotterdam is not None
+    tk.rotterdam.results_available_at = timezone.now()
+    tk.rotterdam.save(update_fields=["results_available_at", "updated_at"])
+    ElectionDocumentFactory(region=tk.rotterdam, file_type=ElectionDocument.FileType.EML_510C, size=1536)
+    contest, brekelmans = tk.rotterdam_contest, tk.brekelmans_rotterdam
+    _party_count(contest, tk.rotterdam, tk.vvd, 300, EmlType.EML_510c)
+    _party_count(contest, tk.rotterdam, tk.cda, 100, EmlType.EML_510c)
+    _candidate_count(contest, tk.rotterdam, tk.vvd, brekelmans, 250, EmlType.EML_510c)
+    _party_count(contest, tk.schiedam, tk.vvd, 300, EmlType.EML_510c)
+    _candidate_count(contest, tk.schiedam, tk.vvd, brekelmans, 250, EmlType.EML_510c)
+
+
+def add_nederland_csb(tk: TkPortal) -> None:
+    assert tk.rotterdam_contest is not None and tk.leiden_contest is not None
+    assert tk.brekelmans_rotterdam is not None and tk.brekelmans_leiden is not None
+    tk.nederland.results_available_at = timezone.now()
+    tk.nederland.save(update_fields=["results_available_at", "updated_at"])
+    ElectionDocumentFactory(region=tk.nederland, file_type=ElectionDocument.FileType.EML_510D, size=2048)
+    _party_count(tk.rotterdam_contest, tk.nederland, tk.vvd, 500, EmlType.EML_510d)
+    _party_count(tk.rotterdam_contest, tk.nederland, tk.cda, 150, EmlType.EML_510d)
+    # The 510d importer stores the CSB total on one of the candidate's records.
+    _candidate_count(tk.rotterdam_contest, tk.nederland, tk.vvd, tk.brekelmans_rotterdam, 420, EmlType.EML_510d)
+    _party_count(tk.rotterdam_contest, tk.rotterdam, tk.vvd, 300, EmlType.EML_510d)
+    _candidate_count(tk.rotterdam_contest, tk.rotterdam, tk.vvd, tk.brekelmans_rotterdam, 250, EmlType.EML_510d)
+    _party_count(tk.leiden_contest, tk.leiden, tk.vvd, 200, EmlType.EML_510d)
+    _candidate_count(tk.leiden_contest, tk.leiden, tk.vvd, tk.brekelmans_leiden, 170, EmlType.EML_510d)

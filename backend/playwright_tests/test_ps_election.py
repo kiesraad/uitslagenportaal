@@ -113,13 +113,7 @@ def test_csb_per_gemeente_lists_the_drenthe_gemeenten(page: Page):
     expect(page.get_by_role("heading", level=1, name="Gemeente Aa en Hunze")).to_be_visible()
 
 
-def expect_ps_tabs_without_hsb(page: Page) -> None:
-    expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
-    expect(page.get_by_role("link", name="Provincies")).to_be_visible()
-    expect(page.get_by_role("link", name="Kieskringen")).to_have_count(0)
-
-
-def expect_ps_tabs_with_hsb(page: Page) -> None:
+def expect_ps_tabs(page: Page) -> None:
     expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
     expect(page.get_by_role("link", name="Kieskringen")).to_be_visible()
     expect(page.get_by_role("link", name="Provincies")).to_be_visible()
@@ -141,9 +135,14 @@ def expect_unpublished_csb(page: Page) -> None:
     expect(page.get_by_role("link", name="VVD")).to_have_count(0)
 
 
-def expect_hsb_is_not_found(page: Page) -> None:
+def expect_unpublished_hsb(page: Page) -> None:
     page.goto("/ps2023/hsb")
-    expect(page.get_by_role("heading", level=1, name="Pagina niet gevonden")).to_be_visible()
+    page.get_by_role("link", name="Assen").click()
+    expect(page).to_have_url(re.compile(r"/hsb/1-assen/resultaten/?$"))
+    expect(
+        page.get_by_role("heading", name="De telresultaten van de kieskring Assen zijn nog niet gepubliceerd")
+    ).to_be_visible()
+    expect(page.get_by_role("link", name="VVD")).to_have_count(0)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -152,7 +151,7 @@ def test_after_definition_lists_show_unpublished_regions(page: Page):
     ps_definition()
 
     page.goto("/ps2023/gsb")
-    expect_ps_tabs_without_hsb(page)
+    expect_ps_tabs(page)
     expect(page.get_by_role("link", name="Aa en Hunze")).to_be_visible()
     expect(page.get_by_role("link", name="Emmen")).to_be_visible()
 
@@ -168,7 +167,7 @@ def test_after_definition_lists_show_unpublished_regions(page: Page):
     page.get_by_role("link", name="Drenthe").click()
     expect_unpublished_csb(page)
 
-    expect_hsb_is_not_found(page)
+    expect_unpublished_hsb(page)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -194,7 +193,7 @@ def test_after_aa_en_hunze_telling_emmen_and_higher_levels_are_still_unpublished
     add_aa_en_hunze_telling(ps)
 
     page.goto("/ps2023/gsb")
-    expect_ps_tabs_without_hsb(page)
+    expect_ps_tabs(page)
     page.get_by_role("link", name="Aa en Hunze").click()
     expect(page.get_by_role("link", name="Hele gemeente")).to_be_visible()
 
@@ -205,19 +204,19 @@ def test_after_aa_en_hunze_telling_emmen_and_higher_levels_are_still_unpublished
     page.goto("/ps2023/csb/3-drenthe/resultaten")
     expect_unpublished_csb(page)
 
-    expect_hsb_is_not_found(page)
+    expect_unpublished_hsb(page)
 
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.usefixtures("empty_database")
-def test_after_assen_hsb_the_kieskring_tab_appears(page: Page):
+def test_after_assen_hsb_its_results_are_published(page: Page):
     ps = ps_definition()
     add_ps_candidate_lists(ps)
     add_aa_en_hunze_telling(ps)
     add_assen_hsb(ps)
 
     page.goto("/ps2023/gsb")
-    expect_ps_tabs_with_hsb(page)
+    expect_ps_tabs(page)
 
     page.get_by_role("link", name="Kieskringen").click()
     page.get_by_role("link", name="Assen").click()
