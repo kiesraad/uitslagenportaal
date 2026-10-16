@@ -193,6 +193,56 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
     }
 
 
+@pytest.mark.django_db
+def test_party_result_matrix_shows_one_row_per_candidate_across_kieskringen():
+    """With several kieskringen the columns are the kieskringen, and a candidate on each kieskring's list is one row."""
+    election = ElectionFactory()
+    party = PartyFactory(election=election)
+    staat = RegionFactory(election=election, region_category=RegionCategory.STAAT, region_name="Nederland")
+    rotterdam = RegionFactory(
+        election=election, csb=staat, region_category=RegionCategory.KIESKRING, region_name="Rotterdam"
+    )
+    leiden = RegionFactory(election=election, csb=staat, region_category=RegionCategory.KIESKRING, region_name="Leiden")
+    rotterdam_contest = ContestFactory(election=election, identifier="10", name="Rotterdam")
+    leiden_contest = ContestFactory(election=election, identifier="7", name="Leiden")
+    rotterdam_candidate = CandidateFactory(contest=rotterdam_contest, party=party, position=1, last_name="Kegel")
+    leiden_candidate = CandidateFactory(contest=leiden_contest, party=party, position=1, last_name="Kegel")
+
+    for region, candidate, valid_votes in [
+        (rotterdam, rotterdam_candidate, 2935),
+        (leiden, leiden_candidate, 8850),
+        # The 510d importer stores the CSB total on one of the candidate's records.
+        (staat, leiden_candidate, 11785),
+    ]:
+        VoteCount.objects.create(
+            contest=candidate.contest,
+            region=region,
+            party=party,
+            candidate=candidate,
+            valid_votes=valid_votes,
+            result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
+            eml_type=EmlType.EML_510d,
+        )
+    for region, valid_votes in [(rotterdam, 3000), (leiden, 9000), (staat, 12000)]:
+        VoteCount.objects.create(
+            contest=rotterdam_contest,
+            region=region,
+            party=party,
+            valid_votes=valid_votes,
+            result_level=VoteCount.RESULT_LEVEL_PARTY,
+            eml_type=EmlType.EML_510d,
+        )
+
+    response = CSBPartyResultMatrixView.as_view()(_matrix_request(election.slug, party.slug, staat.slug))
+
+    assert response.status_code == 200
+    assert [column["region_name"] for column in response.data["columns"]] == ["Leiden", "Rotterdam"]
+    assert [row["candidate"]["last_name"] for row in response.data["rows"]] == ["Kegel"]
+    assert response.data["rows"][0]["total"] == 11785
+    assert response.data["rows"][0]["votes"] == {leiden.slug: 8850, rotterdam.slug: 2935}
+    assert response.data["totals"] == {"total": 12000, "votes": {leiden.slug: 9000, rotterdam.slug: 3000}}
+
+
 def _hsb_matrix_request(election_slug, party_slug, hsb_slug):
     return factory.get(
         "/api/hsb-party-result-matrix/",
