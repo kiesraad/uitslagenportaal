@@ -200,9 +200,11 @@ def test_party_result_matrix_shows_one_row_per_candidate_across_kieskringen():
     party = PartyFactory(election=election)
     staat = RegionFactory(election=election, region_category=RegionCategory.STAAT, region_name="Nederland")
     rotterdam = RegionFactory(
-        election=election, csb=staat, region_category=RegionCategory.KIESKRING, region_name="Rotterdam"
+        election=election, parent=staat, csb=staat, region_category=RegionCategory.KIESKRING, region_name="Rotterdam"
     )
-    leiden = RegionFactory(election=election, csb=staat, region_category=RegionCategory.KIESKRING, region_name="Leiden")
+    leiden = RegionFactory(
+        election=election, parent=staat, csb=staat, region_category=RegionCategory.KIESKRING, region_name="Leiden"
+    )
     rotterdam_contest = ContestFactory(election=election, identifier="10", name="Rotterdam")
     leiden_contest = ContestFactory(election=election, identifier="7", name="Leiden")
     rotterdam_candidate = CandidateFactory(contest=rotterdam_contest, party=party, position=1, last_name="Kegel")

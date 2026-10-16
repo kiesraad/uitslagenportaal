@@ -109,9 +109,8 @@ class CSBPartyResultMatrixView(APIView):
         except Region.DoesNotExist:
             raise NotFound({"csb": "CSB not found for this election."})
 
-        # As in the 510d importer: with several kieskringen (TK, PS) the CSB counts per kieskring. TK kieskringen
-        # have no parent, so they are looked up per election.
-        kieskringen = Region.objects.filter(election=csb.election, region_category=RegionCategory.KIESKRING)
+        # As in the 510d importer: with several kieskringen (TK, PS) the CSB counts per kieskring.
+        kieskringen = Region.objects.filter(parent=csb, region_category=RegionCategory.KIESKRING)
         if kieskringen.count() > 1:
             children = list(kieskringen.order_by("region_name"))
         else:
