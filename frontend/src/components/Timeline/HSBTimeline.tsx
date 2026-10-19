@@ -1,18 +1,18 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { TimelineDate } from "@/api/types.ts";
-import { Timeline } from "@/components/Timeline/Timeline.tsx";
-import TimelineEntry, { getTimelineDate } from "@/components/Timeline/TimelineEntry.tsx";
+import { Timeline, type TimelineContextProps } from "@/components/Timeline/Timeline.tsx";
+import TimelineEntry, { getTimelineDate, SBTimelineEntry } from "@/components/Timeline/TimelineEntry.tsx";
 
-type Props = {
-   dates: TimelineDate[];
-};
+type Props = Omit<TimelineContextProps, "variant">;
 
-export function HomePageTimeline({ dates }: Props) {
+export function HSBTimeline({ dates, documents }: Props) {
    const { t } = useLingui();
 
    return (
       <div id="results-timeline">
-         <Timeline>
+         <h2 className="mb-4.5">
+            <Trans>Hoe zijn de resultaten tot stand gekomen?</Trans>
+         </h2>
+         <Timeline dates={dates} documents={documents}>
             <TimelineEntry
                key="publication"
                date={getTimelineDate(dates, "csb_result_publish")}
@@ -70,18 +70,7 @@ export function HomePageTimeline({ dates }: Props) {
                   </Trans>
                </p>
             </TimelineEntry>
-            <TimelineEntry
-               key="count"
-               date={getTimelineDate(dates, "sb_vote_count")}
-               title={t`Telling in de stembureaus`}
-            >
-               <p>
-                  <Trans>De stemmen worden geteld bij de stembureaus.</Trans>{" "}
-                  <strong>
-                     <Trans>Het is dus nog niet de officiële uitslag van de Kiesraad.</Trans>
-                  </strong>
-               </p>
-            </TimelineEntry>
+            <SBTimelineEntry />
          </Timeline>
       </div>
    );

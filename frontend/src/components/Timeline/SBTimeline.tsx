@@ -1,9 +1,9 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { TimelineDate, TimelineVariant } from "@/api/types.ts";
-import { Timeline } from "@/components/Timeline/Timeline.tsx";
-import TimelineEntry, { getTimelineDate } from "@/components/Timeline/TimelineEntry.tsx";
+import type { TimelineVariant } from "@/api/types.ts";
+import { Timeline, type TimelineContextProps } from "@/components/Timeline/Timeline.tsx";
+import TimelineEntry, { getTimelineDate, SBTimelineEntry } from "@/components/Timeline/TimelineEntry.tsx";
 
 export const VARIANT_DESCRIPTIONS: Record<TimelineVariant, MessageDescriptor | null> = {
    CSO: msg`Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam.`,
@@ -11,19 +11,9 @@ export const VARIANT_DESCRIPTIONS: Record<TimelineVariant, MessageDescriptor | n
    DEFAULT: null,
 };
 
-// The count in the stembureaus is the only step that differs per counting method.
-const COUNT_BODIES: Record<TimelineVariant, MessageDescriptor> = {
-   CSO: msg`Op de avond van de stemming tellen de stembureaus alleen de stemmen per lijst. Het GSB telt de volgende dag de stemmen per lijst en per kandidaat. Dit wordt ook wel 'centraal tellen' genoemd.`,
-   DSO: msg`Op de avond van de stemming telt het stembureau de stemmen per lijst én per kandidaat. Het GSB controleert de volgende dag de processen-verbaal van de stembureaus. Bij (vermoedelijke) fouten worden de stemmen van dat stembureau geheel of gedeeltelijk opnieuw geteld.`,
-   DEFAULT: msg`De stemmen worden geteld bij de stembureaus.`,
-};
+type Props = TimelineContextProps;
 
-type Props = {
-   variant?: TimelineVariant;
-   dates: TimelineDate[];
-};
-
-export function SBTimeline({ variant = "DEFAULT", dates }: Props) {
+export function SBTimeline({ variant = "DEFAULT", dates, documents }: Props) {
    const { t } = useLingui();
 
    const variantDescription = VARIANT_DESCRIPTIONS[variant];
@@ -34,7 +24,7 @@ export function SBTimeline({ variant = "DEFAULT", dates }: Props) {
             <Trans>Hoe zijn de resultaten tot stand gekomen?</Trans>
          </h2>
          {variantDescription && <p className={"mb-4"}>{t(variantDescription)}</p>}
-         <Timeline>
+         <Timeline dates={dates} variant={variant} documents={documents}>
             <TimelineEntry
                key="publication"
                date={getTimelineDate(dates, "csb_result_publish")}
@@ -92,18 +82,7 @@ export function SBTimeline({ variant = "DEFAULT", dates }: Props) {
                   </Trans>
                </p>
             </TimelineEntry>
-            <TimelineEntry
-               key="count"
-               date={getTimelineDate(dates, "sb_vote_count")}
-               title={t`Telling in de stembureaus`}
-            >
-               <p>
-                  {t(COUNT_BODIES[variant])}{" "}
-                  <strong>
-                     <Trans>Het is dus nog niet de officiële uitslag van de Kiesraad.</Trans>
-                  </strong>
-               </p>
-            </TimelineEntry>
+            <SBTimelineEntry />
          </Timeline>
       </div>
    );

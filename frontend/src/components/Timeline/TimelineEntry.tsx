@@ -1,10 +1,11 @@
 import { faCheck, faFile } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
-import { type PropsWithChildren, type ReactNode, useMemo } from "react";
-import type { TimelineDate, TimelineDateEvent } from "@/api/types.ts";
+import { msg, t } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { type PropsWithChildren, type ReactNode, useContext, useMemo } from "react";
+import type { TimelineDate, TimelineDateEvent, TimelineVariant } from "@/api/types.ts";
+import { TimelineContext } from "@/components/Timeline/Timeline.tsx";
 import { electionDay, useFormatters } from "@/utils/format.ts";
 
 // The marker shows the status visually; this is the text screen readers get instead.
@@ -49,17 +50,27 @@ export function getTimelineDate(dates: TimelineDate[], event: TimelineDateEvent)
 
 export type TimelineEntryStatus = "pending" | "in-progress" | "done";
 
-export interface TimelineEntryProps {
+export type TimelineEntryProps = {
    title: ReactNode;
-   date: TimelineDate;
-}
+} & (
+   | {
+        date?: TimelineDate;
+        event: TimelineDateEvent;
+     }
+   | {
+        date: TimelineDate;
+        event?: undefined;
+     }
+);
 
-export default function TimelineEntry({ children, title, date }: PropsWithChildren<TimelineEntryProps>) {
+export default function TimelineEntry({ children, title, date, event }: PropsWithChildren<TimelineEntryProps>) {
    const { formatTimelineDate } = useFormatters();
    const { t } = useLingui();
+   const { dates } = useContext(TimelineContext);
+   const resolved = event ? date || getTimelineDate(dates, event) : date;
 
    const status = useMemo((): TimelineEntryStatus => {
-      const entryDate = new Date(date.date);
+      const entryDate = new Date(resolved.date);
       if (Number.isNaN(entryDate.getTime())) {
          return "pending";
       }
@@ -70,7 +81,7 @@ export default function TimelineEntry({ children, title, date }: PropsWithChildr
          return "in-progress";
       }
       return entryDay < today ? "done" : "pending";
-   }, [date]);
+   }, [resolved.date]);
 
    const classes = STATUS_CLASSES[status];
 
@@ -96,7 +107,7 @@ export default function TimelineEntry({ children, title, date }: PropsWithChildr
                {title}
                <span className="sr-only">, {t(STATUS_LABELS[status])}</span>
             </h3>
-            <div className="mb-1.5 text-muted">{formatTimelineDate(date)}</div>
+            <div className="mb-1.5 text-muted">{formatTimelineDate(resolved)}</div>
             <div className="flex flex-col gap-4 leading-6">{children}</div>
          </div>
       </li>
@@ -124,5 +135,26 @@ export function TimelineFile({ file }: TimelineFileProps) {
             <span className="text-muted">{file.description}</span>
          </div>
       </a>
+   );
+}
+
+const COUNT_BODIES: Record<TimelineVariant, MessageDescriptor> = {
+   CSO: msg`Op de avond van de stemming tellen de stembureaus alleen de stemmen per lijst. Het GSB telt de volgende dag de stemmen per lijst en per kandidaat. Dit wordt ook wel 'centraal tellen' genoemd.`,
+   DSO: msg`Op de avond van de stemming telt het stembureau de stemmen per lijst én per kandidaat. Het GSB controleert de volgende dag de processen-verbaal van de stembureaus. Bij (vermoedelijke) fouten worden de stemmen van dat stembureau geheel of gedeeltelijk opnieuw geteld.`,
+   DEFAULT: msg`Na het sluiten van de stembussen tellen de leden van het stembureau hoeveel mensen hebben gestemd en hoeveel stemmen elke partij heeft gekregen. De voorlopige uitslag die je in het nieuws ziet is gebaseerd op de eerste tellingen van de stembureaus en wordt gepubliceerd door media en persbureaus.`,
+};
+
+export function SBTimelineEntry() {
+   const { variant = "DEFAULT" } = useContext(TimelineContext);
+
+   return (
+      <TimelineEntry key="count" event="sb_vote_count" title={t`Telling in de stembureaus`}>
+         <p>
+            {t(COUNT_BODIES[variant])}{" "}
+            <strong>
+               <Trans>Het is dus nog niet de officiële uitslag van de Kiesraad.</Trans>
+            </strong>
+         </p>
+      </TimelineEntry>
    );
 }

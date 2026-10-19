@@ -1,7 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
-import { SBTimeline } from "@/components/Timeline/SBTimeline.tsx";
+import { HSBTimeline } from "@/components/Timeline/HSBTimeline.tsx";
 import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -106,7 +106,7 @@ export function HSBResultsPage() {
                issueReportDeadline={electionConfig.issue_report_deadline}
                notPublishedRegionName={region.region_name}
                notPublishedRegionCategory={region.region_category}
-               timeline={<SBTimeline variant={region.timeline_variant} dates={electionConfig.timeline_dates ?? []} />}
+               timeline={<HSBTimeline dates={electionConfig.timeline_dates ?? []} />}
             />
          </ResultsPageColumns>
       </LayoutMain>
