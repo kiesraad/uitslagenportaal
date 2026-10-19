@@ -24,9 +24,16 @@ from eml_import.utils.named_bytes_io import NamedBytesIO
 from party.models import Candidate
 from region.models import Region
 
-XML_110A = b"<EML Id='110a'/>"
-XML_230B = b"<EML Id='230b'/>"
-XML_510B = b"<EML Id='510b'/>"
+EML = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<EML xmlns="urn:oasis:names:tc:evs:schema:eml" xmlns:kr="http://www.kiesraad.nl/extensions" Id="{doc_type}">
+    <kr:CreationDateTime>{creation_time}</kr:CreationDateTime>
+</EML>
+"""
+
+XML_110A = EML.format(doc_type="110a", creation_time=str(timezone.now())).encode()
+XML_230B = EML.format(doc_type="230b", creation_time=str(timezone.now())).encode()
+XML_510B = EML.format(doc_type="510b", creation_time=str(timezone.now())).encode()
 
 BRANCH_EXCHANGE = "exchange"
 BRANCH_COUNTING_RESULTS = "counting-results"
@@ -379,6 +386,32 @@ def test_idempotency_within_one_commit_when_failing_halfway(monkeypatch):
     assert ImportedFileHash.objects.count() == 2
     assert Contest.objects.filter(election=Election.objects.get()).count() == 1
     assert Candidate.objects.count() == 2
+
+
+@pytest.mark.django_db
+def test_filter_corrections_keeps_only_newest():
+    config = ElectionConfigFactory(identifier=CONFIG_IDENTIFIER)
+    file_110a_1 = NamedBytesIO(
+        EML.format(doc_type="110a", creation_time="2026-02-06T17:16:41.447").encode(), "definitie-gemeente-a.xml"
+    )
+    file_110a_2 = NamedBytesIO(
+        EML.format(doc_type="110a", creation_time="2026-02-12T14:14:41.123").encode(), "definitie-gemeente-a.xml"
+    )
+    file_230b_1 = NamedBytesIO(
+        EML.format(doc_type="230b", creation_time="2026-02-06T17:16:41.447").encode(), "kandidatenlijst-gemeente-a.xml"
+    )
+    file_230b_2 = NamedBytesIO(
+        EML.format(doc_type="230b", creation_time="2026-02-12T14:14:41.123").encode(), "kandidatenlijst-gemeente-a.xml"
+    )
+    file_other_230b = NamedBytesIO(
+        EML.format(doc_type="230b", creation_time="2026-02-12T14:14:41.123").encode(), "kandidatenlijst-gemeente-b.xml"
+    )
+    files = [file_110a_1, file_110a_2, file_230b_1, file_230b_2, file_other_230b]
+
+    handler = GithubEmlFileHandler(config)
+    filtered = handler._filter_corrections(iter(files))
+
+    assert filtered == [file_110a_2, file_230b_2, file_other_230b]
 
 
 def test_run_imports_from_the_first_commit_and_records_progress(fake_repo, imported_batches, stored_election_config):
