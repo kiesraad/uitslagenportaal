@@ -30,9 +30,9 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
         self.logger.info("Successfully imported data for Election")
 
     def _is_correction(self) -> bool:
-        if Region.objects.filter(election=self.election).exists():
+        if Contest.objects.filter(election=self.election).exists():
             self.logger.info(
-                "\033[32mCorrection detected for election %s eml_type=%s\033[0m",
+                "\033[32mCorrection detected for election '%s', eml_type: %s\033[0m",
                 self.election.name,
                 self.eml_type,
             )
