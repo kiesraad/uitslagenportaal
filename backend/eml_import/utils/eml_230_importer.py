@@ -117,5 +117,3 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
         )
         Candidate.objects.filter(contest=contest).delete()
         Contest.objects.filter(pk=contest.pk).delete()
-        # Key (election_id, list_number)=(1333, 3)
-        # 2026-10-19 07:46:16,445 ForkPoolWorker-7 - INFO - celery.app.trace - Task eml_import.tasks.import_election_eml_commits[5be48de7-6f75-4d0b-89e6-16e4b7c748b6] retry: Retry in 5s: IntegrityError('duplicate key value violates unique constraint "unique_list_number_per_election"\nDETAIL:  Key (election_id, list_number)=(1333, 3) already exists.\n')
