@@ -4,7 +4,7 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg, t } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type PropsWithChildren, type ReactNode, useContext, useMemo } from "react";
-import type { TimelineDate, TimelineDateEvent, TimelineVariant } from "@/api/types.ts";
+import type { ElectionDocumentFileType, TimelineDate, TimelineDateEvent, TimelineVariant } from "@/api/types.ts";
 import { TimelineContext } from "@/components/Timeline/Timeline.tsx";
 import { electionDay, useFormatters } from "@/utils/format.ts";
 
@@ -52,6 +52,7 @@ export type TimelineEntryStatus = "pending" | "in-progress" | "done";
 
 export type TimelineEntryProps = {
    title: ReactNode;
+   document_types?: ElectionDocumentFileType[];
 } & (
    | {
         date?: TimelineDate;
@@ -63,10 +64,16 @@ export type TimelineEntryProps = {
      }
 );
 
-export default function TimelineEntry({ children, title, date, event }: PropsWithChildren<TimelineEntryProps>) {
+export default function TimelineEntry({
+   children,
+   title,
+   date,
+   event,
+   document_types = [],
+}: PropsWithChildren<TimelineEntryProps>) {
    const { formatTimelineDate } = useFormatters();
    const { t } = useLingui();
-   const { dates } = useContext(TimelineContext);
+   const { dates, documents } = useContext(TimelineContext);
    const resolved = event ? date || getTimelineDate(dates, event) : date;
 
    const status = useMemo((): TimelineEntryStatus => {
@@ -82,6 +89,10 @@ export default function TimelineEntry({ children, title, date, event }: PropsWit
       }
       return entryDay < today ? "done" : "pending";
    }, [resolved.date]);
+
+   const selectedDocs = useMemo(() => {
+      return documents?.filter((doc) => document_types.includes(doc.file_type)) ?? [];
+   }, [document_types, documents]);
 
    const classes = STATUS_CLASSES[status];
 
@@ -109,6 +120,9 @@ export default function TimelineEntry({ children, title, date, event }: PropsWit
             </h3>
             <div className="mb-1.5 text-muted">{formatTimelineDate(resolved)}</div>
             <div className="flex flex-col gap-4 leading-6">{children}</div>
+            {selectedDocs.map((doc) => (
+               <TimelineFile key={doc.file_type} file={doc} />
+            ))}
          </div>
       </li>
    );
@@ -148,7 +162,12 @@ export function SBTimelineEntry() {
    const { variant = "DEFAULT" } = useContext(TimelineContext);
 
    return (
-      <TimelineEntry key="count" event="sb_vote_count" title={t`Telling in de stembureaus`}>
+      <TimelineEntry
+         key="count"
+         event="sb_vote_count"
+         title={t`Telling in de stembureaus`}
+         document_types={["EML510b"]}
+      >
          <p>
             {t(COUNT_BODIES[variant])}{" "}
             <strong>

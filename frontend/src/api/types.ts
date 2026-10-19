@@ -33,13 +33,34 @@ export type TimelineDate = {
    qualifier: TimelineDateQualifier;
 };
 
+export type ElectionDocumentFileType =
+   | "EML110a"
+   | "EML230b"
+   | "EML510b"
+   | "EML510c"
+   | "EML510d"
+   | "CSV_OSV4-3"
+   | "PDF_N10-1"
+   | "PDF_N10-2"
+   | "PDF_NA14-1"
+   | "PDF_NA31-1"
+   | "PDF_NA31-2"
+   | "PDF_NA31-2-B1"
+   | "PDF_NA31-2-B2"
+   | "PDF_NA14-2"
+   | "PDF_NA14-2-B1"
+   | "PDF_O7"
+   | "PDF_P1F-1"
+   | "PDF_P22-1"
+   | "PDF_P22-2";
+
 export type ElectionDocument = {
    name: string;
    url: string;
    type: string;
    size: string;
    description: string;
-   file_type: string;
+   file_type: ElectionDocumentFileType;
    correction_number: number;
 };
 

@@ -111,7 +111,7 @@ export function HSBPartyResultsPage() {
                ) : (
                   resultsPageContent
                )}
-               <HSBTimeline dates={electionConfig.timeline_dates ?? []} />
+               <HSBTimeline dates={electionConfig.timeline_dates ?? []} documents={region.documents} />
                <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
             </div>
          </div>

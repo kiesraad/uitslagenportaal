@@ -227,7 +227,11 @@ class ElectionDocument(BaseModel):
     """
 
     class FileType(models.TextChoices):
-        """Source files listed in FILE_TYPE_MAPPINGS, including the scanned proces-verbaal forms."""
+        """
+        Source files listed in FILE_TYPE_MAPPINGS, including the scanned proces-verbaal forms.
+
+        Keep in sync with api/types.ts
+        """
 
         EML_110A = "EML110a", "Verkiezingsdefinitie"
         EML_230B = "EML230b", "Kandidatenlijst"
