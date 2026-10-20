@@ -406,12 +406,15 @@ def test_filter_corrections_keeps_only_newest():
     file_other_230b = NamedBytesIO(
         EML.format(doc_type="230b", creation_time="2026-02-12T14:14:41.123").encode(), "kandidatenlijst-gemeente-b.xml"
     )
-    files = [file_110a_1, file_110a_2, file_230b_1, file_230b_2, file_other_230b]
+    # Non-XML files have no creation date to compare, so they are all kept
+    file_csv_1 = NamedBytesIO(b'"Verkiezing";"Nummer";"Gebied"', "osv4-3_telling.csv")
+    file_csv_2 = NamedBytesIO(b'"Verkiezing";"Nummer";"Gebied"', "osv4-3_telling.csv")
+    files = [file_110a_1, file_110a_2, file_csv_1, file_230b_1, file_230b_2, file_other_230b, file_csv_2]
 
     handler = GithubEmlFileHandler(config)
     filtered = handler._filter_corrections(iter(files))
 
-    assert filtered == [file_110a_2, file_230b_2, file_other_230b]
+    assert filtered == [file_110a_2, file_230b_2, file_other_230b, file_csv_1, file_csv_2]
 
 
 def test_run_imports_from_the_first_commit_and_records_progress(fake_repo, imported_batches, stored_election_config):
