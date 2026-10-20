@@ -182,6 +182,10 @@ a.results-image-container:hover {
    margin-top: 8.5rem;
 }
 
+.page-main-two-columns:has(.result-unpublished) .counting-results-column {
+   margin-top: 0;
+}
+
 .party-level-title {
    font-size: 1.35rem;
    font-weight: 700;
