@@ -269,7 +269,7 @@ class GithubEmlFileHandler(BaseFileHandler):
 
         xml_files, other_files = [], []
         for file in files:
-            (xml_files if file.name.endswith(".xml") else other_files).append(file)
+            (xml_files if file.name.endswith(".eml.xml") else other_files).append(file)
 
         sorted_files = sorted(xml_files, key=lambda f: f.name)
         return [get_newest(list(g)) for _, g in groupby(sorted_files, key=lambda f: f.name)] + other_files

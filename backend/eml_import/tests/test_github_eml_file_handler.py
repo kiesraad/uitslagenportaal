@@ -392,19 +392,22 @@ def test_idempotency_within_one_commit_when_failing_halfway(monkeypatch):
 def test_filter_corrections_keeps_only_newest():
     config = ElectionConfigFactory(identifier=CONFIG_IDENTIFIER)
     file_110a_1 = NamedBytesIO(
-        EML.format(doc_type="110a", creation_time="2026-02-06T17:16:41.447").encode(), "definitie-gemeente-a.xml"
+        EML.format(doc_type="110a", creation_time="2026-02-06T17:16:41.447").encode(), "definitie-gemeente-a.eml.xml"
     )
     file_110a_2 = NamedBytesIO(
-        EML.format(doc_type="110a", creation_time="2026-02-12T14:14:41.123").encode(), "definitie-gemeente-a.xml"
+        EML.format(doc_type="110a", creation_time="2026-02-12T14:14:41.123").encode(), "definitie-gemeente-a.eml.xml"
     )
     file_230b_1 = NamedBytesIO(
-        EML.format(doc_type="230b", creation_time="2026-02-06T17:16:41.447").encode(), "kandidatenlijst-gemeente-a.xml"
+        EML.format(doc_type="230b", creation_time="2026-02-06T17:16:41.447").encode(),
+        "kandidatenlijst-gemeente-a.eml.xml",
     )
     file_230b_2 = NamedBytesIO(
-        EML.format(doc_type="230b", creation_time="2026-02-12T14:14:41.123").encode(), "kandidatenlijst-gemeente-a.xml"
+        EML.format(doc_type="230b", creation_time="2026-02-12T14:14:41.123").encode(),
+        "kandidatenlijst-gemeente-a.eml.xml",
     )
     file_other_230b = NamedBytesIO(
-        EML.format(doc_type="230b", creation_time="2026-02-12T14:14:41.123").encode(), "kandidatenlijst-gemeente-b.xml"
+        EML.format(doc_type="230b", creation_time="2026-02-12T14:14:41.123").encode(),
+        "kandidatenlijst-gemeente-b.eml.xml",
     )
     # Non-XML files have no creation date to compare, so they are all kept
     file_csv_1 = NamedBytesIO(b'"Verkiezing";"Nummer";"Gebied"', "osv4-3_telling.csv")
