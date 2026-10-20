@@ -282,7 +282,7 @@ def test_after_csb_totaaltelling_goes_stays_unpublished(page: Page):
     page.goto("/ab2023/gsb")
     page.get_by_role("link", name="Borsele").click()
     page.get_by_role("link", name="Hele gemeente").click()
-    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510b"))).to_be_visible()
+    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510b")).first).to_be_visible()
 
     page.goto("/ab2023/gsb")
     page.get_by_role("link", name="Goes").click()

@@ -1,13 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import type {
-   ElectionDocument,
-   PollingStationPvArchive,
-   RegionCategory,
-   VoteCount,
-   VoteCounts,
-   VoterTurnoutCount,
-} from "@/api/types.ts";
+import type { ElectionDocument, RegionCategory, VoteCount, VoteCounts, VoterTurnoutCount } from "@/api/types.ts";
 import { getPartyLevelVoteCounts } from "@/utils/voteCounts.ts";
 import IssueNotice from "./IssueNotice";
 import ReportsWithResults from "./ReportsWithResults";
@@ -23,7 +16,6 @@ type Props = {
    reports?: {
       description: string;
       documents: ElectionDocument[] | undefined;
-      pollingStationPvArchive?: PollingStationPvArchive | null;
    };
    timeline?: ReactNode;
    issueReportDeadline: string;
@@ -82,7 +74,6 @@ export default function RegionResultsContent({
                title={t`Brondocumenten`}
                description={reports.description}
                documents={reports.documents}
-               pollingStationPvArchive={reports.pollingStationPvArchive}
             />
          )}
       </>

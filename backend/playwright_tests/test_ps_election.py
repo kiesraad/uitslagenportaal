@@ -219,7 +219,7 @@ def test_after_drenthe_csb_emmen_stays_unpublished_on_gsb(page: Page):
     page.goto("/ps2023/gsb")
     page.get_by_role("link", name="Aa en Hunze").click()
     page.get_by_role("link", name="Hele gemeente").click()
-    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510b"))).to_be_visible()
+    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510b")).first).to_be_visible()
 
     page.goto("/ps2023/gsb")
     page.get_by_role("link", name="Emmen").click()

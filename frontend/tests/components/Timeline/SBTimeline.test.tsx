@@ -22,7 +22,9 @@ describe("SBTimeline", () => {
       renderWithProviders(<SBTimeline dates={[]} />);
 
       expect(screen.queryByText(/Het stembureau doet een/)).not.toBeInTheDocument();
-      expect(screen.getByText(/De stemmen worden geteld bij de stembureaus/)).toBeInTheDocument();
+      expect(
+         screen.getByText(/Na het sluiten van de stembussen tellen de leden van het stembureau/),
+      ).toBeInTheDocument();
       expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(5);
    });
 });

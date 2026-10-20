@@ -52,7 +52,8 @@ export type ElectionDocumentFileType =
    | "PDF_O7"
    | "PDF_P1F-1"
    | "PDF_P22-1"
-   | "PDF_P22-2";
+   | "PDF_P22-2"
+   | "PDF_SB-ZIP";
 
 export type ElectionDocument = {
    name: string;
@@ -62,13 +63,7 @@ export type ElectionDocument = {
    description: string;
    file_type: ElectionDocumentFileType;
    correction_number: number;
-};
-
-export type PollingStationPvArchive = {
-   url: string;
-   present_count: number;
-   total_count: number;
-   size: number;
+   metadata: Record<string, string | number>;
 };
 
 export type ReportingLevel = "gsb" | "hsb" | "csb" | "sb";
@@ -90,7 +85,6 @@ export type Region = {
    voter_turnout_counts?: VoterTurnoutCount[];
    timeline_variant?: TimelineVariant;
    documents?: ElectionDocument[];
-   polling_station_pv_archive?: PollingStationPvArchive | null;
    certified_document_url?: string | null;
    certified_document_preview_url?: string | null;
    region_category: RegionCategory;

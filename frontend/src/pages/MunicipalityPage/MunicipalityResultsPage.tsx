@@ -54,7 +54,6 @@ export function MunicipalityResultsPage() {
                reports={{
                   description: t`Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`,
                   documents: region.documents,
-                  pollingStationPvArchive: region.polling_station_pv_archive,
                }}
                issueReportDeadline={electionConfig.issue_report_deadline}
                notPublishedRegionName={region.region_name}

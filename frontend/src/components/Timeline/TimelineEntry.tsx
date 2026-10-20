@@ -1,10 +1,11 @@
-import { faCheck, faFile } from "@fortawesome/free-solid-svg-icons";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg, t } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type PropsWithChildren, type ReactNode, useContext, useMemo } from "react";
 import type { ElectionDocumentFileType, TimelineDate, TimelineDateEvent, TimelineVariant } from "@/api/types.ts";
+import ElectionFileEntry from "@/components/ElectionFileEntry.tsx";
 import { TimelineContext } from "@/components/Timeline/Timeline.tsx";
 import { electionDay, useFormatters } from "@/utils/format.ts";
 
@@ -114,41 +115,17 @@ export default function TimelineEntry({
             </div>
          </div>
          <div className="min-w-0 flex-1 pb-6">
-            <h3 className="mb-0.5 font-sans leading-normal">
+            <h3 className="mb-0.5 font-sans text-lg leading-normal">
                {title}
                <span className="sr-only">, {t(STATUS_LABELS[status])}</span>
             </h3>
             <div className="mb-1.5 text-muted">{formatTimelineDate(resolved)}</div>
             <div className="flex flex-col gap-4 leading-6">{children}</div>
             {selectedDocs.map((doc) => (
-               <TimelineFile key={doc.file_type} file={doc} />
+               <ElectionFileEntry key={doc.file_type} file={doc} className="mt-2 bg-info-bg p-3" />
             ))}
          </div>
       </li>
-   );
-}
-
-export interface TimelineFileProps {
-   file: {
-      name: string;
-      url: string;
-      type: string;
-      size: string;
-      description: string;
-   };
-}
-
-export function TimelineFile({ file }: TimelineFileProps) {
-   return (
-      <a href={file.url} key={file.url} className="flex gap-2 bg-box-bg p-3 text-xs hover:no-underline">
-         <FontAwesomeIcon icon={faFile} />
-         <div className="flex flex-col">
-            <span className="mb-1 text-blue">
-               <span className="font-semibold">{file.name}</span> ({file.type}, {file.size})
-            </span>
-            <span className="text-muted">{file.description}</span>
-         </div>
-      </a>
    );
 }
 
