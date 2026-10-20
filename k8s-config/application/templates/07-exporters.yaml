@@ -257,6 +257,24 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.redis.credSecret }}
                   key: REDIS_PORT
+          # The event receiver can hang on a dead Redis socket without raising, leaving the
+          # exporter up but deaf. Workers that answer inspect (active_worker_count) while no
+          # heartbeat is seen (worker_up, timed out after 5 minutes) means exactly that. With
+          # no workers at all it passes, so CeleryWorkerAbsent fires instead of a crash loop.
+          livenessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - |
+                  import re, sys, urllib.request
+                  m = urllib.request.urlopen("http://localhost:9808/metrics", timeout=8).read().decode()
+                  v = lambda n: [float(x) for x in re.findall("^" + n + r"\S* (\S+)$", m, re.M)]
+                  sys.exit(sum(v("celery_active_worker_count")) > 0 and 1 not in v("celery_worker_up"))
+            initialDelaySeconds: 60
+            periodSeconds: 300
+            timeoutSeconds: 10
+            failureThreshold: 3
           resources:
             {{- toYaml .Values.monitoring.exporters.celery.resources | nindent 12 }}
           securityContext:
