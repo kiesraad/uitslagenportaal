@@ -274,6 +274,14 @@ msgstr "This website in other languages:"
 msgid "Deze website is actief vanaf 1 dag vóór de verkiezingen tot drie maanden erna. Wilt u uitslagen van eerdere verkiezingen bekijken?"
 msgstr "This website is active from 1 day before the elections until three months afterwards. Would you like to view results of earlier elections?"
 
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "Dit is een dubbel stembureau. Op dezelfde locatie zit ook {otherStationLinks}."
+msgstr "This is a double polling station. The same location also houses {otherStationLinks}."
+
+#: src/components/ListPage/RegionList.tsx
+msgid "Dubbel stembureau"
+msgstr "Double polling station"
+
 #: src/pages/ReportIssuePage.tsx
 msgid "Een fout melden"
 msgstr "Reporting a mistake"
@@ -602,6 +610,10 @@ msgstr "The documents below contain the latest counting results for the municipa
 msgid "Ongeldige stemmen"
 msgstr "Invalid votes"
 
+#: src/components/ListPage/RegionList.tsx
+msgid "Ook stembureau {otherNumbers} op deze locatie"
+msgstr "Polling station {otherNumbers} is at this location too"
+
 #: src/components/Timeline/SBTimeline.tsx
 msgid "Op de avond van de stemming tellen de stembureaus alleen de stemmen per lijst. Het GSB telt de volgende dag de stemmen per lijst en per kandidaat. Dit wordt ook wel 'centraal tellen' genoemd."
 msgstr "On the evening of the vote, the polling stations only count the votes per list. The next day the municipal electoral committee counts the votes per list and per candidate. This is also known as a 'centralised count'."
@@ -760,6 +772,10 @@ msgstr "States"
 #: src/utils/region.ts
 msgid "Stembureau"
 msgstr "Polling station"
+
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "stembureau {stationNumber}"
+msgstr "polling station {stationNumber}"
 
 #: src/utils/region.ts
 msgid "Stembureaus"

@@ -78,6 +78,13 @@ export type Region = {
    csb_slug?: string | null;
    election_slug?: string;
    station_number?: number | null;
+   // The other stembureaus with the same name and postcode: a dubbel stembureau.
+   same_location_stations?: SameLocationStation[];
+};
+
+export type SameLocationStation = {
+   station_number: number | null;
+   slug: string;
 };
 
 export type RegionResponse = Region[];

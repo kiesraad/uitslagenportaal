@@ -30,6 +30,9 @@ from mainsite.utils.eml_type import EmlType
 from party.models import Candidate, Party
 from region.models import Region, build_region_slug
 
+# A stembureau identifier reads e.g. "Stembureau Gemeentehuis Gieten (postcode: 9461 BH)".
+POSTAL_CODE_RE = re.compile(r"\(postcode:\s*([^)]*)\)")
+
 
 class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
     file_type: ElectionDocument.FileType
@@ -255,6 +258,11 @@ class EML510bImporter(EML510BaseImporter):
             name = name[len("Stembureau ") :]
         return name
 
+    @staticmethod
+    def _polling_station_postal_code(unit: ReportingUnitVotes) -> str | None:
+        match = POSTAL_CODE_RE.search(unit.reporting_unit_identifier.value)
+        return (match.group(1).strip() or None) if match else None
+
     def _ensure_polling_stations(self, region: Region) -> dict[tuple[str, str], Region]:
         """
         Create all polling stations of this file up front, keyed by (number, name).
@@ -273,12 +281,13 @@ class EML510bImporter(EML510BaseImporter):
             for station in Region.objects.filter(**stations_filter)
         }
 
-        wanted: set[tuple[str, str]] = set()
+        postal_code_by_key: dict[tuple[str, str], str | None] = {}
         for contest_data in self.eml.count.election.contests.contest:
             for unit in contest_data.reporting_unit_votes:
-                wanted.add((str(unit.reporting_unit_identifier.id), self._polling_station_name(unit)))
+                key = (str(unit.reporting_unit_identifier.id), self._polling_station_name(unit))
+                postal_code_by_key[key] = self._polling_station_postal_code(unit)
 
-        missing = wanted - existing.keys()
+        missing = postal_code_by_key.keys() - existing.keys()
         if not missing:
             return existing
 
@@ -289,6 +298,7 @@ class EML510bImporter(EML510BaseImporter):
                     election=self.election,
                     region_number=region_number,
                     region_name=region_name,
+                    postal_code=postal_code_by_key[(region_number, region_name)],
                     parent=region,
                     csb=csb,
                     region_category=RegionCategory.STEMBUREAU,

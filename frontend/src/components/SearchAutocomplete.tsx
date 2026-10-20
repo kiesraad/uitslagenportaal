@@ -10,6 +10,7 @@ export type SearchListOption = {
    csbSlug?: string;
    sortName?: string;
    stationNumber?: number;
+   sameLocationStationNumbers?: number[];
 };
 
 type Props = {

@@ -1,5 +1,7 @@
+from django.contrib.postgres.expressions import ArraySubquery
 from django.core.files.storage import default_storage
-from django.db.models import Prefetch
+from django.db.models import OuterRef, Prefetch
+from django.db.models.functions import JSONObject
 from django.http import HttpResponseRedirect
 from django.utils.http import content_disposition_header
 from rest_framework.decorators import api_view
@@ -26,6 +28,21 @@ _DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL = {
     ReportingLevel.HSB: ElectionDocument.FileType.EML_510C,
     ReportingLevel.CSB: ElectionDocument.FileType.EML_510D,
 }
+
+
+def _with_same_location_stations(queryset):
+    """Annotate each stembureau with the other stembureaus at its location (a dubbel stembureau)."""
+    others = (
+        Region.objects.filter(
+            parent=OuterRef("parent"),
+            region_category=RegionCategory.STEMBUREAU,
+            region_name=OuterRef("region_name"),
+            postal_code=OuterRef("postal_code"),
+        )
+        .exclude(pk=OuterRef("pk"))
+        .values(json=JSONObject(region_number="region_number", slug="slug"))
+    )
+    return queryset.annotate(same_location_stations=ArraySubquery(others))
 
 
 class RegionListView(ListAPIView):
@@ -72,7 +89,7 @@ class RegionListView(ListAPIView):
             if own_eml_type is None:
                 raise ValidationError({"has_own_results": f"Not supported for region_category {region_category}."})
             result = result.filter(vote_counts__eml_type=own_eml_type).distinct()
-        return result
+        return _with_same_location_stations(result)
 
 
 class RegionDetailView(RetrieveAPIView):
@@ -147,7 +164,7 @@ class RegionDetailView(RetrieveAPIView):
             queryset = queryset.filter(csb__slug=csb_slug)
 
         try:
-            return queryset.get()
+            return _with_same_location_stations(queryset).get()
         except Region.DoesNotExist:
             raise NotFound({"detail": "Region not found for this election."})
         except Region.MultipleObjectsReturned:

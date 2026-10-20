@@ -1,6 +1,6 @@
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { Link, type LoaderFunctionArgs, useLoaderData } from "react-router";
 import { SBTimeline } from "@/components/Timeline/SBTimeline.tsx";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop";
@@ -46,7 +46,7 @@ export type PollingStationLoaderData = Awaited<ReturnType<ReturnType<typeof poll
 export default function PollingStationResultsPage() {
    const { electionConfigQuery, regionQuery, pollingStationQuery } = useLoaderData<PollingStationLoaderData>();
    const { t } = useLingui();
-   const { formatDate } = useFormatters();
+   const { formatDate, locale } = useFormatters();
    // The loader has already resolved every query, so the data is never pending here.
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
    const { data: region } = useSuspenseQuery(regionQuery);
@@ -67,11 +67,35 @@ export default function PollingStationResultsPage() {
    const pageTitle = `${t`Telresultaten stembureau`}\n${stationName}`;
    const documentTitle = t`Telresultaten stembureau – ${stationName}`;
 
+   const sameLocationStations = (pollingStation.same_location_stations ?? []).filter(
+      (station) => station.station_number != null,
+   );
+   const otherStationLinks = new Intl.ListFormat(locale)
+      .formatToParts(sameLocationStations.map((station) => String(station.station_number)))
+      .map((part) => {
+         if (part.type === "literal") return part.value;
+         const stationNumber = part.value;
+         const station = sameLocationStations.find(({ station_number }) => String(station_number) === stationNumber);
+         return (
+            <Link
+               key={stationNumber}
+               to={appRoutes.pollingStationResults(electionConfig.slug, region.slug, station?.slug ?? "", csbSlug)}
+            >
+               {t`stembureau ${stationNumber}`}
+            </Link>
+         );
+      });
+
    return (
       <LayoutMain title={documentTitle} description={documentTitle}>
          <PageTop
             title={pageTitle}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
+            notice={
+               sameLocationStations.length > 0 && (
+                  <Trans>Dit is een dubbel stembureau. Op dezelfde locatie zit ook {otherStationLinks}.</Trans>
+               )
+            }
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
                { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },

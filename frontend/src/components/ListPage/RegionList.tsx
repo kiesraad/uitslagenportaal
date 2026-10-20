@@ -1,6 +1,6 @@
-import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import { faChevronRight, faInfo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Plural, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { type PropsWithChildren, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { twMerge } from "tailwind-merge";
@@ -95,6 +95,9 @@ export function RegionList({
             label: formatStationLabel(name, stationNumber),
             sortName: region.region_name,
             stationNumber,
+            sameLocationStationNumbers: isPollingStationList
+               ? (region.same_location_stations ?? []).flatMap((station) => station.station_number ?? [])
+               : undefined,
             csbSlug: region.csb_slug ?? undefined,
          };
       });
@@ -175,7 +178,10 @@ function SearchList({ children }: PropsWithChildren) {
 }
 
 function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: string }) {
+   const { locale } = useFormatters();
    const name = listOption.stationNumber != null ? (listOption.sortName ?? listOption.label) : listOption.label;
+   const sameLocationNumbers = listOption.sameLocationStationNumbers ?? [];
+   const otherNumbers = new Intl.ListFormat(locale).format(sameLocationNumbers.map(String));
    return (
       <li className="col-span-3 grid grid-cols-subgrid odd:bg-blue-50">
          <Link
@@ -187,7 +193,31 @@ function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: 
                {/* Grid items have no whitespace between them, so screen readers would glue the number to the name. */}
                {listOption.stationNumber !== undefined && <span className="sr-only">&nbsp;</span>}
             </span>
-            <span className="underline">{name}</span>
+            <span className="flex items-center gap-4 py-3">
+               <span className="underline">{name}</span>
+               {sameLocationNumbers.length > 0 && (
+                  <>
+                     <span className="sr-only">, </span>
+                     <span className="mr-4 ml-auto flex shrink-0 items-start gap-2 rounded-xs border border-blue-200 bg-white px-2 py-1 text-gray-700 text-sm">
+                        <span
+                           className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-xs bg-blue text-white"
+                           aria-hidden="true"
+                        >
+                           <FontAwesomeIcon icon={faInfo} className="text-[0.55rem]" />
+                        </span>
+                        <span>
+                           <span className="block">
+                              <Trans>Dubbel stembureau</Trans>
+                           </span>
+                           <span className="sr-only">, </span>
+                           <span className="block">
+                              <Trans>Ook stembureau {otherNumbers} op deze locatie</Trans>
+                           </span>
+                        </span>
+                     </span>
+                  </>
+               )}
+            </span>
             <span>
                <FontAwesomeIcon icon={faChevronRight} />
             </span>

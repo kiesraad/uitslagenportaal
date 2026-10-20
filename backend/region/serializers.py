@@ -10,18 +10,41 @@ from mainsite.serializers import (
     VoteCountSummarySerializer,
     VoterTurnoutCountSummarySerializer,
 )
-from region.models import Region
+from region.models import Region, parse_station_number
 from region.polling_station_pv_archive import polling_station_pv_summary
+
+
+class SameLocationStationsField(serializers.Field):
+    """The other stembureaus at the same location, from the view's `same_location_stations` annotation."""
+
+    def __init__(self, **kwargs):
+        super().__init__(source="*", read_only=True, **kwargs)
+
+    def to_representation(self, region):
+        stations = [
+            {"station_number": parse_station_number(station["region_number"]), "slug": station["slug"]}
+            for station in getattr(region, "same_location_stations", None) or []
+        ]
+        return sorted(stations, key=lambda station: station["station_number"] or 0)
 
 
 class RegionListSerializer(serializers.ModelSerializer):
     csb_name = serializers.CharField(source="csb.region_name", default=None, read_only=True)
     csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
+    same_location_stations = SameLocationStationsField()
 
     class Meta:
         model = Region
-        fields = ("region_name", "slug", "region_category", "csb_name", "csb_slug", "station_number")
+        fields = (
+            "region_name",
+            "slug",
+            "region_category",
+            "csb_name",
+            "csb_slug",
+            "station_number",
+            "same_location_stations",
+        )
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):
@@ -36,6 +59,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
     election_slug = serializers.CharField(source="election.slug", read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
+    same_location_stations = SameLocationStationsField()
 
     class Meta:
         model = Region
@@ -55,6 +79,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "csb_slug",
             "election_slug",
             "station_number",
+            "same_location_stations",
         )
 
     def get_polling_station_pv_archive(self, region):
