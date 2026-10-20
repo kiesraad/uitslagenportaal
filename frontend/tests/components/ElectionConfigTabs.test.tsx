@@ -46,7 +46,7 @@ describe("ElectionConfigTabs", () => {
                ...electionConfig,
                slug: "tk2025",
                csb_type: "STAAT",
-               single_csb: { region_name: "Nederland", slug: "None-nederland" },
+               single_csb: { region_name: "Nederland", slug: "nederland" },
             }}
          />,
          { initialEntries: ["/tk2025/gsb"] },

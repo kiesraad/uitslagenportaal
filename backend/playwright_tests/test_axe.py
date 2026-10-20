@@ -7,10 +7,9 @@ from playwright.sync_api import Page, expect
 
 from playwright_tests.axe import assert_no_axe_violations, format_violations, scan
 from playwright_tests.election_states import (
-    add_aa_en_hunze_telling,
-    add_assen_hsb,
-    add_ps_candidate_lists,
-    ps_definition,
+    add_rotterdam_hsb,
+    add_tk_candidate_lists,
+    tk_definition,
 )
 
 pytestmark = pytest.mark.axe
@@ -117,28 +116,27 @@ def _record_violations(page: Page, reports: list[str]) -> None:
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.usefixtures("empty_database")
 def test_hsb_pages_have_no_axe_violations(page: Page):
-    """HSB templates are not in the EML seed; they only exist after a 510c telling."""
-    ps = ps_definition()
-    add_ps_candidate_lists(ps)
-    add_aa_en_hunze_telling(ps)
-    add_assen_hsb(ps)
+    """The EML seed has no election with HSBs, so a TK kieskring and its 510c are built here."""
+    tk = tk_definition()
+    add_tk_candidate_lists(tk)
+    add_rotterdam_hsb(tk)
 
     reports: list[str] = []
 
-    page.goto("/ps2023/hsb")
+    page.goto("/tk2025/hsb")
     _wait_for_h1(page)
     _record_violations(page, reports)
 
-    page.goto("/ps2023/hsb/1-assen")
+    page.goto("/tk2025/hsb/10-rotterdam")
     _wait_for_h1(page)
     _record_violations(page, reports)
 
-    page.goto("/ps2023/hsb/1-assen/resultaten")
+    page.goto("/tk2025/hsb/10-rotterdam/resultaten")
     expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510c"))).to_be_visible()
     _record_violations(page, reports)
 
     page.get_by_role("link", name="VVD").click()
-    expect(page.get_by_role("columnheader", name="Emmen")).to_be_visible()
+    expect(page.get_by_role("columnheader", name="Schiedam")).to_be_visible()
     _record_violations(page, reports)
 
     if reports:

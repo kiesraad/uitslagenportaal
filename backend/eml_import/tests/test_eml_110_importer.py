@@ -142,6 +142,24 @@ def test_csb_is_the_election_tree_root(regions):
     assert regions[RegionCategory.GEMEENTE].csb == waterschap
 
 
+def test_kieskring_hangs_under_a_staat_without_a_region_number(election_config):
+    """In TK the staat has no RegionNumber, so a kieskring names only its SuperiorRegionCategory."""
+    tree = [
+        make_region(None, RegionCategoryType.STAAT, "Nederland"),
+        make_region(10, RegionCategoryType.KIESKRING, "Rotterdam", None, RegionCategoryType.STAAT),
+        make_region(606, RegionCategoryType.GEMEENTE, "Schiedam", 10, RegionCategoryType.KIESKRING),
+    ]
+    EML110aImporter(fake_eml_file(), eml=make_eml(regions=tree)).parse()
+
+    regions = {
+        region.region_category: region for region in Region.objects.filter(election__election_config=election_config)
+    }
+    staat = regions[RegionCategory.STAAT]
+    assert regions[RegionCategory.KIESKRING].parent == staat
+    assert regions[RegionCategory.KIESKRING].csb == staat
+    assert regions[RegionCategory.GEMEENTE].csb == staat
+
+
 def test_creates_registered_parties(election_config):
     EML110aImporter(fake_eml_file(), eml=make_eml(parties=("Partij voor Zeeland", "CDA"))).parse()
 

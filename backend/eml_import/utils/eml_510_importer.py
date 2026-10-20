@@ -23,6 +23,7 @@ from election.models import (
     VoterTurnoutCount,
 )
 from eml_import.exceptions import EMLImporterException
+from eml_import.utils.csv_osv43_importer import HSB_NUMBER_RE
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
@@ -401,24 +402,30 @@ class EML510cImporter(EML510BaseImporter):
         VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
         ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
 
-    def _parse_data(self) -> None:
+    def _get_kieskring(self) -> Region:
+        regions_qs = Region.objects.filter(election=self.election, region_category=RegionCategory.KIESKRING)
         election_domain = self._get_election_identifier_data().election_domain
         if not isinstance(election_domain, list):
             election_domain = [election_domain]
+
+        if not election_domain:
+            # TK and EP files have no ElectionDomain; the managing authority is the HSB, e.g. "HSB13" Rotterdam.
+            authority = self.eml.managing_authority.authority_identifier
+            match = HSB_NUMBER_RE.fullmatch(authority.id or "")
+            if match is None:
+                raise EMLImporterException(f"Managing authority {authority.id} is not an HSB")
+            return regions_qs.get(region_number=match[1], region_name=(authority.value or "").strip())
+
         assert len(election_domain) == 1, "More than one election domain, cannot parse"
         region_number = int(election_domain[0].id) if election_domain[0].id else None
         region_name = election_domain[0].value
-
-        regions_qs = Region.objects.filter(election=self.election, region_category=RegionCategory.KIESKRING)
         if not region_number:
-            # Allow for the case when the election domain has no region number attached,
-            # this is the case in PS and region number is in that case not needed for retrieval
-            region = regions_qs.get(region_name=region_name)
-        else:
-            region = regions_qs.get(
-                region_number=region_number,
-                region_name=region_name,
-            )
+            # In PS the election domain has no region number, and the name alone identifies the kieskring.
+            return regions_qs.get(region_name=region_name)
+        return regions_qs.get(region_number=region_number, region_name=region_name)
+
+    def _parse_data(self) -> None:
+        region = self._get_kieskring()
 
         is_correction = self._is_correction(region)
 
