@@ -246,6 +246,10 @@ msgstr "The counting results and certified election results will appear here as 
 msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen."
 msgstr "The counting results on this page come from the results software. They were transcribed from the certified election results drawn up after the votes were counted."
 
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen. Momenteel is het proces-verbaal nog niet gepubliceerd en daarom niet zichtbaar."
+msgstr "The counting results on this page come from the results software. They were transcribed from the certified election results drawn up after the votes were counted. The certified election results have not been published yet, so they cannot be shown here."
+
 #: src/components/ResultsPage/ResultsNotPublished.tsx
 msgid "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
 msgstr "The counting results for {regionLabel} have not been published yet"
@@ -431,10 +435,6 @@ msgstr "The signed certified election results of the polling station in a munici
 msgid "Het ondertekende proces-verbaal van het stembureau."
 msgstr "The signed certified election results of the polling station."
 
-#: src/components/ResultsPage/ResultsSourceBox.tsx
-msgid "Het proces-verbaal is nog niet ontvangen"
-msgstr "The certified election results have not arrived yet"
-
 #: src/utils/region.ts
 msgid "het stembureau"
 msgstr "the polling station"
@@ -446,10 +446,6 @@ msgstr "The polling station carries out a rapid count per party. The next day th
 #: src/components/Timeline/SBTimeline.tsx
 msgid "Het stembureau doet een uitgebreide telling op het stembureau. Het gemeentelijk stembureau telt de volgende dag de uitkomsten bij elkaar op. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
 msgstr "The polling station carries out a full count at the polling station. The next day the municipal electoral committee adds up the outcomes. Those counting results are recorded in the report of the municipal electoral committee / public entity electoral committee."
-
-#: src/components/ResultsPage/ResultsSourceBox.tsx
-msgid "Het verschijnt hier zodra het is binnengekomen."
-msgstr "They will appear here once they have been received."
 
 #: src/utils/region.ts
 msgid "het waterschap"
