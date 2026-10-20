@@ -252,7 +252,8 @@ class GithubEmlFileHandler(BaseFileHandler):
 
         It can happen that two versions of a file are uploaded in the same commit, for both the
         election definition and candidate lists. We cannot ensure the import order in the list of files,
-        so have to filter these files and only keep the newest version.
+        so have to filter these files and only keep the newest version. Only EML files carry a creation
+        date, so files of other types are all returned.
         """
 
         def get_newest(identical_files: list[NamedBytesIO]):
@@ -266,8 +267,12 @@ class GithubEmlFileHandler(BaseFileHandler):
 
             return newest[1]
 
-        sorted_files = sorted(files, key=lambda f: f.name)
-        return [get_newest(list(g)) for _, g in groupby(sorted_files, key=lambda f: f.name)]
+        xml_files, other_files = [], []
+        for file in files:
+            (xml_files if file.name.endswith(".eml.xml") else other_files).append(file)
+
+        sorted_files = sorted(xml_files, key=lambda f: f.name)
+        return [get_newest(list(g)) for _, g in groupby(sorted_files, key=lambda f: f.name)] + other_files
 
     @staticmethod
     def _eml_creation_date(file: NamedBytesIO):
