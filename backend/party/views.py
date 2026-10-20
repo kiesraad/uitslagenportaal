@@ -127,7 +127,7 @@ class CSBPartyResultMatrixView(APIView):
             vote_counts__region=csb,
             vote_counts__eml_type=EmlType.EML_510d,
             vote_counts__result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
-        ).distinct()
+        )
 
         return _build_matrix_response(
             party=party,
