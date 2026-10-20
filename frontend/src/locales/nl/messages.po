@@ -275,8 +275,8 @@ msgid "Deze website is actief vanaf 1 dag vóór de verkiezingen tot drie maande
 msgstr "Deze website is actief vanaf 1 dag vóór de verkiezingen tot drie maanden erna. Wilt u uitslagen van eerdere verkiezingen bekijken?"
 
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
-msgid "Dit is een dubbel stembureau. Op dezelfde locatie zit ook {otherStationLinks}."
-msgstr "Dit is een dubbel stembureau. Op dezelfde locatie zit ook {otherStationLinks}."
+msgid "Dit is een dubbel stembureau"
+msgstr "Dit is een dubbel stembureau"
 
 #: src/components/ListPage/RegionList.tsx
 msgid "Dubbel stembureau"
@@ -629,6 +629,10 @@ msgstr "Op deze pagina:"
 #: src/pages/HomePage.tsx
 msgid "Op deze website publiceert de Kiesraad de telresultaten van alle gemeenten en stembureaus. Je vindt hier ook de brondocumenten waarin stembureaus hun tellingen hebben opgeschreven. Zo kan iedereen controleren of de stemmen goed zijn geteld en in de definitieve uitslag terecht zijn gekomen."
 msgstr "Op deze website publiceert de Kiesraad de telresultaten van alle gemeenten en stembureaus. Je vindt hier ook de brondocumenten waarin stembureaus hun tellingen hebben opgeschreven. Zo kan iedereen controleren of de stemmen goed zijn geteld en in de definitieve uitslag terecht zijn gekomen."
+
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "Op dezelfde locatie zit ook {otherStationLinks}."
+msgstr "Op dezelfde locatie zit ook {otherStationLinks}."
 
 #: src/pages/HomePage.tsx
 msgid "Op dit moment zijn er nog geen telresultaten van een verkiezing beschikbaar. Wanneer de dag van stemming nadert, zal een verkiezing met bijbehorende regio's worden aangemaakt. Vanaf de dag van stemming zullen via deze pagina de tellingen worden weergegeven. Na 3 maanden worden de resultaten weer verwijderd."

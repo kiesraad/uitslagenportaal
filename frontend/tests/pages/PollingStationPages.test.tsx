@@ -113,6 +113,15 @@ describe("PollingStationPages", () => {
    it("links a dubbel stembureau to the other stembureau at its location", () => {
       const { queryClient, loaderData } = seedPollingStationQueries({
          ...pollingStation,
+         vote_counts: [
+            {
+               id: 1,
+               valid_votes: 10,
+               candidate: null,
+               party: { registered_name: "VVD", slug: "vvd", list_number: 1 },
+               result_level: "PARTY",
+            },
+         ],
          same_location_stations: [{ station_number: 2, slug: "SB2-de-regenboog" }],
       });
       renderWithProviders(<PollingStationResultsPage />, {
@@ -124,7 +133,7 @@ describe("PollingStationPages", () => {
          queryClient,
       });
 
-      expect(screen.getByText(/Dit is een dubbel stembureau/)).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Dit is een dubbel stembureau" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "stembureau 2" })).toHaveAttribute(
          "href",
          expect.stringContaining("SB2-de-regenboog"),

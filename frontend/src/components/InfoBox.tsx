@@ -1,17 +1,15 @@
 import { faInfo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { ReactNode } from "react";
-import { twMerge } from "tailwind-merge";
 
 interface InfoBoxProps {
    children: ReactNode;
    disableMargin?: boolean;
-   className?: string;
 }
 
-export function InfoBox({ children, disableMargin, className }: InfoBoxProps) {
+export function InfoBox({ children, disableMargin }: InfoBoxProps) {
    return (
-      <div className={twMerge("result-info-box", !disableMargin && "mt-8 mb-9", className)}>
+      <div className={`result-info-box ${!disableMargin ? "mt-8 mb-9" : ""}`}>
          <i className="result-info-icon" aria-hidden="true">
             <FontAwesomeIcon icon={faInfo} className="pb-1 text-xs" />
          </i>

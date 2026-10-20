@@ -91,11 +91,6 @@ export default function PollingStationResultsPage() {
          <PageTop
             title={pageTitle}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
-            notice={
-               sameLocationStations.length > 0 && (
-                  <Trans>Dit is een dubbel stembureau. Op dezelfde locatie zit ook {otherStationLinks}.</Trans>
-               )
-            }
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
                { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
@@ -110,6 +105,18 @@ export default function PollingStationResultsPage() {
          >
             <RegionResultsContent
                intro={t`De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware.`}
+               notice={
+                  sameLocationStations.length > 0 && (
+                     <>
+                        <h2 className="h4">
+                           <Trans>Dit is een dubbel stembureau</Trans>
+                        </h2>
+                        <p>
+                           <Trans>Op dezelfde locatie zit ook {otherStationLinks}.</Trans>
+                        </p>
+                     </>
+                  )
+               }
                voteCounts={pollingStation.vote_counts}
                turnoutVotes={pollingStation.voter_turnout_counts}
                issueReportDeadline={electionConfig.issue_report_deadline}
