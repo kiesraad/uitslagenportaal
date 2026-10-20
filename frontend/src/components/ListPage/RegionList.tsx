@@ -186,7 +186,7 @@ function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: 
       <li className="col-span-3 grid grid-cols-subgrid odd:bg-blue-50">
          <Link
             to={to}
-            className="col-span-3 grid min-h-18 grid-cols-subgrid items-center px-6 hover:bg-blue-100 hover:no-underline"
+            className="group col-span-3 grid min-h-18 grid-cols-subgrid items-center px-6 hover:bg-blue-100 hover:no-underline"
          >
             <span className={twMerge(listOption.stationNumber && "pr-2 font-light text-gray-700")}>
                {listOption.stationNumber}
@@ -197,19 +197,18 @@ function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: 
                <span className="underline">{name}</span>
                {sameLocationNumbers.length > 0 && (
                   <>
-                     <span className="sr-only">, </span>
-                     <span className="mr-4 ml-auto flex shrink-0 items-start gap-2 rounded-xs border border-blue-200 bg-white px-2 py-1 text-gray-700 text-sm">
-                        <span
-                           className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-xs bg-blue text-white"
-                           aria-hidden="true"
-                        >
-                           <FontAwesomeIcon icon={faInfo} className="text-[0.55rem]" />
+                     <span className="sr-only">
+                        , <Trans>Dubbel stembureau</Trans>, <Trans>Ook stembureau {otherNumbers} op deze locatie</Trans>
+                     </span>
+                     {/* Visual tooltip only; screen readers get the sr-only copy above as part of the link name. */}
+                     <span className="group/info relative mr-4 ml-auto shrink-0" aria-hidden="true">
+                        <span className="flex size-5 items-center justify-center rounded-xs bg-blue text-white">
+                           <FontAwesomeIcon icon={faInfo} className="text-[0.65rem]" />
                         </span>
-                        <span>
+                        <span className="absolute right-0 bottom-full z-10 mb-2 hidden w-max rounded-xs border border-blue-200 bg-white px-3 py-2 text-gray-700 text-sm shadow-md group-focus-visible:block group-hover/info:block">
                            <span className="block">
                               <Trans>Dubbel stembureau</Trans>
                            </span>
-                           <span className="sr-only">, </span>
                            <span className="block">
                               <Trans>Ook stembureau {otherNumbers} op deze locatie</Trans>
                            </span>

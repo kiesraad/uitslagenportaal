@@ -122,7 +122,7 @@ describe("RegionList", () => {
 
       expect(
          screen.getByRole("link", {
-            name: "1Huis van de Gemeente,Dubbel stembureau,Ook stembureau 2 op deze locatie",
+            name: "1Huis van de Gemeente, Dubbel stembureau, Ook stembureau 2 op deze locatie",
          }),
       ).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "3E & E Gasthuis" })).toBeInTheDocument();
