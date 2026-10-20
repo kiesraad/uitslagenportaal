@@ -10,7 +10,7 @@ from election.models import ElectionConfig, ElectionDocument, VoteCount, VoterTu
 from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, ReportingLevel
-from region.models import Region
+from region.models import Region, hsb_kieskringen
 from region.polling_station_pv_archive import polling_station_pv_zip_storage_key
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
@@ -57,7 +57,9 @@ class RegionListView(ListAPIView):
             result = result.filter(parent__slug=parent_region_slug)
         if csb_slug:
             result = result.filter(csb__slug=csb_slug)
-        if region_category:
+        if region_category == RegionCategory.KIESKRING:
+            result = hsb_kieskringen(result)
+        elif region_category:
             result = result.filter(region_category=region_category)
         return result
 

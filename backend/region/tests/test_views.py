@@ -122,6 +122,25 @@ def test_region_list_filters_gemeentes_by_csb():
 
 
 @pytest.mark.django_db
+def test_region_list_of_kieskringen_has_only_those_with_their_own_hsb():
+    """Drenthe's sole kieskring is counted by its CSB; Zuid-Holland's kieskringen are listed before any results."""
+    election = ElectionFactory()
+    drenthe = RegionFactory(election=election, region_category=RegionCategory.PROVINCIE, region_name="Drenthe")
+    zuid_holland = RegionFactory(
+        election=election, region_category=RegionCategory.PROVINCIE, region_name="Zuid-Holland"
+    )
+    for csb, name in [(drenthe, "Assen"), (zuid_holland, "Leiden"), (zuid_holland, "Rotterdam")]:
+        RegionFactory(
+            election=election, parent=csb, csb=csb, region_category=RegionCategory.KIESKRING, region_name=name
+        )
+
+    response = list_regions(election, {"region_category": RegionCategory.KIESKRING})
+
+    assert response.status_code == 200
+    assert [region["region_name"] for region in response.data] == ["Leiden", "Rotterdam"]
+
+
+@pytest.mark.django_db
 def test_region_detail_requires_reporting_level():
     response = get_region(ElectionFactory(), "anywhere", {})
 

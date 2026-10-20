@@ -336,25 +336,6 @@ def add_aa_en_hunze_telling(ps: PsPortal) -> None:
         _candidate_count(ps.contest, region, ps.vvd, ps.meeuwissen, 80, EmlType.EML_510b)
 
 
-def add_assen_hsb(ps: PsPortal) -> None:
-    assert ps.contest is not None and ps.meeuwissen is not None
-    ps.assen.results_available_at = timezone.now()
-    ps.assen.save(update_fields=["results_available_at", "updated_at"])
-    ElectionDocumentFactory(
-        region=ps.assen,
-        file_type=ElectionDocument.FileType.EML_510C,
-        size=1536,
-    )
-    _party_count(ps.contest, ps.assen, ps.vvd, 140, EmlType.EML_510c)
-    _party_count(ps.contest, ps.assen, ps.cda, 70, EmlType.EML_510c)
-    _candidate_count(ps.contest, ps.assen, ps.vvd, ps.meeuwissen, 90, EmlType.EML_510c)
-    _party_count(ps.contest, ps.aa_en_hunze, ps.vvd, 100, EmlType.EML_510c)
-    _candidate_count(ps.contest, ps.aa_en_hunze, ps.vvd, ps.meeuwissen, 80, EmlType.EML_510c)
-    # Emmen has HSB numbers only: the matrix shows them, the GSB page must not.
-    _party_count(ps.contest, ps.emmen, ps.vvd, 40, EmlType.EML_510c)
-    _candidate_count(ps.contest, ps.emmen, ps.vvd, ps.meeuwissen, 20, EmlType.EML_510c)
-
-
 def add_drenthe_csb(ps: PsPortal) -> None:
     assert ps.contest is not None and ps.meeuwissen is not None
     ps.provincie.results_available_at = timezone.now()

@@ -1,8 +1,9 @@
 import pytest
 
 from election.models import ElectionCategory, ElectionConfig
-from election.tests.factories import ElectionConfigFactory
+from election.tests.factories import ElectionConfigFactory, ElectionFactory
 from mainsite.models import RegionCategory
+from region.tests.factories import RegionFactory
 
 
 @pytest.mark.parametrize(
@@ -39,18 +40,33 @@ def test_election_config_slug_is_not_overwritten_if_already_set():
     assert config.slug == "custom-slug"
 
 
-@pytest.mark.parametrize(
-    ("category", "expected_has_hsb"),
-    [
-        (ElectionCategory.TK, True),
-        (ElectionCategory.EP, True),
-        (ElectionCategory.PS, True),
-        (ElectionCategory.WS, False),
-        (ElectionCategory.GR, False),
-    ],
-)
-@pytest.mark.django_db
-def test_has_hsb_follows_the_election_category(category, expected_has_hsb):
-    config = ElectionConfigFactory(category=category.value)
+def _csb_with_kieskringen(config, *names):
+    election = ElectionFactory(election_config=config)
+    csb = RegionFactory(election=election, region_category=RegionCategory.PROVINCIE)
+    for name in names:
+        RegionFactory(
+            election=election, parent=csb, csb=csb, region_category=RegionCategory.KIESKRING, region_name=name
+        )
 
-    assert config.has_hsb is expected_has_hsb
+
+@pytest.mark.django_db
+def test_has_hsb_false_without_any_kieskring():
+    assert ElectionConfigFactory().has_hsb is False
+
+
+@pytest.mark.django_db
+def test_has_hsb_false_when_each_csb_has_a_single_kieskring():
+    """A CSB with one kieskring (a WS, or a PS province such as Drenthe) counts it itself; there is no HSB."""
+    config = ElectionConfigFactory()
+    _csb_with_kieskringen(config, "Assen")
+
+    assert config.has_hsb is False
+
+
+@pytest.mark.django_db
+def test_has_hsb_true_when_a_csb_has_several_kieskringen_without_results():
+    config = ElectionConfigFactory()
+    _csb_with_kieskringen(config, "Assen")
+    _csb_with_kieskringen(config, "Leiden", "Rotterdam")
+
+    assert config.has_hsb is True

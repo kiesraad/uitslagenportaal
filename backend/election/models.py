@@ -13,13 +13,12 @@ from election.utils import visibility_cutoff
 from mainsite.models import BaseModel, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from mainsite.utils.utils import name_to_slug
+from region.models import Region, hsb_kieskringen
 
 
 @dataclass
 class ElectionCategoryConfig:
     csb: RegionCategory
-    # Whether kieskringen have their own HSB with a Totaaltelling (EML_510c).
-    has_hsb: bool
 
 
 class ElectionCategory(Choices):
@@ -33,11 +32,11 @@ class ElectionCategory(Choices):
     def config(self):
         return self._config_
 
-    TK = "TK", ElectionCategoryConfig(csb=RegionCategory.STAAT, has_hsb=True), "Tweede Kamerverkiezing"
-    PS = "PS", ElectionCategoryConfig(csb=RegionCategory.PROVINCIE, has_hsb=True), "Provinciale Statenverkiezing"
-    WS = "WS", ElectionCategoryConfig(csb=RegionCategory.WATERSCHAP, has_hsb=False), "Waterschapsverkiezing"
-    GR = "GR", ElectionCategoryConfig(csb=RegionCategory.GEMEENTE, has_hsb=False), "Gemeenteraadsverkiezing"
-    EP = "EP", ElectionCategoryConfig(csb=RegionCategory.STAAT, has_hsb=True), "Europees Parlementsverkiezing"
+    TK = "TK", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Tweede Kamerverkiezing"
+    PS = "PS", ElectionCategoryConfig(csb=RegionCategory.PROVINCIE), "Provinciale Statenverkiezing"
+    WS = "WS", ElectionCategoryConfig(csb=RegionCategory.WATERSCHAP), "Waterschapsverkiezing"
+    GR = "GR", ElectionCategoryConfig(csb=RegionCategory.GEMEENTE), "Gemeenteraadsverkiezing"
+    EP = "EP", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Europees Parlementsverkiezing"
 
 
 class ElectionConfigManager(models.Manager):
@@ -73,7 +72,7 @@ class ElectionConfig(BaseModel):
 
     @property
     def has_hsb(self) -> bool:
-        return ElectionCategory(self.category).config.has_hsb
+        return hsb_kieskringen(Region.objects.filter(election__election_config=self)).exists()
 
     def save(self, *args, **kwargs):
         if not self.slug:

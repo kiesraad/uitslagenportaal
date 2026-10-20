@@ -90,3 +90,14 @@ class Region(BaseModel):
 
     def __str__(self) -> str:
         return f"<Region {self.region_category.lower()} {self.region_name} ({self.pk})>"
+
+
+def hsb_kieskringen(regions: models.QuerySet[Region]) -> models.QuerySet[Region]:
+    """The kieskringen among regions that have their own HSB (EML_510c).
+
+    Only a kieskring that shares its CSB with other kieskringen does; a CSB with a single kieskring (a WS, or a PS
+    province such as Drenthe) counts that kieskring itself.
+    """
+    kieskringen = regions.filter(region_category=RegionCategory.KIESKRING)
+    shared_csbs = kieskringen.values("parent").annotate(count=models.Count("id")).filter(count__gt=1)
+    return kieskringen.filter(parent__in=shared_csbs.values("parent"))
