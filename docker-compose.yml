@@ -128,7 +128,7 @@ services:
 
   # S3-compatible object storage for local dev.
   object-storage:
-    image: rustfs/rustfs:1.0.0-rc.1
+    image: rustfs/rustfs:1.0.3
     environment:
       RUSTFS_ACCESS_KEY: uitslagenportaal
       RUSTFS_SECRET_KEY: password

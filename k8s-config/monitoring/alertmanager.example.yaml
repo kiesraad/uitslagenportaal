@@ -12,6 +12,8 @@ global:
 route:
   receiver: "null"
   group_by: [ namespace, alertname ]
+  # An alert that keeps firing is mailed again every two days.
+  repeat_interval: 48h
   routes:
     - receiver: email
       matchers:

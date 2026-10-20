@@ -1,3 +1,4 @@
+from django.db.models import QuerySet
 from rest_framework import viewsets
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
@@ -8,7 +9,7 @@ from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from mainsite.serializers import CandidateSummarySerializer
 from mainsite.utils.eml_type import EmlType
-from party.models import Party
+from party.models import Candidate, Party
 from party.serializers import PartyDetailSerializer, PartyListSerializer
 from region.models import Region
 
@@ -31,18 +32,21 @@ def _build_matrix_response(
     children: list[Region],
     region_key: str,
     eml_type: str,
-    contest_id: int | None = None,
+    candidate_qs: QuerySet[Candidate],
 ) -> Response:
-    candidate_qs = party.candidates.filter(contest_id=contest_id) if contest_id is not None else party.candidates
     candidates = list(candidate_qs.order_by("position"))
+
+    def person_key(candidate: Candidate) -> tuple:
+        # One person has a candidate record per contest (per kieskring at TK); the name ties them together.
+        return (candidate.initials, candidate.first_name, candidate.name_prefix, candidate.last_name)
 
     vote_counts = VoteCount.objects.filter(
         party=party,
         region__in=[region, *children],
         eml_type=eml_type,
-    )
+    ).select_related("candidate")
     votes_by_candidate_and_region = {
-        (vote_count.candidate_id, vote_count.region_id): vote_count.valid_votes
+        (person_key(vote_count.candidate), vote_count.region_id): vote_count.valid_votes
         for vote_count in vote_counts
         if vote_count.result_level == VoteCount.RESULT_LEVEL_CANDIDATE
     }
@@ -57,9 +61,10 @@ def _build_matrix_response(
         rows.append(
             {
                 "candidate": CandidateSummarySerializer(candidate).data,
-                "total": votes_by_candidate_and_region.get((candidate.id, region.id)),
+                "total": votes_by_candidate_and_region.get((person_key(candidate), region.id)),
                 "votes": {
-                    child.slug: votes_by_candidate_and_region.get((candidate.id, child.id)) for child in children
+                    child.slug: votes_by_candidate_and_region.get((person_key(candidate), child.id))
+                    for child in children
                 },
             }
         )
@@ -104,20 +109,33 @@ class CSBPartyResultMatrixView(APIView):
         except Region.DoesNotExist:
             raise NotFound({"csb": "CSB not found for this election."})
 
-        gemeentes = list(
-            Region.objects.filter(
-                election=csb.election,
-                region_category=RegionCategory.GEMEENTE,
-                csb=csb,
-            ).order_by("region_name")
+        # As in the 510d importer: with several kieskringen (TK, PS) the CSB counts per kieskring.
+        kieskringen = Region.objects.filter(parent=csb, region_category=RegionCategory.KIESKRING)
+        if kieskringen.count() > 1:
+            children = list(kieskringen.order_by("region_name"))
+        else:
+            children = list(
+                Region.objects.filter(
+                    election=csb.election,
+                    region_category=RegionCategory.GEMEENTE,
+                    csb=csb,
+                ).order_by("region_name")
+            )
+
+        # A candidate has a record per contest (per kieskring at TK); only one carries the CSB total.
+        candidate_qs = party.candidates.filter(
+            vote_counts__region=csb,
+            vote_counts__eml_type=EmlType.EML_510d,
+            vote_counts__result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
         )
 
         return _build_matrix_response(
             party=party,
             region=csb,
-            children=gemeentes,
+            children=children,
             region_key="csb",
             eml_type=EmlType.EML_510d,
+            candidate_qs=candidate_qs,
         )
 
 
@@ -163,7 +181,7 @@ class HSBPartyResultMatrixView(APIView):
             children=gemeentes,
             region_key="hsb",
             eml_type=EmlType.EML_510c,
-            contest_id=contest.id if contest else None,
+            candidate_qs=party.candidates.filter(contest=contest) if contest else party.candidates.all(),
         )
 
 

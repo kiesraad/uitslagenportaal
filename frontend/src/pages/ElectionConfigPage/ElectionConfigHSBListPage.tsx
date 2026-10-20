@@ -12,7 +12,7 @@ import { useFormatters } from "@/utils/format.ts";
 export function electionConfigHSBListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionsQueryOptions = regionsQuery(params, "KIESKRING", true);
+      const regionsQueryOptions = regionsQuery(params, "KIESKRING");
 
       const [electionConfig] = await Promise.all([
          queryClient.query(electionConfigQueryOptions),

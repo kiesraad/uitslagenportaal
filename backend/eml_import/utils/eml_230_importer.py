@@ -101,7 +101,7 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
                 return False
 
             self.logger.info(
-                "\033[32mCorrection detected for contest %s eml_type=%s\033[0m",
+                "\033[32mCorrection detected for contest '%s', eml_type: %s\033[0m",
                 contest.identifier,
                 self.eml_type,
             )

@@ -3,8 +3,10 @@ import io
 import itertools
 import logging
 import zipfile
+from itertools import groupby
 from os import path
 from typing import Iterator
+from xml.etree import ElementTree
 
 from django.conf import settings
 from django.core.cache import cache
@@ -29,6 +31,9 @@ BRANCH_FIELDS: dict[BranchType, str] = {
     BranchType.EXCHANGE: "gh_exchange_branch",
     BranchType.COUNTING_RESULTS: "gh_counting_results_branch",
 }
+
+KR_NS = "http://www.kiesraad.nl/extensions"
+_CREATION_DATE_TAG = f"{{{KR_NS}}}CreationDateTime"
 
 
 class GithubEmlFileHandler(BaseFileHandler):
@@ -106,7 +111,7 @@ class GithubEmlFileHandler(BaseFileHandler):
             if next_commit_sha is None:
                 continue
 
-            xml_files = list(self._iterate_all_supported_files(files))
+            xml_files = self._filter_corrections(self._iterate_all_supported_files(files))
             self.import_file_objects(xml_files)
             ImportedCommit.objects.create(
                 election_config=self.election_config,
@@ -240,3 +245,38 @@ class GithubEmlFileHandler(BaseFileHandler):
 
                 if file_ext in self._VALID_EXTENSIONS:
                     yield NamedBytesIO(zf.read(name), name)
+
+    def _filter_corrections(self, files: Iterator[NamedBytesIO]):
+        """
+        Filter out corrections within the single commit files were downloaded for, and only keep the newest version.
+
+        It can happen that two versions of a file are uploaded in the same commit, for both the
+        election definition and candidate lists. We cannot ensure the import order in the list of files,
+        so have to filter these files and only keep the newest version.
+        """
+
+        def get_newest(identical_files: list[NamedBytesIO]):
+            """Return the newest file based on the creation date in the EML"""
+            if len(identical_files) == 1:
+                return identical_files[0]
+
+            newest = sorted(
+                [(self._eml_creation_date(f), f) for f in identical_files], key=lambda r: r[0], reverse=True
+            )[0]
+
+            return newest[1]
+
+        sorted_files = sorted(files, key=lambda f: f.name)
+        return [get_newest(list(g)) for _, g in groupby(sorted_files, key=lambda f: f.name)]
+
+    @staticmethod
+    def _eml_creation_date(file: NamedBytesIO):
+        """Get the creation date from the EML"""
+        for event, element in ElementTree.iterparse(file, events=("start", "end")):
+            if event != "end":
+                continue
+
+            if element.tag == _CREATION_DATE_TAG:
+                return element.text
+
+        return None
