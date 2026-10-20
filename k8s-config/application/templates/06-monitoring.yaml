@@ -159,12 +159,13 @@ spec:
             summary: "Celery tasks are failing"
             description: "Over 5% of tasks in {{ `{{ $labels.namespace }}` }} have failed over ten minutes."
 
-        # No workers means no series, which == 0 alone would never match.
+        # No workers means no series, which == 0 alone would never match. The `for` outlasts
+        # the exporter's liveness probe, which restarts it when it stops hearing heartbeats.
         - alert: CeleryWorkerAbsent
           expr: |
             sum by (namespace) (celery_worker_up{namespace="{{ .Release.Namespace }}"}) == 0
               or absent(celery_worker_up{namespace="{{ .Release.Namespace }}"})
-          for: 5m
+          for: 30m
           labels:
             severity: critical
             area: Imports

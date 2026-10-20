@@ -1,5 +1,5 @@
 from io import BytesIO
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PurePosixPath
 from typing import Self
 
 
@@ -12,7 +12,7 @@ class NamedBytesIO(BytesIO):
 
     def __init__(self, data: bytes, filename: str | PurePath) -> None:
         super().__init__(data)
-        self.path = PurePath(filename)
+        self.path = PurePosixPath(filename)
 
     @property
     def filename(self):

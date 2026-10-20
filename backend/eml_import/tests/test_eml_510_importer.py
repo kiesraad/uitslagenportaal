@@ -244,6 +244,20 @@ def make_tk_510d_eml(*, contests):
     )
 
 
+def make_tk_510c_eml(*, contests):
+    """A Totaaltelling HSB in TK; without an election domain, the managing authority names the kieskring."""
+    return make_eml(
+        eml_id="510c",
+        authority_id="HSB10",
+        authority_name="Rotterdam",
+        contests=contests,
+        election_id=TK_ELECTION_ID,
+        election_name=TK_ELECTION_NAME,
+        category=ElectionCategoryType.TK,
+        subcategory=ElectionSubcategoryType.TK,
+    )
+
+
 def make_ps_510c_eml(*, contests, authority_name="Maastricht"):
     """A Totaaltelling HSB published by a kieskring's hoofdstembureau.
 
@@ -1250,3 +1264,31 @@ def test_510d_resolves_staat_csb_without_election_domain(tk_regions, tk_election
         (tk_regions["Rotterdam"], 150),
         (staat, 250),
     ]
+
+
+def test_510c_resolves_kieskring_from_managing_authority_without_election_domain(tk_regions, tk_election):
+    rotterdam = tk_regions["Rotterdam"]
+    schiedam = RegionFactory(
+        election=tk_election,
+        parent=rotterdam,
+        csb=tk_regions["staat"],
+        region_category=RegionCategory.GEMEENTE,
+        region_number="606",
+        region_name="Schiedam",
+    )
+    PartyFactory(election=tk_election, list_number=1, registered_name="CDA")
+    ContestFactory(election=tk_election, identifier="10", name="Rotterdam")
+
+    units = [
+        make_reporting_unit("0606", "Gemeente Schiedam", [party_selection(ReportingUnitVotes.Selection, 1, "CDA", 150)])
+    ]
+    totals = make_total_votes([party_selection(TotalVotes.Selection, 1, "CDA", 150)])
+    EML510cImporter(
+        fake_eml_file(), eml=make_tk_510c_eml(contests=[make_contest("10", total_votes=totals, units=units)])
+    ).parse()
+
+    rows = VoteCount.objects.filter(result_level=VoteCount.RESULT_LEVEL_PARTY)
+    assert {(row.region, row.valid_votes, row.eml_type) for row in rows} == {
+        (schiedam, 150, EmlType.EML_510c),
+        (rotterdam, 150, EmlType.EML_510c),
+    }

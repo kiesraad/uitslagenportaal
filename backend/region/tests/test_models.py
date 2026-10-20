@@ -40,6 +40,13 @@ def test_region_slug_is_generated_from_number_and_name():
 
 
 @pytest.mark.django_db
+def test_region_slug_is_only_the_name_without_a_region_number():
+    region = RegionFactory(region_number=None, region_name="Nederland")
+
+    assert region.slug == "nederland"
+
+
+@pytest.mark.django_db
 def test_region_slug_replaces_colons_in_region_number():
     region = RegionFactory(region_number="0484::SB6", region_name="Nutsgebouw Zwammerdam")
 

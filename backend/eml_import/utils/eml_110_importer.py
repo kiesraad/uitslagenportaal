@@ -30,9 +30,9 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
         self.logger.info("Successfully imported data for Election")
 
     def _is_correction(self) -> bool:
-        if Region.objects.filter(election=self.election).exists():
+        if Contest.objects.filter(election=self.election).exists():
             self.logger.info(
-                "\033[32mCorrection detected for election %s eml_type=%s\033[0m",
+                "\033[32mCorrection detected for election '%s', eml_type: %s\033[0m",
                 self.election.name,
                 self.eml_type,
             )
@@ -59,7 +59,8 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
         region_nodes = self.eml.election_event.election.election_tree.region
         for node in region_nodes:
             parent_region = None
-            if node.superior_region_number:
+            # A TK kieskring names only the category of its superior: the staat has no region number.
+            if node.superior_region_category:
                 parent_region = Region.objects.get(
                     election=self.election,
                     region_category=node.superior_region_category.value,
