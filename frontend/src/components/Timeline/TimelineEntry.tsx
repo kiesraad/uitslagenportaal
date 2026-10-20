@@ -129,24 +129,30 @@ export default function TimelineEntry({
    );
 }
 
-const COUNT_BODIES: Record<TimelineVariant, MessageDescriptor> = {
+const SB_VOTE_COUNT_TITLES: Record<TimelineVariant, MessageDescriptor> = {
+   CSO: msg`Sneltelling in de stembureaus`,
+   DSO: msg`Telling in de stembureaus`,
+   DEFAULT: msg`Telling in de stembureaus`,
+};
+
+const SB_VOTE_COUNT_BODIES: Record<TimelineVariant, MessageDescriptor> = {
    CSO: msg`Op de avond van de stemming tellen de stembureaus alleen de stemmen per lijst. Het GSB telt de volgende dag de stemmen per lijst en per kandidaat. Dit wordt ook wel 'centraal tellen' genoemd.`,
    DSO: msg`Op de avond van de stemming telt het stembureau de stemmen per lijst én per kandidaat. Het GSB controleert de volgende dag de processen-verbaal van de stembureaus. Bij (vermoedelijke) fouten worden de stemmen van dat stembureau geheel of gedeeltelijk opnieuw geteld.`,
    DEFAULT: msg`Na het sluiten van de stembussen tellen de leden van het stembureau hoeveel mensen hebben gestemd en hoeveel stemmen elke partij heeft gekregen. De voorlopige uitslag die je in het nieuws ziet is gebaseerd op de eerste tellingen van de stembureaus en wordt gepubliceerd door media en persbureaus.`,
 };
 
-export function SBTimelineEntry() {
+export function SBVoteCountTimelineEntry() {
    const { variant = "DEFAULT" } = useContext(TimelineContext);
 
    return (
       <TimelineEntry
          key="count"
          event="sb_vote_count"
-         title={t`Telling in de stembureaus`}
-         document_types={["EML510b"]}
+         title={t(SB_VOTE_COUNT_TITLES[variant])}
+         document_types={["EML510d"]}
       >
          <p>
-            {t(COUNT_BODIES[variant])}{" "}
+            {t(SB_VOTE_COUNT_BODIES[variant])}{" "}
             <strong>
                <Trans>Het is dus nog niet de officiële uitslag van de Kiesraad.</Trans>
             </strong>

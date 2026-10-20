@@ -3,7 +3,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { TimelineVariant } from "@/api/types.ts";
 import { Timeline, type TimelineContextProps } from "@/components/Timeline/Timeline.tsx";
-import TimelineEntry, { getTimelineDate, SBTimelineEntry } from "@/components/Timeline/TimelineEntry.tsx";
+import TimelineEntry, { getTimelineDate, SBVoteCountTimelineEntry } from "@/components/Timeline/TimelineEntry.tsx";
 
 export const VARIANT_DESCRIPTIONS: Record<TimelineVariant, MessageDescriptor | null> = {
    CSO: msg`Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam.`,
@@ -82,7 +82,7 @@ export function SBTimeline({ variant = "DEFAULT", dates, documents }: Props) {
                   </Trans>
                </p>
             </TimelineEntry>
-            <SBTimelineEntry />
+            <SBVoteCountTimelineEntry />
          </Timeline>
       </div>
    );

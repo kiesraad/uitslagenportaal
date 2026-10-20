@@ -1,6 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Timeline, type TimelineContextProps } from "@/components/Timeline/Timeline.tsx";
-import TimelineEntry, { getTimelineDate, SBTimelineEntry } from "@/components/Timeline/TimelineEntry.tsx";
+import TimelineEntry, { getTimelineDate, SBVoteCountTimelineEntry } from "@/components/Timeline/TimelineEntry.tsx";
 
 type Props = Omit<TimelineContextProps, "variant">;
 
@@ -70,7 +70,7 @@ export function CSBTimeline({ dates, documents }: Props) {
                   </Trans>
                </p>
             </TimelineEntry>
-            <SBTimelineEntry />
+            <SBVoteCountTimelineEntry />
          </Timeline>
       </div>
    );
