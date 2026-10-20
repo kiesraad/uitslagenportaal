@@ -121,7 +121,7 @@ scraper:
   dispatchMaxTasks: 5
   terminationGracePeriodSeconds: 300
   resources:
-    # A scrape peaks at about 700Mi, the idle worker uses 130Mi; OCR stays under 300Mi.
+    # A scrape peaks at 600Mi to 1Gi depending on the site, the idle worker uses 130Mi; OCR stays under 500Mi.
     requests:
       cpu: 250m
       memory: 768Mi
