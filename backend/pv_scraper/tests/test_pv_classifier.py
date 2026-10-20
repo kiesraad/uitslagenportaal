@@ -16,6 +16,7 @@ from pv_scraper.tests.factories import ScrapeSourceFactory
 from pv_scraper.utils.pv_classifier import (
     DPI,
     HEADER_LABEL_TAIL_RE,
+    MAX_PIXELS,
     STORAGE_ENTRY,
     ClassificationResult,
     PvClassificationException,
@@ -651,6 +652,33 @@ def test_render_page(tmp_path):
     assert page.size == (DPI, 2 * DPI)
     assert page.mode == "L"
     assert pv.render_page(1) is None
+
+
+def test_render_page_lowers_the_resolution_of_a_page_larger_than_a4(tmp_path):
+    path = tmp_path / "a3.pdf"
+    pdf = pdfium.PdfDocument.new()
+    # Landscape A3, in points.
+    pdf.new_page(1191, 842)
+    pdf.save(path)
+    pdf.close()
+
+    page = PvClassifier(path).render_page(0)
+
+    # pdfium rounds each side to whole pixels.
+    assert page.width * page.height == pytest.approx(MAX_PIXELS, rel=0.001)
+    assert page.width / page.height == pytest.approx(1191 / 842, rel=0.01)
+
+
+def test_render_page_rejects_a_page_larger_than_a3(tmp_path):
+    path = tmp_path / "map.pdf"
+    pdf = pdfium.PdfDocument.new()
+    # A0, in points.
+    pdf.new_page(3370, 2384)
+    pdf.save(path)
+    pdf.close()
+
+    with pytest.raises(PvClassificationException, match="larger than A3"):
+        PvClassifier(path).render_page(0)
 
 
 @pytest.mark.parametrize(

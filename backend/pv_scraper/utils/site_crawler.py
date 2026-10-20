@@ -4,6 +4,7 @@ import logging
 import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+from urllib.parse import urlsplit
 
 import requests
 from playwright.sync_api import Browser, BrowserContext, Error, Page, Playwright, sync_playwright
@@ -63,6 +64,12 @@ REVEAL_JS = """
 """
 
 logger = logging.getLogger(__name__)
+
+
+def log_crawl(url: str, outcome: str, *args) -> None:
+    """Log a crawled URL, the full one in the `url` field: Loki reads a `key=value` in the message as a field."""
+    shown = urlsplit(url)._replace(query="", fragment="").geturl()
+    logger.info("Crawled %s: " + outcome, shown, *args, extra={"url": url})
 
 
 @dataclass
@@ -128,7 +135,6 @@ class SiteCrawler:
         # Bot protection compares the UA with the browser's client hints, so a spoofed version gets a 403.
         user_agent = UA.replace("Chrome/130.0", f"Chrome/{self.browser.version}")
         self.context = self.browser.new_context(user_agent=user_agent, locale="nl-NL", accept_downloads=True)
-        self.page = self.context.new_page()
 
     def _stop(self) -> None:
         try:
@@ -147,13 +153,17 @@ class SiteCrawler:
             return CrawledPage(url, error=str(exc).splitlines()[0])
         # A 304 has no content type: it answers a conditional request for a known file.
         if status == 304 or "html" not in response_headers.get("content-type", ""):
-            logger.info("Crawled %s: file download (status %d)", url, status)
+            log_crawl(url, "file download (status %d)", status)
             return CrawledPage(url, status, response_headers, file=body)
         if status >= 400:
-            logger.info("Crawled %s: status %d", url, status)
+            log_crawl(url, "status %d", status)
             return CrawledPage(url, status, response_headers)
 
-        page = self.page
+        # A new tab per page, in the same context so cookies carry over: Chromium renders a site's pages in one
+        # process, which grew past 700Mi over a crawl when the tab was kept.
+        if self.page:
+            self.page.close()
+        self.page = page = self.context.new_page()
         try:
             response = page.goto(url, wait_until="domcontentloaded", timeout=45_000)
         except Error as exc:
@@ -183,15 +193,15 @@ class SiteCrawler:
             result.title = page.title()
         except Error as exc:
             result.error = str(exc).splitlines()[0]
-            logger.info("Crawled %s: error %s", url, result.error)
+            log_crawl(url, "error %s", result.error)
             return result
         if BLOCKED_RE.search(result.title) or (len(links) < 3 and BLOCKED_RE.search(page.content())):
             result.blocked = True
-            logger.info("Crawled %s: blocked", url)
+            log_crawl(url, "blocked")
             return result
         result.url = page.url
         result.links = [Link(**link) for link in links]
-        logger.info("Crawled %s: found %d links", url, len(links))
+        log_crawl(url, "found %d links", len(links))
         return result
 
     def accept_cookies(self) -> None:
