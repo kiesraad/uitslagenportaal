@@ -9,15 +9,10 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView
 from election.models import ElectionConfig, ElectionDocument, VoteCount, VoterTurnoutCount
 from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
-from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, EmlType, ReportingLevel
-from region.models import Region
+from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, ReportingLevel
+from region.models import Region, hsb_kieskringen
 from region.polling_station_pv_archive import polling_station_pv_zip_storage_key
 from region.serializers import RegionDetailSerializer, RegionListSerializer
-
-_OWN_RESULTS_EML_TYPE = {
-    RegionCategory.GEMEENTE: EmlType.EML_510b,
-    RegionCategory.KIESKRING: EmlType.EML_510c,
-}
 
 # FileType values are EML510b, not the EmlType strings 510b used on vote counts.
 _DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL = {
@@ -43,9 +38,6 @@ class RegionListView(ListAPIView):
         # optional — CSB ancestor slug (any depth)
         csb_slug = self.request.query_params.get("csb")
 
-        # optional — only regions that published their own results (see _OWN_RESULTS_EML_TYPE)
-        has_own_results = self.request.query_params.get("has_own_results") == "true"
-
         if region_category:
             if region_category not in RegionCategory.values:
                 raise ValidationError({f"region_category {region_category} not recognized."})
@@ -65,13 +57,10 @@ class RegionListView(ListAPIView):
             result = result.filter(parent__slug=parent_region_slug)
         if csb_slug:
             result = result.filter(csb__slug=csb_slug)
-        if region_category:
+        if region_category == RegionCategory.KIESKRING:
+            result = hsb_kieskringen(result)
+        elif region_category:
             result = result.filter(region_category=region_category)
-        if has_own_results:
-            own_eml_type = _OWN_RESULTS_EML_TYPE.get(region_category)
-            if own_eml_type is None:
-                raise ValidationError({"has_own_results": f"Not supported for region_category {region_category}."})
-            result = result.filter(vote_counts__eml_type=own_eml_type).distinct()
         return result
 
 
