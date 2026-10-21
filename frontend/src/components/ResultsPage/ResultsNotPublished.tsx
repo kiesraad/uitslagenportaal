@@ -2,7 +2,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { RegionCategory } from "../../api/types";
 import { InfoBox } from "../../components/InfoBox";
-import { getRegionLabels } from "../../utils/region";
+import { getRegionLabels, regionWithName } from "../../utils/region";
 
 type Props = {
    regionName: string;
@@ -13,10 +13,7 @@ export default function ResultsNotPublished({ regionName, regionCategory }: Prop
    const { t } = useLingui();
 
    const regionLabels = getRegionLabels(regionCategory);
-   const regionLabel =
-      regionCategory === "STAAT"
-         ? t(msg`Nederland`)
-         : `${t(getRegionLabels(regionCategory).withArticle)} ${regionName}`;
+   const regionLabel = regionCategory === "STAAT" ? t(msg`Nederland`) : t(regionWithName(regionCategory, regionName));
    const csbName = t(regionLabels?.csbName ?? regionLabels.withArticle);
 
    return (

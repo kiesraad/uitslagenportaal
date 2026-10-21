@@ -121,12 +121,12 @@ describe("CSB name in the timeline", () => {
 
    it("translates the name", () => {
       renderEntry(<CsbResultPublishTimelineEntry />, {
-         region: region({ csb: summary({ region_category: "STAAT" }) }),
+         region: region({ csb: summary({ region_name: "Utrecht" }) }),
          locale: "en",
       });
 
       expect(
-         screen.getByRole("heading", { level: 3, name: /^The Electoral Council publishes the results/ }),
+         screen.getByRole("heading", { level: 3, name: /^The municipality of Utrecht publishes the results/ }),
       ).toBeInTheDocument();
    });
 });

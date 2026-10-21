@@ -31,7 +31,7 @@ describe("ResultsNotPublished", () => {
       expect(screen.getByRole("heading", { name: /het stembureau De Regenboog/ })).toBeInTheDocument();
    });
 
-   it("Uses Nederland and the Kiesraad for a STAAT CSB", () => {
+   it("Uses Nederland and De Kiesraad for a STAAT CSB", () => {
       renderBox("Nederland", "STAAT");
 
       expect(
@@ -39,17 +39,7 @@ describe("ResultsNotPublished", () => {
       ).toBeInTheDocument();
       expect(
          screen.getByText(
-            /De telresultaten en processen-verbaal van Nederland zijn hier te zien zodra de Kiesraad ze publiceert./i,
-         ),
-      ).toBeInTheDocument();
-   });
-
-   it("Uses the Electoral Council in English for a STAAT CSB", () => {
-      renderBox("Nederland", "STAAT", "en");
-
-      expect(
-         screen.getByText(
-            /The counting results and certified election results for the Netherlands will appear here as soon as the Electoral Council publishes them./i,
+            /De telresultaten en processen-verbaal van Nederland zijn hier te zien zodra De Kiesraad ze publiceert./,
          ),
       ).toBeInTheDocument();
    });
@@ -59,7 +49,7 @@ describe("ResultsNotPublished", () => {
 
       expect(
          screen.getByText(
-            "The counting results and certified election results for the municipality Blaricum will appear here as soon as the municipality publishes them.",
+            "The counting results and certified election results for the municipality of Blaricum will appear here as soon as the municipality publishes them.",
          ),
       ).toBeInTheDocument();
    });

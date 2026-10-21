@@ -15,7 +15,7 @@ import type {
 import ElectionFileEntry from "@/components/ElectionFileEntry.tsx";
 import { useTimelineContext } from "@/components/Timeline/Timeline.tsx";
 import { electionDay, useFormatters } from "@/utils/format.ts";
-import { getRegionLabels } from "@/utils/region.ts";
+import { getRegionLabels, regionWithName } from "@/utils/region.ts";
 import { uppercaseFirst } from "@/utils/text.ts";
 
 // The marker shows the status visually; this is the text screen readers get instead.
@@ -213,7 +213,7 @@ export function useTimelineCsbName() {
    if (csb) {
       const regionLabels = getRegionLabels(csb.region_category as RegionCategory);
       csbName = uppercaseFirst(
-         regionLabels?.csbName ? t(regionLabels.csbName) : `${t(regionLabels.withArticle)} ${csb.region_name}`,
+         t(regionLabels.csbName ?? regionWithName(csb.region_category as RegionCategory, csb.region_name)),
       );
    }
 

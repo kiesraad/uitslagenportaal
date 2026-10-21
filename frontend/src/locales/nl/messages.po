@@ -172,6 +172,10 @@ msgstr "De {regionPlural} zijn nog niet beschikbaar"
 msgid "de gemeente"
 msgstr "de gemeente"
 
+#: src/utils/region.ts
+msgid "de gemeente {name}"
+msgstr "de gemeente {name}"
+
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
 msgid "De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
 msgstr "De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
@@ -179,6 +183,10 @@ msgstr "De gemeente typt de telgegevens van alle stembureaus over in de uitslage
 #: src/utils/region.ts
 msgid "de kieskring"
 msgstr "de kieskring"
+
+#: src/utils/region.ts
+msgid "de kieskring {name}"
+msgstr "de kieskring {name}"
 
 #: src/components/Timeline/GenericTimeline.tsx
 msgid "De kieskringen in Nederland tellen de resultaten van alle gemeenten in de kieskring bij elkaar op."
@@ -217,8 +225,16 @@ msgid "de provincie"
 msgstr "de provincie"
 
 #: src/utils/region.ts
+msgid "de provincie {name}"
+msgstr "de provincie {name}"
+
+#: src/utils/region.ts
 msgid "de regio"
 msgstr "de regio"
+
+#: src/utils/region.ts
+msgid "de regio {name}"
+msgstr "de regio {name}"
 
 #. placeholder {0}: hsb.region_name
 #: src/components/Timeline/TimelineEntry.tsx
@@ -232,6 +248,10 @@ msgstr "De resultaten van alle stembureaus worden gecontroleerd en van papier ov
 #: src/utils/region.ts
 msgid "de staat"
 msgstr "de staat"
+
+#: src/utils/region.ts
+msgid "de staat {name}"
+msgstr "de staat {name}"
 
 #: src/components/ResultsPage/ResultsNotPublished.tsx
 msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra {csbName} ze publiceert."
@@ -433,6 +453,10 @@ msgstr "Het proces-verbaal is nog niet ontvangen"
 msgid "het stembureau"
 msgstr "het stembureau"
 
+#: src/utils/region.ts
+msgid "het stembureau {name}"
+msgstr "het stembureau {name}"
+
 #: src/components/Timeline/GSBTimeline.tsx
 #: src/components/Timeline/SBTimeline.tsx
 msgid "Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
@@ -450,6 +474,10 @@ msgstr "Het verschijnt hier zodra het is binnengekomen."
 #: src/utils/region.ts
 msgid "het waterschap"
 msgstr "het waterschap"
+
+#: src/utils/region.ts
+msgid "het waterschap {name}"
+msgstr "het waterschap {name}"
 
 #: src/pages/HomePage.tsx
 msgid "Hieronder wordt stap voor stap uitgelegd hoe het resultaat van de verkiezing tot stand komt. Het begint bij het stembureau en eindigt bij de definitieve uitslag die de Kiesraad publiceert. Bij iedere stap is er controle, zodat de uitslag klopt."
