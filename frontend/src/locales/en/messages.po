@@ -906,6 +906,10 @@ msgstr "You can no longer report a mistake"
 msgid "Uitgebrachte stemmen"
 msgstr "Votes cast"
 
+#: src/components/ListPage/RegionList.tsx
+msgid "Uitleg dubbel stembureau {name}"
+msgstr "About double polling station {name}"
+
 #: src/components/Footer.tsx
 msgid "Uitleg over telproces"
 msgstr "About the counting process"

@@ -126,6 +126,16 @@ describe("RegionList", () => {
          }),
       ).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "3E & E Gasthuis" })).toBeInTheDocument();
+
+      const infoButton = screen.getByRole("button", { name: "Uitleg dubbel stembureau Huis van de Gemeente" });
+      fireEvent.click(infoButton);
+
+      expect(infoButton).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByText("Ook stembureau 2 op deze locatie")).toBeInTheDocument();
+
+      fireEvent.keyDown(document, { key: "Escape" });
+
+      expect(infoButton).toHaveAttribute("aria-expanded", "false");
    });
 
    it("finds a stembureau by its padded station number", () => {

@@ -1,7 +1,8 @@
 import { faChevronRight, faInfo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
-import { type PropsWithChildren, useMemo } from "react";
+import { type PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
+import { Button, Popover } from "react-aria-components";
 import { Link, useNavigate } from "react-router";
 import { twMerge } from "tailwind-merge";
 import type { ElectionConfig, Region, RegionCategory } from "../../api/types";
@@ -178,49 +179,121 @@ function SearchList({ children }: PropsWithChildren) {
 }
 
 function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: string }) {
+   const { t } = useLingui();
    const { locale } = useFormatters();
    const name = listOption.stationNumber != null ? (listOption.sortName ?? listOption.label) : listOption.label;
    const sameLocationNumbers = listOption.sameLocationStationNumbers ?? [];
+   const isDoubleStation = sameLocationNumbers.length > 0;
    const otherNumbers = new Intl.ListFormat(locale).format(sameLocationNumbers.map(String));
    return (
-      <li className="col-span-3 grid grid-cols-subgrid odd:bg-blue-50">
+      <li className="relative col-span-3 grid grid-cols-subgrid odd:bg-blue-50">
          <Link
             to={to}
-            className="group col-span-3 grid min-h-18 grid-cols-subgrid items-center px-6 hover:bg-blue-100 hover:no-underline"
+            className="col-span-3 grid min-h-18 grid-cols-subgrid items-center px-6 hover:bg-blue-100 hover:no-underline"
          >
             <span className={twMerge(listOption.stationNumber && "pr-2 font-light text-gray-700")}>
                {listOption.stationNumber}
                {/* Grid items have no whitespace between them, so screen readers would glue the number to the name. */}
                {listOption.stationNumber !== undefined && <span className="sr-only">&nbsp;</span>}
             </span>
-            <span className="flex items-center gap-4 py-3">
+            <span className={twMerge("py-3", isDoubleStation && "pr-12")}>
                <span className="underline">{name}</span>
-               {sameLocationNumbers.length > 0 && (
-                  <>
-                     <span className="sr-only">
-                        , <Trans>Dubbel stembureau</Trans>, <Trans>Ook stembureau {otherNumbers} op deze locatie</Trans>
-                     </span>
-                     {/* Visual tooltip only; screen readers get the sr-only copy above as part of the link name. */}
-                     <span className="group/info relative mr-4 ml-auto shrink-0" aria-hidden="true">
-                        <span className="flex size-5 items-center justify-center rounded-xs bg-blue text-white">
-                           <FontAwesomeIcon icon={faInfo} className="text-[0.65rem]" />
-                        </span>
-                        <span className="absolute right-0 bottom-full z-10 mb-2 hidden w-max rounded-xs border border-blue-200 bg-white px-3 py-2 text-gray-700 text-sm shadow-md group-focus-visible:block group-hover/info:block">
-                           <span className="block">
-                              <Trans>Dubbel stembureau</Trans>
-                           </span>
-                           <span className="block">
-                              <Trans>Ook stembureau {otherNumbers} op deze locatie</Trans>
-                           </span>
-                        </span>
-                     </span>
-                  </>
+               {isDoubleStation && (
+                  <span className="sr-only">
+                     , <Trans>Dubbel stembureau</Trans>, <Trans>Ook stembureau {otherNumbers} op deze locatie</Trans>
+                  </span>
                )}
             </span>
             <span>
                <FontAwesomeIcon icon={faChevronRight} />
             </span>
          </Link>
+         {/* A sibling of the link, not a child: a button may not sit inside a link. */}
+         {isDoubleStation && <DoubleStationInfo label={t`Uitleg dubbel stembureau ${name}`} otherNumbers={otherNumbers} />}
       </li>
+   );
+}
+
+/** Info button that opens on hover, click, tap or Enter; closes on Escape, a click outside or the pointer leaving. */
+function DoubleStationInfo({ label, otherNumbers }: { label: string; otherNumbers: string }) {
+   const triggerRef = useRef<HTMLButtonElement>(null);
+   const popoverRef = useRef<HTMLDivElement>(null);
+   const isPointerOver = useRef(false);
+   const closeTimer = useRef<number | undefined>(undefined);
+   const [isOpen, setOpen] = useState(false);
+
+   function open() {
+      window.clearTimeout(closeTimer.current);
+      setOpen(true);
+   }
+
+   // The delay lets the pointer cross the gap onto the popover without it closing (WCAG 1.4.13).
+   function closeSoon() {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = window.setTimeout(() => setOpen(false), 300);
+   }
+
+   function pointerEnter() {
+      isPointerOver.current = true;
+      open();
+   }
+
+   function pointerLeave() {
+      isPointerOver.current = false;
+      closeSoon();
+   }
+
+   useEffect(() => {
+      if (!isOpen) return;
+      const onKeyDown = (event: KeyboardEvent) => {
+         if (event.key === "Escape") setOpen(false);
+      };
+      const onPointerDown = (event: PointerEvent) => {
+         const target = event.target as Node;
+         if (!triggerRef.current?.contains(target) && !popoverRef.current?.contains(target)) setOpen(false);
+      };
+      document.addEventListener("keydown", onKeyDown);
+      document.addEventListener("pointerdown", onPointerDown);
+      return () => {
+         document.removeEventListener("keydown", onKeyDown);
+         document.removeEventListener("pointerdown", onPointerDown);
+      };
+   }, [isOpen]);
+
+   useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+
+   return (
+      <>
+         <Button
+            ref={triggerRef}
+            aria-label={label}
+            aria-expanded={isOpen}
+            onPress={open}
+            onHoverStart={pointerEnter}
+            onHoverEnd={pointerLeave}
+            onBlur={() => !isPointerOver.current && setOpen(false)}
+            className="absolute top-1/2 right-14 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xs bg-blue text-white focus-visible:outline-2 focus-visible:outline-blue focus-visible:outline-offset-2"
+         >
+            <FontAwesomeIcon icon={faInfo} className="text-[0.7rem]" />
+         </Button>
+         {/* Non-modal, so opening on hover neither moves focus nor hides the rest of the page. */}
+         <Popover
+            triggerRef={triggerRef}
+            isOpen={isOpen}
+            onOpenChange={setOpen}
+            isNonModal
+            placement="top end"
+            className="max-w-xs rounded-xs border border-blue-200 bg-white text-gray-700 text-sm shadow-md"
+         >
+            <div ref={popoverRef} onPointerEnter={pointerEnter} onPointerLeave={pointerLeave} className="px-3 py-2">
+               <p>
+                  <Trans>Dubbel stembureau</Trans>
+               </p>
+               <p>
+                  <Trans>Ook stembureau {otherNumbers} op deze locatie</Trans>
+               </p>
+            </div>
+         </Popover>
+      </>
    );
 }

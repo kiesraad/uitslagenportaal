@@ -906,6 +906,10 @@ msgstr "U kunt geen fout meer melden"
 msgid "Uitgebrachte stemmen"
 msgstr "Uitgebrachte stemmen"
 
+#: src/components/ListPage/RegionList.tsx
+msgid "Uitleg dubbel stembureau {name}"
+msgstr "Uitleg dubbel stembureau {name}"
+
 #: src/components/Footer.tsx
 msgid "Uitleg over telproces"
 msgstr "Uitleg over telproces"
