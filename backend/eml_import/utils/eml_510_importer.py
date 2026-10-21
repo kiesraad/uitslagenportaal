@@ -33,6 +33,7 @@ from region.models import Region, build_region_slug
 
 # A stembureau identifier reads e.g. "Stembureau Gemeentehuis Gieten (postcode: 9461 BH)".
 POSTAL_CODE_RE = re.compile(r"\(postcode:\s*([^)]*)\)")
+DUTCH_POSTAL_CODE_RE = re.compile(r"^(\d{4})\s*([A-Za-z]{2})$")
 
 
 class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
@@ -262,7 +263,11 @@ class EML510bImporter(EML510BaseImporter):
     @staticmethod
     def _polling_station_postal_code(unit: ReportingUnitVotes) -> str | None:
         match = POSTAL_CODE_RE.search(unit.reporting_unit_identifier.value)
-        return (match.group(1).strip() or None) if match else None
+        postal_code = match.group(1).strip() if match else ""
+        # Gemeenten write "1000AB" or "1000 ab" as well; store "1000 AB" so equal postcodes compare equal.
+        if dutch := DUTCH_POSTAL_CODE_RE.match(postal_code):
+            return f"{dutch.group(1)} {dutch.group(2).upper()}"
+        return postal_code or None
 
     def _ensure_polling_stations(self, region: Region) -> dict[tuple[str, str], Region]:
         """

@@ -396,6 +396,9 @@ def test_polling_station_name(name, expected):
     ("name", "expected"),
     [
         ("Heinkenszand, De Stenge (postcode: 4451 CZ)", "4451 CZ"),
+        ("Heinkenszand, De Stenge (postcode: 4451CZ)", "4451 CZ"),
+        ("Heinkenszand, De Stenge (postcode: 4451 cz)", "4451 CZ"),
+        ("Kralendijk (postcode: onbekend)", "onbekend"),
         ("Nutsgebouw Zwammerdam", None),
         ("Nutsgebouw Zwammerdam (postcode: )", None),
     ],
