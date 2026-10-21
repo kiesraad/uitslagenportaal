@@ -53,7 +53,7 @@ GR2026_ELECTION_SEED = {
         "id": "GR2026",
         "label": "Gemeenteraadsverkiezingen 2026",
         "category": "GR",
-        "date": "2026-04-12T10:00:00",
+        "date": "2026-09-12T10:00:00",
         "issue_report_opens_at": "2026-08-18T11:00:00",
         "issue_report_deadline": "2026-09-12T10:00:00",
         "gh_counting_results_branch": "auto-tk2026-tel",
