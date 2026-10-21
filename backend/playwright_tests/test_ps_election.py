@@ -11,10 +11,14 @@ from playwright_tests.election_states import (
     add_ps_candidate_lists,
     ps_definition,
 )
+from playwright_tests.timeline import CHECK, GSB, SB, expect_timeline_steps
 
 pytestmark = pytest.mark.playwright
 
 _seeded = pytest.mark.usefixtures("seeded_database")
+
+# Drenthe is a single kieskring, which its CSB counts: there is no HSB step.
+PS_STEPS = ["De provincie Drenthe publiceert de uitslag", CHECK, GSB, SB]
 
 
 @_seeded
@@ -36,6 +40,7 @@ def test_homepage_leads_through_the_provincie_list_to_the_drenthe_party_matrix(p
     expect(page.get_by_role("heading", name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="VVD")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
+    expect_timeline_steps(page, PS_STEPS)
 
     page.get_by_role("link", name="VVD").click()
     expect(page).to_have_url(re.compile(r"/csb/[^/]+/resultaten/[^/]+/?$"))
@@ -68,6 +73,7 @@ def test_gemeente_list_leads_to_aa_en_hunze_and_its_party_results(page: Page):
     expect(page.get_by_role("heading", name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="VVD")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
+    expect_timeline_steps(page, PS_STEPS)
 
     page.get_by_role("link", name="VVD").click()
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/resultaten/[^/]+/?$"))
@@ -90,6 +96,7 @@ def test_stembureau_list_leads_to_stembureau_results_and_party_results(page: Pag
     expect(page.get_by_role("heading", level=2, name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="VVD")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
+    expect_timeline_steps(page, PS_STEPS)
 
     page.get_by_role("link", name="VVD").click()
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/[^/]+/[^/]+/?$"))
@@ -212,7 +219,7 @@ def test_after_drenthe_csb_emmen_stays_unpublished_on_gsb(page: Page):
 
     page.goto("/ps2023/csb")
     page.get_by_role("link", name="Drenthe").click()
-    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510d"))).to_be_visible()
+    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510d")).first).to_be_visible()
     page.get_by_role("link", name="VVD").click()
     expect(page.get_by_role("columnheader", name="Emmen")).to_be_visible()
 

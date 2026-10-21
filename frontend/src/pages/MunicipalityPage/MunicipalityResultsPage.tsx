@@ -63,6 +63,7 @@ export function MunicipalityResultsPage() {
                      variant={region.timeline_variant}
                      dates={electionConfig.timeline_dates ?? []}
                      documents={region.documents}
+                     region={region}
                   />
                }
             />

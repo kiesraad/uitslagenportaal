@@ -3,11 +3,20 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg, t } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { type PropsWithChildren, type ReactNode, useContext, useMemo } from "react";
-import type { ElectionDocumentFileType, TimelineDate, TimelineDateEvent, TimelineVariant } from "@/api/types.ts";
+import { type PropsWithChildren, type ReactNode, useMemo } from "react";
+import type {
+   ElectionDocumentFileType,
+   Region,
+   RegionCategory,
+   TimelineDate,
+   TimelineDateEvent,
+   TimelineVariant,
+} from "@/api/types.ts";
 import ElectionFileEntry from "@/components/ElectionFileEntry.tsx";
-import { TimelineContext } from "@/components/Timeline/Timeline.tsx";
+import { useTimelineContext } from "@/components/Timeline/Timeline.tsx";
 import { electionDay, useFormatters } from "@/utils/format.ts";
+import { getRegionLabels } from "@/utils/region.ts";
+import { uppercaseFirst } from "@/utils/text.ts";
 
 // The marker shows the status visually; this is the text screen readers get instead.
 const STATUS_LABELS: Record<TimelineEntryStatus, MessageDescriptor> = {
@@ -74,7 +83,7 @@ export default function TimelineEntry({
 }: PropsWithChildren<TimelineEntryProps>) {
    const { formatTimelineDate } = useFormatters();
    const { t } = useLingui();
-   const { dates, documents } = useContext(TimelineContext);
+   const { dates, documents } = useTimelineContext();
    const resolved = event ? date || getTimelineDate(dates, event) : date;
 
    const status = useMemo((): TimelineEntryStatus => {
@@ -142,20 +151,108 @@ const SB_VOTE_COUNT_BODIES: Record<TimelineVariant, MessageDescriptor> = {
 };
 
 export function SBVoteCountTimelineEntry() {
-   const { variant = "DEFAULT" } = useContext(TimelineContext);
+   const { variant = "DEFAULT" } = useTimelineContext();
 
    return (
-      <TimelineEntry
-         key="count"
-         event="sb_vote_count"
-         title={t(SB_VOTE_COUNT_TITLES[variant])}
-         document_types={["EML510d"]}
-      >
+      <TimelineEntry event="sb_vote_count" title={t(SB_VOTE_COUNT_TITLES[variant])}>
          <p>
             {t(SB_VOTE_COUNT_BODIES[variant])}{" "}
             <strong>
                <Trans>Het is dus nog niet de officiële uitslag van de Kiesraad.</Trans>
             </strong>
+         </p>
+      </TimelineEntry>
+   );
+}
+
+export function GSBVoteCountTimelineEntry() {
+   return (
+      <TimelineEntry event="municipality_vote_count" title={t`Optelling per gemeente`} document_types={["EML510b"]}>
+         <p>
+            <Trans>
+               De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware
+               en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen
+               worden meegenomen in de landelijke uitslag.
+            </Trans>
+         </p>
+      </TimelineEntry>
+   );
+}
+
+export function HSBVoteCountTimelineEntry() {
+   const { region } = useTimelineContext();
+
+   let hsb: Pick<Region, "region_name"> | null | undefined = null;
+   if (region?.region_category === "KIESKRING") {
+      hsb = region;
+   } else if (region?.has_hsb) {
+      hsb = region?.hsb;
+   }
+
+   if (!hsb) {
+      return null;
+   }
+
+   return (
+      <TimelineEntry event="electoral_district_vote_count" title={t`Optelling kieskring ${hsb.region_name}`}>
+         <p>
+            <Trans>
+               De resultaten van alle gemeenten in Kieskring {hsb.region_name} worden op het hoofdstembureau
+               gecontroleerd bij elkaar opgeteld.
+            </Trans>
+         </p>
+      </TimelineEntry>
+   );
+}
+
+export function useTimelineCsbName() {
+   const { region } = useTimelineContext();
+   const csb = region?.is_csb ? region : region?.csb;
+
+   let csbName = "Het Centraal Stembureau";
+   if (csb) {
+      const regionLabels = getRegionLabels(csb.region_category as RegionCategory);
+      csbName = uppercaseFirst(
+         regionLabels?.csbName ? t(regionLabels.csbName) : `${t(regionLabels.withArticle)} ${csb.region_name}`,
+      );
+   }
+
+   return csbName;
+}
+
+export function CsbCheckTimelineEntry() {
+   const csbName = useTimelineCsbName();
+
+   return (
+      <TimelineEntry event="csb_check" title={t`Centraal Stembureau controleert`}>
+         <p>
+            <Trans>
+               {csbName} controleert de telresultaten van alle kieskringen, gemeenten en stembureaus. Zijn alle
+               documenten compleet? Zijn alle stemmen meegeteld? Zijn er meldingen van kiezers die onderzocht moeten
+               worden? Als het nodig is, worden de resultaten van bepaalde stembureaus opnieuw geteld om fouten te
+               herstellen.
+            </Trans>
+         </p>
+         <p>
+            <Trans>
+               Pas als alles klopt worden de resultaten van alle kieskringen bij elkaar opgeteld tot de uiteindelijke
+               uitslag.
+            </Trans>
+         </p>
+      </TimelineEntry>
+   );
+}
+
+export function CsbResultPublishTimelineEntry() {
+   const csbName = useTimelineCsbName();
+
+   return (
+      <TimelineEntry event="csb_result_publish" title={t`${csbName} publiceert de uitslag`}>
+         <p>
+            <Trans>
+               In de uitslag staat hoeveel stemmen elke kandidaat heeft gekregen, hoeveel zetels elke partij krijgt en
+               welke personen zijn verkozen.
+            </Trans>
          </p>
       </TimelineEntry>
    );

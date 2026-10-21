@@ -42,6 +42,14 @@ msgstr "{0, plural, one {U heeft nog # minuut om een melding te maken} other {U 
 msgid "{0, plural, one {U heeft nog # uur om een melding te maken} other {U heeft nog # uur om een melding te maken}}"
 msgstr "{0, plural, one {U heeft nog # uur om een melding te maken} other {U heeft nog # uur om een melding te maken}}"
 
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "{csbName} controleert de telresultaten van alle kieskringen, gemeenten en stembureaus. Zijn alle documenten compleet? Zijn alle stemmen meegeteld? Zijn er meldingen van kiezers die onderzocht moeten worden? Als het nodig is, worden de resultaten van bepaalde stembureaus opnieuw geteld om fouten te herstellen."
+msgstr "{csbName} controleert de telresultaten van alle kieskringen, gemeenten en stembureaus. Zijn alle documenten compleet? Zijn alle stemmen meegeteld? Zijn er meldingen van kiezers die onderzocht moeten worden? Als het nodig is, worden de resultaten van bepaalde stembureaus opnieuw geteld om fouten te herstellen."
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "{csbName} publiceert de uitslag"
+msgstr "{csbName} publiceert de uitslag"
+
 #: src/pages/CSBPage/CSBMunicipalityListPage.tsx
 #: src/pages/CSBPage/CSBResultsPage.tsx
 #: src/pages/HSBPage/HSBMunicipalityListPage.tsx
@@ -124,11 +132,7 @@ msgstr "Blanco stemmen"
 msgid "Brondocumenten"
 msgstr "Brondocumenten"
 
-#: src/components/Timeline/CSBTimeline.tsx
-#: src/components/Timeline/GenericTimeline.tsx
-#: src/components/Timeline/GSBTimeline.tsx
-#: src/components/Timeline/HSBTimeline.tsx
-#: src/components/Timeline/SBTimeline.tsx
+#: src/components/Timeline/TimelineEntry.tsx
 msgid "Centraal Stembureau controleert"
 msgstr "Centraal Stembureau controleert"
 
@@ -164,14 +168,6 @@ msgstr "Databank verkiezinguitslag"
 msgid "De {regionPlural} zijn nog niet beschikbaar"
 msgstr "De {regionPlural} zijn nog niet beschikbaar"
 
-#: src/components/Timeline/CSBTimeline.tsx
-#: src/components/Timeline/GenericTimeline.tsx
-#: src/components/Timeline/GSBTimeline.tsx
-#: src/components/Timeline/HSBTimeline.tsx
-#: src/components/Timeline/SBTimeline.tsx
-msgid "De 20 kieskringen in Nederland tellen de resultaten van alle gemeenten in de kieskring bij elkaar op."
-msgstr "De 20 kieskringen in Nederland tellen de resultaten van alle gemeenten in de kieskring bij elkaar op."
-
 #: src/utils/region.ts
 msgid "de gemeente"
 msgstr "de gemeente"
@@ -184,21 +180,13 @@ msgstr "De gemeente typt de telgegevens van alle stembureaus over in de uitslage
 msgid "de kieskring"
 msgstr "de kieskring"
 
-#: src/components/Timeline/CSBTimeline.tsx
 #: src/components/Timeline/GenericTimeline.tsx
-#: src/components/Timeline/GSBTimeline.tsx
-#: src/components/Timeline/HSBTimeline.tsx
-#: src/components/Timeline/SBTimeline.tsx
-msgid "De Kiesraad controleert de telresultaten van alle kieskringen, gemeenten en stembureaus. Zijn alle documenten compleet? Zijn alle stemmen meegeteld? Zijn er meldingen van kiezers die onderzocht moeten worden? Als het nodig is, worden de resultaten van bepaalde stembureaus opnieuw geteld om fouten te herstellen."
-msgstr "De Kiesraad controleert de telresultaten van alle kieskringen, gemeenten en stembureaus. Zijn alle documenten compleet? Zijn alle stemmen meegeteld? Zijn er meldingen van kiezers die onderzocht moeten worden? Als het nodig is, worden de resultaten van bepaalde stembureaus opnieuw geteld om fouten te herstellen."
+msgid "De kieskringen in Nederland tellen de resultaten van alle gemeenten in de kieskring bij elkaar op."
+msgstr "De kieskringen in Nederland tellen de resultaten van alle gemeenten in de kieskring bij elkaar op."
 
-#: src/components/Timeline/CSBTimeline.tsx
-#: src/components/Timeline/GenericTimeline.tsx
-#: src/components/Timeline/GSBTimeline.tsx
-#: src/components/Timeline/HSBTimeline.tsx
-#: src/components/Timeline/SBTimeline.tsx
-msgid "De Kiesraad publiceert de uitslag"
-msgstr "De Kiesraad publiceert de uitslag"
+#: src/utils/region.ts
+msgid "De Kiesraad"
+msgstr "De Kiesraad"
 
 #: src/components/ListPage/RegionListNotAvailable.tsx
 msgid "De lijst verschijnt hier zodra de resultaten worden gepubliceerd."
@@ -232,11 +220,12 @@ msgstr "de provincie"
 msgid "de regio"
 msgstr "de regio"
 
-#: src/components/Timeline/CSBTimeline.tsx
-#: src/components/Timeline/GenericTimeline.tsx
-#: src/components/Timeline/GSBTimeline.tsx
-#: src/components/Timeline/HSBTimeline.tsx
-#: src/components/Timeline/SBTimeline.tsx
+#. placeholder {0}: hsb.region_name
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "De resultaten van alle gemeenten in Kieskring {0} worden op het hoofdstembureau gecontroleerd bij elkaar opgeteld."
+msgstr "De resultaten van alle gemeenten in Kieskring {0} worden op het hoofdstembureau gecontroleerd bij elkaar opgeteld."
+
+#: src/components/Timeline/TimelineEntry.tsx
 msgid "De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen worden meegenomen in de landelijke uitslag."
 msgstr "De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen worden meegenomen in de landelijke uitslag."
 
@@ -245,12 +234,8 @@ msgid "de staat"
 msgstr "de staat"
 
 #: src/components/ResultsPage/ResultsNotPublished.tsx
-msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra {regionLabel} ze publiceert."
-msgstr "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra {regionLabel} ze publiceert."
-
-#: src/components/ResultsPage/ResultsNotPublished.tsx
-msgid "De telresultaten en processen-verbaal van Nederland zijn hier te zien zodra de Kiesraad ze publiceert."
-msgstr "De telresultaten en processen-verbaal van Nederland zijn hier te zien zodra de Kiesraad ze publiceert."
+msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra {csbName} ze publiceert."
+msgstr "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra {csbName} ze publiceert."
 
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen."
@@ -263,10 +248,6 @@ msgstr "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
 #: src/pages/HomePage.tsx
 msgid "De telresultaten van alle stembureaus in Nederland."
 msgstr "De telresultaten van alle stembureaus in Nederland."
-
-#: src/components/ResultsPage/ResultsNotPublished.tsx
-msgid "De telresultaten van Nederland zijn nog niet gepubliceerd"
-msgstr "De telresultaten van Nederland zijn nog niet gepubliceerd"
 
 #: src/pages/ReportIssuePage.tsx
 msgid "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
@@ -399,6 +380,10 @@ msgstr "Het centraal stembureau heeft de telresultaten van alle gemeenten en kie
 msgid "Het gemeentelijk stembureau heeft de telresultaten van alle stembureaus in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van de gemeente."
 msgstr "Het gemeentelijk stembureau heeft de telresultaten van alle stembureaus in {regionName} gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van de gemeente."
 
+#: src/components/Timeline/SBTimeline.tsx
+msgid "Het gemeentelijk stembureau telt per stembureau alle stembiljetten op kandidaatsniveau: voor welke kandidaten per partij de stemmen precies zijn uitgebracht. <0>Deze telling is de basis van de officiële uitslag.</0>"
+msgstr "Het gemeentelijk stembureau telt per stembureau alle stembiljetten op kandidaatsniveau: voor welke kandidaten per partij de stemmen precies zijn uitgebracht. <0>Deze telling is de basis van de officiële uitslag.</0>"
+
 #: src/pages/HSBPage/HSBPartyResultsPage.tsx
 msgid "Het hoofdstembureau heeft de telresultaten van alle gemeenten in de kieskring gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
 msgstr "Het hoofdstembureau heeft de telresultaten van alle gemeenten in de kieskring gecontroleerd, overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in het proces-verbaal van het hoofdstembureau."
@@ -507,13 +492,9 @@ msgstr "Home"
 msgid "Homepage"
 msgstr "Homepage"
 
-#: src/components/Timeline/CSBTimeline.tsx
-#: src/components/Timeline/GenericTimeline.tsx
-#: src/components/Timeline/GSBTimeline.tsx
-#: src/components/Timeline/HSBTimeline.tsx
-#: src/components/Timeline/SBTimeline.tsx
-msgid "In de uitslag staat hoeveel stemmen elke kandidaat heeft gekregen, hoeveel zetels elke partij krijgt en welke mensen in de Tweede Kamer komen."
-msgstr "In de uitslag staat hoeveel stemmen elke kandidaat heeft gekregen, hoeveel zetels elke partij krijgt en welke mensen in de Tweede Kamer komen."
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "In de uitslag staat hoeveel stemmen elke kandidaat heeft gekregen, hoeveel zetels elke partij krijgt en welke personen zijn verkozen."
+msgstr "In de uitslag staat hoeveel stemmen elke kandidaat heeft gekregen, hoeveel zetels elke partij krijgt en welke personen zijn verkozen."
 
 #: src/components/Footer.tsx
 msgid "In samenwerking met de Kiesraad"
@@ -601,6 +582,10 @@ msgstr "Naar hoofdinhoud"
 msgid "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is. Als dat nodig is, nemen we contact op met de gemeente of het stembureau. In sommige gevallen kan er een hertelling plaatsvinden. Als blijkt dat er inderdaad een fout is gemaakt, bijvoorbeeld bij het tellen van de stemmen, dan wordt die fout hersteld. De correctie wordt vastgelegd in een corrigendum en openbaar gemaakt door dit te publiceren. Je ontvangt geen persoonlijk bericht over wat er met je melding is gedaan."
 msgstr "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is. Als dat nodig is, nemen we contact op met de gemeente of het stembureau. In sommige gevallen kan er een hertelling plaatsvinden. Als blijkt dat er inderdaad een fout is gemaakt, bijvoorbeeld bij het tellen van de stemmen, dan wordt die fout hersteld. De correctie wordt vastgelegd in een corrigendum en openbaar gemaakt door dit te publiceren. Je ontvangt geen persoonlijk bericht over wat er met je melding is gedaan."
 
+#: src/components/ResultsPage/ResultsNotPublished.tsx
+msgid "Nederland"
+msgstr "Nederland"
+
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "nog niet gestart"
 msgstr "nog niet gestart"
@@ -647,19 +632,16 @@ msgstr "Op dit moment zijn er nog geen telresultaten van een verkiezing beschikb
 msgid "Opnieuw proberen"
 msgstr "Opnieuw proberen"
 
-#: src/components/Timeline/CSBTimeline.tsx
-#: src/components/Timeline/GenericTimeline.tsx
-#: src/components/Timeline/GSBTimeline.tsx
-#: src/components/Timeline/HSBTimeline.tsx
-#: src/components/Timeline/SBTimeline.tsx
+#. placeholder {0}: hsb.region_name
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "Optelling kieskring {0}"
+msgstr "Optelling kieskring {0}"
+
+#: src/components/Timeline/TimelineEntry.tsx
 msgid "Optelling per gemeente"
 msgstr "Optelling per gemeente"
 
-#: src/components/Timeline/CSBTimeline.tsx
 #: src/components/Timeline/GenericTimeline.tsx
-#: src/components/Timeline/GSBTimeline.tsx
-#: src/components/Timeline/HSBTimeline.tsx
-#: src/components/Timeline/SBTimeline.tsx
 msgid "Optelling per kieskring"
 msgstr "Optelling per kieskring"
 
@@ -687,13 +669,9 @@ msgstr "Output van de optelsoftware, bevat de resultaten van alle stembureaus en
 msgid "Pagina niet gevonden"
 msgstr "Pagina niet gevonden"
 
-#: src/components/Timeline/CSBTimeline.tsx
-#: src/components/Timeline/GenericTimeline.tsx
-#: src/components/Timeline/GSBTimeline.tsx
-#: src/components/Timeline/HSBTimeline.tsx
-#: src/components/Timeline/SBTimeline.tsx
-msgid "Pas als alles klopt worden de resultaten van alle kieskringen bij elkaar opgeteld tot de landelijke uitslag."
-msgstr "Pas als alles klopt worden de resultaten van alle kieskringen bij elkaar opgeteld tot de landelijke uitslag."
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "Pas als alles klopt worden de resultaten van alle kieskringen bij elkaar opgeteld tot de uiteindelijke uitslag."
+msgstr "Pas als alles klopt worden de resultaten van alle kieskringen bij elkaar opgeteld tot de uiteindelijke uitslag."
 
 #: src/pages/CSBPage/CSBMunicipalityListPage.tsx
 #: src/pages/CSBPage/CSBResultsPage.tsx
@@ -774,6 +752,10 @@ msgstr "Resultaten {municipalityTitle} per stembureau"
 msgid "Resultaten per stembureau"
 msgstr "Resultaten per stembureau"
 
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "Sneltelling in de stembureaus"
+msgstr "Sneltelling in de stembureaus"
+
 #: src/components/ResultsPage/IssueNotice.tsx
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Soms gaat er iets mis bij het tellen, opschrijven of overtypen van de stemmen. Fouten die na {deadline} worden gemeld, kunnen we nog onderzoeken en herstellen. Dan kan de juiste informatie mee in de officiele uitslag."
@@ -818,6 +800,10 @@ msgstr "Subnavigatie"
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "Telling in de stembureaus"
 msgstr "Telling in de stembureaus"
+
+#: src/components/Timeline/SBTimeline.tsx
+msgid "Telling per lijst en kandidaat"
+msgstr "Telling per lijst en kandidaat"
 
 #: src/components/ResultsPage/RegionResultsContent.tsx
 msgid "Telresultaten"

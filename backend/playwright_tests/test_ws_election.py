@@ -6,6 +6,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from election.models import ElectionCategory
+from mainsite.models import CountingMethod
 from playwright_tests.election_states import (
     GR_LABEL,
     PS_LABEL,
@@ -19,10 +20,15 @@ from playwright_tests.election_states import (
     visible_config,
     ws_definition,
 )
+from playwright_tests.timeline import CHECK, GSB, SB, expect_timeline_steps, timeline
 
 pytestmark = pytest.mark.playwright
 
 _seeded = pytest.mark.usefixtures("seeded_database")
+
+# Scheldestromen is a single kieskring, which its CSB counts: there is no HSB step.
+WS_PUBLISH = "Het waterschap Scheldestromen publiceert de uitslag"
+WS_STEPS = [WS_PUBLISH, CHECK, GSB, SB]
 
 
 @_seeded
@@ -46,6 +52,7 @@ def test_homepage_leads_through_the_waterschappen_list_to_the_party_matrix(page:
     expect(page.get_by_role("heading", name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="Partij voor Zeeland")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
+    expect_timeline_steps(page, WS_STEPS)
 
     page.get_by_role("link", name="Partij voor Zeeland").click()
     expect(page).to_have_url(re.compile(r"/csb/[^/]+/resultaten/[^/]+/?$"))
@@ -77,6 +84,7 @@ def test_gemeente_list_leads_to_borsele_and_its_party_results(page: Page):
     expect(page.get_by_role("heading", name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="Partij voor Zeeland")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
+    expect_timeline_steps(page, WS_STEPS)
 
     page.get_by_role("link", name="Partij voor Zeeland").click()
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/resultaten/[^/]+/?$"))
@@ -117,6 +125,7 @@ def test_stembureau_list_leads_to_stembureau_results_and_party_results(page: Pag
     expect(page.get_by_role("heading", level=2, name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="Partij voor Zeeland")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
+    expect_timeline_steps(page, WS_STEPS)
 
     page.get_by_role("link", name="Partij voor Zeeland").click()
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/[^/]+/[^/]+/?$"))
@@ -182,6 +191,10 @@ def test_one_election_config_has_empty_region_lists_and_a_timeline(page: Page):
     page.goto("/")
     expect(home_election_link(page, WS_LABEL)).to_be_visible()
     expect(page.get_by_role("heading", name="Hoe komt de uitslag tot stand?")).to_be_visible()
+    # Without a region the timeline is generic, and includes the kieskring step.
+    expect_timeline_steps(
+        page, ["Het Centraal Stembureau publiceert de uitslag", CHECK, "Optelling per kieskring", GSB, SB]
+    )
 
     home_election_link(page, WS_LABEL).click()
     expect_empty_region_lists(page)
@@ -253,10 +266,22 @@ def test_after_borsele_telling_goes_and_csb_are_still_unpublished(page: Page):
     ws = ws_definition()
     add_candidate_lists(ws)
     add_borsele_telling(ws)
+    ws.borsele.counting_method = CountingMethod.CSO
+    ws.borsele.save(update_fields=["counting_method", "updated_at"])
+    cso_description = "Het stembureau doet een sneltelling per partij."
+    quick_count = "Sneltelling in de stembureaus"
 
     page.goto("/ab2023/gsb")
     page.get_by_role("link", name="Borsele").click()
     expect(page.get_by_role("link", name="Hele gemeente")).to_be_visible()
+
+    # Borsele counts centrally: a quick count, and on a stembureau page the candidate count after it.
+    page.get_by_role("link", name=re.compile(r"Heinkenszand")).click()
+    expect(timeline(page).get_by_text(cso_description)).to_be_visible()
+    expect_timeline_steps(page, [WS_PUBLISH, CHECK, GSB, "Telling per lijst en kandidaat", quick_count])
+    page.goto("/ab2023/gsb/654-borsele/csb/17-scheldestromen/resultaten")
+    expect(timeline(page).get_by_text(cso_description)).to_be_visible()
+    expect_timeline_steps(page, [WS_PUBLISH, CHECK, GSB, quick_count])
 
     page.goto("/ab2023/gsb")
     page.get_by_role("link", name="Goes").click()

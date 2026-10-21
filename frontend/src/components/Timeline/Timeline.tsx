@@ -1,8 +1,8 @@
 import { faArrowDown, faArrowUp } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { createContext, type ReactElement } from "react";
-import type { ElectionDocument, TimelineDate, TimelineVariant } from "@/api/types.ts";
+import { createContext, type ReactElement, useContext } from "react";
+import type { ElectionDocument, Region, TimelineDate, TimelineVariant } from "@/api/types.ts";
 import type { TimelineEntryProps } from "@/components/Timeline/TimelineEntry.tsx";
 import { usePersistedState } from "@/hooks/usePersistedState.ts";
 
@@ -12,6 +12,7 @@ export type TimelineContextProps = {
    variant?: TimelineVariant;
    dates: TimelineDate[];
    documents?: ElectionDocument[];
+   region?: Region;
 };
 
 export const TimelineContext = createContext<TimelineContextProps>({
@@ -20,14 +21,13 @@ export const TimelineContext = createContext<TimelineContextProps>({
    documents: [],
 });
 
-type TimelineProps = {
-   variant?: TimelineVariant;
-   dates: TimelineDate[];
-   documents?: ElectionDocument[];
-   children: ReactElement<TimelineEntryProps>[];
+export const useTimelineContext = () => useContext(TimelineContext);
+
+type TimelineProps = TimelineContextProps & {
+   children: (ReactElement<TimelineEntryProps> | boolean | null | undefined)[];
 };
 
-export function Timeline({ variant, dates, documents, children }: TimelineProps) {
+export function Timeline({ variant, dates, documents, region, children }: TimelineProps) {
    const { t } = useLingui();
    const [sortDesc, setSortDesc] = usePersistedState<boolean>(
       TIMELINE_ORDER_KEY,
@@ -36,7 +36,7 @@ export function Timeline({ variant, dates, documents, children }: TimelineProps)
    );
 
    return (
-      <TimelineContext value={{ variant, dates, documents }}>
+      <TimelineContext value={{ variant, dates, documents, region }}>
          <button type="button" onClick={() => setSortDesc((prev) => !prev)} className="result-order-hint">
             <span>
                <FontAwesomeIcon icon={faArrowUp} color={sortDesc ? "Black" : "Grey"} />

@@ -26,6 +26,10 @@ const zoetermeer: Region = {
    vote_counts: [],
    region_category: "GEMEENTE",
    results_available_at: null,
+   has_hsb: false,
+   hsb: null,
+   is_csb: false,
+   csb: null,
 };
 
 function renderRegionList(props: Partial<ComponentProps<typeof RegionList>> = {}, locale: "nl" | "en" = "nl") {
@@ -76,6 +80,10 @@ describe("RegionList", () => {
             vote_counts: [],
             region_category: "STEMBUREAU",
             results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
             station_number: 1,
          },
          {
@@ -84,6 +92,10 @@ describe("RegionList", () => {
             vote_counts: [],
             region_category: "STEMBUREAU",
             results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
             station_number: 2,
          },
       ];
@@ -105,6 +117,10 @@ describe("RegionList", () => {
             vote_counts: [],
             region_category: "STEMBUREAU",
             results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
             station_number: 1,
          },
          {
@@ -113,6 +129,10 @@ describe("RegionList", () => {
             vote_counts: [],
             region_category: "STEMBUREAU",
             results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
             station_number: 3,
          },
       ];

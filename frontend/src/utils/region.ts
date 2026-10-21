@@ -1,7 +1,7 @@
 // Helper mapping from csb_type to the labels used for that kind of region.
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import type { RegionCategory } from "../api/types";
+import type { RegionCategory, RegionSummary } from "../api/types";
 import { appRoutes } from "./routes";
 
 /**
@@ -22,6 +22,8 @@ export type RegionLabels = {
    whole: MessageDescriptor;
    /** With a definite article: "de gemeente", "het waterschap". */
    withArticle: MessageDescriptor;
+   /** The CSB name in case it differs from [withArticle] */
+   csbName?: MessageDescriptor;
 };
 
 const regionTypeMapping: Record<string, RegionLabels> = {
@@ -30,6 +32,7 @@ const regionTypeMapping: Record<string, RegionLabels> = {
       plural: msg`Staten`,
       whole: msg`Hele staat`,
       withArticle: msg`de staat`,
+      csbName: msg`De Kiesraad`,
    },
    WATERSCHAP: {
       singular: msg`Waterschap`,
@@ -83,9 +86,10 @@ export function formatStationLabel(name: string, stationNumber?: number | null):
 }
 
 export function getCsbCrumb(
-   region: { csb_name?: string | null; csb_slug?: string | null } | undefined,
+   region: { csb?: RegionSummary | null } | undefined,
    electionConfigSlug: string,
 ): { href: string; label: string } | null {
-   if (!region?.csb_name || !region.csb_slug) return null;
-   return { href: appRoutes.csbMunicipalityList(electionConfigSlug, region.csb_slug), label: region.csb_name };
+   const csb = region?.csb;
+   if (!csb) return null;
+   return { href: appRoutes.csbMunicipalityList(electionConfigSlug, csb.slug), label: csb.region_name };
 }

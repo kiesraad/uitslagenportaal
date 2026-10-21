@@ -28,8 +28,18 @@ const gemeente: Region = {
    vote_counts: [],
    region_category: "GEMEENTE",
    results_available_at: null,
-   csb_name: "Scheldestromen",
-   csb_slug: "17-scheldestromen",
+   has_hsb: false,
+   is_csb: false,
+   hsb: null,
+   csb: {
+      id: 17,
+      election_id: 1,
+      parent_id: 1,
+      region_number: "17",
+      region_category: "WATERSCHAP",
+      region_name: "Scheldestromen",
+      slug: "17-scheldestromen",
+   },
 };
 
 const pollingStation: Region = {
@@ -38,8 +48,11 @@ const pollingStation: Region = {
    vote_counts: [],
    region_category: "STEMBUREAU",
    results_available_at: null,
+   has_hsb: false,
+   is_csb: false,
+   hsb: null,
    station_number: 1,
-   csb_slug: "17-scheldestromen",
+   csb: gemeente.csb,
 };
 
 function seedPollingStationQueries() {
@@ -51,7 +64,7 @@ function seedPollingStationQueries() {
       {
          electionConfigSlug: electionConfig.slug,
          regionSlug: gemeente.slug,
-         csbSlug: gemeente.csb_slug ?? undefined,
+         csbSlug: gemeente.csb?.slug,
       },
       "gsb",
    );
@@ -59,7 +72,7 @@ function seedPollingStationQueries() {
       {
          electionConfigSlug: electionConfig.slug,
          regionSlug: pollingStation.slug,
-         csbSlug: gemeente.csb_slug ?? undefined,
+         csbSlug: gemeente.csb?.slug,
          parentRegionSlug: gemeente.slug,
       },
       "sb",
@@ -83,7 +96,7 @@ describe("PollingStationPages", () => {
       renderWithProviders(<PollingStationResultsPage />, {
          path: "/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/:pollingStationSlug",
          initialEntries: [
-            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb_slug}/${pollingStation.slug}`,
+            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb?.slug}/${pollingStation.slug}`,
          ],
          loaderData,
          queryClient,
@@ -100,7 +113,7 @@ describe("PollingStationPages", () => {
       renderWithProviders(<PollingStationPartyResultsPage />, {
          path: "/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/:pollingStationSlug/:partySlug",
          initialEntries: [
-            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb_slug}/${pollingStation.slug}/vvd`,
+            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb?.slug}/${pollingStation.slug}/vvd`,
          ],
          loaderData,
          queryClient,

@@ -106,7 +106,13 @@ export function HSBResultsPage() {
                issueReportDeadline={electionConfig.issue_report_deadline}
                notPublishedRegionName={region.region_name}
                notPublishedRegionCategory={region.region_category}
-               timeline={<HSBTimeline dates={electionConfig.timeline_dates ?? []} documents={region.documents} />}
+               timeline={
+                  <HSBTimeline
+                     dates={electionConfig.timeline_dates ?? []}
+                     documents={region.documents}
+                     region={region}
+                  />
+               }
             />
          </ResultsPageColumns>
       </LayoutMain>

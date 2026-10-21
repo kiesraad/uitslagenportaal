@@ -78,6 +78,16 @@ export type VoterTurnoutCount = {
    votes: number;
 };
 
+export interface RegionSummary {
+   id: number;
+   election_id: number;
+   parent_id: number;
+   region_number: string;
+   region_category: string;
+   region_name: string;
+   slug: string;
+}
+
 export type Region = {
    region_name: string;
    slug: string;
@@ -89,10 +99,12 @@ export type Region = {
    certified_document_preview_url?: string | null;
    region_category: RegionCategory;
    results_available_at: string | null;
-   csb_name?: string | null;
-   csb_slug?: string | null;
    election_slug?: string;
    station_number?: number | null;
+   has_hsb: boolean;
+   hsb: RegionSummary | null;
+   is_csb: boolean;
+   csb: RegionSummary | null;
 };
 
 export type RegionResponse = Region[];

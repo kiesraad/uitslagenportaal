@@ -7,6 +7,7 @@ from rest_framework import serializers
 from election.models import ElectionDocument, TimelineVariant
 from election.serializers import ElectionDocumentSerializer
 from mainsite.serializers import (
+    RegionSummarySerializer,
     VoteCountSummarySerializer,
     VoterTurnoutCountSummarySerializer,
 )
@@ -14,13 +15,12 @@ from region.models import Region
 
 
 class RegionListSerializer(serializers.ModelSerializer):
-    csb_name = serializers.CharField(source="csb.region_name", default=None, read_only=True)
-    csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
+    csb = RegionSummarySerializer(read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
 
     class Meta:
         model = Region
-        fields = ("region_name", "slug", "region_category", "csb_name", "csb_slug", "station_number")
+        fields = ("region_name", "slug", "region_category", "csb", "station_number")
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):
@@ -30,10 +30,10 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     certified_document_url = serializers.SerializerMethodField()
     certified_document_preview_url = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
-    csb_name = serializers.CharField(source="csb.region_name", default=None, read_only=True)
-    csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
     election_slug = serializers.CharField(source="election.slug", read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
+    csb = RegionSummarySerializer(read_only=True)
+    hsb = RegionSummarySerializer(read_only=True)
 
     class Meta:
         model = Region
@@ -48,10 +48,12 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "timeline_variant",
             "region_category",
             "results_available_at",
-            "csb_name",
-            "csb_slug",
             "election_slug",
             "station_number",
+            "is_csb",
+            "csb",
+            "has_hsb",
+            "hsb",
         )
 
     def _certified_document(self, region):

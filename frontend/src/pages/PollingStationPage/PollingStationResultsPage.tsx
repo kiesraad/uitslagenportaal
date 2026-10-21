@@ -52,7 +52,7 @@ export default function PollingStationResultsPage() {
    const { data: region } = useSuspenseQuery(regionQuery);
    const { data: pollingStation } = useSuspenseQuery(pollingStationQuery);
 
-   const csbSlug = region.csb_slug ?? undefined;
+   const csbSlug = region.csb?.slug;
    const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(
       electionConfig.slug,
       region.slug,
@@ -96,6 +96,7 @@ export default function PollingStationResultsPage() {
                      variant={pollingStation.timeline_variant}
                      dates={electionConfig.timeline_dates}
                      documents={region.documents}
+                     region={region}
                   />
                }
             />

@@ -108,7 +108,7 @@ export function CSBPartyResultsPage() {
                ) : (
                   resultsPageContent
                )}
-               <CSBTimeline dates={electionConfig.timeline_dates ?? []} documents={region.documents} />
+               <CSBTimeline dates={electionConfig.timeline_dates ?? []} documents={region.documents} region={region} />
                <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
             </div>
          </div>

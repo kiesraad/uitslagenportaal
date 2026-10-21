@@ -25,6 +25,6 @@ describe("SBTimeline", () => {
       expect(
          screen.getByText(/Na het sluiten van de stembussen tellen de leden van het stembureau/),
       ).toBeInTheDocument();
-      expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(5);
+      expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(4);
    });
 });

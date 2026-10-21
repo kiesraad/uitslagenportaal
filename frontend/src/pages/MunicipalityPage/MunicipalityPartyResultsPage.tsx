@@ -22,7 +22,7 @@ export function MunicipalityPartyResultsPage() {
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
    const { data: region } = useSuspenseQuery(regionQuery);
 
-   const csbSlug = region.csb_slug ?? undefined;
+   const csbSlug = region.csb?.slug;
    const municipalityResultsRoute = appRoutes.municipalityResults(electionConfig.slug, region.slug, csbSlug);
 
    // Only an unknown party slug is a 404; empty results mean "not published yet"
