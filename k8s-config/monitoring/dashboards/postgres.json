@@ -47,7 +47,7 @@
          "title": "Exporter connected",
          "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
          "datasource": { "type": "prometheus", "uid": "${datasource}" },
-         "targets": [{ "refId": "A", "expr": "pg_up{namespace=\"$namespace\"}", "instant": true }],
+         "targets": [{ "refId": "A", "expr": "max(pg_up{namespace=\"$namespace\"}) or on () vector(0)", "instant": true }],
          "fieldConfig": {
             "defaults": {
                "mappings": [
@@ -73,7 +73,7 @@
          "targets": [
             {
                "refId": "A",
-               "expr": "sum(pg_stat_database_numbackends{namespace=\"$namespace\"}) / max(pg_settings_max_connections{namespace=\"$namespace\"})"
+               "expr": "sum(max by (datname) (pg_stat_database_numbackends{namespace=\"$namespace\"})) / max(pg_settings_max_connections{namespace=\"$namespace\"})"
             }
          ],
          "fieldConfig": {
@@ -198,7 +198,7 @@
          "targets": [
             {
                "refId": "A",
-               "expr": "sum by (datname) (pg_stat_database_numbackends{namespace=\"$namespace\", datname!~\"template.*\"})",
+               "expr": "max by (datname) (pg_stat_database_numbackends{namespace=\"$namespace\", datname!~\"template.*\"})",
                "legendFormat": "{{datname}}"
             },
             {
@@ -388,7 +388,7 @@
             },
             {
                "refId": "E",
-               "expr": "sum by (relname) (rate(pg_stat_user_tables_seq_scan{namespace=\"$namespace\", datname=\"$database\"}[$__range]))",
+               "expr": "max by (relname) (increase(pg_stat_user_tables_seq_scan{namespace=\"$namespace\", datname=\"$database\"}[$__range]))",
                "format": "table",
                "instant": true
             },
@@ -444,8 +444,8 @@
                {
                   "matcher": { "id": "byName", "options": "Sequential scans" },
                   "properties": [
-                     { "id": "unit", "value": "ops" },
-                     { "id": "decimals", "value": 2 }
+                     { "id": "unit", "value": "short" },
+                     { "id": "decimals", "value": 0 }
                   ]
                },
                {

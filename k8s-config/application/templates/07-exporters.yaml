@@ -53,8 +53,8 @@ spec:
                   name: {{ .Values.db.credSecret }}
                   key: DB_NAME
             # The application's own role. Everything alerted on here is readable by any
-            # login role; a role holding pg_monitor is only needed for pg_stat_statements,
-            # replication, and other sessions' query text.
+            # login role; pg_monitor would add wal, pg_stat_statements, replication, and
+            # other sessions' query text.
             - name: DATA_SOURCE_USER
               valueFrom:
                 secretKeyRef:
