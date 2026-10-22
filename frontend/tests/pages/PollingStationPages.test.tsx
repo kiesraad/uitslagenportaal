@@ -140,7 +140,7 @@ describe("PollingStationPages", () => {
       renderWithProviders(<PollingStationResultsPage />, {
          path: "/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/:pollingStationSlug",
          initialEntries: [
-            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb_slug}/${pollingStation.slug}`,
+            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb?.slug}/${pollingStation.slug}`,
          ],
          loaderData,
          queryClient,
@@ -158,7 +158,7 @@ describe("PollingStationPages", () => {
       renderWithProviders(<PollingStationResultsPage />, {
          path: "/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/:pollingStationSlug",
          initialEntries: [
-            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb_slug}/${pollingStation.slug}`,
+            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb?.slug}/${pollingStation.slug}`,
          ],
          loaderData,
          queryClient,
