@@ -434,23 +434,51 @@
             "defaults": {},
             "overrides": [
                {
-                  "matcher": { "id": "byRegexp", "options": "Table size|Index size" },
-                  "properties": [{ "id": "unit", "value": "bytes" }]
+                  "matcher": { "id": "byName", "options": "Table" },
+                  "properties": [{ "id": "description", "value": "Django's table name: app, then model." }]
                },
                {
-                  "matcher": { "id": "byRegexp", "options": "Live rows|Dead rows" },
-                  "properties": [{ "id": "unit", "value": "short" }]
+                  "matcher": { "id": "byName", "options": "Table size" },
+                  "properties": [
+                     { "id": "unit", "value": "bytes" },
+                     { "id": "description", "value": "Rows on disk, including TOAST; indexes not included." }
+                  ]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Index size" },
+                  "properties": [
+                     { "id": "unit", "value": "bytes" },
+                     { "id": "description", "value": "All indexes on the table together." }
+                  ]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Live rows" },
+                  "properties": [
+                     { "id": "unit", "value": "short" },
+                     { "id": "description", "value": "Postgres's running estimate, not an exact count." }
+                  ]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Dead rows" },
+                  "properties": [
+                     { "id": "unit", "value": "short" },
+                     { "id": "description", "value": "Old row versions waiting for vacuum. Normal after an import; steady growth means vacuum is held back." }
+                  ]
                },
                {
                   "matcher": { "id": "byName", "options": "Sequential scans" },
                   "properties": [
                      { "id": "unit", "value": "short" },
-                     { "id": "decimals", "value": 0 }
+                     { "id": "decimals", "value": 0 },
+                     { "id": "description", "value": "Full-table reads in the selected range. Many on a large table suggest a missing index." }
                   ]
                },
                {
                   "matcher": { "id": "byName", "options": "Last autovacuum" },
-                  "properties": [{ "id": "unit", "value": "dateTimeFromNow" }]
+                  "properties": [
+                     { "id": "unit", "value": "dateTimeFromNow" },
+                     { "id": "description", "value": "Empty if autovacuum has not run since the statistics were reset." }
+                  ]
                }
             ]
          }
