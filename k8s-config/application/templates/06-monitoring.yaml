@@ -17,21 +17,6 @@ spec:
     - port: http
       path: /metrics
       interval: {{ .Values.monitoring.scrapeInterval }}
-{{- if .Values.monitoring.exporters.postgres.enabled }}
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: {{ .Release.Name }}-postgres-exporter
-  namespace: {{ .Release.Namespace }}
-spec:
-  selector:
-    matchLabels:
-      app: {{ .Release.Name }}-postgres-exporter
-  endpoints:
-    - port: metrics
-      interval: {{ .Values.monitoring.scrapeInterval }}
-{{- end }}
 {{- if .Values.monitoring.exporters.redis.enabled }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -190,35 +175,9 @@ spec:
             description: "The periodic import has not been sent in {{ `{{ $labels.namespace }}` }} for half an hour; the scheduler is likely dead."
 {{- end }}
 
-{{- if or .Values.monitoring.exporters.postgres.enabled .Values.monitoring.exporters.redis.enabled }}
+{{- if .Values.monitoring.exporters.redis.enabled }}
     - name: uitslagenportaal.datastores
       rules:
-{{- if .Values.monitoring.exporters.postgres.enabled }}
-        - alert: PostgresUnreachable
-          expr: pg_up{namespace="{{ .Release.Namespace }}"} == 0
-          for: 5m
-          labels:
-            severity: critical
-            area: Backend
-          annotations:
-            summary: "The exporter cannot reach Postgres"
-            description: "The managed database for {{ `{{ $labels.namespace }}` }} has been unreachable for five minutes."
-
-        # Each serving thread holds a persistent connection; fires when the budget in the
-        # ConfigMap comments no longer fits.
-        - alert: PostgresConnectionSaturation
-          expr: |
-            sum by (namespace) (pg_stat_database_numbackends{namespace="{{ .Release.Namespace }}"})
-              / max by (namespace) (pg_settings_max_connections{namespace="{{ .Release.Namespace }}"}) > 0.8
-          for: 10m
-          labels:
-            severity: warning
-            area: Backend
-          annotations:
-            summary: "Postgres connections above 80% of the cap"
-            description: "The database for {{ `{{ $labels.namespace }}` }} is close to refusing new connections."
-{{- end }}
-{{- if .Values.monitoring.exporters.redis.enabled }}
         - alert: RedisUnreachable
           expr: redis_up{namespace="{{ .Release.Namespace }}"} == 0
           for: 5m
@@ -242,7 +201,6 @@ spec:
           annotations:
             summary: "Redis is near its memory limit"
             description: "The cache for {{ `{{ $labels.namespace }}` }} is above 85% of maxmemory; eviction will start dropping broker state."
-{{- end }}
 {{- end }}
 
 {{- if and .Values.gateway.enabled .Values.issuer.enabled }}

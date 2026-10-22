@@ -1,94 +1,14 @@
 {{- if .Values.monitoring.enabled }}
 {{- /*
-Exporters for the three managed services the application depends on. They run here,
-beside the credentials they need, rather than in the monitoring namespace: those secrets
-exist only in this namespace and differ per environment, and copying them would mean
-keeping two sets in step.
+Exporters for the managed Redis and the Celery broker on it. The managed Postgres denies
+the access an exporter needs, so it has none. They run here, beside the credentials they
+need, rather than in the monitoring namespace: those secrets exist only in this namespace
+and differ per environment, and copying them would mean keeping two sets in step.
 
 Kubernetes expands $(VAR) in env and args only against entries in this container's own
 env list, never against envFrom, which is why every part of a connection string below is
 named explicitly instead of pulled in wholesale.
 */}}
-{{- if .Values.monitoring.exporters.postgres.enabled }}
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ .Release.Name }}-postgres-exporter
-  namespace: {{ .Release.Namespace }}
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: {{ .Release.Name }}-postgres-exporter
-  template:
-    metadata:
-      labels:
-        app: {{ .Release.Name }}-postgres-exporter
-    spec:
-      containers:
-        - name: postgres-exporter
-          image: {{ .Values.monitoring.exporters.postgres.image }}
-          ports:
-            - name: metrics
-              containerPort: 9187
-          env:
-            - name: DB_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.db.credSecret }}
-                  key: DB_HOST
-            - name: DB_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.db.credSecret }}
-                  key: DB_PORT
-            - name: DB_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.db.credSecret }}
-                  key: DB_NAME
-            # The application's own role. Everything alerted on here is readable by any
-            # login role; a role holding pg_monitor is only needed for pg_stat_statements,
-            # replication, and other sessions' query text.
-            - name: DATA_SOURCE_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.db.credSecret }}
-                  key: DB_USER
-            - name: DATA_SOURCE_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.db.credSecret }}
-                  key: DB_PASSWORD
-            # User and password stay in their own variables so neither has to survive
-            # being URL-encoded into this one.
-            - name: DATA_SOURCE_URI
-              value: "$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode={{ .Values.db.sslmode }}&sslrootcert=/etc/ssl/rdb/ca.pem"
-          resources:
-            {{- toYaml .Values.monitoring.exporters.postgres.resources | nindent 12 }}
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: [ ALL ]
-          {{- include "uitslagenportaal.caVolumeMounts" . | nindent 10 }}
-      {{- include "uitslagenportaal.caVolumes" . | nindent 6 }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Release.Name }}-postgres-exporter
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app: {{ .Release.Name }}-postgres-exporter
-spec:
-  selector:
-    app: {{ .Release.Name }}-postgres-exporter
-  ports:
-    - name: metrics
-      port: 9187
-      targetPort: metrics
----
-{{- end }}
 {{- if .Values.monitoring.exporters.redis.enabled }}
 apiVersion: apps/v1
 kind: Deployment
