@@ -1,10 +1,6 @@
 from django.contrib.postgres.expressions import ArraySubquery
-from django.core.files.storage import default_storage
 from django.db.models import OuterRef, Prefetch
 from django.db.models.functions import JSONObject
-from django.http import HttpResponseRedirect
-from django.utils.http import content_disposition_header
-from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
@@ -13,15 +9,14 @@ from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, ReportingLevel
 from region.models import Region, hsb_kieskringen
-from region.polling_station_pv_archive import polling_station_pv_zip_storage_key
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
 # FileType values are EML510b, not the EmlType strings 510b used on vote counts.
-_DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL = {
-    ReportingLevel.SB: ElectionDocument.FileType.EML_510B,
-    ReportingLevel.GSB: ElectionDocument.FileType.EML_510B,
-    ReportingLevel.HSB: ElectionDocument.FileType.EML_510C,
-    ReportingLevel.CSB: ElectionDocument.FileType.EML_510D,
+_DOCUMENT_FILE_TYPES_BY_REPORTING_LEVEL = {
+    ReportingLevel.SB: [ElectionDocument.FileType.EML_510B],
+    ReportingLevel.GSB: [ElectionDocument.FileType.EML_510B, ElectionDocument.FileType.PDF_SB_ZIP],
+    ReportingLevel.HSB: [ElectionDocument.FileType.EML_510C],
+    ReportingLevel.CSB: [ElectionDocument.FileType.EML_510D, ElectionDocument.FileType.PDF_SB_ZIP],
 }
 
 
@@ -97,7 +92,7 @@ class RegionDetailView(RetrieveAPIView):
 
         eml_type = EML_TYPE_BY_REPORTING_LEVEL[level]
         document_file_type = [
-            _DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL[level],
+            *_DOCUMENT_FILE_TYPES_BY_REPORTING_LEVEL[level],
             ElectionDocument.FileType.CSV_OSV43,
             *ElectionDocument.CERTIFIED_FILE_TYPES,
         ]
@@ -160,45 +155,3 @@ class RegionDetailView(RetrieveAPIView):
             raise ValidationError(
                 {"detail": "Multiple regions match this slug. Specify the 'parent_region' or 'csb' query parameter."}
             )
-
-
-def _visible_municipality(request, election_config_slug, region_slug):
-    queryset = Region.objects.select_related("election__election_config").filter(
-        election__election_config__slug=election_config_slug,
-        election__election_config__date__gte=visibility_cutoff(),
-        slug=region_slug,
-        region_category=RegionCategory.GEMEENTE,
-    )
-    parent_region_slug = request.GET.get("parent_region")
-    csb_slug = request.GET.get("csb")
-    if parent_region_slug:
-        queryset = queryset.filter(parent__slug=parent_region_slug)
-    if csb_slug:
-        queryset = queryset.filter(csb__slug=csb_slug)
-    try:
-        return queryset.get()
-    except Region.DoesNotExist:
-        raise NotFound({"detail": "Region not found for this election."}) from None
-    except Region.MultipleObjectsReturned:
-        raise ValidationError(
-            {"detail": "Multiple regions match this slug. Specify the 'parent_region' or 'csb' query parameter."}
-        ) from None
-
-
-@api_view(["GET"])
-def polling_station_pv_archive(request, election_config, region):
-    municipality = _visible_municipality(request, election_config, region)
-    key = polling_station_pv_zip_storage_key(municipality)
-    if not default_storage.exists(key):
-        raise NotFound({"detail": "No polling-station reports."})
-
-    filename = f"processen-verbaal-{municipality.slug}.zip"
-    return HttpResponseRedirect(
-        default_storage.url(
-            key,
-            parameters={
-                "ResponseContentType": "application/zip",
-                "ResponseContentDisposition": content_disposition_header(True, filename),
-            },
-        )
-    )

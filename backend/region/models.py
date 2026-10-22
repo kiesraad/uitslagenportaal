@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 
 from mainsite.models import BaseModel, CountingMethod, RegionCategory
 from mainsite.utils.utils import name_to_slug
@@ -77,6 +78,26 @@ class Region(BaseModel):
         if self.region_category != RegionCategory.STEMBUREAU:
             return None
         return parse_station_number(self.region_number)
+
+    @property
+    def is_csb(self) -> bool:
+        return self.region_category == self.election.election_config.csb_type
+
+    @property
+    def hsb(self) -> Region | None:
+        if self.region_category not in [RegionCategory.STEMBUREAU, RegionCategory.GEMEENTE]:
+            return None
+        return Region.objects.filter(
+            Q(region_category=RegionCategory.KIESKRING) & (Q(children=self) | Q(children__children=self))
+        ).first()
+
+    @property
+    def has_hsb(self) -> bool:
+        """
+        A single HSB for a region means it's skipped in the counting process,
+        only return true if the HSB takes part in the vote counting hierarchy.
+        """
+        return self.csb is not None and self.csb.children.filter(region_category=RegionCategory.KIESKRING).count() > 1
 
     def save(self, *args, **kwargs):
         if not self.slug:

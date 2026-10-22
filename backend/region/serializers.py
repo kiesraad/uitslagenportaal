@@ -7,11 +7,11 @@ from rest_framework import serializers
 from election.models import ElectionDocument, TimelineVariant
 from election.serializers import ElectionDocumentSerializer
 from mainsite.serializers import (
+    RegionSummarySerializer,
     VoteCountSummarySerializer,
     VoterTurnoutCountSummarySerializer,
 )
 from region.models import Region, parse_station_number
-from region.polling_station_pv_archive import polling_station_pv_summary
 
 
 class SameLocationStationsField(serializers.Field):
@@ -29,37 +29,27 @@ class SameLocationStationsField(serializers.Field):
 
 
 class RegionListSerializer(serializers.ModelSerializer):
-    csb_name = serializers.CharField(source="csb.region_name", default=None, read_only=True)
-    csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
+    csb = RegionSummarySerializer(read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
     same_location_stations = SameLocationStationsField()
 
     class Meta:
         model = Region
-        fields = (
-            "region_name",
-            "slug",
-            "region_category",
-            "csb_name",
-            "csb_slug",
-            "station_number",
-            "same_location_stations",
-        )
+        fields = ("region_name", "slug", "region_category", "csb", "station_number", "same_location_stations")
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):
     voter_turnout_counts = VoterTurnoutCountSummarySerializer(read_only=True, many=True)
     vote_counts = VoteCountSummarySerializer(read_only=True, many=True)
     documents = ElectionDocumentSerializer(read_only=True, many=True)
-    polling_station_pv_archive = serializers.SerializerMethodField()
     certified_document_url = serializers.SerializerMethodField()
     certified_document_preview_url = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
-    csb_name = serializers.CharField(source="csb.region_name", default=None, read_only=True)
-    csb_slug = serializers.SlugField(source="csb.slug", default=None, read_only=True)
     election_slug = serializers.CharField(source="election.slug", read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
     same_location_stations = SameLocationStationsField()
+    csb = RegionSummarySerializer(read_only=True)
+    hsb = RegionSummarySerializer(read_only=True)
 
     class Meta:
         model = Region
@@ -69,21 +59,19 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "vote_counts",
             "slug",
             "documents",
-            "polling_station_pv_archive",
             "certified_document_url",
             "certified_document_preview_url",
             "timeline_variant",
             "region_category",
             "results_available_at",
-            "csb_name",
-            "csb_slug",
             "election_slug",
             "station_number",
             "same_location_stations",
+            "is_csb",
+            "csb",
+            "has_hsb",
+            "hsb",
         )
-
-    def get_polling_station_pv_archive(self, region):
-        return polling_station_pv_summary(region, self.context.get("request"))
 
     def _certified_document(self, region):
         documents = ElectionDocument.objects.filter(

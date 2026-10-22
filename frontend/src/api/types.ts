@@ -33,21 +33,37 @@ export type TimelineDate = {
    qualifier: TimelineDateQualifier;
 };
 
+export type ElectionDocumentFileType =
+   | "EML110a"
+   | "EML230b"
+   | "EML510b"
+   | "EML510c"
+   | "EML510d"
+   | "CSV_OSV4-3"
+   | "PDF_N10-1"
+   | "PDF_N10-2"
+   | "PDF_NA14-1"
+   | "PDF_NA31-1"
+   | "PDF_NA31-2"
+   | "PDF_NA31-2-B1"
+   | "PDF_NA31-2-B2"
+   | "PDF_NA14-2"
+   | "PDF_NA14-2-B1"
+   | "PDF_O7"
+   | "PDF_P1F-1"
+   | "PDF_P22-1"
+   | "PDF_P22-2"
+   | "PDF_SB-ZIP";
+
 export type ElectionDocument = {
    name: string;
    url: string;
    type: string;
    size: string;
    description: string;
-   file_type: string;
+   file_type: ElectionDocumentFileType;
    correction_number: number;
-};
-
-export type PollingStationPvArchive = {
-   url: string;
-   present_count: number;
-   total_count: number;
-   size: number;
+   metadata: Record<string, string | number>;
 };
 
 export type ReportingLevel = "gsb" | "hsb" | "csb" | "sb";
@@ -62,6 +78,16 @@ export type VoterTurnoutCount = {
    votes: number;
 };
 
+export interface RegionSummary {
+   id: number;
+   election_id: number;
+   parent_id: number;
+   region_number: string;
+   region_category: string;
+   region_name: string;
+   slug: string;
+}
+
 export type Region = {
    region_name: string;
    slug: string;
@@ -69,15 +95,16 @@ export type Region = {
    voter_turnout_counts?: VoterTurnoutCount[];
    timeline_variant?: TimelineVariant;
    documents?: ElectionDocument[];
-   polling_station_pv_archive?: PollingStationPvArchive | null;
    certified_document_url?: string | null;
    certified_document_preview_url?: string | null;
    region_category: RegionCategory;
    results_available_at: string | null;
-   csb_name?: string | null;
-   csb_slug?: string | null;
    election_slug?: string;
    station_number?: number | null;
+   has_hsb: boolean;
+   hsb: RegionSummary | null;
+   is_csb: boolean;
+   csb: RegionSummary | null;
    // The other stembureaus with the same name and postcode: a dubbel stembureau.
    same_location_stations?: SameLocationStation[];
 };

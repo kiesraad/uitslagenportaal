@@ -227,7 +227,11 @@ class ElectionDocument(BaseModel):
     """
 
     class FileType(models.TextChoices):
-        """Source files listed in FILE_TYPE_MAPPINGS, including the scanned proces-verbaal forms."""
+        """
+        Source files listed in FILE_TYPE_MAPPINGS, including the scanned proces-verbaal forms.
+
+        Keep in sync with api/types.ts
+        """
 
         EML_110A = "EML110a", "Verkiezingsdefinitie"
         EML_230B = "EML230b", "Kandidatenlijst"
@@ -248,6 +252,7 @@ class ElectionDocument(BaseModel):
         PDF_P1F_1 = "PDF_P1F-1", "Corrigendum proces-verbaal hoofdstembureau"
         PDF_P22_1 = "PDF_P22-1", "Proces-verbaal centraal stembureau met meerdere kieskringen"
         PDF_P22_2 = "PDF_P22-2", "Proces-verbaal centraal stembureau met één kieskring"
+        PDF_SB_ZIP = "PDF_SB-ZIP", "Proces-verbalen van stembureaus in zip bestand"
 
         @classmethod
         def from_form_code(cls, form_code: str) -> Self | None:
@@ -305,6 +310,7 @@ class ElectionDocument(BaseModel):
         help_text="Type of the election document",
     )
     is_current = models.BooleanField(default=True, db_index=True)
+    metadata = models.JSONField(default=dict)
 
     objects = CurrentManager()
     all_objects = models.Manager()
@@ -322,9 +328,13 @@ class ElectionDocument(BaseModel):
     @property
     def download_filename(self) -> str:
         """Storage keys carry the raw EML region id (0638::SB001); browsers get a readable name."""
-        if self.file_type not in self.CERTIFIED_FILE_TYPES or self.region is None:
+        if self.region is None or self.file_type not in {*self.CERTIFIED_FILE_TYPES, self.FileType.PDF_SB_ZIP}:
             return Path(self.storage_key).name
         parts = [self.region.election.election_config.identifier]
+        # The zip is keyed by region pk, so it is named after the gemeente.
+        if self.file_type == self.FileType.PDF_SB_ZIP:
+            parts += [self.region.region_name, "processen-verbaal stembureaus"]
+            return re.sub(r"[^\w .-]", "-", " ".join(filter(None, parts))) + ".zip"
         if self.region.region_category == RegionCategory.STEMBUREAU and self.region.parent:
             parts += [self.region.parent.region_name, (self.region.region_number or "").split("::")[-1]]
         parts += [self.region.region_name, str(self.file_type).removeprefix("PDF_")]
