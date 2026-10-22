@@ -457,13 +457,11 @@ msgstr "the polling station"
 msgid "het stembureau {name}"
 msgstr "the polling station {name}"
 
-#: src/components/Timeline/GSBTimeline.tsx
-#: src/components/Timeline/SBTimeline.tsx
+#: src/components/Timeline/Timeline.tsx
 msgid "Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
 msgstr "The polling station carries out a rapid count per party. The next day the municipal electoral committee recounts everything and counts the votes per candidate at a central counting location. Those counting results are recorded in the report of the municipal electoral committee / public entity electoral committee."
 
-#: src/components/Timeline/GSBTimeline.tsx
-#: src/components/Timeline/SBTimeline.tsx
+#: src/components/Timeline/Timeline.tsx
 msgid "Het stembureau doet een uitgebreide telling op het stembureau. Het gemeentelijk stembureau telt de volgende dag de uitkomsten bij elkaar op. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
 msgstr "The polling station carries out a full count at the polling station. The next day the municipal electoral committee adds up the outcomes. Those counting results are recorded in the report of the municipal electoral committee / public entity electoral committee."
 

@@ -1,9 +1,9 @@
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { lowercaseFirst } from "@/utils/text.ts";
 import type { RegionCategory } from "../../api/types";
 import { InfoBox } from "../../components/InfoBox";
 import { getRegionLabels, regionWithName } from "../../utils/region";
-import {lowercaseFirst} from "@/utils/text.ts";
 
 type Props = {
    regionName: string;

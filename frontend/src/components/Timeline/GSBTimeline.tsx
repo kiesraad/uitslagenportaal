@@ -1,5 +1,5 @@
-import {Trans, useLingui} from "@lingui/react/macro";
-import {Timeline, type TimelineContextProps, VARIANT_DESCRIPTIONS} from "@/components/Timeline/Timeline.tsx";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { Timeline, type TimelineContextProps, VARIANT_DESCRIPTIONS } from "@/components/Timeline/Timeline.tsx";
 import {
    CsbCheckTimelineEntry,
    CsbResultPublishTimelineEntry,

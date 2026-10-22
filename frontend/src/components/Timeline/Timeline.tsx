@@ -1,12 +1,12 @@
 import { faArrowDown, faArrowUp } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { createContext, type ReactElement, useContext } from "react";
 import type { ElectionDocument, Region, TimelineDate, TimelineVariant } from "@/api/types.ts";
 import type { TimelineEntryProps } from "@/components/Timeline/TimelineEntry.tsx";
 import { usePersistedState } from "@/hooks/usePersistedState.ts";
-import type {MessageDescriptor} from "@lingui/core";
-import {msg} from "@lingui/core/macro";
 
 const TIMELINE_ORDER_KEY = "timeline-order-desc";
 

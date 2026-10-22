@@ -1,5 +1,5 @@
-import {Trans, useLingui} from "@lingui/react/macro";
-import {Timeline, type TimelineContextProps, VARIANT_DESCRIPTIONS} from "@/components/Timeline/Timeline.tsx";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { Timeline, type TimelineContextProps, VARIANT_DESCRIPTIONS } from "@/components/Timeline/Timeline.tsx";
 import TimelineEntry, {
    CsbCheckTimelineEntry,
    CsbResultPublishTimelineEntry,
@@ -10,8 +10,8 @@ import TimelineEntry, {
 
 type Props = TimelineContextProps;
 
-export function SBTimeline({variant = "DEFAULT", dates, ...timelineProps}: Props) {
-   const {t} = useLingui();
+export function SBTimeline({ variant = "DEFAULT", dates, ...timelineProps }: Props) {
+   const { t } = useLingui();
 
    const variantDescription = VARIANT_DESCRIPTIONS[variant];
 
@@ -22,10 +22,10 @@ export function SBTimeline({variant = "DEFAULT", dates, ...timelineProps}: Props
          </h2>
          {variantDescription && <p className={"mb-4"}>{t(variantDescription)}</p>}
          <Timeline dates={dates} variant={variant} {...timelineProps}>
-            <CsbResultPublishTimelineEntry/>
-            <CsbCheckTimelineEntry/>
-            <HSBVoteCountTimelineEntry/>
-            <GSBVoteCountTimelineEntry/>
+            <CsbResultPublishTimelineEntry />
+            <CsbCheckTimelineEntry />
+            <HSBVoteCountTimelineEntry />
+            <GSBVoteCountTimelineEntry />
             {variant === "CSO" && (
                <TimelineEntry title={t`Telling per lijst en kandidaat`} event="municipality_vote_count">
                   <Trans>
@@ -35,7 +35,7 @@ export function SBTimeline({variant = "DEFAULT", dates, ...timelineProps}: Props
                   </Trans>
                </TimelineEntry>
             )}
-            <SBVoteCountTimelineEntry/>
+            <SBVoteCountTimelineEntry />
          </Timeline>
       </div>
    );
