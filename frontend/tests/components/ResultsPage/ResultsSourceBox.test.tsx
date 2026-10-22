@@ -37,21 +37,15 @@ function renderBox(locale: "nl" | "en" = "nl", previewUrl?: string | null, docum
 }
 
 describe("ResultsSourceBox", () => {
-   it("Says the certified election document has not arrived yet when the region has none", () => {
+   it("Only says the certified election document is not published yet when the region has none", () => {
       renderBox();
 
       expect(
          screen.getByRole("heading", { level: 2, name: "Waar komen deze telresultaten vandaan?" }),
       ).toBeInTheDocument();
-      expect(screen.getByText("Het proces-verbaal is nog niet ontvangen")).toBeInTheDocument();
-      expect(screen.getByText("Het verschijnt hier zodra het is binnengekomen.")).toBeInTheDocument();
+      expect(screen.getByText(/Momenteel is het proces-verbaal nog niet gepubliceerd/)).toBeInTheDocument();
       expect(screen.queryByRole("img", { name: "Proces-verbaal" })).not.toBeInTheDocument();
-      expect(screen.queryByRole("link", { name: /Bekijk het proces-verbaal/ })).not.toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /Meld een fout of iets dat niet klopt/ })).toHaveAttribute(
-         "href",
-         "/ws2023/fout-melden",
-      );
-      expect(screen.getByText(/14 december om 10:00/)).toBeInTheDocument();
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
    });
 
    it("Opens the full certified election document from the picture and from the link", () => {
@@ -66,6 +60,27 @@ describe("ResultsSourceBox", () => {
          expect(link).toHaveAttribute("href", documentUrl);
          expect(link).toHaveAttribute("target", "_blank");
       }
+      expect(screen.getByRole("link", { name: /Meld een fout of iets dat niet klopt/ })).toHaveAttribute(
+         "href",
+         "/ws2023/fout-melden",
+      );
+      expect(screen.getByText(/14 december om 10:00/)).toBeInTheDocument();
+   });
+
+   it("Says the certified election document is not published when only the document exists", () => {
+      renderBox("nl", null, "/api/certified-documents/7/");
+
+      expect(screen.getByText(/Momenteel is het proces-verbaal nog niet gepubliceerd/)).toBeInTheDocument();
+      expect(screen.queryByRole("img", { name: "Proces-verbaal" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+   });
+
+   it("Says the certified election document is not published when only the preview exists", () => {
+      renderBox("nl", "/api/certified-documents/7/preview/", null);
+
+      expect(screen.getByText(/Momenteel is het proces-verbaal nog niet gepubliceerd/)).toBeInTheDocument();
+      expect(screen.queryByRole("img", { name: "Proces-verbaal" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
    });
 
    it("Renders the source box in English when that locale is active", () => {
@@ -74,9 +89,6 @@ describe("ResultsSourceBox", () => {
       expect(
          screen.getByRole("heading", { level: 2, name: "Where do these counting results come from?" }),
       ).toBeInTheDocument();
-      expect(screen.getByText("The certified election results have not arrived yet")).toBeInTheDocument();
-      expect(screen.getByText("They will appear here once they have been received.")).toBeInTheDocument();
-      expect(screen.queryByRole("link", { name: /View the certified election results/ })).not.toBeInTheDocument();
-      expect(screen.getByText(/14 December at 10:00/)).toBeInTheDocument();
+      expect(screen.getByText(/The certified election results have not been published yet/)).toBeInTheDocument();
    });
 });

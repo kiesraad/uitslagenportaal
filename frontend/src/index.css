@@ -70,7 +70,7 @@
    --color-text: var(--color-gray-900);
    --color-muted: var(--color-gray-500);
    --color-border: #d0d7de;
-   --color-info-bg: #dce8f8;
+   --color-info-bg: var(--color-blue-100);
    --color-box-bg: #f4f7fa;
    --color-info-bdr: #1569c5;
    --color-faq-bg: #f3f7fa;
@@ -183,7 +183,7 @@ main h1:focus {
 }
 
 .page-top {
-   background: #e3e9f4;
+   background: var(--c-info-bg);
    padding: 2rem 6rem 0;
 }
 
@@ -347,7 +347,7 @@ main h1:focus {
    display: flex;
    gap: 16px;
    align-items: start;
-   background: #e3e9f4;
+   background: var(--c-info-bg);
    border-radius: 0 2px 2px 0;
    padding: 18px 22px;
    line-height: 1.5;
@@ -405,7 +405,7 @@ main h1:focus {
    display: flex;
    gap: 16px;
    align-items: start;
-   background: #e3e9f4;
+   background: var(--c-info-bg);
    border-radius: 0 2px 2px 0;
    padding: 18px 22px;
    line-height: 1.5;

@@ -9,3 +9,8 @@
 export function lowercaseFirst(label: string): string {
    return label.charAt(0).toLocaleLowerCase() + label.slice(1);
 }
+
+/** The sentence-initial form of a label: "de gemeente Utrecht" → "De gemeente Utrecht". */
+export function uppercaseFirst(label: string): string {
+   return label.charAt(0).toLocaleUpperCase() + label.slice(1);
+}

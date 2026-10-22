@@ -87,15 +87,15 @@ export function RegionList({
       }, {});
 
       return visibleRegions.map((region) => {
-         const isAmbiguous = nameCounts[region.region_name] > 1 && Boolean(region.csb_name);
-         const name = isAmbiguous ? `${region.region_name} - ${region.csb_name}` : region.region_name;
+         const isAmbiguous = nameCounts[region.region_name] > 1 && Boolean(region.csb);
+         const name = isAmbiguous ? `${region.region_name} - ${region.csb?.region_name}` : region.region_name;
          const stationNumber = isPollingStationList ? (region.station_number ?? undefined) : undefined;
          return {
             id: region.slug,
             label: formatStationLabel(name, stationNumber),
             sortName: region.region_name,
             stationNumber,
-            csbSlug: region.csb_slug ?? undefined,
+            csbSlug: region.csb?.slug,
          };
       });
    }, [regions, isPollingStationList]);
