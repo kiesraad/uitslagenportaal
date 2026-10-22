@@ -209,7 +209,9 @@ function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: 
             </span>
          </Link>
          {/* A sibling of the link, not a child: a button may not sit inside a link. */}
-         {isDoubleStation && <DoubleStationInfo label={t`Uitleg dubbel stembureau ${name}`} otherNumbers={otherNumbers} />}
+         {isDoubleStation && (
+            <DoubleStationInfo label={t`Uitleg dubbel stembureau ${name}`} otherNumbers={otherNumbers} />
+         )}
       </li>
    );
 }
