@@ -1,7 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
-import { SBTimeline } from "@/components/Timeline/SBTimeline.tsx";
+import { CSBTimeline } from "@/components/Timeline/CSBTimeline.tsx";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import IssueNotice from "../../components/ResultsPage/IssueNotice.tsx";
@@ -108,7 +108,7 @@ export function CSBPartyResultsPage() {
                ) : (
                   resultsPageContent
                )}
-               <SBTimeline variant={region.timeline_variant} dates={electionConfig.timeline_dates ?? []} />
+               <CSBTimeline dates={electionConfig.timeline_dates ?? []} documents={region.documents} region={region} />
                <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
             </div>
          </div>

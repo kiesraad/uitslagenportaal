@@ -11,6 +11,11 @@ from playwright_tests.election_states import (
     add_tk_candidate_lists,
     tk_definition,
 )
+from playwright_tests.timeline import CHECK, GSB, SB, expect_timeline_steps
+
+# Nederland spans several kieskringen, so only a kieskring's own pages have an HSB step.
+CSB_STEPS = ["De Kiesraad publiceert de uitslag", CHECK, GSB, SB]
+ROTTERDAM_STEPS = ["De Kiesraad publiceert de uitslag", CHECK, "Optelling kieskring Rotterdam", GSB, SB]
 
 pytestmark = [
     pytest.mark.playwright,
@@ -48,6 +53,7 @@ def test_after_definition_kieskringen_and_nederland_are_unpublished(page: Page):
     page.get_by_role("link", name="Rotterdam").click()
     expect(page).to_have_url(re.compile(r"/tk2025/hsb/10-rotterdam/resultaten/?$"))
     expect_unpublished_kieskring(page, "Rotterdam")
+    expect_timeline_steps(page, ROTTERDAM_STEPS)
 
     # The kieskring hangs under Nederland, whose gemeenten are listed per CSB.
     page.get_by_role("navigation", name="Kruimelpad").get_by_role("link", name="Nederland").click()
@@ -60,6 +66,7 @@ def test_after_definition_kieskringen_and_nederland_are_unpublished(page: Page):
     expect(
         page.get_by_role("heading", name="De telresultaten van Nederland zijn nog niet gepubliceerd")
     ).to_be_visible()
+    expect_timeline_steps(page, CSB_STEPS)
 
 
 def test_after_rotterdam_hsb_its_results_are_published(page: Page):
@@ -69,10 +76,12 @@ def test_after_rotterdam_hsb_its_results_are_published(page: Page):
 
     open_kieskring(page, "Rotterdam")
     expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510c"))).to_be_visible()
+    expect_timeline_steps(page, ROTTERDAM_STEPS)
     page.get_by_role("link", name="VVD").click()
     expect(page).to_have_url(re.compile(r"/tk2025/hsb/10-rotterdam/resultaten/[^/]+/?$"))
     expect(page.get_by_role("columnheader", name="Schiedam")).to_be_visible()
     expect(page.get_by_role("rowheader", name=re.compile(r"Brekelmans"))).to_have_count(1)
+    expect_timeline_steps(page, ROTTERDAM_STEPS)
 
     open_kieskring(page, "Leiden")
     expect_unpublished_kieskring(page, "Leiden")
@@ -85,10 +94,12 @@ def test_after_nederland_csb_the_party_matrix_is_per_kieskring(page: Page):
     add_nederland_csb(tk)
 
     page.goto("/tk2025/csb")
-    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510d"))).to_be_visible()
+    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510d")).first).to_be_visible()
+    expect_timeline_steps(page, CSB_STEPS)
     page.get_by_role("link", name="VVD").click()
     expect(page).to_have_url(re.compile(r"/tk2025/csb/nederland/resultaten/[^/]+/?$"))
     expect(page.get_by_role("columnheader", name="Leiden")).to_be_visible()
     expect(page.get_by_role("columnheader", name="Rotterdam")).to_be_visible()
     # One row although the candidate has a record on each kieskring's list.
     expect(page.get_by_role("rowheader", name=re.compile(r"Brekelmans"))).to_have_count(1)
+    expect_timeline_steps(page, CSB_STEPS)

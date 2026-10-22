@@ -23,7 +23,7 @@ export default function PollingStationPartyResultsPage() {
    const { data: region } = useSuspenseQuery(regionQuery);
    const { data: pollingStation } = useSuspenseQuery(pollingStationQuery);
 
-   const csbSlug = region.csb_slug ?? undefined;
+   const csbSlug = region.csb?.slug;
    const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(
       electionConfig.slug,
       region.slug,

@@ -531,8 +531,8 @@ def test_region_detail_disambiguates_waterschap_polling_station_by_csb_and_paren
     assert response.status_code == 200
     assert response.data["region_name"] == stembureau.region_name
     assert response.data["slug"] == stembureau.slug
-    assert response.data["csb_slug"] == waterschap.slug
-    assert response.data["csb_name"] == waterschap.region_name
+    assert response.data["csb"]["slug"] == waterschap.slug
+    assert response.data["csb"]["region_name"] == waterschap.region_name
     assert response.data["station_number"] == 1
 
 

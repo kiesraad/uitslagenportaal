@@ -1,8 +1,9 @@
 import { fireEvent, screen } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { TimelineDate } from "@/api/types";
-import { Timeline } from "@/components/Timeline/Timeline";
-import TimelineEntry, { getTimelineDate } from "@/components/Timeline/TimelineEntry";
+import type { ElectionDocument, TimelineDate } from "@/api/types";
+import { Timeline, TimelineContext, type TimelineContextProps } from "@/components/Timeline/Timeline";
+import TimelineEntry, { getTimelineDate, type TimelineEntryProps } from "@/components/Timeline/TimelineEntry";
 import { renderWithProviders } from "../../testUtils";
 
 const counted: TimelineDate = { event: "sb_vote_count", date: "2026-03-17T21:00:00+01:00", qualifier: "from" };
@@ -13,13 +14,36 @@ const published: TimelineDate = {
    qualifier: "expected",
 };
 
+// Entries are written latest step first.
 function renderTimeline() {
    return renderWithProviders(
-      <Timeline>
+      <Timeline dates={[]}>
          <TimelineEntry key="published" date={published} title="Uitslag publiceren" />
-         <TimelineEntry key="counted" date={counted} title="Stemmen tellen" />
          <TimelineEntry key="checked" date={checked} title="Uitslag controleren" />
+         <TimelineEntry key="counted" date={counted} title="Stemmen tellen" />
       </Timeline>,
+   );
+}
+
+function document(overrides: Partial<ElectionDocument>): ElectionDocument {
+   return {
+      name: "telling.xml",
+      url: "/api/documents/1/download/",
+      type: "xml",
+      size: "1024",
+      description: "",
+      file_type: "EML510b",
+      correction_number: 1,
+      metadata: {},
+      ...overrides,
+   };
+}
+
+function renderEntry(entry: ReactElement<TimelineEntryProps>, context: Partial<TimelineContextProps> = {}) {
+   return renderWithProviders(
+      <TimelineContext value={{ dates: [], ...context }}>
+         <ol>{entry}</ol>
+      </TimelineContext>,
    );
 }
 
@@ -57,23 +81,6 @@ describe("Timeline", () => {
       expect(headingTexts()[0]).toMatch(/^Stemmen tellen/);
    });
 
-   it("puts a step with an unparseable date last in chronological order", () => {
-      localStorage.setItem("timeline-order-desc", JSON.stringify(false));
-      renderWithProviders(
-         <Timeline>
-            <TimelineEntry key="unknown" date={{ ...checked, date: "later" }} title="Uitslag controleren" />
-            <TimelineEntry key="published" date={published} title="Uitslag publiceren" />
-            <TimelineEntry key="counted" date={counted} title="Stemmen tellen" />
-         </Timeline>,
-      );
-
-      expect(headingTexts()).toEqual([
-         expect.stringMatching(/^Stemmen tellen/),
-         expect.stringMatching(/^Uitslag publiceren/),
-         expect.stringMatching(/^Uitslag controleren/),
-      ]);
-   });
-
    it("stores the order when it is flipped", () => {
       renderTimeline();
 
@@ -91,6 +98,33 @@ describe("TimelineEntry", () => {
       expect(screen.getByRole("heading", { name: "Stemmen tellen, afgerond" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "Uitslag controleren, bezig" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "Uitslag publiceren, nog niet gestart" })).toBeInTheDocument();
+   });
+
+   it("is pending when its date cannot be parsed", () => {
+      renderEntry(<TimelineEntry date={{ ...checked, date: "later" }} title="Uitslag controleren" />);
+
+      expect(screen.getByRole("heading", { name: "Uitslag controleren, nog niet gestart" })).toBeInTheDocument();
+   });
+
+   it("takes the date for its event from the timeline", () => {
+      renderEntry(<TimelineEntry event="sb_vote_count" title="Stemmen tellen" />, { dates: [counted] });
+
+      expect(screen.getByRole("heading", { name: "Stemmen tellen, afgerond" })).toBeInTheDocument();
+   });
+
+   it("lists only the timeline documents of its own types", () => {
+      renderEntry(<TimelineEntry date={counted} title="Stemmen tellen" document_types={["EML510b"]} />, {
+         documents: [
+            document({ url: "/api/documents/1/download/", file_type: "EML510b" }),
+            document({ url: "/api/documents/2/download/", file_type: "EML510c" }),
+         ],
+      });
+
+      expect(screen.getByRole("link", { name: /^EML_NL tellingbestand 510b/ })).toHaveAttribute(
+         "href",
+         "/api/documents/1/download/",
+      );
+      expect(screen.queryByRole("link", { name: /510c/ })).not.toBeInTheDocument();
    });
 });
 
