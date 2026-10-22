@@ -24,7 +24,7 @@ The application chart is divided into several yaml files, see ./k8s-config/appli
 - `05-celery.yaml`: Celery and Celery beat deployments.
 - `06-monitoring.yaml`: The `ServiceMonitor`s for the backend and the exporters, and the `PrometheusRule` with the
   application's alerts (only with `monitoring.enabled`).
-- `07-exporters.yaml`: Prometheus exporters for Redis and Celery (only with `monitoring.enabled`).
+- `07-exporters.yaml`: Prometheus exporters for PostgreSQL, Redis and Celery (only with `monitoring.enabled`).
 - `08-scraper.yaml`: The Celery worker for the PV scraper's `scraper` queue, in the Playwright worker image (only with
   `scraper.enabled`).
 - `99-services.yaml`: Several `StatefulSet`s for PostgreSQL/Redis/Object storage services (local deployments only).

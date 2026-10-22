@@ -1,0 +1,459 @@
+{
+   "uid": "postgres",
+   "title": "Postgres",
+   "description": "The managed database, from each environment's postgres-exporter. Connections are counted for the whole instance, which the environments share; everything else is the selected database.",
+   "tags": ["uitslagenportaal", "metrics"],
+   "timezone": "browser",
+   "schemaVersion": 41,
+   "editable": true,
+   "refresh": "1m",
+   "time": { "from": "now-6h", "to": "now" },
+   "templating": {
+      "list": [
+         {
+            "name": "datasource",
+            "label": "Data source",
+            "type": "datasource",
+            "query": "prometheus",
+            "hide": 2
+         },
+         {
+            "name": "namespace",
+            "label": "Namespace",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "${datasource}" },
+            "query": { "query": "label_values(pg_up, namespace)", "refId": "PrometheusVariableQueryEditor-VariableQuery" },
+            "refresh": 2,
+            "sort": 1
+         },
+         {
+            "name": "database",
+            "label": "Database",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "${datasource}" },
+            "query": {
+               "query": "label_values(pg_stat_user_tables_n_live_tup{namespace=\"$namespace\"}, datname)",
+               "refId": "PrometheusVariableQueryEditor-VariableQuery"
+            },
+            "refresh": 2,
+            "sort": 1
+         }
+      ]
+   },
+   "panels": [
+      {
+         "id": 1,
+         "type": "stat",
+         "title": "Exporter connected",
+         "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [{ "refId": "A", "expr": "pg_up{namespace=\"$namespace\"}", "instant": true }],
+         "fieldConfig": {
+            "defaults": {
+               "mappings": [
+                  {
+                     "type": "value",
+                     "options": {
+                        "0": { "text": "Down", "color": "red", "index": 0 },
+                        "1": { "text": "Up", "color": "green", "index": 1 }
+                     }
+                  }
+               ]
+            }
+         },
+         "options": { "colorMode": "background", "graphMode": "none" }
+      },
+      {
+         "id": 2,
+         "type": "stat",
+         "title": "Connections used",
+         "description": "Across the whole instance, against max_connections. PostgresConnectionSaturation fires above 80%.",
+         "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum(pg_stat_database_numbackends{namespace=\"$namespace\"}) / max(pg_settings_max_connections{namespace=\"$namespace\"})"
+            }
+         ],
+         "fieldConfig": {
+            "defaults": {
+               "unit": "percentunit",
+               "decimals": 0,
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     { "color": "green", "value": null },
+                     { "color": "orange", "value": 0.8 }
+                  ]
+               }
+            }
+         }
+      },
+      {
+         "id": 3,
+         "type": "stat",
+         "title": "Cache hit ratio",
+         "description": "Block reads served from shared buffers over the selected range.",
+         "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum(increase(pg_stat_database_blks_hit{namespace=\"$namespace\", datname=\"$database\"}[$__range])) / (sum(increase(pg_stat_database_blks_hit{namespace=\"$namespace\", datname=\"$database\"}[$__range])) + sum(increase(pg_stat_database_blks_read{namespace=\"$namespace\", datname=\"$database\"}[$__range])))",
+               "instant": true
+            }
+         ],
+         "fieldConfig": {
+            "defaults": {
+               "unit": "percentunit",
+               "decimals": 2,
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     { "color": "orange", "value": null },
+                     { "color": "green", "value": 0.99 }
+                  ]
+               }
+            }
+         },
+         "options": { "graphMode": "none" }
+      },
+      {
+         "id": 4,
+         "type": "stat",
+         "title": "Data size",
+         "description": "Tables plus their indexes and TOAST.",
+         "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum(pg_stat_user_tables_table_size_bytes{namespace=\"$namespace\", datname=\"$database\"}) + sum(pg_stat_user_tables_index_size_bytes{namespace=\"$namespace\", datname=\"$database\"})"
+            }
+         ],
+         "fieldConfig": { "defaults": { "unit": "bytes", "color": { "mode": "fixed", "fixedColor": "text" } } }
+      },
+      {
+         "id": 5,
+         "type": "stat",
+         "title": "Deadlocks",
+         "description": "Over the selected range.",
+         "gridPos": { "x": 16, "y": 0, "w": 4, "h": 4 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum(increase(pg_stat_database_deadlocks{namespace=\"$namespace\", datname=\"$database\"}[$__range]))",
+               "instant": true
+            }
+         ],
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     { "color": "green", "value": null },
+                     { "color": "red", "value": 1 }
+                  ]
+               }
+            }
+         },
+         "options": { "graphMode": "none" }
+      },
+      {
+         "id": 6,
+         "type": "stat",
+         "title": "Longest open transaction",
+         "description": "Of the connections that are not idle. A long one idle in transaction holds back vacuum.",
+         "gridPos": { "x": 20, "y": 0, "w": 4, "h": 4 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "max(pg_stat_activity_max_tx_duration{namespace=\"$namespace\", datname=\"$database\", state!=\"idle\"})"
+            }
+         ],
+         "fieldConfig": {
+            "defaults": {
+               "unit": "s",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     { "color": "green", "value": null },
+                     { "color": "orange", "value": 300 }
+                  ]
+               }
+            }
+         }
+      },
+      {
+         "id": 7,
+         "type": "timeseries",
+         "title": "Connections by database",
+         "description": "Every database on the instance, since they all count towards max_connections.",
+         "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum by (datname) (pg_stat_database_numbackends{namespace=\"$namespace\", datname!~\"template.*\"})",
+               "legendFormat": "{{datname}}"
+            },
+            {
+               "refId": "B",
+               "expr": "max(pg_settings_max_connections{namespace=\"$namespace\"})",
+               "legendFormat": "max_connections"
+            }
+         ],
+         "fieldConfig": {
+            "defaults": { "custom": { "stacking": { "mode": "normal" }, "fillOpacity": 30 } },
+            "overrides": [
+               {
+                  "matcher": { "id": "byName", "options": "max_connections" },
+                  "properties": [
+                     { "id": "custom.stacking", "value": { "mode": "none" } },
+                     { "id": "custom.fillOpacity", "value": 0 },
+                     { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 10] } },
+                     { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }
+                  ]
+               }
+            ]
+         }
+      },
+      {
+         "id": 8,
+         "type": "timeseries",
+         "title": "Connections by state",
+         "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum by (state) (pg_stat_activity_count{namespace=\"$namespace\", datname=\"$database\"})",
+               "legendFormat": "{{state}}"
+            }
+         ],
+         "fieldConfig": {
+            "defaults": { "custom": { "stacking": { "mode": "normal" }, "fillOpacity": 30 } }
+         }
+      },
+      {
+         "id": 9,
+         "type": "timeseries",
+         "title": "Transactions",
+         "gridPos": { "x": 0, "y": 12, "w": 8, "h": 8 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum(rate(pg_stat_database_xact_commit{namespace=\"$namespace\", datname=\"$database\"}[$__rate_interval]))",
+               "legendFormat": "commit"
+            },
+            {
+               "refId": "B",
+               "expr": "sum(rate(pg_stat_database_xact_rollback{namespace=\"$namespace\", datname=\"$database\"}[$__rate_interval]))",
+               "legendFormat": "rollback"
+            }
+         ],
+         "fieldConfig": { "defaults": { "unit": "ops" } }
+      },
+      {
+         "id": 10,
+         "type": "timeseries",
+         "title": "Rows written",
+         "description": "An import shows as a burst of inserts and deletes.",
+         "gridPos": { "x": 8, "y": 12, "w": 8, "h": 8 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum(rate(pg_stat_database_tup_inserted{namespace=\"$namespace\", datname=\"$database\"}[$__rate_interval]))",
+               "legendFormat": "inserted"
+            },
+            {
+               "refId": "B",
+               "expr": "sum(rate(pg_stat_database_tup_updated{namespace=\"$namespace\", datname=\"$database\"}[$__rate_interval]))",
+               "legendFormat": "updated"
+            },
+            {
+               "refId": "C",
+               "expr": "sum(rate(pg_stat_database_tup_deleted{namespace=\"$namespace\", datname=\"$database\"}[$__rate_interval]))",
+               "legendFormat": "deleted"
+            }
+         ],
+         "fieldConfig": { "defaults": { "unit": "rowsps" } }
+      },
+      {
+         "id": 11,
+         "type": "timeseries",
+         "title": "Rows read",
+         "description": "Returned is what scans read, fetched what reached the client; a wide gap means scanning more than is used.",
+         "gridPos": { "x": 16, "y": 12, "w": 8, "h": 8 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum(rate(pg_stat_database_tup_returned{namespace=\"$namespace\", datname=\"$database\"}[$__rate_interval]))",
+               "legendFormat": "returned"
+            },
+            {
+               "refId": "B",
+               "expr": "sum(rate(pg_stat_database_tup_fetched{namespace=\"$namespace\", datname=\"$database\"}[$__rate_interval]))",
+               "legendFormat": "fetched"
+            }
+         ],
+         "fieldConfig": { "defaults": { "unit": "rowsps" } }
+      },
+      {
+         "id": 12,
+         "type": "timeseries",
+         "title": "Longest transaction by state",
+         "gridPos": { "x": 0, "y": 20, "w": 8, "h": 8 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "max by (state) (pg_stat_activity_max_tx_duration{namespace=\"$namespace\", datname=\"$database\", state!=\"idle\"})",
+               "legendFormat": "{{state}}"
+            }
+         ],
+         "fieldConfig": { "defaults": { "unit": "s" } }
+      },
+      {
+         "id": 13,
+         "type": "timeseries",
+         "title": "Locks by mode",
+         "gridPos": { "x": 8, "y": 20, "w": 8, "h": 8 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum by (mode) (pg_locks_count{namespace=\"$namespace\", datname=\"$database\"}) > 0",
+               "legendFormat": "{{mode}}"
+            }
+         ],
+         "fieldConfig": {
+            "defaults": { "custom": { "stacking": { "mode": "normal" }, "fillOpacity": 30 } }
+         }
+      },
+      {
+         "id": 14,
+         "type": "timeseries",
+         "title": "Temporary files",
+         "description": "Sorts and hashes that did not fit in work_mem and spilled to disk.",
+         "gridPos": { "x": 16, "y": 20, "w": 8, "h": 8 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum(rate(pg_stat_database_temp_bytes{namespace=\"$namespace\", datname=\"$database\"}[$__rate_interval]))",
+               "legendFormat": "written"
+            }
+         ],
+         "fieldConfig": { "defaults": { "unit": "Bps" } }
+      },
+      {
+         "id": 15,
+         "type": "table",
+         "title": "Tables",
+         "description": "Sizes include indexes and TOAST. Dead rows pile up when autovacuum falls behind.",
+         "gridPos": { "x": 0, "y": 28, "w": 24, "h": 12 },
+         "datasource": { "type": "prometheus", "uid": "${datasource}" },
+         "targets": [
+            {
+               "refId": "A",
+               "expr": "sum by (relname) (pg_stat_user_tables_table_size_bytes{namespace=\"$namespace\", datname=\"$database\"})",
+               "format": "table",
+               "instant": true
+            },
+            {
+               "refId": "B",
+               "expr": "sum by (relname) (pg_stat_user_tables_index_size_bytes{namespace=\"$namespace\", datname=\"$database\"})",
+               "format": "table",
+               "instant": true
+            },
+            {
+               "refId": "C",
+               "expr": "sum by (relname) (pg_stat_user_tables_n_live_tup{namespace=\"$namespace\", datname=\"$database\"})",
+               "format": "table",
+               "instant": true
+            },
+            {
+               "refId": "D",
+               "expr": "sum by (relname) (pg_stat_user_tables_n_dead_tup{namespace=\"$namespace\", datname=\"$database\"})",
+               "format": "table",
+               "instant": true
+            },
+            {
+               "refId": "E",
+               "expr": "sum by (relname) (rate(pg_stat_user_tables_seq_scan{namespace=\"$namespace\", datname=\"$database\"}[$__range]))",
+               "format": "table",
+               "instant": true
+            },
+            {
+               "refId": "F",
+               "expr": "max by (relname) (pg_stat_user_tables_last_autovacuum{namespace=\"$namespace\", datname=\"$database\"}) * 1000 > 0",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "transformations": [
+            { "id": "merge", "options": {} },
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": { "Time": true },
+                  "indexByName": {
+                     "relname": 0,
+                     "Value #A": 1,
+                     "Value #B": 2,
+                     "Value #C": 3,
+                     "Value #D": 4,
+                     "Value #E": 5,
+                     "Value #F": 6
+                  },
+                  "renameByName": {
+                     "relname": "Table",
+                     "Value #A": "Table size",
+                     "Value #B": "Index size",
+                     "Value #C": "Live rows",
+                     "Value #D": "Dead rows",
+                     "Value #E": "Sequential scans",
+                     "Value #F": "Last autovacuum"
+                  }
+               }
+            }
+         ],
+         "options": {
+            "showHeader": true,
+            "sortBy": [{ "displayName": "Table size", "desc": true }]
+         },
+         "fieldConfig": {
+            "defaults": {},
+            "overrides": [
+               {
+                  "matcher": { "id": "byRegexp", "options": "Table size|Index size" },
+                  "properties": [{ "id": "unit", "value": "bytes" }]
+               },
+               {
+                  "matcher": { "id": "byRegexp", "options": "Live rows|Dead rows" },
+                  "properties": [{ "id": "unit", "value": "short" }]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Sequential scans" },
+                  "properties": [
+                     { "id": "unit", "value": "ops" },
+                     { "id": "decimals", "value": 2 }
+                  ]
+               },
+               {
+                  "matcher": { "id": "byName", "options": "Last autovacuum" },
+                  "properties": [{ "id": "unit", "value": "dateTimeFromNow" }]
+               }
+            ]
+         }
+      }
+   ]
+}
