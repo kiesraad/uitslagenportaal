@@ -11,16 +11,31 @@ from mainsite.serializers import (
     VoteCountSummarySerializer,
     VoterTurnoutCountSummarySerializer,
 )
-from region.models import Region
+from region.models import Region, parse_station_number
+
+
+class SameLocationStationsField(serializers.Field):
+    """The other stembureaus at the same location, from the view's `same_location_stations` annotation."""
+
+    def __init__(self, **kwargs):
+        super().__init__(source="*", read_only=True, **kwargs)
+
+    def to_representation(self, region):
+        stations = [
+            {"station_number": parse_station_number(station["region_number"]), "slug": station["slug"]}
+            for station in getattr(region, "same_location_stations", None) or []
+        ]
+        return sorted(stations, key=lambda station: station["station_number"] or 0)
 
 
 class RegionListSerializer(serializers.ModelSerializer):
     csb = RegionSummarySerializer(read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
+    same_location_stations = SameLocationStationsField()
 
     class Meta:
         model = Region
-        fields = ("region_name", "slug", "region_category", "csb", "station_number")
+        fields = ("region_name", "slug", "region_category", "csb", "station_number", "same_location_stations")
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):
@@ -32,6 +47,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     timeline_variant = serializers.SerializerMethodField()
     election_slug = serializers.CharField(source="election.slug", read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
+    same_location_stations = SameLocationStationsField()
     csb = RegionSummarySerializer(read_only=True)
     hsb = RegionSummarySerializer(read_only=True)
 
@@ -50,6 +66,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "results_available_at",
             "election_slug",
             "station_number",
+            "same_location_stations",
             "is_csb",
             "csb",
             "has_hsb",

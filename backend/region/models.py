@@ -22,6 +22,14 @@ def build_region_slug(region_number, region_name: str) -> str:
     return f"{number_slug}-{name_to_slug(region_name)}"[:49]
 
 
+def parse_station_number(region_number: str | None) -> int | None:
+    """Polling-station number from a stembureau region_number (`0203::SB1` → 1)."""
+    if not region_number:
+        return None
+    station = str(region_number).split("::")[-1].removeprefix("SB")
+    return int(station) if station.isdigit() else None
+
+
 class Region(BaseModel):
     election = models.ForeignKey(
         "election.Election",
@@ -49,6 +57,8 @@ class Region(BaseModel):
         choices=RegionCategory.choices,
     )
     region_name = models.CharField(max_length=255, db_index=True)
+    # Stembureaus only; together with region_name it identifies the voting location.
+    postal_code = models.CharField(max_length=16, null=True, blank=True)
 
     counting_method = models.CharField(
         max_length=3,
@@ -65,10 +75,9 @@ class Region(BaseModel):
     @property
     def station_number(self) -> int | None:
         """Polling-station number from region_number (`0203::SB1` → 1); otherwise None."""
-        if self.region_category != RegionCategory.STEMBUREAU or not self.region_number:
+        if self.region_category != RegionCategory.STEMBUREAU:
             return None
-        station = str(self.region_number).split("::")[-1].removeprefix("SB")
-        return int(station) if station.isdigit() else None
+        return parse_station_number(self.region_number)
 
     @property
     def is_csb(self) -> bool:

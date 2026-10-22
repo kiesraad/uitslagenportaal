@@ -289,6 +289,14 @@ msgstr "This website in other languages:"
 msgid "Deze website is actief vanaf 1 dag vóór de verkiezingen tot drie maanden erna. Wilt u uitslagen van eerdere verkiezingen bekijken?"
 msgstr "This website is active from 1 day before the elections until three months afterwards. Would you like to view results of earlier elections?"
 
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "Dit is een dubbel stembureau"
+msgstr "This is a double polling station"
+
+#: src/components/ListPage/RegionList.tsx
+msgid "Dubbel stembureau"
+msgstr "Double polling station"
+
 #: src/pages/ReportIssuePage.tsx
 msgid "Een fout melden"
 msgstr "Reporting a mistake"
@@ -630,6 +638,10 @@ msgstr "The documents below contain the latest counting results for the municipa
 msgid "Ongeldige stemmen"
 msgstr "Invalid votes"
 
+#: src/components/ListPage/RegionList.tsx
+msgid "Ook stembureau {otherNumbers} op deze locatie"
+msgstr "Polling station {otherNumbers} is at this location too"
+
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "Op de avond van de stemming tellen de stembureaus alleen de stemmen per lijst. Het GSB telt de volgende dag de stemmen per lijst en per kandidaat. Dit wordt ook wel 'centraal tellen' genoemd."
 msgstr "On the evening of the vote, the polling stations only count the votes per list. The next day the municipal electoral committee counts the votes per list and per candidate. This is also known as a 'centralised count'."
@@ -645,6 +657,10 @@ msgstr "On this page:"
 #: src/pages/HomePage.tsx
 msgid "Op deze website publiceert de Kiesraad de telresultaten van alle gemeenten en stembureaus. Je vindt hier ook de brondocumenten waarin stembureaus hun tellingen hebben opgeschreven. Zo kan iedereen controleren of de stemmen goed zijn geteld en in de definitieve uitslag terecht zijn gekomen."
 msgstr "On this website De Kiesraad publishes the counting results of every municipality and polling station. You will also find the source documents in which polling stations recorded their counts, so that anyone can check whether the votes were counted correctly and made it into the final result."
+
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "Op dezelfde locatie zit ook {otherStationLinks}."
+msgstr "The same location also houses {otherStationLinks}."
 
 #: src/pages/HomePage.tsx
 msgid "Op dit moment zijn er nog geen telresultaten van een verkiezing beschikbaar. Wanneer de dag van stemming nadert, zal een verkiezing met bijbehorende regio's worden aangemaakt. Vanaf de dag van stemming zullen via deze pagina de tellingen worden weergegeven. Na 3 maanden worden de resultaten weer verwijderd."
@@ -795,6 +811,10 @@ msgstr "States"
 msgid "Stembureau"
 msgstr "Polling station"
 
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "stembureau {stationNumber}"
+msgstr "polling station {stationNumber}"
+
 #: src/utils/region.ts
 msgid "Stembureaus"
 msgstr "Polling stations"
@@ -922,6 +942,10 @@ msgstr "You can no longer report a mistake"
 #: src/components/ResultsPage/RegionResultsContent.tsx
 msgid "Uitgebrachte stemmen"
 msgstr "Votes cast"
+
+#: src/components/ListPage/RegionList.tsx
+msgid "Uitleg dubbel stembureau {name}"
+msgstr "About double polling station {name}"
 
 #: src/components/Footer.tsx
 msgid "Uitleg over telproces"

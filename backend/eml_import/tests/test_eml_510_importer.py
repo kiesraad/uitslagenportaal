@@ -392,6 +392,23 @@ def test_polling_station_name(name, expected):
     assert EML510bImporter._polling_station_name(unit) == expected
 
 
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("Heinkenszand, De Stenge (postcode: 4451 CZ)", "4451 CZ"),
+        ("Heinkenszand, De Stenge (postcode: 4451CZ)", "4451 CZ"),
+        ("Heinkenszand, De Stenge (postcode: 4451 cz)", "4451 CZ"),
+        ("Kralendijk (postcode: onbekend)", "onbekend"),
+        ("Nutsgebouw Zwammerdam", None),
+        ("Nutsgebouw Zwammerdam (postcode: )", None),
+    ],
+)
+def test_polling_station_postal_code(name, expected):
+    unit = make_reporting_unit("0654::SB1", name, [])
+
+    assert EML510bImporter._polling_station_postal_code(unit) == expected
+
+
 def test_parse_party_candidate_votecounts_builds_party_and_candidate_rows(
     ws_importer, ws_regions, ws_contest, ws_parties, ws_candidates
 ):
@@ -553,6 +570,16 @@ def test_ensure_polling_stations_creates_missing_stations(ws_regions):
     assert created.count() == 2
     # The polling stations hang off the gemeente, but their CSB is the election-tree root
     assert all(station.csb == ws_regions["waterschap"] for station in created)
+
+
+def test_ensure_polling_stations_stores_the_postal_code(ws_regions):
+    eml = make_polling_station_document(("0654::SB1", "Stembureau A (postcode: 4451 CZ)"), ("0654::SB2", "B"))
+    importer = EML510bImporter(fake_eml_file(), eml=eml)
+
+    stations = importer._ensure_polling_stations(ws_regions["gemeente"])
+
+    assert stations[("0654::SB1", "A")].postal_code == "4451 CZ"
+    assert stations[("0654::SB2", "B")].postal_code is None
 
 
 def test_ensure_polling_stations_reuses_existing_stations(ws_regions):

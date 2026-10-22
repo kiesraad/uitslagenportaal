@@ -145,7 +145,6 @@ a.results-image-container:hover {
    position: sticky;
    top: 1.5rem;
    align-self: start;
-   margin-top: 8.5rem;
 }
 
 .page-main-two-columns:has(.result-unpublished) .counting-results-column {
@@ -287,10 +286,4 @@ a.results-image-container:hover {
 
 .report-error-checklist-item-text {
    flex: 1;
-}
-
-@media (max-width: 1024px) {
-   .counting-results-column {
-      margin-top: 0;
-   }
 }

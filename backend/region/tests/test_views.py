@@ -564,6 +564,63 @@ def test_region_list_includes_station_number_for_stembureaus():
     }
 
 
+def make_station(gemeente, number, name, postal_code):
+    return RegionFactory(
+        election=gemeente.election,
+        parent=gemeente,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name=name,
+        region_number=f"0352::SB{number}",
+        slug=f"SB{number}-{name.lower().replace(' ', '-')}",
+        postal_code=postal_code,
+    )
+
+
+@pytest.mark.django_db
+def test_region_list_includes_the_other_stations_at_the_same_location():
+    gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE, slug="wijk-bij-duurstede")
+    make_station(gemeente, 1, "Huis van de Gemeente", "3961 BA")
+    make_station(gemeente, 2, "Huis van de Gemeente", "3961 BA")
+    make_station(gemeente, 3, "Gymzaal", "3961 AB")
+    make_station(gemeente, 4, "Gymzaal", "3962 CD")
+
+    response = list_regions(
+        gemeente.election, {"parent_region": gemeente.slug, "region_category": RegionCategory.STEMBUREAU}
+    )
+
+    assert response.status_code == 200
+    assert {region["station_number"]: region["same_location_stations"] for region in response.data} == {
+        1: [{"station_number": 2, "slug": "SB2-huis-van-de-gemeente"}],
+        2: [{"station_number": 1, "slug": "SB1-huis-van-de-gemeente"}],
+        3: [],
+        4: [],
+    }
+
+
+@pytest.mark.django_db
+def test_region_detail_without_postal_code_has_no_same_location_stations():
+    gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE, slug="wijk-bij-duurstede")
+    station = make_station(gemeente, 1, "Huis van de Gemeente", None)
+    make_station(gemeente, 2, "Huis van de Gemeente", None)
+
+    response = get_region(station.election, station.slug, {"level": "sb", "parent_region": gemeente.slug})
+
+    assert response.status_code == 200
+    assert response.data["same_location_stations"] == []
+
+
+@pytest.mark.django_db
+def test_region_detail_includes_the_other_stations_at_the_same_location():
+    gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE, slug="wijk-bij-duurstede")
+    station = make_station(gemeente, 1, "Huis van de Gemeente", "3961 BA")
+    make_station(gemeente, 2, "Huis van de Gemeente", "3961 BA")
+
+    response = get_region(station.election, station.slug, {"level": "sb", "parent_region": gemeente.slug})
+
+    assert response.status_code == 200
+    assert response.data["same_location_stations"] == [{"station_number": 2, "slug": "SB2-huis-van-de-gemeente"}]
+
+
 @pytest.mark.django_db
 def test_region_detail_includes_station_number_for_a_stembureau():
     gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE, slug="borsele")

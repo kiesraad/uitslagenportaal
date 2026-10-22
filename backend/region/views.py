@@ -1,4 +1,6 @@
-from django.db.models import Prefetch
+from django.contrib.postgres.expressions import ArraySubquery
+from django.db.models import OuterRef, Prefetch
+from django.db.models.functions import JSONObject
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
@@ -16,6 +18,21 @@ _DOCUMENT_FILE_TYPES_BY_REPORTING_LEVEL = {
     ReportingLevel.HSB: [ElectionDocument.FileType.EML_510C],
     ReportingLevel.CSB: [ElectionDocument.FileType.EML_510D, ElectionDocument.FileType.PDF_SB_ZIP],
 }
+
+
+def _with_same_location_stations(queryset):
+    """Annotate each stembureau with the other stembureaus at its location (a dubbel stembureau)."""
+    others = (
+        Region.objects.filter(
+            parent=OuterRef("parent"),
+            region_category=RegionCategory.STEMBUREAU,
+            region_name=OuterRef("region_name"),
+            postal_code=OuterRef("postal_code"),
+        )
+        .exclude(pk=OuterRef("pk"))
+        .values(json=JSONObject(region_number="region_number", slug="slug"))
+    )
+    return queryset.annotate(same_location_stations=ArraySubquery(others))
 
 
 class RegionListView(ListAPIView):
@@ -56,7 +73,7 @@ class RegionListView(ListAPIView):
             result = hsb_kieskringen(result)
         elif region_category:
             result = result.filter(region_category=region_category)
-        return result
+        return _with_same_location_stations(result)
 
 
 class RegionDetailView(RetrieveAPIView):
@@ -131,7 +148,7 @@ class RegionDetailView(RetrieveAPIView):
             queryset = queryset.filter(csb__slug=csb_slug)
 
         try:
-            return queryset.get()
+            return _with_same_location_stations(queryset).get()
         except Region.DoesNotExist:
             raise NotFound({"detail": "Region not found for this election."})
         except Region.MultipleObjectsReturned:
