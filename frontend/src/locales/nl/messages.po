@@ -261,6 +261,10 @@ msgstr "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zie
 msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen."
 msgstr "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen."
 
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen. Momenteel is het proces-verbaal nog niet gepubliceerd en daarom niet zichtbaar."
+msgstr "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen. Momenteel is het proces-verbaal nog niet gepubliceerd en daarom niet zichtbaar."
+
 #: src/components/ResultsPage/ResultsNotPublished.tsx
 msgid "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
 msgstr "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
@@ -445,10 +449,6 @@ msgstr "Het ondertekende proces-verbaal van het stembureau in een gemeente die C
 msgid "Het ondertekende proces-verbaal van het stembureau."
 msgstr "Het ondertekende proces-verbaal van het stembureau."
 
-#: src/components/ResultsPage/ResultsSourceBox.tsx
-msgid "Het proces-verbaal is nog niet ontvangen"
-msgstr "Het proces-verbaal is nog niet ontvangen"
-
 #: src/utils/region.ts
 msgid "het stembureau"
 msgstr "het stembureau"
@@ -464,10 +464,6 @@ msgstr "Het stembureau doet een sneltelling per partij. Het gemeentelijk stembur
 #: src/components/Timeline/Timeline.tsx
 msgid "Het stembureau doet een uitgebreide telling op het stembureau. Het gemeentelijk stembureau telt de volgende dag de uitkomsten bij elkaar op. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
 msgstr "Het stembureau doet een uitgebreide telling op het stembureau. Het gemeentelijk stembureau telt de volgende dag de uitkomsten bij elkaar op. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
-
-#: src/components/ResultsPage/ResultsSourceBox.tsx
-msgid "Het verschijnt hier zodra het is binnengekomen."
-msgstr "Het verschijnt hier zodra het is binnengekomen."
 
 #: src/utils/region.ts
 msgid "het waterschap"

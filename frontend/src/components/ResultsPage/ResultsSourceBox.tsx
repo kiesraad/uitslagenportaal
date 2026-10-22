@@ -1,4 +1,3 @@
-import { faHourglass } from "@fortawesome/free-regular-svg-icons";
 import { faArrowRight, faMaximize } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -21,60 +20,51 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
    const { formatDate } = useFormatters();
    const deadline = formatDate(electionConfig.issue_report_deadline, { delimiter: "at", withYear: false });
 
+   const heading = (
+      <h2 className="h4">
+         <Trans>Waar komen deze telresultaten vandaan?</Trans>
+      </h2>
+   );
+
+   if (!documentUrl || !previewUrl) {
+      return (
+         <div className="counting-results-infobox">
+            <InfoBox disableMargin>
+               {heading}
+               <span>
+                  <Trans>
+                     De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het
+                     proces-verbaal dat gemaakt is na het tellen van de stemmen. Momenteel is het proces-verbaal nog
+                     niet gepubliceerd en daarom niet zichtbaar.
+                  </Trans>
+               </span>
+            </InfoBox>
+         </div>
+      );
+   }
+
    return (
       <div className="counting-results-infobox">
          <InfoBox disableMargin>
-            <h2 className="h4">
-               <Trans>Waar komen deze telresultaten vandaan?</Trans>
-            </h2>
+            {heading}
             <span className="mb-2">
                <Trans>
                   De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het
                   proces-verbaal dat gemaakt is na het tellen van de stemmen.
                </Trans>
             </span>
-            {previewUrl ? (
-               <>
-                  {documentUrl ? (
-                     <a
-                        href={documentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="results-image-container mb-2"
-                     >
-                        <div className="results-image-resize" aria-hidden="true">
-                           <FontAwesomeIcon icon={faMaximize} />
-                        </div>
-                        <img src={previewUrl} alt={t`Proces-verbaal`} className="results-image" />
-                     </a>
-                  ) : (
-                     <div className="results-image-container mb-2">
-                        <div className="results-image-resize" aria-hidden="true">
-                           <FontAwesomeIcon icon={faMaximize} />
-                        </div>
-                        <img src={previewUrl} alt={t`Proces-verbaal`} className="results-image" />
-                     </div>
-                  )}
-                  {documentUrl ? (
-                     <p className="mb-3">
-                        <a href={documentUrl} target="_blank" rel="noopener noreferrer">
-                           <Trans>Bekijk het proces-verbaal</Trans>
-                           <FontAwesomeIcon icon={faArrowRight} />
-                        </a>
-                     </p>
-                  ) : null}
-               </>
-            ) : (
-               <div className="results-image-container results-image-pending mb-2">
-                  <FontAwesomeIcon icon={faHourglass} className="results-image-pending-icon" aria-hidden="true" />
-                  <p className="results-image-pending-title">
-                     <Trans>Het proces-verbaal is nog niet ontvangen</Trans>
-                  </p>
-                  <p className="results-image-pending-text">
-                     <Trans>Het verschijnt hier zodra het is binnengekomen.</Trans>
-                  </p>
+            <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="results-image-container mb-2">
+               <div className="results-image-resize" aria-hidden="true">
+                  <FontAwesomeIcon icon={faMaximize} />
                </div>
-            )}
+               <img src={previewUrl} alt={t`Proces-verbaal`} className="results-image" />
+            </a>
+            <p className="mb-3">
+               <a href={documentUrl} target="_blank" rel="noopener noreferrer">
+                  <Trans>Bekijk het proces-verbaal</Trans>
+                  <FontAwesomeIcon icon={faArrowRight} />
+               </a>
+            </p>
             <span className="mb-1">
                <Trans>
                   Soms gaat er iets mis bij het tellen, opschrijven of overtypen van de stemmen. Fouten die na{" "}
