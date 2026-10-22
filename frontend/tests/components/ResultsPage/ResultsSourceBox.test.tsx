@@ -67,6 +67,22 @@ describe("ResultsSourceBox", () => {
       expect(screen.getByText(/14 december om 10:00/)).toBeInTheDocument();
    });
 
+   it("Says the certified election document is not published when only the document exists", () => {
+      renderBox("nl", null, "/api/certified-documents/7/");
+
+      expect(screen.getByText(/Momenteel is het proces-verbaal nog niet gepubliceerd/)).toBeInTheDocument();
+      expect(screen.queryByRole("img", { name: "Proces-verbaal" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+   });
+
+   it("Says the certified election document is not published when only the preview exists", () => {
+      renderBox("nl", "/api/certified-documents/7/preview/", null);
+
+      expect(screen.getByText(/Momenteel is het proces-verbaal nog niet gepubliceerd/)).toBeInTheDocument();
+      expect(screen.queryByRole("img", { name: "Proces-verbaal" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+   });
+
    it("Renders the source box in English when that locale is active", () => {
       renderBox("en");
 

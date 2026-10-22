@@ -26,7 +26,7 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
       </h2>
    );
 
-   if (!previewUrl) {
+   if (!documentUrl || !previewUrl) {
       return (
          <div className="counting-results-infobox">
             <InfoBox disableMargin>
@@ -53,29 +53,18 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
                   proces-verbaal dat gemaakt is na het tellen van de stemmen.
                </Trans>
             </span>
-            {documentUrl ? (
-               <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="results-image-container mb-2">
-                  <div className="results-image-resize" aria-hidden="true">
-                     <FontAwesomeIcon icon={faMaximize} />
-                  </div>
-                  <img src={previewUrl} alt={t`Proces-verbaal`} className="results-image" />
-               </a>
-            ) : (
-               <div className="results-image-container mb-2">
-                  <div className="results-image-resize" aria-hidden="true">
-                     <FontAwesomeIcon icon={faMaximize} />
-                  </div>
-                  <img src={previewUrl} alt={t`Proces-verbaal`} className="results-image" />
+            <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="results-image-container mb-2">
+               <div className="results-image-resize" aria-hidden="true">
+                  <FontAwesomeIcon icon={faMaximize} />
                </div>
-            )}
-            {documentUrl ? (
-               <p className="mb-3">
-                  <a href={documentUrl} target="_blank" rel="noopener noreferrer">
-                     <Trans>Bekijk het proces-verbaal</Trans>
-                     <FontAwesomeIcon icon={faArrowRight} />
-                  </a>
-               </p>
-            ) : null}
+               <img src={previewUrl} alt={t`Proces-verbaal`} className="results-image" />
+            </a>
+            <p className="mb-3">
+               <a href={documentUrl} target="_blank" rel="noopener noreferrer">
+                  <Trans>Bekijk het proces-verbaal</Trans>
+                  <FontAwesomeIcon icon={faArrowRight} />
+               </a>
+            </p>
             <span className="mb-1">
                <Trans>
                   Soms gaat er iets mis bij het tellen, opschrijven of overtypen van de stemmen. Fouten die na{" "}
