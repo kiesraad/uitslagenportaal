@@ -29,7 +29,8 @@ def build_polling_station_pv_zip(gemeente_id: int) -> str | None:
                 # Corrections on the same polling station do not raise the count.
                 sb_with_pv_cnt=Count(
                     "children",
-                    filter=Q(children__documents__file_type__in=POLLING_STATION_PV_FILE_TYPES),
+                    filter=Q(children__documents__file_type__in=POLLING_STATION_PV_FILE_TYPES)
+                    & Q(children__documents__is_current=True),
                     distinct=True,
                 ),
             )

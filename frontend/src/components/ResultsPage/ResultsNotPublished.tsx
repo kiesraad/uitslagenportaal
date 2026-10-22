@@ -3,6 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { RegionCategory } from "../../api/types";
 import { InfoBox } from "../../components/InfoBox";
 import { getRegionLabels, regionWithName } from "../../utils/region";
+import {lowercaseFirst} from "@/utils/text.ts";
 
 type Props = {
    regionName: string;
@@ -14,7 +15,7 @@ export default function ResultsNotPublished({ regionName, regionCategory }: Prop
 
    const regionLabels = getRegionLabels(regionCategory);
    const regionLabel = regionCategory === "STAAT" ? t(msg`Nederland`) : t(regionWithName(regionCategory, regionName));
-   const csbName = t(regionLabels?.csbName ?? regionLabels.withArticle);
+   const csbName = lowercaseFirst(t(regionLabels?.csbName ?? regionLabels.withArticle));
 
    return (
       <div>

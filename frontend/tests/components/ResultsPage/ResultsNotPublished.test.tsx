@@ -39,7 +39,7 @@ describe("ResultsNotPublished", () => {
       ).toBeInTheDocument();
       expect(
          screen.getByText(
-            /De telresultaten en processen-verbaal van Nederland zijn hier te zien zodra De Kiesraad ze publiceert./,
+            /De telresultaten en processen-verbaal van Nederland zijn hier te zien zodra de Kiesraad ze publiceert./,
          ),
       ).toBeInTheDocument();
    });
