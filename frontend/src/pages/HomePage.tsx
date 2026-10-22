@@ -3,7 +3,7 @@ import { faCircleNotch, faRotateRight } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Link } from "react-router";
-import { HomePageTimeline } from "@/components/Timeline/HomePageTimeline.tsx";
+import { GenericTimeline } from "@/components/Timeline/GenericTimeline.tsx";
 import Button from "@/elements/Button.tsx";
 import { ExternalLinkIcon } from "@/elements/ExternalLinkIcon.tsx";
 import PageSection from "@/elements/PageSection.tsx";
@@ -113,7 +113,7 @@ export function HomePage() {
                      </Trans>
                   </p>
 
-                  <HomePageTimeline dates={election_configs[0].timeline_dates} />
+                  <GenericTimeline dates={election_configs[0].timeline_dates} />
                </PageSection>
 
                <PageSection className="max-w-5xl pt-0!">
