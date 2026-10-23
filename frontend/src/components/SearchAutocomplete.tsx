@@ -1,6 +1,15 @@
-import { Plural } from "@lingui/react/macro";
-import { type FocusEvent, type KeyboardEvent, type ReactNode, useCallback, useMemo, useState } from "react";
-import { Autocomplete, Input, Label, ListBox, ListBoxItem, SearchField, useFilter } from "react-aria-components";
+import { Plural, Trans } from "@lingui/react/macro";
+import { type FocusEvent, type KeyboardEvent, type ReactNode, useCallback, useMemo, useRef, useState } from "react";
+import {
+   Autocomplete,
+   Input,
+   Label,
+   ListBox,
+   ListBoxItem,
+   Popover,
+   SearchField,
+   useFilter,
+} from "react-aria-components";
 
 export type SearchListOption = {
    id: string;
@@ -41,10 +50,11 @@ export function useOptionMatcher() {
 function useSuggestions(options: SearchListOption[], query: string, maxSuggestions: number) {
    const matches = useOptionMatcher();
 
-   return useMemo(
-      () => options.filter((option) => matches(option, query)).slice(0, maxSuggestions),
-      [maxSuggestions, options, query, matches],
-   );
+   return useMemo(() => {
+      const suggestions = options.filter((option) => matches(option, query));
+      const slicedSuggestions = suggestions.slice(0, maxSuggestions);
+      return { suggestions: slicedSuggestions, total: suggestions.length };
+   }, [maxSuggestions, options, query, matches]);
 }
 
 export default function SearchAutocomplete({
@@ -60,8 +70,12 @@ export default function SearchAutocomplete({
 }: Props) {
    const [internalOpen, setInternalOpen] = useState(false);
    const open = isOpenProp ?? internalOpen;
-   const suggestions = useSuggestions(options, value, maxSuggestions);
+   const { suggestions, total } = useSuggestions(options, value, maxSuggestions);
    const isOpen = open && suggestions.length > 0;
+   const shown = suggestions.length;
+   const isTruncated = total > shown;
+   const triggerRef = useRef<HTMLDivElement>(null);
+   const popoverRef = useRef<HTMLElement>(null);
 
    function setOpen(next: boolean) {
       if (isOpenProp === undefined) {
@@ -89,8 +103,9 @@ export default function SearchAutocomplete({
    }
 
    // Clicking a suggestion focuses the listbox, so only close once focus leaves the input and listbox altogether.
+   // The popover is portalled out of this div, so its blur events bubble here but its elements aren't DOM children.
    function handleBlur(e: FocusEvent<HTMLDivElement>) {
-      if (!e.currentTarget.contains(e.relatedTarget)) {
+      if (!e.currentTarget.contains(e.relatedTarget) && !popoverRef.current?.contains(e.relatedTarget)) {
          setOpen(false);
       }
    }
@@ -101,37 +116,65 @@ export default function SearchAutocomplete({
             <Label className="mb-1 basis-full font-bold">{label}</Label>
             {/* biome-ignore lint/a11y/noStaticElementInteractions: onBlur only tracks focus leaving the controls inside. */}
             {/** biome-ignore lint/a11y/noNoninteractiveElementInteractions: onBlur only tracks focus leaving the controls inside */}
-            <div className="relative min-w-0 flex-1" onBlur={handleBlur}>
+            <div ref={triggerRef} className="min-w-0 flex-1" onBlur={handleBlur}>
                <Input
                   placeholder={placeholder}
                   onKeyDown={handleKeyDown}
                   className="w-full rounded-xs border border-blue-500 bg-white px-3 py-2.5 font-sans placeholder:text-gray-300 focus-visible:outline-blue-400 data-focused:outline-2 data-focused:outline-blue-400 sm:px-4 sm:py-3 [&::-webkit-search-cancel-button]:appearance-none"
                />
-               {isOpen && (
+               {/* Popover caps its height to the space left in the viewport, flipping above the input when that
+                   side has more; non-modal so focus stays in the input. */}
+               <Popover
+                  ref={popoverRef}
+                  triggerRef={triggerRef}
+                  isOpen={isOpen}
+                  isNonModal
+                  placement="bottom start"
+                  offset={4}
+                  className="flex w-(--trigger-width) flex-col rounded-xs border border-blue-500 bg-white"
+               >
                   <ListBox
                      aria-label={label}
-                     items={suggestions}
-                     className="absolute inset-x-0 top-full z-10 mt-1 max-h-75 divide-y divide-gray-200 overflow-y-auto rounded-xs border border-blue-500 bg-white empty:invisible"
+                     className="max-h-100 min-h-0 flex-1 divide-y divide-gray-200 overflow-y-auto"
                   >
-                     {(option) => (
-                        <ListBoxItem
-                           id={`${option.id}-${option.csbSlug ?? ""}`}
-                           textValue={option.label}
-                           onAction={() => handleSelect(option)}
-                           className="flex min-h-12 cursor-pointer select-none items-center p-3 data-focused:bg-blue-50 data-hovered:bg-blue-50"
-                        >
-                           {option.content ?? option.label}
-                        </ListBoxItem>
-                     )}
+                     {suggestions.map((option) => {
+                        const id = `${option.id}-${option.csbSlug ?? ""}`;
+                        return (
+                           <ListBoxItem
+                              key={id}
+                              id={id}
+                              textValue={option.label}
+                              onAction={() => handleSelect(option)}
+                              className="flex min-h-12 cursor-pointer select-none items-center p-3 data-focused:bg-blue-50 data-hovered:bg-blue-50"
+                           >
+                              {option.content ?? option.label}
+                           </ListBoxItem>
+                        );
+                     })}
                   </ListBox>
-               )}
+                  <p
+                     aria-hidden="true"
+                     onMouseDown={(e) => e.preventDefault()}
+                     className="border-gray-200 border-t bg-gray-50 px-3 py-1 text-gray-700 text-sm"
+                  >
+                     <Trans>
+                        {shown} van {total} resultaten
+                     </Trans>
+                  </p>
+               </Popover>
             </div>
          </SearchField>
          {/* Rendered always, so screen readers pick up changes to its text. */}
          <div role="status" className="sr-only">
-            {open && value.trim().length > 0 && (
-               <Plural value={suggestions.length} _0="Geen resultaten" one="# resultaat" other="# resultaten" />
-            )}
+            {open &&
+               value.trim().length > 0 &&
+               (isTruncated ? (
+                  <Trans>
+                     {shown} van {total} resultaten
+                  </Trans>
+               ) : (
+                  <Plural value={total} _0="Geen resultaten" one="# resultaat" other="# resultaten" />
+               ))}
          </div>
       </Autocomplete>
    );
