@@ -85,7 +85,7 @@ def test_unpublished_gemeente_has_no_axe_violations(page: Page):
     page.goto(CSB)
     page.get_by_role("link", name="Goes").click()
     expect(
-        page.get_by_role("heading", name="De telresultaten van de gemeente Goes zijn nog niet gepubliceerd")
+        page.get_by_role("heading", name="De telresultaten van gemeente Goes zijn nog niet gepubliceerd")
     ).to_be_visible()
     assert_no_axe_violations(page)
 
@@ -132,7 +132,9 @@ def test_hsb_pages_have_no_axe_violations(page: Page):
     _record_violations(page, reports)
 
     page.goto("/tk2025/hsb/10-rotterdam/resultaten")
-    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510c"))).to_be_visible()
+    expect(
+        page.locator("#results-timeline").get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510c"))
+    ).to_be_visible()
     _record_violations(page, reports)
 
     page.get_by_role("link", name="VVD").click()

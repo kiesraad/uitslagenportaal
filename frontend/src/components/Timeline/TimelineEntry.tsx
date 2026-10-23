@@ -154,7 +154,11 @@ export function SBVoteCountTimelineEntry() {
    const { variant = "DEFAULT" } = useTimelineContext();
 
    return (
-      <TimelineEntry event="sb_vote_count" title={t(SB_VOTE_COUNT_TITLES[variant])}>
+      <TimelineEntry
+         event="sb_vote_count"
+         title={t(SB_VOTE_COUNT_TITLES[variant])}
+         document_types={["PDF_N10-1", "PDF_N10-2"]}
+      >
          <p>
             {t(SB_VOTE_COUNT_BODIES[variant])}{" "}
             <strong>
@@ -167,7 +171,11 @@ export function SBVoteCountTimelineEntry() {
 
 export function GSBVoteCountTimelineEntry() {
    return (
-      <TimelineEntry event="municipality_vote_count" title={t`Optelling per gemeente`} document_types={["EML510b"]}>
+      <TimelineEntry
+         event="municipality_vote_count"
+         title={t`Optelling per gemeente`}
+         document_types={["EML510b", "PDF_NA31-1", "PDF_NA31-2", "PDF_NA31-2-B2"]}
+      >
          <p>
             <Trans>
                De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware
@@ -194,7 +202,11 @@ export function HSBVoteCountTimelineEntry() {
    }
 
    return (
-      <TimelineEntry event="electoral_district_vote_count" title={t`Optelling kieskring ${hsb.region_name}`}>
+      <TimelineEntry
+         event="electoral_district_vote_count"
+         title={t`Optelling kieskring ${hsb.region_name}`}
+         document_types={["EML510c", "PDF_O7"]}
+      >
          <p>
             <Trans>
                De resultaten van alle gemeenten in Kieskring {hsb.region_name} worden op het hoofdstembureau
@@ -224,7 +236,11 @@ export function CsbCheckTimelineEntry() {
    const csbName = useTimelineCsbName();
 
    return (
-      <TimelineEntry event="csb_check" title={t`Centraal Stembureau controleert`}>
+      <TimelineEntry
+         event="csb_check"
+         title={t`Centraal Stembureau controleert`}
+         document_types={["EML510d", "PDF_P22-1", "PDF_P22-2"]}
+      >
          <p>
             <Trans>
                {csbName} controleert de telresultaten van alle kieskringen, gemeenten en stembureaus. Zijn alle

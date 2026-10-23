@@ -100,7 +100,7 @@ describe("CSB name in the timeline", () => {
    it("names the gemeente, capitalised, for a gemeente CSB", () => {
       renderEntry(<CsbCheckTimelineEntry />, { region: region({ csb: summary({ region_name: "Utrecht" }) }) });
 
-      expect(screen.getByText(/^De gemeente Utrecht controleert de telresultaten/)).toBeInTheDocument();
+      expect(screen.getByText(/^Gemeente Utrecht controleert de telresultaten/)).toBeInTheDocument();
    });
 
    it("uses the region itself when it is the CSB", () => {
@@ -109,7 +109,7 @@ describe("CSB name in the timeline", () => {
       });
 
       expect(
-         screen.getByRole("heading", { level: 3, name: /^Het waterschap Delfland publiceert de uitslag/ }),
+         screen.getByRole("heading", { level: 3, name: /^Waterschap Delfland publiceert de uitslag/ }),
       ).toBeInTheDocument();
    });
 
