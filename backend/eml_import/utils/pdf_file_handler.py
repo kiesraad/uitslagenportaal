@@ -12,7 +12,7 @@ from django.db.models import Q
 from redis.exceptions import LockError
 
 from election.models import ElectionCategory, ElectionConfig, ElectionDocument
-from eml_import.exceptions import FileAlreadyImported, PDFImporterException
+from eml_import.exceptions import FileAlreadyImported, InvalidPDFException, PDFImporterException
 from eml_import.models import ImportedFileHash
 from mainsite.models import RegionCategory
 from region.models import Region
@@ -96,8 +96,11 @@ class PDFFileHandler:
             try:
                 if self._import_pv(file):
                     imported += 1
+            except InvalidPDFException as exc:
+                # A bad file must not stop the rest of this sweep. An invalid PDF stays invalid, so it is not retried.
+                logger.error("Failed to import proces-verbaal %s: %s", name, exc)
+                self._move_to_failed(file)
             except (IntegrityError, PDFImporterException) as exc:
-                # A bad file must not stop the rest of this sweep.
                 logger.error("Failed to import proces-verbaal %s: %s", name, exc)
                 self._count_failed_attempt(file)
             else:
@@ -109,17 +112,18 @@ class PDFFileHandler:
         return f"pdf-importer-attempts:{file.key}"
 
     def _count_failed_attempt(self, file: _StoragePdf) -> None:
+        """Count a failure that may resolve itself, such as a region whose EML is not imported yet."""
         key = self._attempts_key(file)
         cache.add(key, 0, timeout=ATTEMPTS_TIMEOUT)
-        if cache.incr(key) < MAX_IMPORT_ATTEMPTS:
-            return
+        if cache.incr(key) >= MAX_IMPORT_ATTEMPTS:
+            self._move_to_failed(file)
+
+    def _move_to_failed(self, file: _StoragePdf) -> None:
         with file.open("rb") as handle:
             moved_key = self.storage.save(f"{FAILED_PV_DIRECTORY}/{file.name}", handle)
         self.storage.delete(file.key)
-        cache.delete(key)
-        logger.error(
-            "Gave up on proces-verbaal %s after %d attempts, moved to %s", file.key, MAX_IMPORT_ATTEMPTS, moved_key
-        )
+        cache.delete(self._attempts_key(file))
+        logger.error("Gave up on proces-verbaal %s, moved to %s", file.key, moved_key)
 
     def _pdf_names(self, directory: str):
         directories, filenames = self.storage.listdir(directory)
@@ -165,7 +169,7 @@ class PDFFileHandler:
         try:
             document = pdfium.PdfDocument(content.getvalue())
         except Exception as exc:
-            raise PDFImporterException(f"{filename} is not a readable PDF") from exc
+            raise InvalidPDFException(f"{filename} is not a readable PDF") from exc
         try:
             election_id, model, region_name, csb_name, stembureau = (
                 document.get_metadata_value(key).strip()
@@ -174,10 +178,10 @@ class PDFFileHandler:
         finally:
             document.close()
         if not (election_id and model and region_name):
-            raise PDFImporterException(f"{filename} is missing PvElection, PvModel or PvRegionName")
+            raise InvalidPDFException(f"{filename} is missing PvElection, PvModel or PvRegionName")
         file_type = ElectionDocument.FileType.from_form_code(model)
         if file_type is None:
-            raise PDFImporterException(f"Unknown certified election document type {model} in {filename}")
+            raise InvalidPDFException(f"Unknown certified election document type {model} in {filename}")
         return election_id, file_type, region_name, csb_name or None, stembureau or None
 
     def _election_config(self, election_id: str) -> ElectionConfig:
@@ -201,9 +205,9 @@ class PDFFileHandler:
     ) -> Region:
         category = self._region_category(config, file_type)
         if category == RegionCategory.STEMBUREAU and not stembureau:
-            raise PDFImporterException("Polling-station form needs PvStembureau")
+            raise InvalidPDFException("Polling-station form needs PvStembureau")
         if config.category == ElectionCategory.WS.value and file_type in POLLING_STATION_PV_FILE_TYPES and not csb_name:
-            raise PDFImporterException("Waterschap polling-station form needs PvCsb")
+            raise InvalidPDFException("Waterschap polling-station form needs PvCsb")
 
         regions = Region.objects.filter(election__election_config=config, region_category=category)
         if csb_name:
@@ -215,7 +219,7 @@ class PDFFileHandler:
         if category == RegionCategory.STEMBUREAU:
             station = (stembureau or "").removeprefix("SB").lstrip("0")
             if not station.isdigit():
-                raise PDFImporterException(f"PvStembureau {stembureau!r} is not a stembureau number")
+                raise InvalidPDFException(f"PvStembureau {stembureau!r} is not a stembureau number")
             # Some EML pads the stembureau number: 0770::SB08.
             regions = regions.filter(
                 parent__region_name__iexact=region_name, region_number__iregex=rf"::SB0*{station}$"

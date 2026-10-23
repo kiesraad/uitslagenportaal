@@ -421,7 +421,8 @@ def test_logs_a_waterschap_polling_station_form_without_csb(caplog):
 
     assert imported == 0
     assert "needs PvCsb" in caplog.text
-    assert storages["pv_import"].exists(key)
+    assert not storages["pv_import"].exists(key)
+    assert storages["pv_import"].exists(f"{FAILED_PV_DIRECTORY}/n10.pdf")
 
 
 @pytest.mark.django_db
@@ -436,13 +437,23 @@ def test_logs_a_pdf_missing_identity_and_imports_the_rest(caplog):
     assert imported == 1
     assert ElectionDocument.objects.count() == 1
     assert "blank.pdf" in caplog.text
-    assert storages["pv_import"].exists(blank_key)
+    assert not storages["pv_import"].exists(blank_key)
     assert not storages["pv_import"].exists(key)
 
 
 @pytest.mark.django_db
-def test_moves_a_pdf_out_of_the_queue_after_the_last_failed_attempt():
+def test_moves_a_pdf_without_metadata_out_of_the_queue_at_once():
     key = write_pdf("blank.pdf", one_page_pdf(b"blank"))
+
+    PDFFileHandler(storages["pv_import"]).run()
+
+    assert not storages["pv_import"].exists(key)
+    assert storages["pv_import"].open(f"{FAILED_PV_DIRECTORY}/blank.pdf").read() == one_page_pdf(b"blank")
+
+
+@pytest.mark.django_db
+def test_moves_a_pdf_out_of_the_queue_after_the_last_failed_attempt():
+    key = write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
     handler = PDFFileHandler(storages["pv_import"])
 
     for _ in range(MAX_IMPORT_ATTEMPTS - 1):
@@ -451,7 +462,7 @@ def test_moves_a_pdf_out_of_the_queue_after_the_last_failed_attempt():
 
     handler.run()
     assert not storages["pv_import"].exists(key)
-    assert storages["pv_import"].open(f"{FAILED_PV_DIRECTORY}/blank.pdf").read() == one_page_pdf(b"blank")
+    assert storages["pv_import"].exists(f"{FAILED_PV_DIRECTORY}/TK2025_Nederland_NA31-2_Barneveld.pdf")
 
 
 @pytest.mark.django_db
