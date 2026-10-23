@@ -1,5 +1,6 @@
 import logging
 from datetime import timedelta
+from functools import cached_property
 from io import BytesIO
 from pathlib import Path
 
@@ -70,6 +71,12 @@ class _StoragePdf:
     def open(self, mode="rb"):
         return self._storage.open(self.key, mode)
 
+    @cached_property
+    def retry_key(self) -> str:
+        # A file uploaded again under the same name starts a new retry schedule.
+        modified = self._storage.get_modified_time(self.key).timestamp()
+        return f"pdf-importer-retry:{self.key}:{modified}"
+
 
 class PDFFileHandler:
     def __init__(self, storage: Storage, directory: str | None = None):
@@ -103,7 +110,7 @@ class PDFFileHandler:
         imported = 0
         for name in sorted(self._pdf_names(self.root_directory)):
             file = _StoragePdf(self.storage, name)
-            retry = cache.get(self._retry_key(file))
+            retry = cache.get(file.retry_key)
             if retry and timezone.now() < retry["retry_at"]:
                 continue
             try:
@@ -117,12 +124,8 @@ class PDFFileHandler:
                 logger.error("Failed to import proces-verbaal %s: %s", name, exc)
                 self._schedule_retry(file, retry["failures"] if retry else 0)
             else:
-                cache.delete(self._retry_key(file))
+                cache.delete(file.retry_key)
         return imported
-
-    @staticmethod
-    def _retry_key(file: _StoragePdf) -> str:
-        return f"pdf-importer-retry:{file.key}"
 
     def _schedule_retry(self, file: _StoragePdf, earlier_failures: int) -> None:
         """Retry a failure that may resolve itself, such as a region whose EML is not imported yet."""
@@ -130,13 +133,13 @@ class PDFFileHandler:
             self._move_to_failed(file)
             return
         retry = {"failures": earlier_failures + 1, "retry_at": timezone.now() + RETRY_DELAYS[earlier_failures]}
-        cache.set(self._retry_key(file), retry, timeout=RETRY_STATE_TIMEOUT)
+        cache.set(file.retry_key, retry, timeout=RETRY_STATE_TIMEOUT)
 
     def _move_to_failed(self, file: _StoragePdf) -> None:
         with file.open("rb") as handle:
             moved_key = self.storage.save(f"{FAILED_PV_DIRECTORY}/{file.name}", handle)
         self.storage.delete(file.key)
-        cache.delete(self._retry_key(file))
+        cache.delete(file.retry_key)
         logger.error("Gave up on proces-verbaal %s, moved to %s", file.key, moved_key)
 
     def _pdf_names(self, directory: str):

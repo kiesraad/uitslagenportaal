@@ -503,6 +503,19 @@ def test_moves_a_pdf_out_of_the_queue_after_the_last_retry(clock):
 
 
 @pytest.mark.django_db
+def test_a_file_uploaded_again_under_the_same_name_is_tried_at_once(clock, caplog):
+    name = "TK2025_Nederland_NA31-2_Barneveld.pdf"
+    write_pdf(name, pv_pdf(PvRegionName="Elsewhere"))
+    handler = PDFFileHandler(storages["pv_import"])
+    handler.run()
+
+    barneveld()
+    write_pdf(name)
+    assert handler.run() == 1
+    assert failures_of(caplog) == 1
+
+
+@pytest.mark.django_db
 def test_a_successful_import_resets_the_retries(clock, caplog):
     name = "TK2025_Nederland_NA31-2_Barneveld.pdf"
     write_pdf(name)
