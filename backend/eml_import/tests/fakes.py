@@ -144,6 +144,24 @@ def fake_eml_file(filename: str = "test.eml.xml") -> NamedBytesIO:
     return NamedBytesIO(f'<eml n="{next(_fake_eml_seq)}"/>'.encode(), filename)
 
 
+def fake_520_eml(
+    election_id: str,
+    election_name: str,
+    filename: str = "resultaat.eml.xml",
+    extra: str = "",
+) -> NamedBytesIO:
+    """Minimal 520: root Id plus ElectionIdentifier/@Id and ElectionName, enough to attach the file."""
+    xml = (
+        f"<EML Id='520'>"
+        f"<ElectionIdentifier Id='{election_id}'>"
+        f"<ElectionName>{election_name}</ElectionName>"
+        f"</ElectionIdentifier>"
+        f"{extra}"
+        f"</EML>"
+    )
+    return NamedBytesIO(xml.encode(), filename)
+
+
 def fake_osv43_csv(
     verkiezing: str,
     nummer: str,

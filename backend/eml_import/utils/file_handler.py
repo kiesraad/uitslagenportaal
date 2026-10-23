@@ -19,6 +19,7 @@ from eml_import.utils.csv_osv43_importer import CSVOsv43Importer
 from eml_import.utils.eml_110_importer import EML110aImporter
 from eml_import.utils.eml_230_importer import EML230bImporter
 from eml_import.utils.eml_510_importer import EML510bImporter, EML510cImporter, EML510dImporter
+from eml_import.utils.eml_520_importer import EML520Importer
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.utils.eml_type import CsvType, EmlType
 
@@ -45,6 +46,7 @@ class BaseFileHandler(ABC):
         EmlType.EML_510c: (Eml510, EML510cImporter),  # Telling HSB
         EmlType.EML_510d: (Eml510, EML510dImporter),  # Totaaltelling
         CsvType.CSV_OSV43: (None, CSVOsv43Importer),  # CSV telling
+        EmlType.EML_520: (None, EML520Importer),  # Resultaat
     }
 
     _VALID_EXTENSIONS = [".xml", ".csv"]
