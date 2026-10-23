@@ -30,6 +30,11 @@ _PREVIEW_SCALE = 2
 
 DEFAULT_PV_DIRECTORY = "pv_import_queue"
 
+# A PV that fails this many sweeps is moved here, so it is no longer retried.
+FAILED_PV_DIRECTORY = "pv_import_failed"
+MAX_IMPORT_ATTEMPTS = 5
+ATTEMPTS_TIMEOUT = 24 * 60 * 60
+
 # P22 is the centraal stembureau; that region's category comes from the election.
 _REGION_CATEGORY_BY_FILE_TYPE = {
     ElectionDocument.FileType.PDF_N10_1: RegionCategory.STEMBUREAU,
@@ -87,13 +92,34 @@ class PDFFileHandler:
     def _run_import(self) -> int:
         imported = 0
         for name in sorted(self._pdf_names(self.root_directory)):
+            file = _StoragePdf(self.storage, name)
             try:
-                if self._import_pv(_StoragePdf(self.storage, name)):
+                if self._import_pv(file):
                     imported += 1
             except (IntegrityError, PDFImporterException) as exc:
                 # A bad file must not stop the rest of this sweep.
                 logger.error("Failed to import proces-verbaal %s: %s", name, exc)
+                self._count_failed_attempt(file)
+            else:
+                cache.delete(self._attempts_key(file))
         return imported
+
+    @staticmethod
+    def _attempts_key(file: _StoragePdf) -> str:
+        return f"pdf-importer-attempts:{file.key}"
+
+    def _count_failed_attempt(self, file: _StoragePdf) -> None:
+        key = self._attempts_key(file)
+        cache.add(key, 0, timeout=ATTEMPTS_TIMEOUT)
+        if cache.incr(key) < MAX_IMPORT_ATTEMPTS:
+            return
+        with file.open("rb") as handle:
+            moved_key = self.storage.save(f"{FAILED_PV_DIRECTORY}/{file.name}", handle)
+        self.storage.delete(file.key)
+        cache.delete(key)
+        logger.error(
+            "Gave up on proces-verbaal %s after %d attempts, moved to %s", file.key, MAX_IMPORT_ATTEMPTS, moved_key
+        )
 
     def _pdf_names(self, directory: str):
         directories, filenames = self.storage.listdir(directory)

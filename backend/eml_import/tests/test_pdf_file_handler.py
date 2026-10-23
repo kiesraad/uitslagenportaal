@@ -10,7 +10,12 @@ from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
 from eml_import.models import ImportedFileHash
 from eml_import.tests.pdf_files import PDF_BYTES, barneveld, one_page_pdf, pv_pdf, write_pdf
-from eml_import.utils.pdf_file_handler import LOCK_TIMEOUT, PDFFileHandler
+from eml_import.utils.pdf_file_handler import (
+    FAILED_PV_DIRECTORY,
+    LOCK_TIMEOUT,
+    MAX_IMPORT_ATTEMPTS,
+    PDFFileHandler,
+)
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
 
@@ -433,6 +438,36 @@ def test_logs_a_pdf_missing_identity_and_imports_the_rest(caplog):
     assert "blank.pdf" in caplog.text
     assert storages["pv_import"].exists(blank_key)
     assert not storages["pv_import"].exists(key)
+
+
+@pytest.mark.django_db
+def test_moves_a_pdf_out_of_the_queue_after_the_last_failed_attempt():
+    key = write_pdf("blank.pdf", one_page_pdf(b"blank"))
+    handler = PDFFileHandler(storages["pv_import"])
+
+    for _ in range(MAX_IMPORT_ATTEMPTS - 1):
+        handler.run()
+    assert storages["pv_import"].exists(key)
+
+    handler.run()
+    assert not storages["pv_import"].exists(key)
+    assert storages["pv_import"].open(f"{FAILED_PV_DIRECTORY}/blank.pdf").read() == one_page_pdf(b"blank")
+
+
+@pytest.mark.django_db
+def test_a_successful_import_resets_the_failed_attempts():
+    name = "TK2025_Nederland_NA31-2_Barneveld.pdf"
+    key = write_pdf(name)
+    handler = PDFFileHandler(storages["pv_import"])
+    for _ in range(MAX_IMPORT_ATTEMPTS - 1):
+        handler.run()
+
+    barneveld()
+    assert handler.run() == 1
+
+    write_pdf(name, pv_pdf(b"another scan", PvRegionName="Elsewhere"))
+    handler.run()
+    assert storages["pv_import"].exists(key)
 
 
 @pytest.mark.django_db
