@@ -32,7 +32,7 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
                 self._delete(contest_data)
 
             # The contest can already exist for elections with one contest, but for elections with multiple contests
-            # we still need to create it. name is never set in 110a, so select on id/election only.
+            # we still need to create it. The 110a has no contest name, so select on id/election only.
             contest, _ = Contest.objects.update_or_create(
                 identifier=contest_data.contest_identifier.id,
                 election=self.election,
@@ -50,7 +50,7 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             candidates: list[Candidate] = []
             for affiliation in contest_data.affiliation:
                 # Some candidates are not affiliated to any party, in that case affiliation_identifier.registered_name
-                # is empty and we name the party 'Blanke lijst xx'.
+                # is empty and we name the party 'Blanco Lijst <list number>'.
                 list_number = self._list_number(affiliation)
                 registered_name = (
                     affiliation.affiliation_identifier.registered_name

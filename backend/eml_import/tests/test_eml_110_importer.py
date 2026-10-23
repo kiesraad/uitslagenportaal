@@ -251,7 +251,7 @@ def test_correction_updates_a_changed_region(election, regions):
     EML110aImporter(fake_eml_file(), eml=make_eml(regions=tree)).parse()
 
     gemeente.refresh_from_db()
-    assert gemeente.region_name == "Borssele"
+    assert (gemeente.region_name, gemeente.slug) == ("Borssele", "654-borssele")
     assert gemeente.parent == regions[RegionCategory.KIESKRING]
 
 
