@@ -59,8 +59,16 @@ def import_election_config(data: dict) -> ElectionConfig:
     if not lock.acquire():
         raise ImportInProgressError(f"Commits are still being imported for election config {identifier}")
 
+    logger.warning(
+        "GitHub branch(es) changed for election config %s; wiping previously imported election data.",
+        election_config.identifier,
+    )
     try:
-        _wipe_election_data(election_config)
+        # Blanked and committed in its own transaction, ahead of the wipe after.
+        for field in _BRANCH_FIELDS:
+            setattr(election_config, field, None)
+        election_config.save(update_fields=_BRANCH_FIELDS)
+        wipe_election_data(election_config)
         return _save_election_config(election_config, identifier, election_data, data, source_hash)
     finally:
         try:
@@ -69,17 +77,7 @@ def import_election_config(data: dict) -> ElectionConfig:
             logger.warning("Lock for %s expired while wiping election data", identifier)
 
 
-def _wipe_election_data(election_config: ElectionConfig) -> None:
-    logger.warning(
-        "GitHub branch(es) changed for election config %s; wiping previously imported election data.",
-        election_config.identifier,
-    )
-
-    # Blanked and committed in its own transaction, ahead of the wipe below.
-    for field in _BRANCH_FIELDS:
-        setattr(election_config, field, None)
-    election_config.save(update_fields=_BRANCH_FIELDS)
-
+def wipe_election_data(election_config: ElectionConfig) -> None:
     with transaction.atomic():
         # The rows are the only reference to the stored documents, so the keys have
         # to be collected before the cascade deletes ElectionDocument along with them.
