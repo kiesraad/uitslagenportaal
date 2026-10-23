@@ -45,21 +45,24 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
                     f"AffiliationIdentifier/@Id missing for party "
                     f"{affiliation.affiliation_identifier.registered_name or self.BLANCO_PARTY_REGISTERED_NAME}"
                 )
+
+                # Some candidates are not affiliated to any party, in that case affiliation_identifier.registered_name
+                # is empty and we name the party 'Blanke lijst xx'.
                 list_number = int(affiliation.affiliation_identifier.id)
-                try:
-                    party = Party.objects.get(
-                        election=self.election,
-                        registered_name=affiliation.affiliation_identifier.registered_name,
-                    )
-                    party.list_number = list_number
-                    party.save(update_fields=["list_number", "updated_at"])
-                except Party.DoesNotExist:
-                    # Some candidates are not affiliated to any party
-                    party, _ = Party.objects.get_or_create(
-                        election=self.election,
-                        registered_name=f"{self.BLANCO_PARTY_REGISTERED_NAME} {list_number}",
+                registered_name = (
+                    affiliation.affiliation_identifier.registered_name
+                    or f"{self.BLANCO_PARTY_REGISTERED_NAME} {list_number}"
+                )
+                # We can receive 110a/230b files in any order, so we need to create missing parties with their
+                # list number and not expect them to have been created on 110a import. If they exist,
+                # we only update the list number.
+                party, _ = Party.objects.update_or_create(
+                    election=self.election,
+                    registered_name=registered_name,
+                    defaults=dict(
                         list_number=list_number,
-                    )
+                    ),
+                )
 
                 for candidate in affiliation.candidate:
                     identifier = int(candidate.candidate_identifier.id)

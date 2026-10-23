@@ -173,6 +173,14 @@ def test_assigns_list_number_to_registered_party(contest, party, election):
     assert Party.objects.filter(election=election).count() == 1
 
 
+def test_creates_registered_party_with_list_number_when_110a_was_not_imported(election):
+    EML230bImporter(fake_eml_file(), eml=make_eml()).parse()
+
+    party = Party.objects.get(election=election)
+    assert (party.registered_name, party.list_number) == (REGISTERED_NAME, LIST_NUMBER)
+    assert party.candidates.count() == 2
+
+
 def test_creates_blanco_party_for_affiliation_without_registered_name(election):
     blanco = make_affiliation(12, None, [make_candidate(1, "T.E.", "Theo", "Richel")])
 
