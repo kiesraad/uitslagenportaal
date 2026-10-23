@@ -191,6 +191,31 @@ def test_creates_blanco_party_for_affiliation_without_registered_name(election):
     assert party.candidates.get().last_name == "Richel"
 
 
+def test_deletes_registered_party_that_has_no_list(election, party):
+    # A 110a registers every appellation, also those of parties that did not submit a list
+    without_list = PartyFactory(election=election, registered_name="Partij zonder lijst")
+
+    EML230bImporter(fake_eml_file(), eml=make_eml()).parse()
+
+    assert not Party.objects.filter(pk=without_list.pk).exists()
+    assert Party.objects.filter(pk=party.pk).exists()
+
+
+def test_deletes_party_whose_list_number_is_not_in_the_list(election, party):
+    other_party = PartyFactory(election=election, registered_name="VVD", list_number=2)
+
+    EML230bImporter(fake_eml_file(), eml=make_eml()).parse()
+
+    assert not Party.objects.filter(pk=other_party.pk).exists()
+
+
+def test_correction_deletes_party_dropped_from_the_list(contest, party, election):
+    blanco = make_affiliation(2, None, [make_candidate(1, "T.E.", "Theo", "Richel")])
+    EML230bImporter(fake_eml_file(), eml=make_eml(affiliations=[blanco])).parse()
+
+    assert list(Party.objects.filter(election=election).values_list("registered_name", flat=True)) == ["Blanco Lijst 2"]
+
+
 def test_correction_deletes_prior_contest_and_candidates(contest, party):
     EML230bImporter(fake_eml_file(), eml=make_eml()).parse()
 

@@ -89,6 +89,11 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             if candidates:
                 Candidate.objects.bulk_create(candidates, batch_size=self.BULK_BATCH_SIZE)
 
+            # The 230b decides which parties take part: this drops parties the 110a registered without a list,
+            # and parties (blanco ones too) whose list number is gone after a correction.
+            list_numbers = [int(affiliation.affiliation_identifier.id) for affiliation in contest_data.affiliation]
+            Party.objects.filter(election=self.election).exclude(list_number__in=list_numbers).delete()
+
     def _is_correction(self, contest_data) -> bool:
         """
         The EML 230b file being imported is a correction if the contest exists and candidates exist for the contest.
