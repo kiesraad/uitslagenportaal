@@ -76,9 +76,28 @@ TK2025_ELECTION_SEED = {
     },
     "timeline_dates": TIMELINE_DATES,
 }
+EP2024_ELECTION_SEED = {
+    "election": {
+        "id": "EP2024",
+        "label": "Europees Parlementsverkiezing 2024",
+        "category": "EP",
+        "date": "2026-09-12T10:00:00",
+        "issue_report_opens_at": "2026-08-18T11:00:00",
+        "issue_report_deadline": "2026-09-12T10:00:00",
+        "gh_counting_results_branch": "auto-ep2024-tel",
+        "gh_exchange_branch": "auto-ep2024-uit",
+    },
+    "timeline_dates": TIMELINE_DATES,
+}
 
 
-ELECTION_SEED = [WS2023_ELECTION_SEED, PS2023_ELECTION_SEED, GR2026_ELECTION_SEED, TK2025_ELECTION_SEED]
+ELECTION_SEED = [
+    WS2023_ELECTION_SEED,
+    PS2023_ELECTION_SEED,
+    GR2026_ELECTION_SEED,
+    TK2025_ELECTION_SEED,
+    EP2024_ELECTION_SEED,
+]
 
 
 class Command(BaseCommand):
