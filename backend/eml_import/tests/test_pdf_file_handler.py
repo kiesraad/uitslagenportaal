@@ -1,10 +1,12 @@
 import hashlib
 import logging
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
 from django.core.cache import cache
 from django.core.files.storage import default_storage, storages
+from django.utils import timezone
 
 from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
@@ -13,7 +15,7 @@ from eml_import.tests.pdf_files import PDF_BYTES, barneveld, one_page_pdf, pv_pd
 from eml_import.utils.pdf_file_handler import (
     FAILED_PV_DIRECTORY,
     LOCK_TIMEOUT,
-    MAX_IMPORT_ATTEMPTS,
+    RETRY_DELAYS,
     PDFFileHandler,
 )
 from mainsite.models import RegionCategory
@@ -451,13 +453,48 @@ def test_moves_a_pdf_without_metadata_out_of_the_queue_at_once():
     assert storages["pv_import"].open(f"{FAILED_PV_DIRECTORY}/blank.pdf").read() == one_page_pdf(b"blank")
 
 
+@pytest.fixture
+def clock(monkeypatch):
+    """Freeze `timezone.now`; `clock.advance(delta)` moves it on."""
+
+    class Clock:
+        now = timezone.now()
+
+        def advance(self, delta):
+            self.now += delta
+
+    frozen = Clock()
+    monkeypatch.setattr(timezone, "now", lambda: frozen.now)
+    return frozen
+
+
+def failures_of(caplog) -> int:
+    return sum("Failed to import proces-verbaal" in record.getMessage() for record in caplog.records)
+
+
 @pytest.mark.django_db
-def test_moves_a_pdf_out_of_the_queue_after_the_last_failed_attempt():
+def test_retries_a_failed_pdf_only_once_its_delay_has_passed(clock, caplog):
+    write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
+    handler = PDFFileHandler(storages["pv_import"])
+
+    handler.run()
+    clock.advance(RETRY_DELAYS[0] - timedelta(seconds=1))
+    handler.run()
+    assert failures_of(caplog) == 1
+
+    clock.advance(timedelta(seconds=1))
+    handler.run()
+    assert failures_of(caplog) == 2
+
+
+@pytest.mark.django_db
+def test_moves_a_pdf_out_of_the_queue_after_the_last_retry(clock):
     key = write_pdf("TK2025_Nederland_NA31-2_Barneveld.pdf")
     handler = PDFFileHandler(storages["pv_import"])
 
-    for _ in range(MAX_IMPORT_ATTEMPTS - 1):
+    for delay in RETRY_DELAYS:
         handler.run()
+        clock.advance(delay)
     assert storages["pv_import"].exists(key)
 
     handler.run()
@@ -466,19 +503,21 @@ def test_moves_a_pdf_out_of_the_queue_after_the_last_failed_attempt():
 
 
 @pytest.mark.django_db
-def test_a_successful_import_resets_the_failed_attempts():
+def test_a_successful_import_resets_the_retries(clock, caplog):
     name = "TK2025_Nederland_NA31-2_Barneveld.pdf"
-    key = write_pdf(name)
+    write_pdf(name)
     handler = PDFFileHandler(storages["pv_import"])
-    for _ in range(MAX_IMPORT_ATTEMPTS - 1):
-        handler.run()
+    handler.run()
 
     barneveld()
+    clock.advance(RETRY_DELAYS[0])
     assert handler.run() == 1
 
     write_pdf(name, pv_pdf(b"another scan", PvRegionName="Elsewhere"))
     handler.run()
-    assert storages["pv_import"].exists(key)
+    clock.advance(RETRY_DELAYS[0])
+    handler.run()
+    assert failures_of(caplog) == 3
 
 
 @pytest.mark.django_db

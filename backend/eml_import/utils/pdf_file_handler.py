@@ -1,4 +1,5 @@
 import logging
+from datetime import timedelta
 from io import BytesIO
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import Storage, default_storage
 from django.db import IntegrityError, transaction
 from django.db.models import Q
+from django.utils import timezone
 from redis.exceptions import LockError
 
 from election.models import ElectionCategory, ElectionConfig, ElectionDocument
@@ -30,10 +32,18 @@ _PREVIEW_SCALE = 2
 
 DEFAULT_PV_DIRECTORY = "pv_import_queue"
 
-# A PV that fails this many sweeps is moved here, so it is no longer retried.
+# A PV is moved here once it is invalid or has used up its retries, so it is no longer tried.
 FAILED_PV_DIRECTORY = "pv_import_failed"
-MAX_IMPORT_ATTEMPTS = 5
-ATTEMPTS_TIMEOUT = 24 * 60 * 60
+# Waits after each failed try; a region whose EML is not imported yet may take a day to arrive.
+RETRY_DELAYS = (
+    timedelta(minutes=5),
+    timedelta(minutes=20),
+    timedelta(hours=1),
+    timedelta(hours=12),
+    timedelta(hours=24),
+)
+# Outlasts the whole schedule, so the retry state is not evicted halfway.
+RETRY_STATE_TIMEOUT = 2 * 24 * 60 * 60
 
 # P22 is the centraal stembureau; that region's category comes from the election.
 _REGION_CATEGORY_BY_FILE_TYPE = {
@@ -93,6 +103,9 @@ class PDFFileHandler:
         imported = 0
         for name in sorted(self._pdf_names(self.root_directory)):
             file = _StoragePdf(self.storage, name)
+            retry = cache.get(self._retry_key(file))
+            if retry and timezone.now() < retry["retry_at"]:
+                continue
             try:
                 if self._import_pv(file):
                     imported += 1
@@ -102,27 +115,28 @@ class PDFFileHandler:
                 self._move_to_failed(file)
             except (IntegrityError, PDFImporterException) as exc:
                 logger.error("Failed to import proces-verbaal %s: %s", name, exc)
-                self._count_failed_attempt(file)
+                self._schedule_retry(file, retry["failures"] if retry else 0)
             else:
-                cache.delete(self._attempts_key(file))
+                cache.delete(self._retry_key(file))
         return imported
 
     @staticmethod
-    def _attempts_key(file: _StoragePdf) -> str:
-        return f"pdf-importer-attempts:{file.key}"
+    def _retry_key(file: _StoragePdf) -> str:
+        return f"pdf-importer-retry:{file.key}"
 
-    def _count_failed_attempt(self, file: _StoragePdf) -> None:
-        """Count a failure that may resolve itself, such as a region whose EML is not imported yet."""
-        key = self._attempts_key(file)
-        cache.add(key, 0, timeout=ATTEMPTS_TIMEOUT)
-        if cache.incr(key) >= MAX_IMPORT_ATTEMPTS:
+    def _schedule_retry(self, file: _StoragePdf, earlier_failures: int) -> None:
+        """Retry a failure that may resolve itself, such as a region whose EML is not imported yet."""
+        if earlier_failures >= len(RETRY_DELAYS):
             self._move_to_failed(file)
+            return
+        retry = {"failures": earlier_failures + 1, "retry_at": timezone.now() + RETRY_DELAYS[earlier_failures]}
+        cache.set(self._retry_key(file), retry, timeout=RETRY_STATE_TIMEOUT)
 
     def _move_to_failed(self, file: _StoragePdf) -> None:
         with file.open("rb") as handle:
             moved_key = self.storage.save(f"{FAILED_PV_DIRECTORY}/{file.name}", handle)
         self.storage.delete(file.key)
-        cache.delete(self._attempts_key(file))
+        cache.delete(self._retry_key(file))
         logger.error("Gave up on proces-verbaal %s, moved to %s", file.key, moved_key)
 
     def _pdf_names(self, directory: str):
