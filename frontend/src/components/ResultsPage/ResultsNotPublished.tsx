@@ -1,16 +1,16 @@
-import {Trans, useLingui} from "@lingui/react/macro";
-import {lowercaseFirst} from "@/utils/text.ts";
-import type {RegionCategory} from "../../api/types";
-import {InfoBox} from "../../components/InfoBox";
-import {getRegionLabels, regionWithName} from "../../utils/region";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { lowercaseFirst } from "@/utils/text.ts";
+import type { RegionCategory } from "../../api/types";
+import { InfoBox } from "../../components/InfoBox";
+import { getRegionLabels, regionWithName } from "../../utils/region";
 
 type Props = {
    regionName: string;
    regionCategory: RegionCategory;
 };
 
-export default function ResultsNotPublished({regionName, regionCategory}: Props) {
-   const {t} = useLingui();
+export default function ResultsNotPublished({ regionName, regionCategory }: Props) {
+   const { t } = useLingui();
 
    const regionLabels = getRegionLabels(regionCategory);
    const regionLabel = t(regionWithName(regionCategory, regionName));

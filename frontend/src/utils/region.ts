@@ -7,7 +7,7 @@ import { appRoutes } from "./routes";
 /**
  * Labels for one kind of region.
  *
- * `whole`, `withArticle` and `withName` are whole phrases rather than fragments
+ * `whole`, `withArticle` and `name` are whole phrases rather than fragments
  * to be assembled at the call site: Dutch picks `Heel`/`Hele` and `de`/`het` by
  * the noun's gender, and English says "the municipality of Utrecht", neither of
  * which survives being composed in application code, so they live in the
@@ -25,7 +25,7 @@ export type RegionLabels = {
    withArticle: MessageDescriptor;
    /** The name as used in texts, e.g. "gemeente Utrecht" or "Nederland". Resolve with `regionWithName`. */
    name: MessageDescriptor;
-   /** The CSB name in case it differs from [withName] */
+   /** The CSB name, when it is not the region's `withArticle`. */
    csbName?: MessageDescriptor;
 };
 
@@ -88,7 +88,7 @@ export function getRegionLabels(regionType?: RegionCategory): RegionLabels {
    return regionTypeMapping[regionType] ?? FALLBACK_LABELS;
 }
 
-/** The `withName` phrase for a region, ready for `t()`: "de gemeente Utrecht". */
+/** The `name` phrase for a region, ready for `t()`: "gemeente Utrecht". */
 export function regionWithName(regionType: RegionCategory | undefined, name: string): MessageDescriptor {
    return { ...getRegionLabels(regionType).name, values: { name } };
 }

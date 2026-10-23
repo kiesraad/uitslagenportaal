@@ -18,7 +18,7 @@ pytestmark = pytest.mark.playwright
 _seeded = pytest.mark.usefixtures("seeded_database")
 
 # Drenthe is a single kieskring, which its CSB counts: there is no HSB step.
-PS_STEPS = ["De provincie Drenthe publiceert de uitslag", CHECK, GSB, SB]
+PS_STEPS = ["Provincie Drenthe publiceert de uitslag", CHECK, GSB, SB]
 
 
 @_seeded
@@ -129,7 +129,7 @@ def expect_ps_tabs(page: Page) -> None:
 def expect_unpublished_gemeente(page: Page, name: str) -> None:
     expect(page.get_by_role("heading", level=1, name=f"Gemeente {name}")).to_be_visible()
     expect(
-        page.get_by_role("heading", name=f"De telresultaten van de gemeente {name} zijn nog niet gepubliceerd")
+        page.get_by_role("heading", name=f"De telresultaten van gemeente {name} zijn nog niet gepubliceerd")
     ).to_be_visible()
     expect(page.get_by_role("link", name="Hele gemeente")).to_have_count(0)
     expect(page.get_by_role("link", name="Resultaten per stembureau")).to_have_count(0)
@@ -137,7 +137,7 @@ def expect_unpublished_gemeente(page: Page, name: str) -> None:
 
 def expect_unpublished_csb(page: Page) -> None:
     expect(
-        page.get_by_role("heading", name="De telresultaten van de provincie Drenthe zijn nog niet gepubliceerd")
+        page.get_by_role("heading", name="De telresultaten van provincie Drenthe zijn nog niet gepubliceerd")
     ).to_be_visible()
     expect(page.get_by_role("link", name="VVD")).to_have_count(0)
 

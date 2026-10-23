@@ -37,7 +37,7 @@ def open_kieskring(page: Page, name: str) -> None:
 
 def expect_unpublished_kieskring(page: Page, name: str) -> None:
     expect(
-        page.get_by_role("heading", name=f"De telresultaten van de kieskring {name} zijn nog niet gepubliceerd")
+        page.get_by_role("heading", name=f"De telresultaten van kieskring {name} zijn nog niet gepubliceerd")
     ).to_be_visible()
     expect(page.get_by_role("link", name="VVD")).to_have_count(0)
 
@@ -75,7 +75,9 @@ def test_after_rotterdam_hsb_its_results_are_published(page: Page):
     add_rotterdam_hsb(tk)
 
     open_kieskring(page, "Rotterdam")
-    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510c"))).to_be_visible()
+    expect(
+        page.locator("#results-timeline").get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510c"))
+    ).to_be_visible()
     expect_timeline_steps(page, ROTTERDAM_STEPS)
     page.get_by_role("link", name="VVD").click()
     expect(page).to_have_url(re.compile(r"/tk2025/hsb/10-rotterdam/resultaten/[^/]+/?$"))

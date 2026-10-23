@@ -27,7 +27,7 @@ pytestmark = pytest.mark.playwright
 _seeded = pytest.mark.usefixtures("seeded_database")
 
 # Scheldestromen is a single kieskring, which its CSB counts: there is no HSB step.
-WS_PUBLISH = "Het waterschap Scheldestromen publiceert de uitslag"
+WS_PUBLISH = "Waterschap Scheldestromen publiceert de uitslag"
 WS_STEPS = [WS_PUBLISH, CHECK, GSB, SB]
 
 
@@ -107,7 +107,7 @@ def test_csb_per_gemeente_shows_that_goes_has_no_results(page: Page):
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/resultaten/?$"))
     expect(page.get_by_role("heading", level=1, name="Gemeente Goes")).to_be_visible()
     expect(
-        page.get_by_role("heading", name="De telresultaten van de gemeente Goes zijn nog niet gepubliceerd")
+        page.get_by_role("heading", name="De telresultaten van gemeente Goes zijn nog niet gepubliceerd")
     ).to_be_visible()
     expect(page.get_by_role("link", name="Hele gemeente")).to_have_count(0)
     expect(page.get_by_role("link", name="Partij voor Zeeland")).to_have_count(0)
@@ -144,7 +144,7 @@ def expect_ws_tabs_without_hsb(page: Page) -> None:
 def expect_unpublished_gemeente(page: Page, name: str) -> None:
     expect(page.get_by_role("heading", level=1, name=f"Gemeente {name}")).to_be_visible()
     expect(
-        page.get_by_role("heading", name=f"De telresultaten van de gemeente {name} zijn nog niet gepubliceerd")
+        page.get_by_role("heading", name=f"De telresultaten van gemeente {name} zijn nog niet gepubliceerd")
     ).to_be_visible()
     expect(page.get_by_role("link", name="Hele gemeente")).to_have_count(0)
     expect(page.get_by_role("link", name="Resultaten per stembureau")).to_have_count(0)
@@ -152,9 +152,7 @@ def expect_unpublished_gemeente(page: Page, name: str) -> None:
 
 def expect_unpublished_csb(page: Page) -> None:
     expect(
-        page.get_by_role(
-            "heading", name="De telresultaten van het waterschap Scheldestromen zijn nog niet gepubliceerd"
-        )
+        page.get_by_role("heading", name="De telresultaten van waterschap Scheldestromen zijn nog niet gepubliceerd")
     ).to_be_visible()
     expect(page.get_by_role("link", name="Partij voor Zeeland")).to_have_count(0)
 
