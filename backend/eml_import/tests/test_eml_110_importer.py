@@ -29,9 +29,13 @@ from election.models import Contest, Election
 from election.tests.factories import ElectionConfigFactory
 from eml_import.exceptions import EMLImporterException
 from eml_import.tests.fakes import fake_eml_file
+from eml_import.tests.test_eml_230_importer import CONTEST_NAME, make_affiliation, make_candidate
+from eml_import.tests.test_eml_230_importer import make_eml as make_230b_eml
 from eml_import.utils.eml_110_importer import EML110aImporter
+from eml_import.utils.eml_230_importer import EML230bImporter
 from mainsite.models import RegionCategory
 from party.models import Party
+from party.tests.factories import PartyFactory
 from region.models import Region
 from region.tests.factories import RegionFactory
 
@@ -61,7 +65,7 @@ ELECTION_TREE = [
 ]
 
 
-def make_eml(*, regions: list[EmlRegion] | None = None, parties=("CDA",), contest_id=CONTEST_ID) -> Eml110a:
+def make_eml(*, regions: list[EmlRegion] | None = None, contest_id=CONTEST_ID) -> Eml110a:
     """A 110a document. Everything the importer does not read is filled in with constants."""
     if regions is None:
         regions = ELECTION_TREE
@@ -85,9 +89,7 @@ def make_eml(*, regions: list[EmlRegion] | None = None, parties=("CDA",), contes
                 ),
                 election_tree=ElectionTree(region=list(regions)),
                 registered_parties=RegisteredParties(
-                    registered_party=[
-                        RegisteredParty(registered_appellation=RegisteredAppellation(value=name)) for name in parties
-                    ]
+                    registered_party=[RegisteredParty(registered_appellation=RegisteredAppellation(value="CDA"))]
                 ),
             )
         ),
@@ -162,12 +164,13 @@ def test_kieskring_hangs_under_a_staat_without_a_region_number(election_config):
     assert regions[RegionCategory.GEMEENTE].csb == staat
 
 
-def test_creates_registered_parties(election_config):
-    EML110aImporter(fake_eml_file(), eml=make_eml(parties=("Partij voor Zeeland", "CDA"))).parse()
+def test_leaves_parties_to_the_candidate_lists(election):
+    # A blanco lijst is not a registered party, so it is never among the 110a's registered appellations
+    blanco = PartyFactory(election=election, registered_name="Blanco Lijst 12", list_number=12)
 
-    election = Election.objects.get(election_config=election_config)
-    names = Party.objects.filter(election=election).values_list("registered_name", flat=True)
-    assert set(names) == {"Partij voor Zeeland", "CDA"}
+    EML110aImporter(fake_eml_file(), eml=make_eml()).parse()
+
+    assert list(Party.objects.filter(election=election)) == [blanco]
 
 
 def test_creates_top_level_contest(election_config):
@@ -177,6 +180,30 @@ def test_creates_top_level_contest(election_config):
     contest = Contest.objects.get(election=election)
     # The 110a schema omits ContestName
     assert (contest.identifier, contest.name) == ("alle", None)
+
+
+def test_imports_after_the_candidate_list_of_a_single_contest_election(election_config):
+    blanco = make_affiliation(12, None, [make_candidate(1, "T.E.", "Theo", "Richel")])
+    EML230bImporter(fake_eml_file(), eml=make_230b_eml(affiliations=[blanco])).parse()
+    election = Election.objects.get(election_config=election_config)
+
+    EML110aImporter(fake_eml_file(), eml=make_eml()).parse()
+
+    contest = Contest.objects.get(election=election)
+    assert (contest.identifier, contest.name) == (CONTEST_ID, CONTEST_NAME)
+    assert Region.objects.filter(election=election).count() == 3
+    party = Party.objects.get(election=election)
+    assert (party.registered_name, party.candidates.count()) == ("Blanco Lijst 12", 1)
+
+
+def test_imports_after_a_candidate_list_of_a_multi_contest_election(election_config):
+    EML230bImporter(fake_eml_file(), eml=make_230b_eml(contest_id="1")).parse()
+    election = Election.objects.get(election_config=election_config)
+
+    EML110aImporter(fake_eml_file(), eml=make_eml(contest_id="alle")).parse()
+
+    assert set(Contest.objects.filter(election=election).values_list("identifier", flat=True)) == {"alle", "1"}
+    assert Region.objects.filter(election=election).count() == 3
 
 
 def test_correction_keeps_the_contest(election):
@@ -193,11 +220,9 @@ def test_correction_rejects_a_changed_contest(election):
     original_contest_id = Contest.objects.get(election=election).pk
 
     with pytest.raises(EMLImporterException, match="contest 'alle'"):
-        EML110aImporter(fake_eml_file(), eml=make_eml(contest_id="alle", parties=("VVD",))).parse()
+        EML110aImporter(fake_eml_file(), eml=make_eml(contest_id="alle")).parse()
 
-    # The whole correction is rolled back
     assert list(Contest.objects.filter(election=election).values_list("pk", flat=True)) == [original_contest_id]
-    assert set(Party.objects.filter(election=election).values_list("registered_name", flat=True)) == {"CDA"}
 
 
 def test_correction_keeps_the_contest_name_set_by_the_candidate_lists(election):
@@ -208,18 +233,12 @@ def test_correction_keeps_the_contest_name_set_by_the_candidate_lists(election):
     assert Contest.objects.get(election=election).name == "Scheldestromen"
 
 
-def test_correction_keeps_regions_and_parties_that_remain(election_config):
-    eml = make_eml(parties=("Partij voor Zeeland", "CDA"))
-
-    EML110aImporter(fake_eml_file(), eml=eml).parse()
-    election = Election.objects.get(election_config=election_config)
+def test_correction_keeps_regions_that_remain(election):
     original_region_ids = set(Region.objects.filter(election=election).values_list("pk", flat=True))
-    original_party_ids = set(Party.objects.filter(election=election).values_list("pk", flat=True))
 
-    EML110aImporter(fake_eml_file(), eml=eml).parse()
+    EML110aImporter(fake_eml_file(), eml=make_eml()).parse()
 
     assert set(Region.objects.filter(election=election).values_list("pk", flat=True)) == original_region_ids
-    assert set(Party.objects.filter(election=election).values_list("pk", flat=True)) == original_party_ids
 
 
 def test_correction_updates_a_changed_region(election, regions):
@@ -272,13 +291,3 @@ def test_correction_keeps_stembureaus(election, regions):
     EML110aImporter(fake_eml_file(), eml=make_eml()).parse()
 
     assert Region.objects.filter(pk=stembureau.pk).exists()
-
-
-def test_correction_deletes_parties_no_longer_registered(election_config):
-    EML110aImporter(fake_eml_file(), eml=make_eml(parties=("Partij voor Zeeland", "CDA"))).parse()
-    election = Election.objects.get(election_config=election_config)
-
-    EML110aImporter(fake_eml_file(), eml=make_eml(parties=("CDA",))).parse()
-
-    names = Party.objects.filter(election=election).values_list("registered_name", flat=True)
-    assert set(names) == {"CDA"}

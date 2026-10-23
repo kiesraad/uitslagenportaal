@@ -8,7 +8,6 @@ from eml_import.exceptions import EMLImporterException
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
-from party.models import Party
 from region.models import Region
 
 
@@ -17,6 +16,15 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
 
     eml_type = EmlType.EML_110a
     file_type = ElectionDocument.FileType.EML_110A
+
+    # The regions of the election tree; stembureaus come from the 510 counts.
+    TREE_CATEGORIES = (
+        RegionCategory.STAAT,
+        RegionCategory.WATERSCHAP,
+        RegionCategory.PROVINCIE,
+        RegionCategory.KIESKRING,
+        RegionCategory.GEMEENTE,
+    )
 
     def _get_election_identifier_data(self):
         return self.eml.election_event.election.election_identifier
@@ -28,11 +36,12 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
                 self._ensure_contest_unchanged()
             self._parse_contest()
             self._parse_regions()
-            self._parse_registered_parties()
+            # RegisteredParties is left alone: it also lists parties that submitted no list. The 230b creates parties.
         self.logger.info("Successfully imported data for Election")
 
     def _is_correction(self) -> bool:
-        if Contest.objects.filter(election=self.election).exists():
+        # Only a 110a creates the election tree; a 230b also creates contests, but no regions.
+        if Region.objects.filter(election=self.election, region_category__in=self.TREE_CATEGORIES).exists():
             self.logger.info(
                 "\033[32mCorrection detected for election '%s', eml_type: %s\033[0m",
                 self.election.name,
@@ -85,21 +94,6 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
             )
             imported_ids.append(region.pk)
 
-        # Stembureaus come from the 510 counts, not from the election tree.
-        Region.objects.filter(election=self.election).exclude(region_category=RegionCategory.STEMBUREAU).exclude(
+        Region.objects.filter(election=self.election, region_category__in=self.TREE_CATEGORIES).exclude(
             pk__in=imported_ids
         ).delete()
-
-    def _parse_registered_parties(self) -> None:
-        party_nodes = self.eml.election_event.election.registered_parties.registered_party
-        existing_parties = set(Party.objects.filter(election=self.election).values_list("registered_name", flat=True))
-        new_parties = {n.registered_appellation.value for n in party_nodes}
-        parties_to_delete = existing_parties - new_parties
-
-        for node in party_nodes:
-            Party.objects.get_or_create(
-                election=self.election,
-                registered_name=node.registered_appellation.value,
-            )
-
-        Party.objects.filter(election=self.election, registered_name__in=parties_to_delete).delete()

@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef
 from pyeml_bindings import (
     Eml230,
 )
@@ -39,29 +39,28 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
                 defaults={"name": contest_data.contest_identifier.contest_name},
             )
 
+            # Drops parties (blanco ones too) whose list number is gone after a correction, unless they still run in
+            # another contest (TK/PS kieskringen). Runs first, so the names and numbers it frees can be reused below.
+            list_numbers = {self._list_number(affiliation) for affiliation in contest_data.affiliation}
+            in_other_contest = Candidate.objects.filter(party=OuterRef("pk")).exclude(contest=contest)
+            Party.objects.filter(election=self.election).exclude(list_number__in=list_numbers).exclude(
+                Exists(in_other_contest)
+            ).delete()
+
             candidates: list[Candidate] = []
             for affiliation in contest_data.affiliation:
-                assert affiliation.affiliation_identifier.id, (
-                    f"AffiliationIdentifier/@Id missing for party "
-                    f"{affiliation.affiliation_identifier.registered_name or self.BLANCO_PARTY_REGISTERED_NAME}"
-                )
-
                 # Some candidates are not affiliated to any party, in that case affiliation_identifier.registered_name
                 # is empty and we name the party 'Blanke lijst xx'.
-                list_number = int(affiliation.affiliation_identifier.id)
+                list_number = self._list_number(affiliation)
                 registered_name = (
                     affiliation.affiliation_identifier.registered_name
                     or f"{self.BLANCO_PARTY_REGISTERED_NAME} {list_number}"
                 )
-                # We can receive 110a/230b files in any order, so we need to create missing parties with their
-                # list number and not expect them to have been created on 110a import. If they exist,
-                # we only update the list number.
+                # Matched on list number, so a correction can rename a list, e.g. give a blanco lijst its name.
                 party, _ = Party.objects.update_or_create(
                     election=self.election,
-                    registered_name=registered_name,
-                    defaults=dict(
-                        list_number=list_number,
-                    ),
+                    list_number=list_number,
+                    defaults={"registered_name": registered_name, "slug": Party.slug_for(registered_name)},
                 )
 
                 for candidate in affiliation.candidate:
@@ -89,10 +88,12 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             if candidates:
                 Candidate.objects.bulk_create(candidates, batch_size=self.BULK_BATCH_SIZE)
 
-            # The 230b decides which parties take part: this drops parties the 110a registered without a list,
-            # and parties (blanco ones too) whose list number is gone after a correction.
-            list_numbers = [int(affiliation.affiliation_identifier.id) for affiliation in contest_data.affiliation]
-            Party.objects.filter(election=self.election).exclude(list_number__in=list_numbers).delete()
+    def _list_number(self, affiliation) -> int:
+        assert affiliation.affiliation_identifier.id, (
+            f"AffiliationIdentifier/@Id missing for party "
+            f"{affiliation.affiliation_identifier.registered_name or self.BLANCO_PARTY_REGISTERED_NAME}"
+        )
+        return int(affiliation.affiliation_identifier.id)
 
     def _is_correction(self, contest_data) -> bool:
         """
