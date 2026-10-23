@@ -109,6 +109,55 @@ describe("RegionList", () => {
       expect(screen.getByRole("link", { name: "2De Regenboog" })).toBeInTheDocument();
    });
 
+   it("marks a dubbel stembureau with the other station number at its location", () => {
+      const stations: Region[] = [
+         {
+            region_name: "Huis van de Gemeente",
+            slug: "sb1-huis-van-de-gemeente",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 1,
+            same_location_stations: [{ station_number: 2, slug: "sb2-huis-van-de-gemeente" }],
+         },
+         {
+            region_name: "E & E Gasthuis",
+            slug: "sb3-e-e-gasthuis",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 3,
+            same_location_stations: [],
+         },
+      ];
+      renderRegionList({ regionCategory: "STEMBUREAU", regions: stations, parentRegionSlug: "wijk-bij-duurstede" });
+
+      expect(
+         screen.getByRole("link", {
+            name: "1Huis van de Gemeente, Dubbel stembureau, Ook stembureau 2 op deze locatie",
+         }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "3E & E Gasthuis" })).toBeInTheDocument();
+
+      const infoButton = screen.getByRole("button", { name: "Uitleg dubbel stembureau Huis van de Gemeente" });
+      fireEvent.click(infoButton);
+
+      expect(infoButton).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByText("Ook stembureau 2 op deze locatie")).toBeInTheDocument();
+
+      fireEvent.keyDown(document, { key: "Escape" });
+
+      expect(infoButton).toHaveAttribute("aria-expanded", "false");
+   });
+
    it("finds a stembureau by its padded station number", () => {
       const stations: Region[] = [
          {

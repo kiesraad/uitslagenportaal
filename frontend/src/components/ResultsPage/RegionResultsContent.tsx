@@ -2,6 +2,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import type { ElectionDocument, RegionCategory, VoteCount, VoteCounts, VoterTurnoutCount } from "@/api/types.ts";
 import { getPartyLevelVoteCounts } from "@/utils/voteCounts.ts";
+import { InfoBox } from "../InfoBox";
 import IssueNotice from "./IssueNotice";
 import ReportsWithResults from "./ReportsWithResults";
 import ResultsNotPublished from "./ResultsNotPublished";
@@ -11,6 +12,7 @@ import VotesResume from "./VotesResume";
 
 type Props = {
    intro: ReactNode;
+   notice?: ReactNode;
    voteCounts: VoteCounts | undefined;
    turnoutVotes: VoterTurnoutCount[] | undefined;
    reports?: {
@@ -26,6 +28,7 @@ type Props = {
 
 export default function RegionResultsContent({
    intro,
+   notice,
    voteCounts,
    turnoutVotes,
    reports,
@@ -42,6 +45,7 @@ export default function RegionResultsContent({
    const resultsContent = (
       <>
          <ResultsPageIndex />
+         {notice && <InfoBox disableMargin>{notice}</InfoBox>}
          <section id="telresultaten">
             <h2 className="mb-2">
                <Trans>Telresultaten</Trans>
