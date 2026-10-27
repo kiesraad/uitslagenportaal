@@ -78,18 +78,18 @@ def test_after_definition_kieskringen_and_nederland_are_unpublished(page: Page, 
     expect_unpublished_kieskring(page, "Rotterdam")
     expect_timeline_steps(page, ROTTERDAM_STEPS)
 
-    # The kieskring hangs under Nederland, whose gemeenten are listed per CSB.
+    # The breadcrumb leads to the same page as the Nederland tab.
     page.get_by_role("navigation", name="Kruimelpad").get_by_role("link", name="Nederland").click()
-    expect(page).to_have_url(re.compile(rf"/{slug}/csb/nederland/?$"))
-    expect(page.get_by_role("link", name="Schiedam")).to_be_visible()
-    expect(page.get_by_role("link", name="Katwijk")).to_be_visible()
-
-    page.goto(f"/{slug}/gsb")
-    page.get_by_role("link", name="Nederland").click()
+    expect(page).to_have_url(re.compile(rf"/{slug}/csb/?$"))
     expect(
         page.get_by_role("heading", name="De telresultaten van Nederland zijn nog niet gepubliceerd")
     ).to_be_visible()
     expect_timeline_steps(page, CSB_STEPS)
+
+    # Nederland's gemeenten are listed per CSB, also when they hang under a kieskring.
+    page.goto(f"/{slug}/csb/nederland")
+    expect(page.get_by_role("link", name="Schiedam")).to_be_visible()
+    expect(page.get_by_role("link", name="Katwijk")).to_be_visible()
 
 
 def test_after_rotterdam_hsb_its_results_are_published(page: Page, national: NationalElection):
