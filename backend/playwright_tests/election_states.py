@@ -213,6 +213,10 @@ def add_csb_totaaltelling(ws: WsPortal) -> None:
     _candidate_count(ws.contest, ws.waterschap, ws.zeeland, ws.minderhoud, 90, EmlType.EML_510d)
     _party_count(ws.contest, ws.borsele, ws.zeeland, 99, EmlType.EML_510d)
     _candidate_count(ws.contest, ws.borsele, ws.zeeland, ws.minderhoud, 70, EmlType.EML_510d)
+
+
+def add_csb_resultaat(ws: WsPortal) -> None:
+    ElectionDocumentFactory(region=ws.waterschap, file_type=ElectionDocument.FileType.EML_520, size=1024)
     # Goes has CSB numbers only: the matrix shows them, the GSB page must not.
     _party_count(ws.contest, ws.goes, ws.zeeland, 43, EmlType.EML_510d)
     _candidate_count(ws.contest, ws.goes, ws.zeeland, ws.minderhoud, 20, EmlType.EML_510d)

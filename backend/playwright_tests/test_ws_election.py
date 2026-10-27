@@ -14,6 +14,7 @@ from playwright_tests.election_states import (
     WS_LABEL,
     add_borsele_telling,
     add_candidate_lists,
+    add_csb_resultaat,
     add_csb_totaaltelling,
     add_home_timeline,
     expired_config,
@@ -312,3 +313,25 @@ def test_after_csb_totaaltelling_goes_stays_unpublished(page: Page):
     page.goto("/ab2023/gsb")
     page.get_by_role("link", name="Goes").click()
     expect_unpublished_gemeente(page, "Goes")
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("empty_database")
+def test_after_csb_resultaat_the_csb_lists_the_520_in_its_sources_and_at_the_check(page: Page):
+    ws = ws_definition()
+    add_candidate_lists(ws)
+    add_borsele_telling(ws)
+    add_csb_totaaltelling(ws)
+    add_csb_resultaat(ws)
+    resultaat = re.compile(r"EML_NL resultaatbestand 520")
+
+    page.goto("/ab2023/csb/17-scheldestromen/resultaten")
+    sources = page.get_by_role("heading", name="Brondocumenten").locator("..")
+    expect(sources.get_by_role("link", name=resultaat)).to_have_count(1)
+    check = (
+        timeline(page)
+        .get_by_role("listitem")
+        .filter(has=page.get_by_role("heading", level=3, name=re.compile(f"^{CHECK}")))
+    )
+    expect(check.get_by_role("link", name=resultaat)).to_have_count(1)
+    expect(timeline(page).get_by_role("link", name=resultaat)).to_have_count(1)
