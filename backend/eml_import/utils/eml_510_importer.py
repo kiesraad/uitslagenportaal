@@ -169,8 +169,7 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
         )
 
     def _get_contest(self, contest_identifier: str, reporting_unit_name: str | None = None) -> Contest:
-        if self.election.election_config.category == ElectionCategory.EP.value:
-            # EP has one national candidate list; 510c files use the kieskring number as contest identifier.
+        if ElectionCategory(self.election.election_config.category).config.single_contest:
             return Contest.objects.get(election=self.election)
         if reporting_unit_name is not None and contest_identifier == "alle":
             # 'alle' links the candidates to a contest per reporting unit, so get the contest by name.
