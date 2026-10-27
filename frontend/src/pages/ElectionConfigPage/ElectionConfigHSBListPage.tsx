@@ -8,6 +8,7 @@ import { RegionList } from "@/components/ListPage/RegionList.tsx";
 import PageTop from "@/components/PageTop.tsx";
 import { electionConfigQuery, regionsQuery } from "@/hooks/queries.ts";
 import { useFormatters } from "@/utils/format.ts";
+import { electionHasHsb } from "@/utils/region.ts";
 
 export function electionConfigHSBListLoader(queryClient: QueryClient) {
    return async ({ params }: LoaderFunctionArgs) => {
@@ -19,7 +20,7 @@ export function electionConfigHSBListLoader(queryClient: QueryClient) {
          queryClient.query(regionsQueryOptions),
       ]);
 
-      if (!electionConfig.has_hsb) {
+      if (!electionHasHsb(electionConfig)) {
          throw new ApiError("Election has no HSBs", 404);
       }
 

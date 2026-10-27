@@ -616,6 +616,11 @@ msgstr "After we receive your report, we investigate what is going on. If necess
 msgid "Nederland"
 msgstr "the Netherlands"
 
+#: src/components/ElectionConfigTabs.tsx
+msgctxt "tab"
+msgid "Nederland"
+msgstr "The Netherlands"
+
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "nog niet gestart"
 msgstr "not started yet"

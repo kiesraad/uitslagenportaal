@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import type { ElectionConfig } from "@/api/types";
 import SharedTabs from "@/components/SharedTabs.tsx";
-import { getRegionLabels } from "@/utils/region.ts";
+import { electionHasHsb, getRegionLabels } from "@/utils/region.ts";
 import { appRoutes } from "@/utils/routes.ts";
 
 type Props = {
@@ -10,7 +10,10 @@ type Props = {
 
 export default function ElectionConfigTabs({ electionConfig }: Props) {
    const { t } = useLingui();
-   const singleCsb = electionConfig.single_csb;
+   const csbLabel =
+      electionConfig.csb_type === "STAAT"
+         ? (electionConfig.single_csb?.region_name ?? t({ message: "Nederland", context: "tab" }))
+         : t(getRegionLabels(electionConfig.csb_type).plural);
 
    return (
       <SharedTabs
@@ -20,13 +23,13 @@ export default function ElectionConfigTabs({ electionConfig }: Props) {
                value: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                activePatterns: ["/:electionConfigSlug/gsb"],
             },
-            electionConfig.has_hsb && {
+            electionHasHsb(electionConfig) && {
                label: t(getRegionLabels("KIESKRING").plural),
                value: appRoutes.electionConfigHSBList(electionConfig.slug),
                activePatterns: ["/:electionConfigSlug/hsb"],
             },
             {
-               label: singleCsb ? singleCsb.region_name : t(getRegionLabels(electionConfig.csb_type).plural),
+               label: csbLabel,
                value: appRoutes.electionConfigCSBList(electionConfig.slug),
                activePatterns: ["/:electionConfigSlug/csb"],
             },

@@ -616,6 +616,11 @@ msgstr "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand i
 msgid "Nederland"
 msgstr "Nederland"
 
+#: src/components/ElectionConfigTabs.tsx
+msgctxt "tab"
+msgid "Nederland"
+msgstr "Nederland"
+
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "nog niet gestart"
 msgstr "nog niet gestart"

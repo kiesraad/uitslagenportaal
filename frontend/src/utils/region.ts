@@ -1,7 +1,7 @@
 // Helper mapping from csb_type to the labels used for that kind of region.
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import type { RegionCategory, RegionSummary } from "../api/types";
+import type { ElectionConfig, RegionCategory, RegionSummary } from "../api/types";
 import { appRoutes } from "./routes";
 
 /**
@@ -91,6 +91,11 @@ export function getRegionLabels(regionType?: RegionCategory): RegionLabels {
 /** The `withName` phrase for a region, ready for `t()`: "de gemeente Utrecht". */
 export function regionWithName(regionType: RegionCategory | undefined, name: string): MessageDescriptor {
    return { ...getRegionLabels(regionType).withName, values: { name } };
+}
+
+/** TK, EP and PS always have HSBs, but `has_hsb` only reports them once regions are imported. */
+export function electionHasHsb(electionConfig: Pick<ElectionConfig, "csb_type" | "has_hsb">): boolean {
+   return electionConfig.has_hsb || electionConfig.csb_type === "STAAT" || electionConfig.csb_type === "PROVINCIE";
 }
 
 export function formatStationLabel(name: string, stationNumber?: number | null): string {
