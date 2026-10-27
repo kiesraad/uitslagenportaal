@@ -224,7 +224,7 @@ export function CsbCheckTimelineEntry() {
    const csbName = useTimelineCsbName();
 
    return (
-      <TimelineEntry event="csb_check" title={t`Centraal Stembureau controleert`}>
+      <TimelineEntry event="csb_check" title={t`Centraal Stembureau controleert`} document_types={["EML520"]}>
          <p>
             <Trans>
                {csbName} controleert de telresultaten van alle kieskringen, gemeenten en stembureaus. Zijn alle

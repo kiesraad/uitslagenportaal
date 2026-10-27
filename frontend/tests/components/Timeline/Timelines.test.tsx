@@ -58,6 +58,13 @@ describe("CSBTimeline", () => {
    it("includes the HSB entry when the region has one", () => {
       expect(steps(<CSBTimeline dates={[]} region={gemeente} />)).toContain("Optelling kieskring Noord");
    });
+
+   it("passes the 520 document to the CSB check entry", () => {
+      const documents = [{ file_type: "EML520", url: "/api/documents/4/download/" }] as ElectionDocument[];
+      renderWithProviders(<CSBTimeline dates={[]} documents={documents} />);
+
+      expect(screen.getByRole("link", { name: /^EML_NL resultaatbestand 520/ })).toBeInTheDocument();
+   });
 });
 
 describe("HSBTimeline", () => {
