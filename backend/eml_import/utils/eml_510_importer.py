@@ -372,10 +372,7 @@ class EML510bImporter(EML510BaseImporter):
             vote_counts: list[VoteCount] = []
             turnout_counts: list[VoterTurnoutCount] = []
             for contest_data in self.eml.count.election.contests.contest:
-                contest = Contest.objects.get(
-                    identifier=contest_data.contest_identifier.id,
-                    election=self.election,
-                )
+                contest = self._get_contest(contest_data.contest_identifier.id)
                 candidate_by_key = {
                     (candidate.party_id, candidate.identifier): candidate
                     for candidate in Candidate.objects.filter(contest=contest)
