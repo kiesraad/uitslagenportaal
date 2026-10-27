@@ -367,8 +367,8 @@ class NationalPortal:
     schiedam: Region
     vvd: Party
     cda: Party
-    # In TK each kieskring has its own list, so one person has a candidate record on each.
-    # In EP both kieskringen share the national list and its single record.
+    # In TK each kieskring is its own contest, so one person has a candidate record per contest.
+    # In EP both kieskringen fall under the one national contest, so they share its single record.
     rotterdam_contest: Contest | None = None
     leiden_contest: Contest | None = None
     brekelmans_rotterdam: Candidate | None = None
