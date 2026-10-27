@@ -1,20 +1,16 @@
-import re
 from io import BytesIO
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from django.core.files.storage import default_storage
-from django.utils import timezone
-
 from election.models import Election, ElectionConfig, ElectionDocument
 from eml_import.exceptions import EMLImporterException
-from eml_import.utils.base_importer import BaseImporter
+from eml_import.utils.base_importer import BaseImporter, EMLStorageMixin
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.utils.eml_type import EmlType
 from region.models import Region
 
 
-class EML520Importer(BaseImporter):
+class EML520Importer(EMLStorageMixin, BaseImporter):
     """
     Store-only importer for EML 520 result files.
 
@@ -30,7 +26,9 @@ class EML520Importer(BaseImporter):
 
     def _parse_data(self):
         assert self.election is not None
-        self._store_eml(self._find_csb(self.election))
+        region = self._find_csb(self.election)
+        ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
+        self._store_eml(region)
 
     @classmethod
     def _find_election(cls, file_path: Path | NamedBytesIO) -> Election:
@@ -84,42 +82,3 @@ class EML520Importer(BaseImporter):
             raise EMLImporterException(
                 f"CSB region does not exist in the election definition of election {election.name}"
             ) from ex
-
-    def _store_eml(self, region: Region) -> None:
-        election_config = self.election.election_config
-        parent_number, parent_name = (
-            (region.parent.region_number, region.parent.region_name) if region.parent else (None, None)
-        )
-        filename = "_".join(
-            filter(
-                None,
-                [
-                    election_config.identifier,
-                    self.eml_type.label,
-                    parent_number,
-                    parent_name,
-                    region.region_number,
-                    region.region_name,
-                    timezone.now().strftime("%Y%m%dT%H%M%S%f"),
-                ],
-            )
-        )
-        filename = re.sub(r"[^A-Za-z0-9_-]", "", filename.replace(" ", "_"))
-        file_path = f"{election_config.identifier}/{filename}.eml.xml"
-
-        if isinstance(self.file_path, Path):
-            file_content = BytesIO(self.file_path.read_bytes())
-        else:
-            file_content = self.file_path
-        file_content.seek(0)
-        size = len(file_content.getvalue())
-        stored_file_path = default_storage.save(file_path, file_content)
-
-        ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
-        ElectionDocument.objects.create(
-            storage_key=stored_file_path,
-            region=region,
-            content_type="application/xml",
-            file_type=self.file_type,
-            size=size,
-        )

@@ -1,10 +1,8 @@
 import re
 from abc import ABC
 from datetime import datetime
-from io import BytesIO
 from pathlib import Path
 
-from django.core.files.storage import default_storage
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -23,6 +21,7 @@ from election.models import (
     VoterTurnoutCount,
 )
 from eml_import.exceptions import EMLImporterException
+from eml_import.utils.base_importer import EMLStorageMixin
 from eml_import.utils.csv_osv43_importer import HSB_NUMBER_RE
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
@@ -36,7 +35,7 @@ POSTAL_CODE_RE = re.compile(r"\(postcode:\s*([^)]*)\)")
 DUTCH_POSTAL_CODE_RE = re.compile(r"^(\d{4})\s*([A-Za-z]{2})$")
 
 
-class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
+class EML510BaseImporter(EMLStorageMixin, EMLBaseImporter[Eml510], ABC):
     file_type: ElectionDocument.FileType
 
     def __init__(self, file_path: Path | NamedBytesIO, eml: Eml510):
@@ -186,43 +185,6 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
                 self.eml_type,
             )
         return is_correction
-
-    def _store_eml(self, region: Region) -> None:
-        parent_number, parent_name = (
-            (region.parent.region_number, region.parent.region_name) if region.parent else (None, None)
-        )
-        filename = "_".join(
-            filter(
-                lambda x: x,
-                [
-                    self.election_config.identifier,
-                    self.eml_type.label,
-                    parent_number,
-                    parent_name,
-                    region.region_number,
-                    region.region_name,
-                    timezone.now().strftime("%Y%m%dT%H%M%S%f"),
-                ],
-            )
-        )
-        filename = re.sub(r"[^A-Za-z0-9_-]", "", filename.replace(" ", "_"))
-        file_path = f"{self.election_config.identifier}/{filename}.eml.xml"
-
-        if isinstance(self.file_path, Path):
-            file_content = BytesIO(self.file_path.read_bytes())
-        else:
-            file_content = self.file_path
-        file_content.seek(0)
-        size = len(file_content.getvalue())
-        stored_file_path = default_storage.save(file_path, file_content)
-
-        ElectionDocument.objects.create(
-            storage_key=stored_file_path,
-            region=region,
-            content_type="application/xml",
-            file_type=self.file_type,
-            size=size,
-        )
 
 
 class EML510bImporter(EML510BaseImporter):
