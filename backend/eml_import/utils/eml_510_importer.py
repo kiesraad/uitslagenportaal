@@ -189,7 +189,7 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
         )
         if is_correction:
             self.logger.info(
-                "\033[32mCorrection detected for region %s (%s) eml_type=%s\033[0m",
+                "\033[32mCorrection detected for region %s (%s) eml_type: %s\033[0m",
                 region.region_number,
                 region.region_name,
                 self.eml_type,

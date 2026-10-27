@@ -37,7 +37,13 @@ class EMLBaseImporter[T](BaseImporter, ABC):
 
     def _parse_election(self) -> None:
         election_identifier = self._get_election_identifier_data().id.split("_")[0]
-        self.election_config = ElectionConfig.with_expired.get(identifier=election_identifier)
+        try:
+            self.election_config = ElectionConfig.with_expired.get(identifier=election_identifier)
+        except ElectionConfig.DoesNotExist as ex:
+            # We always run importers for a specific election, whose existence is checked in the command or task,
+            # so this means a typo in the election identifier
+            raise EMLImporterException(f"ElectionConfig does not exist for {election_identifier}") from ex
+
         election_identifier_object = self._get_election_identifier_data()
         election, _ = Election.objects.get_or_create(
             election_config=self.election_config,
