@@ -35,7 +35,6 @@ WS_ELECTION_NAME = "Algemeen bestuur van het waterschap Aa en Maas 2023"
 def make_eml(election_id: str = "AB2023_Aa_en_Maas") -> Eml520:
     """A 520 document. Its result is left empty: the importer only reads the election identifier."""
     return Eml520(
-        id="520",
         schema_version="5",
         transaction_id=TransactionId(value="1"),
         managing_authority=ManagingAuthorityStructureKr(
