@@ -27,7 +27,11 @@ export function SBTimeline({ variant = "DEFAULT", dates, ...timelineProps }: Pro
             <HSBVoteCountTimelineEntry />
             <GSBVoteCountTimelineEntry />
             {variant === "CSO" && (
-               <TimelineEntry title={t`Telling per lijst en kandidaat`} event="municipality_vote_count">
+               <TimelineEntry
+                  title={t`Telling per lijst en kandidaat`}
+                  event="municipality_vote_count"
+                  document_types={["PDF_NA31-2-B1"]}
+               >
                   <Trans>
                      Het gemeentelijk stembureau telt per stembureau alle stembiljetten op kandidaatsniveau: voor welke
                      kandidaten per partij de stemmen precies zijn uitgebracht.{" "}
