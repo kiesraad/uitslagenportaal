@@ -8,6 +8,7 @@ from pyeml_bindings import (
     Eml110a,
     Eml230,
     Eml510,
+    Eml520,
     Emlstructure,
 )
 from xsdata.formats.dataclass.parsers import XmlParser
@@ -46,7 +47,7 @@ class BaseFileHandler(ABC):
         EmlType.EML_510c: (Eml510, EML510cImporter),  # Telling HSB
         EmlType.EML_510d: (Eml510, EML510dImporter),  # Totaaltelling
         CsvType.CSV_OSV43: (None, CSVOsv43Importer),  # CSV telling
-        EmlType.EML_520: (None, EML520Importer),  # Resultaat
+        EmlType.EML_520: (Eml520, EML520Importer),  # Resultaat
     }
 
     _VALID_EXTENSIONS = [".xml", ".csv"]
