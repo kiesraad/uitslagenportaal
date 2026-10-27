@@ -19,7 +19,7 @@ export default function ElectionConfigTabs({ electionConfig }: Props) {
       <SharedTabs
          tabs={[
             {
-               label: t`Gemeente`,
+               label: t(getRegionLabels("GEMEENTE").plural),
                value: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                activePatterns: ["/:electionConfigSlug/gsb"],
             },

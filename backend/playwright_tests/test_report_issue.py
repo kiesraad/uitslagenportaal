@@ -27,7 +27,7 @@ def test_report_issue_page_links_back_through_its_breadcrumb(page: Page):
 
     page.get_by_role("link", name="Waterschapsverkiezingen 2023").click()
     expect(page).to_have_url(re.compile(r"/ab2023/gsb/?$"))
-    expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
+    expect(page.get_by_role("link", name="Gemeenten")).to_be_visible()
 
 
 def test_report_issue_page_states_the_reporting_window(page: Page):

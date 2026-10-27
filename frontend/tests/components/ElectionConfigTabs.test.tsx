@@ -25,7 +25,7 @@ describe("ElectionConfigTabs", () => {
          initialEntries: ["/ws2023/gsb"],
       });
 
-      expect(screen.getByRole("link", { name: "Gemeente" })).toHaveAttribute("href", "/ws2023/gsb");
+      expect(screen.getByRole("link", { name: "Gemeenten" })).toHaveAttribute("href", "/ws2023/gsb");
       expect(screen.getByRole("link", { name: "Waterschappen" })).toHaveAttribute("href", "/ws2023/csb");
       expect(screen.queryByRole("link", { name: "Kieskringen" })).not.toBeInTheDocument();
    });

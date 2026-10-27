@@ -337,7 +337,6 @@ msgstr "Fout melden"
 msgid "Ga dan naar"
 msgstr "Ga dan naar"
 
-#: src/components/ElectionConfigTabs.tsx
 #: src/utils/region.ts
 msgid "Gemeente"
 msgstr "Gemeente"
