@@ -16,7 +16,11 @@ _DOCUMENT_FILE_TYPES_BY_REPORTING_LEVEL = {
     ReportingLevel.SB: [ElectionDocument.FileType.EML_510B],
     ReportingLevel.GSB: [ElectionDocument.FileType.EML_510B, ElectionDocument.FileType.PDF_SB_ZIP],
     ReportingLevel.HSB: [ElectionDocument.FileType.EML_510C],
-    ReportingLevel.CSB: [ElectionDocument.FileType.EML_510D, ElectionDocument.FileType.PDF_SB_ZIP],
+    ReportingLevel.CSB: [
+        ElectionDocument.FileType.EML_510D,
+        ElectionDocument.FileType.EML_520,
+        ElectionDocument.FileType.PDF_SB_ZIP,
+    ],
 }
 
 

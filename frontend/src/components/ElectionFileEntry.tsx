@@ -32,6 +32,12 @@ const FILE_TYPE_MAPPINGS: Record<
       icon: faFolder,
       description: msg`Output van de optelsoftware, bevat de resultaten van alle onderliggende regio's en de totaaltellingen.`,
    },
+   EML520: {
+      name: msg`EML_NL resultaatbestand 520`,
+      fileType: "xml",
+      icon: faFolder,
+      description: msg`Officieel resultaat van het centraal stembureau, met de zetelverdeling en de gekozen kandidaten.`,
+   },
    "CSV_OSV4-3": {
       name: msg`OSV4-3 tellingbestand`,
       fileType: "csv",

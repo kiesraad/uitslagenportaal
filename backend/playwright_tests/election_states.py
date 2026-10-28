@@ -219,6 +219,10 @@ def add_csb_totaaltelling(ws: WsPortal) -> None:
     _candidate_count(ws.contest, ws.goes, ws.zeeland, ws.minderhoud, 20, EmlType.EML_510d)
 
 
+def add_csb_resultaat(ws: WsPortal) -> None:
+    ElectionDocumentFactory(region=ws.waterschap, file_type=ElectionDocument.FileType.EML_520, size=1024)
+
+
 @dataclass
 class PsPortal:
     config: ElectionConfig

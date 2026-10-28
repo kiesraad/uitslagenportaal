@@ -240,6 +240,7 @@ class ElectionDocument(BaseModel):
         EML_510B = "EML510b", "Telling GSB"
         EML_510C = "EML510c", "Totaaltelling HSB"
         EML_510D = "EML510d", "Totaaltelling CSB"
+        EML_520 = "EML520", "Resultaat"
         CSV_OSV43 = "CSV_OSV4-3", "OSV4-3 telling CSV"
         PDF_N10_1 = "PDF_N10-1", "Proces-verbaal stembureau"
         PDF_N10_2 = "PDF_N10-2", "Proces-verbaal stembureau in een gemeente die CSB is"
