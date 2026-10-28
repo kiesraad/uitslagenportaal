@@ -21,6 +21,8 @@ class ElectionCategoryConfig:
     csb: RegionCategory
     # All counts belong to the one contest, whatever contest identifier the 510 files name (EP: the kieskring number).
     single_contest: bool = False
+    # Known by category, so also before any region is imported.
+    has_hsb: bool = False
 
 
 class ElectionCategory(Choices):
@@ -34,11 +36,15 @@ class ElectionCategory(Choices):
     def config(self):
         return self._config_
 
-    TK = "TK", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Tweede Kamerverkiezing"
+    TK = "TK", ElectionCategoryConfig(csb=RegionCategory.STAAT, has_hsb=True), "Tweede Kamerverkiezing"
     PS = "PS", ElectionCategoryConfig(csb=RegionCategory.PROVINCIE), "Provinciale Statenverkiezing"
     WS = "WS", ElectionCategoryConfig(csb=RegionCategory.WATERSCHAP), "Waterschapsverkiezing"
     GR = "GR", ElectionCategoryConfig(csb=RegionCategory.GEMEENTE), "Gemeenteraadsverkiezing"
-    EP = "EP", ElectionCategoryConfig(csb=RegionCategory.STAAT, single_contest=True), "Europees Parlementsverkiezing"
+    EP = (
+        "EP",
+        ElectionCategoryConfig(csb=RegionCategory.STAAT, single_contest=True, has_hsb=True),
+        "Europees Parlementsverkiezing",
+    )
 
 
 class ElectionConfigManager(models.Manager):
@@ -74,6 +80,8 @@ class ElectionConfig(BaseModel):
 
     @property
     def has_hsb(self) -> bool:
+        if ElectionCategory(self.category).config.has_hsb:
+            return True
         return hsb_kieskringen(Region.objects.filter(election__election_config=self)).exists()
 
     def save(self, *args, **kwargs):

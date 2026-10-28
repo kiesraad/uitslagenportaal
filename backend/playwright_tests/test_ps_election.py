@@ -27,7 +27,7 @@ def test_homepage_leads_through_the_provincie_list_to_the_drenthe_party_matrix(p
 
     page.get_by_role("link", name="Provinciale Statenverkiezingen 2023").click()
     expect(page).to_have_url(re.compile(r"/gsb/?$"))
-    expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
+    expect(page.get_by_role("link", name="Gemeenten")).to_be_visible()
     expect(page.get_by_role("link", name="Provincies")).to_be_visible()
 
     page.get_by_role("link", name="Provincies").click()
@@ -120,7 +120,7 @@ def test_csb_per_gemeente_lists_the_drenthe_gemeenten(page: Page):
 
 
 def expect_ps_tabs(page: Page) -> None:
-    expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
+    expect(page.get_by_role("link", name="Gemeenten")).to_be_visible()
     expect(page.get_by_role("link", name="Provincies")).to_be_visible()
     # Drenthe is a single kieskring, which its CSB counts: there is no HSB.
     expect(page.get_by_role("link", name="Kieskringen")).to_have_count(0)

@@ -47,7 +47,7 @@ def national(request: pytest.FixtureRequest) -> NationalElection:
 
 
 def expect_national_tabs(page: Page) -> None:
-    expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
+    expect(page.get_by_role("link", name="Gemeenten")).to_be_visible()
     expect(page.get_by_role("link", name="Kieskringen")).to_be_visible()
     expect(page.get_by_role("link", name="Nederland")).to_be_visible()
 

@@ -7,6 +7,7 @@ import { LayoutMain } from "@/components/LayoutMain.tsx";
 import { RegionList } from "@/components/ListPage/RegionList.tsx";
 import PageTop from "@/components/PageTop.tsx";
 import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
+import ResultsNotPublished from "@/components/ResultsPage/ResultsNotPublished.tsx";
 import { electionConfigQuery, regionQuery, regionsQuery } from "@/hooks/queries.ts";
 import { useFormatters } from "@/utils/format.ts";
 
@@ -25,6 +26,10 @@ export function electionConfigCSBListLoader(queryClient: QueryClient) {
             regionsQuery: undefined,
             regionQuery: regionQueryOptions,
          };
+      }
+
+      if (electionConfig.csb_type === "STAAT") {
+         return { electionConfigQuery: electionConfigQueryOptions, regionsQuery: undefined, regionQuery: undefined };
       }
 
       const regionsQueryOptions = regionsQuery(params, electionConfig.csb_type);
@@ -94,6 +99,11 @@ export function ElectionConfigCSBListPage() {
          />
          {regionQuery && <SingleCsbResults electionConfig={electionConfig} regionQuery={regionQuery} />}
          {regionsQuery && <CsbRegionList electionConfig={electionConfig} regionsQuery={regionsQuery} />}
+         {!regionQuery && !regionsQuery && (
+            <div className="page-main">
+               <ResultsNotPublished regionName="" regionCategory="STAAT" />
+            </div>
+         )}
       </LayoutMain>
    );
 }

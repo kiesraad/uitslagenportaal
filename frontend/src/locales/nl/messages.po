@@ -341,7 +341,6 @@ msgstr "Fout melden"
 msgid "Ga dan naar"
 msgstr "Ga dan naar"
 
-#: src/components/ElectionConfigTabs.tsx
 #: src/utils/region.ts
 msgid "Gemeente"
 msgstr "Gemeente"
@@ -617,6 +616,11 @@ msgid "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is
 msgstr "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is. Als dat nodig is, nemen we contact op met de gemeente of het stembureau. In sommige gevallen kan er een hertelling plaatsvinden. Als blijkt dat er inderdaad een fout is gemaakt, bijvoorbeeld bij het tellen van de stemmen, dan wordt die fout hersteld. De correctie wordt vastgelegd in een corrigendum en openbaar gemaakt door dit te publiceren. Je ontvangt geen persoonlijk bericht over wat er met je melding is gedaan."
 
 #: src/components/ResultsPage/ResultsNotPublished.tsx
+msgid "Nederland"
+msgstr "Nederland"
+
+#: src/components/ElectionConfigTabs.tsx
+msgctxt "tab"
 msgid "Nederland"
 msgstr "Nederland"
 

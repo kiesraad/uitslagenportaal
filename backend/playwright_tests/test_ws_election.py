@@ -38,7 +38,7 @@ def test_homepage_leads_through_the_waterschappen_list_to_the_party_matrix(page:
 
     page.get_by_role("link", name="Waterschapsverkiezingen 2023").click()
     expect(page).to_have_url(re.compile(r"/gsb/?$"))
-    expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
+    expect(page.get_by_role("link", name="Gemeenten")).to_be_visible()
     expect(page.get_by_role("link", name="Waterschappen")).to_be_visible()
     expect(page.get_by_role("link", name="Borsele")).to_be_visible()
     expect(page.get_by_role("link", name="Goes")).to_be_visible()
@@ -137,7 +137,7 @@ def test_stembureau_list_leads_to_stembureau_results_and_party_results(page: Pag
 
 
 def expect_ws_tabs_without_hsb(page: Page) -> None:
-    expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
+    expect(page.get_by_role("link", name="Gemeenten")).to_be_visible()
     expect(page.get_by_role("link", name="Waterschappen")).to_be_visible()
     expect(page.get_by_role("link", name="Kieskringen")).to_have_count(0)
 

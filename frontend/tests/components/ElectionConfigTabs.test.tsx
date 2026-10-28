@@ -25,7 +25,7 @@ describe("ElectionConfigTabs", () => {
          initialEntries: ["/ws2023/gsb"],
       });
 
-      expect(screen.getByRole("link", { name: "Gemeente" })).toHaveAttribute("href", "/ws2023/gsb");
+      expect(screen.getByRole("link", { name: "Gemeenten" })).toHaveAttribute("href", "/ws2023/gsb");
       expect(screen.getByRole("link", { name: "Waterschappen" })).toHaveAttribute("href", "/ws2023/csb");
       expect(screen.queryByRole("link", { name: "Kieskringen" })).not.toBeInTheDocument();
    });
@@ -52,6 +52,18 @@ describe("ElectionConfigTabs", () => {
          { initialEntries: ["/tk2025/gsb"] },
       );
 
+      expect(screen.getByRole("link", { name: "Nederland" })).toHaveAttribute("href", "/tk2025/csb");
+   });
+
+   it("shows kieskringen and Nederland for a TK election before any results are imported", () => {
+      renderWithProviders(
+         <ElectionConfigTabs
+            electionConfig={{ ...electionConfig, slug: "tk2025", csb_type: "STAAT", has_hsb: true }}
+         />,
+         { initialEntries: ["/tk2025/gsb"] },
+      );
+
+      expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("href", "/tk2025/hsb");
       expect(screen.getByRole("link", { name: "Nederland" })).toHaveAttribute("href", "/tk2025/csb");
    });
 });
