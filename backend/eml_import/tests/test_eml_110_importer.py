@@ -317,7 +317,7 @@ def make_110b_file(polling_places: list[tuple[int, str, str]]) -> NamedBytesIO:
 def test_110b_creates_stembureaus_under_the_gemeente(regions):
     gemeente = regions[RegionCategory.GEMEENTE]
 
-    EML110bImporter(make_110b_file([(1, "Gemeentehuis", "4451AA"), (2, "Dorpshuis", "4454 ab")])).parse()
+    EML110bImporter(make_110b_file([(1, "Gemeentehuis ", "4451AA"), (2, "Dorpshuis", "4454 ab")])).parse()
 
     stembureaus = Region.objects.filter(parent=gemeente, region_category=RegionCategory.STEMBUREAU)
     assert {(sb.region_number, sb.region_name, sb.postal_code) for sb in stembureaus} == {

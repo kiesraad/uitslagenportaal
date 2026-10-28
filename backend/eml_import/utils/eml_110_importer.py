@@ -158,7 +158,7 @@ class EML110bImporter(BaseImporter):
             locality = location.find("eml:Address/eml:Locality", EML_NS)
             if locality is None:
                 raise EMLImporterException(f"Stembureau {region_number} has no Locality address")
-            region_name = locality.findtext("xal:LocalityName", namespaces=EML_NS)
+            region_name = locality.findtext("xal:LocalityName", default="", namespaces=EML_NS).strip()
             stations.append(
                 Region(
                     election=self.election,
