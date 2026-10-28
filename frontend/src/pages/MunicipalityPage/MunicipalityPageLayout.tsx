@@ -46,7 +46,7 @@ export default function MunicipalityPageLayout({
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               getCsbCrumb(region, electionConfig.slug),
+               getCsbCrumb(region, electionConfig),
                { label: municipalityTitle },
             ]}
             tabs={

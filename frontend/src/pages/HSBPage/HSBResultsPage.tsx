@@ -65,7 +65,7 @@ export function HSBResultsPage() {
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               getCsbCrumb(region, electionConfig.slug),
+               getCsbCrumb(region, electionConfig),
                { label: region.region_name },
             ]}
             tabs={

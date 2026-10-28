@@ -88,6 +88,22 @@ describe("GSBVoteCountTimelineEntry", () => {
    });
 });
 
+describe("CsbCheckTimelineEntry", () => {
+   it("attaches the 520 document only", () => {
+      const documents = [
+         { file_type: "EML520", url: "/api/documents/11/download/" },
+         { file_type: "EML510d", url: "/api/documents/10/download/" },
+      ] as ElectionDocument[];
+      renderEntry(<CsbCheckTimelineEntry />, { documents });
+
+      expect(screen.getByRole("link", { name: /^EML_NL resultaatbestand 520/ })).toHaveAttribute(
+         "href",
+         "/api/documents/11/download/",
+      );
+      expect(screen.queryByRole("link", { name: /^EML_NL tellingbestand 510d/ })).not.toBeInTheDocument();
+   });
+});
+
 describe("CSB name in the timeline", () => {
    it("defaults to the Centraal Stembureau without a region", () => {
       renderEntry(<CsbResultPublishTimelineEntry />);

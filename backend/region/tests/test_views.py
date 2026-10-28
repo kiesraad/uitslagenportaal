@@ -360,6 +360,25 @@ def test_gsb_returns_510b_and_csb_returns_510d_for_the_same_region():
 
 
 @pytest.mark.django_db
+def test_csb_includes_the_520_document_and_gsb_does_not():
+    region = RegionFactory(
+        election__election_config__category=ElectionCategory.GR.value,
+        region_category=RegionCategory.GEMEENTE,
+    )
+    ElectionDocumentFactory(region=region, file_type=ElectionDocument.FileType.EML_520)
+    ElectionDocumentFactory(region=region, file_type=ElectionDocument.FileType.EML_510D)
+    ElectionDocumentFactory(region=region, file_type=ElectionDocument.FileType.EML_510B)
+
+    assert {item["file_type"] for item in region_detail(region, "csb")["documents"]} == {
+        ElectionDocument.FileType.EML_520,
+        ElectionDocument.FileType.EML_510D,
+    }
+    assert {item["file_type"] for item in region_detail(region, "gsb")["documents"]} == {
+        ElectionDocument.FileType.EML_510B,
+    }
+
+
+@pytest.mark.django_db
 def test_gsb_is_empty_without_a_510b_telling():
     contest = ContestFactory()
     party = PartyFactory(election=contest.election)

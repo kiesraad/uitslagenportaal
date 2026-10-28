@@ -25,6 +25,7 @@ def test_classify_files_buckets_known_ids_in_import_order():
         xml_with_id("510c"),
         xml_with_id("510b"),
         xml_with_id("230b"),
+        xml_with_id("520"),
         xml_with_id("110a"),
     ]
 
@@ -37,6 +38,7 @@ def test_classify_files_buckets_known_ids_in_import_order():
         EmlType.EML_510c,
         EmlType.EML_510d,
         CsvType.CSV_OSV43,
+        EmlType.EML_520,
     ]
     assert [f.getvalue() for f in classified[EmlType.EML_110a]] == [
         xml_with_id("110a").getvalue(),
@@ -46,6 +48,7 @@ def test_classify_files_buckets_known_ids_in_import_order():
     assert len(classified[EmlType.EML_510b]) == 1
     assert len(classified[EmlType.EML_510c]) == 1
     assert len(classified[EmlType.EML_510d]) == 1
+    assert len(classified[EmlType.EML_520]) == 1
 
 
 def test_classify_files_ignores_unknown_root_ids():
@@ -54,7 +57,6 @@ def test_classify_files_ignores_unknown_root_ids():
         xml_with_id("110a"),
         xml_with_id("110b"),
         xml_with_id("510a"),
-        xml_with_id("520"),
         xml_with_id("nope"),
         NamedBytesIO(b"<EML/>", "no-id.xml"),
     ]

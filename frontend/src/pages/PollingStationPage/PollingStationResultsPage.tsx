@@ -94,7 +94,7 @@ export default function PollingStationResultsPage() {
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
                { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
-               getCsbCrumb(region, electionConfig.slug),
+               getCsbCrumb(region, electionConfig),
                { href: municipalityPollingstationListRoute, label: t`Gemeente ${regionName}` },
                { label: stationLabel },
             ]}

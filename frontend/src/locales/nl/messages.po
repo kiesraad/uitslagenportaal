@@ -310,6 +310,10 @@ msgid "Eerste stap bovenaan"
 msgstr "Eerste stap bovenaan"
 
 #: src/components/ElectionFileEntry.tsx
+msgid "EML_NL resultaatbestand 520"
+msgstr "EML_NL resultaatbestand 520"
+
+#: src/components/ElectionFileEntry.tsx
 msgid "EML_NL tellingbestand 510b"
 msgstr "EML_NL tellingbestand 510b"
 
@@ -623,6 +627,10 @@ msgstr "Nederland"
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "nog niet gestart"
 msgstr "nog niet gestart"
+
+#: src/components/ElectionFileEntry.tsx
+msgid "Officieel resultaat van het centraal stembureau, met de zetelverdeling en de gekozen kandidaten."
+msgstr "Officieel resultaat van het centraal stembureau, met de zetelverdeling en de gekozen kandidaten."
 
 #. Between a date and a time: 8 december om 21:00
 #: src/utils/format.ts

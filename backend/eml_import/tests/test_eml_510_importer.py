@@ -69,6 +69,10 @@ TK_ELECTION_ID = "TK2025"
 TK_CONFIG_IDENTIFIER = "TK2025"
 TK_ELECTION_NAME = "Tweede Kamer der Staten-Generaal 2025"
 
+EP_ELECTION_ID = "EP2024"
+EP_CONFIG_IDENTIFIER = "EP2024"
+EP_ELECTION_NAME = "Europees Parlement 2024"
+
 TotalVotes = Count.Election.Contests.Contest.TotalVotes
 
 
@@ -1295,3 +1299,135 @@ def test_510c_resolves_kieskring_from_managing_authority_without_election_domain
         (schiedam, 150, EmlType.EML_510c),
         (rotterdam, 150, EmlType.EML_510c),
     }
+
+
+def make_ep_eml(*, eml_id, authority_id, authority_name, contests):
+    """An EP file; like TK, it has no election domain."""
+    return make_eml(
+        eml_id=eml_id,
+        authority_id=authority_id,
+        authority_name=authority_name,
+        contests=contests,
+        election_id=EP_ELECTION_ID,
+        election_name=EP_ELECTION_NAME,
+        category=ElectionCategoryType.EP,
+        subcategory=ElectionSubcategoryType.EP,
+    )
+
+
+@pytest.fixture
+def ep_election(db):
+    config = ElectionConfigFactory(identifier=EP_CONFIG_IDENTIFIER, category=ElectionCategory.EP.value)
+    return ElectionFactory(
+        election_config=config,
+        name=EP_ELECTION_NAME,
+        subcategory="EP",
+        date=ELECTION_DATE,
+    )
+
+
+@pytest.fixture
+def ep_regions(ep_election):
+    """staat -> kieskringen Assen and Amsterdam; Assen -> gemeente Emmen."""
+    staat = RegionFactory(
+        election=ep_election,
+        region_category=RegionCategory.STAAT,
+        region_number=None,
+        region_name="Nederland",
+    )
+    kieskringen = {
+        name: RegionFactory(
+            election=ep_election,
+            parent=staat,
+            csb=staat,
+            region_category=RegionCategory.KIESKRING,
+            region_number=str(number),
+            region_name=name,
+        )
+        for number, name in ((3, "Assen"), (9, "Amsterdam"))
+    }
+    emmen = RegionFactory(
+        election=ep_election,
+        parent=kieskringen["Assen"],
+        csb=staat,
+        region_category=RegionCategory.GEMEENTE,
+        region_number="114",
+        region_name="Emmen",
+    )
+    return {"staat": staat, **kieskringen, "Emmen": emmen}
+
+
+@pytest.fixture
+def ep_candidate(ep_election):
+    """EP has one national candidate list: the 110a and 230b only define contest "alle"."""
+    contest = ContestFactory(election=ep_election, identifier="alle")
+    party = PartyFactory(election=ep_election, list_number=1, registered_name="CDA")
+    return CandidateFactory(contest=contest, party=party, identifier=1, position=1)
+
+
+def test_ep_510c_uses_the_national_contest_for_the_kieskring_number(ep_regions, ep_candidate):
+    """An EP Totaaltelling HSB names the kieskring number as its contest, which has no Contest of its own."""
+    units = [
+        make_reporting_unit(
+            "HSB3::0114",
+            "Emmen",
+            [
+                party_selection(ReportingUnitVotes.Selection, 1, "CDA", 120),
+                candidate_selection(ReportingUnitVotes.Selection, 40, number=1),
+            ],
+        )
+    ]
+    totals = make_total_votes(
+        [
+            party_selection(TotalVotes.Selection, 1, "CDA", 120),
+            candidate_selection(TotalVotes.Selection, 40, number=1),
+        ]
+    )
+    eml = make_ep_eml(
+        eml_id="510c",
+        authority_id="HSB3",
+        authority_name="Assen",
+        contests=[make_contest("3", total_votes=totals, units=units)],
+    )
+    EML510cImporter(fake_eml_file(), eml=eml).parse()
+
+    rows = VoteCount.objects.all()
+    assert {(row.region, row.result_level, row.candidate, row.valid_votes) for row in rows} == {
+        (ep_regions["Emmen"], VoteCount.RESULT_LEVEL_PARTY, None, 120),
+        (ep_regions["Emmen"], VoteCount.RESULT_LEVEL_CANDIDATE, ep_candidate, 40),
+        (ep_regions["Assen"], VoteCount.RESULT_LEVEL_PARTY, None, 120),
+        (ep_regions["Assen"], VoteCount.RESULT_LEVEL_CANDIDATE, ep_candidate, 40),
+    }
+    assert {row.contest for row in rows} == {ep_candidate.contest}
+
+
+def test_ep_510d_uses_the_national_contest_for_each_kieskring(ep_regions, ep_candidate):
+    """Contest "alle" does not mean a contest per kieskring in EP, as it does in TK and PS."""
+    units = [
+        make_reporting_unit(
+            "HSB3",
+            "Kieskring Assen",
+            [party_selection(ReportingUnitVotes.Selection, 1, "CDA", 120)],
+        ),
+        make_reporting_unit(
+            "HSB9",
+            "Kieskring Amsterdam",
+            [party_selection(ReportingUnitVotes.Selection, 1, "CDA", 300)],
+        ),
+    ]
+    totals = make_total_votes([party_selection(TotalVotes.Selection, 1, "CDA", 420)])
+    eml = make_ep_eml(
+        eml_id="510d",
+        authority_id="CSB",
+        authority_name="De Kiesraad",
+        contests=[make_contest("alle", total_votes=totals, units=units)],
+    )
+    EML510dImporter(fake_eml_file(), eml=eml).parse()
+
+    rows = VoteCount.objects.all()
+    assert {(row.region, row.valid_votes) for row in rows} == {
+        (ep_regions["Assen"], 120),
+        (ep_regions["Amsterdam"], 300),
+        (ep_regions["staat"], 420),
+    }
+    assert {row.contest for row in rows} == {ep_candidate.contest}

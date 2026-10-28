@@ -39,6 +39,7 @@ export type ElectionDocumentFileType =
    | "EML510b"
    | "EML510c"
    | "EML510d"
+   | "EML520"
    | "CSV_OSV4-3"
    | "PDF_N10-1"
    | "PDF_N10-2"

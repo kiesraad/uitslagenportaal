@@ -19,6 +19,8 @@ from region.models import Region, hsb_kieskringen
 @dataclass
 class ElectionCategoryConfig:
     csb: RegionCategory
+    # All counts belong to the one contest, whatever contest identifier the 510 files name (EP: the kieskring number).
+    single_contest: bool = False
 
 
 class ElectionCategory(Choices):
@@ -36,7 +38,7 @@ class ElectionCategory(Choices):
     PS = "PS", ElectionCategoryConfig(csb=RegionCategory.PROVINCIE), "Provinciale Statenverkiezing"
     WS = "WS", ElectionCategoryConfig(csb=RegionCategory.WATERSCHAP), "Waterschapsverkiezing"
     GR = "GR", ElectionCategoryConfig(csb=RegionCategory.GEMEENTE), "Gemeenteraadsverkiezing"
-    EP = "EP", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Europees Parlementsverkiezing"
+    EP = "EP", ElectionCategoryConfig(csb=RegionCategory.STAAT, single_contest=True), "Europees Parlementsverkiezing"
 
 
 class ElectionConfigManager(models.Manager):
@@ -238,6 +240,7 @@ class ElectionDocument(BaseModel):
         EML_510B = "EML510b", "Telling GSB"
         EML_510C = "EML510c", "Totaaltelling HSB"
         EML_510D = "EML510d", "Totaaltelling CSB"
+        EML_520 = "EML520", "Resultaat"
         CSV_OSV43 = "CSV_OSV4-3", "OSV4-3 telling CSV"
         PDF_N10_1 = "PDF_N10-1", "Proces-verbaal stembureau"
         PDF_N10_2 = "PDF_N10-2", "Proces-verbaal stembureau in een gemeente die CSB is"
