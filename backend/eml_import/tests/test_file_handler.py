@@ -33,6 +33,7 @@ def test_classify_files_buckets_known_ids_in_import_order():
 
     assert list(classified) == [
         EmlType.EML_110a,
+        EmlType.EML_110b,
         EmlType.EML_230b,
         EmlType.EML_510b,
         EmlType.EML_510c,
@@ -55,7 +56,6 @@ def test_classify_files_ignores_unknown_root_ids():
     handler = StubFileHandler()
     files = [
         xml_with_id("110a"),
-        xml_with_id("110b"),
         xml_with_id("510a"),
         xml_with_id("nope"),
         NamedBytesIO(b"<EML/>", "no-id.xml"),

@@ -31,8 +31,9 @@ from eml_import.exceptions import EMLImporterException
 from eml_import.tests.fakes import fake_eml_file
 from eml_import.tests.test_eml_230_importer import CONTEST_NAME, make_affiliation, make_candidate
 from eml_import.tests.test_eml_230_importer import make_eml as make_230b_eml
-from eml_import.utils.eml_110_importer import EML110aImporter
+from eml_import.utils.eml_110_importer import EML110aImporter, EML110bImporter
 from eml_import.utils.eml_230_importer import EML230bImporter
+from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
 from party.models import Party
 from party.tests.factories import PartyFactory
@@ -291,3 +292,36 @@ def test_correction_keeps_stembureaus(election, regions):
     EML110aImporter(fake_eml_file(), eml=make_eml()).parse()
 
     assert Region.objects.filter(pk=stembureau.pk).exists()
+
+
+def make_110b_file(polling_places: list[tuple[int, str, str]]) -> NamedBytesIO:
+    """A 110b for gemeente Borsele with (station id, name, postcode) per stembureau."""
+    places = "".join(
+        f'<PollingPlace Channel="polling"><PhysicalLocation><Address><Locality>'
+        f"<xal:LocalityName>{name}</xal:LocalityName>"
+        f"<xal:PostalCode><xal:PostalCodeNumber>{postal_code}</xal:PostalCodeNumber></xal:PostalCode>"
+        f'</Locality></Address><PollingStation Id="{station_id}">1000</PollingStation></PhysicalLocation>'
+        f"</PollingPlace>"
+        for station_id, name, postal_code in polling_places
+    )
+    xml = (
+        '<EML xmlns="urn:oasis:names:tc:evs:schema:eml" xmlns:xal="urn:oasis:names:tc:ciq:xsdschema:xAL:2.0" '
+        'Id="110b"><ManagingAuthority><AuthorityIdentifier Id="0654">Borsele</AuthorityIdentifier>'
+        f'</ManagingAuthority><ElectionEvent><Election><ElectionIdentifier Id="{ELECTION_ID}">'
+        f"<ElectionName>{ELECTION_NAME}</ElectionName></ElectionIdentifier>"
+        f"<Contest>{places}</Contest></Election></ElectionEvent></EML>"
+    )
+    return NamedBytesIO(xml.encode(), "stembureaus.eml.xml")
+
+
+def test_110b_creates_stembureaus_under_the_gemeente(regions):
+    gemeente = regions[RegionCategory.GEMEENTE]
+
+    EML110bImporter(make_110b_file([(1, "Gemeentehuis", "4451AA"), (2, "Dorpshuis", "4454 ab")])).parse()
+
+    stembureaus = Region.objects.filter(parent=gemeente, region_category=RegionCategory.STEMBUREAU)
+    assert {(sb.region_number, sb.region_name, sb.postal_code) for sb in stembureaus} == {
+        ("0654::SB1", "Gemeentehuis", "4451 AA"),
+        ("0654::SB2", "Dorpshuis", "4454 AB"),
+    }
+    assert {sb.csb for sb in stembureaus} == {gemeente.csb}
