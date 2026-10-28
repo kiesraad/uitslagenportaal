@@ -57,7 +57,7 @@ describe("ElectionConfigTabs", () => {
 
    it("shows kieskringen and Nederland for a TK election before any results are imported", () => {
       renderWithProviders(
-         <ElectionConfigTabs electionConfig={{ ...electionConfig, slug: "tk2025", csb_type: "STAAT" }} />,
+         <ElectionConfigTabs electionConfig={{ ...electionConfig, slug: "tk2025", csb_type: "STAAT", has_hsb: true }} />,
          { initialEntries: ["/tk2025/gsb"] },
       );
 

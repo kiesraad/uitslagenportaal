@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import type { ElectionConfig } from "@/api/types";
 import SharedTabs from "@/components/SharedTabs.tsx";
-import { electionHasHsb, getRegionLabels } from "@/utils/region.ts";
+import { getRegionLabels } from "@/utils/region.ts";
 import { appRoutes } from "@/utils/routes.ts";
 
 type Props = {
@@ -23,7 +23,7 @@ export default function ElectionConfigTabs({ electionConfig }: Props) {
                value: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                activePatterns: ["/:electionConfigSlug/gsb"],
             },
-            electionHasHsb(electionConfig) && {
+            electionConfig.has_hsb && {
                label: t(getRegionLabels("KIESKRING").plural),
                value: appRoutes.electionConfigHSBList(electionConfig.slug),
                activePatterns: ["/:electionConfigSlug/hsb"],
