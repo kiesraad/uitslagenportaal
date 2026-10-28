@@ -1,7 +1,7 @@
 // Helper mapping from csb_type to the labels used for that kind of region.
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import type { RegionCategory, RegionSummary } from "../api/types";
+import type { ElectionConfig, RegionCategory, RegionSummary } from "../api/types";
 import { appRoutes } from "./routes";
 
 /**
@@ -102,9 +102,13 @@ export function formatStationLabel(name: string, stationNumber?: number | null):
 
 export function getCsbCrumb(
    region: { csb?: RegionSummary | null } | undefined,
-   electionConfigSlug: string,
+   electionConfig: Pick<ElectionConfig, "slug" | "single_csb">,
 ): { href: string; label: string } | null {
    const csb = region?.csb;
    if (!csb) return null;
-   return { href: appRoutes.csbMunicipalityList(electionConfigSlug, csb.slug), label: csb.region_name };
+   // A single CSB has no list to pick it from: link to its results, as the CSB tab does.
+   const href = electionConfig.single_csb
+      ? appRoutes.electionConfigCSBList(electionConfig.slug)
+      : appRoutes.csbMunicipalityList(electionConfig.slug, csb.slug);
+   return { href, label: csb.region_name };
 }

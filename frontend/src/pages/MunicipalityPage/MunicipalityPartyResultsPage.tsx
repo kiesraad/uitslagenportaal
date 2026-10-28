@@ -46,7 +46,7 @@ export function MunicipalityPartyResultsPage() {
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
                { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
-               getCsbCrumb(region, electionConfig.slug),
+               getCsbCrumb(region, electionConfig),
                { href: municipalityResultsRoute, label: t`Gemeente ${regionName}` },
                { label: partyName },
             ]}

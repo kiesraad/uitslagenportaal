@@ -168,6 +168,14 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
             )
         )
 
+    def _get_contest(self, contest_identifier: str, reporting_unit_name: str | None = None) -> Contest:
+        if ElectionCategory(self.election.election_config.category).config.single_contest:
+            return Contest.objects.get(election=self.election)
+        if reporting_unit_name is not None and contest_identifier == "alle":
+            # 'alle' links the candidates to a contest per reporting unit, so get the contest by name.
+            return Contest.objects.get(election=self.election, name=reporting_unit_name)
+        return Contest.objects.get(identifier=contest_identifier, election=self.election)
+
     def _is_correction(self, region: Region) -> bool:
         """
         True when this EML's logical file key is already imported.
@@ -364,10 +372,7 @@ class EML510bImporter(EML510BaseImporter):
             vote_counts: list[VoteCount] = []
             turnout_counts: list[VoterTurnoutCount] = []
             for contest_data in self.eml.count.election.contests.contest:
-                contest = Contest.objects.get(
-                    identifier=contest_data.contest_identifier.id,
-                    election=self.election,
-                )
+                contest = self._get_contest(contest_data.contest_identifier.id)
                 candidate_by_key = {
                     (candidate.party_id, candidate.identifier): candidate
                     for candidate in Candidate.objects.filter(contest=contest)
@@ -487,14 +492,7 @@ class EML510cImporter(EML510BaseImporter):
                         f"Cannot find child_region_name {child_region_name} in child_region_by_name"
                     )
 
-                contest_filter = {"election": self.election}
-                # Get the contest from the DB by name, if the contest in the EML file is set to 'alle'. This means
-                # that the candidates are linked to a contest per reporting unit, so we get the contest by name.
-                if contest_data.contest_identifier.id == "alle":
-                    contest_filter["name"] = child_region_name
-                else:
-                    contest_filter["identifier"] = contest_data.contest_identifier.id
-                contest = Contest.objects.get(**contest_filter)
+                contest = self._get_contest(contest_data.contest_identifier.id, child_region_name)
                 candidate_by_key = {
                     (candidate.party_id, candidate.identifier): candidate
                     for candidate in Candidate.objects.filter(contest=contest)
@@ -512,10 +510,7 @@ class EML510cImporter(EML510BaseImporter):
                 self._collect_turnout_counts(contest, child_region, unit, turnout_counts)
 
             # HSB totals
-            contest = Contest.objects.get(
-                identifier=contest_data.contest_identifier.id,
-                election=self.election,
-            )
+            contest = self._get_contest(contest_data.contest_identifier.id)
             # Get candidates by (party, identifier) and by (None, DB id) key.
             # We need to get candidates by DB id when processing contest-spanning totals. The DB ids are determined by
             # the short code mapping, which is tracked when processing the reporting unit's votes.
@@ -611,14 +606,7 @@ class EML510dImporter(EML510BaseImporter):
                         f"Cannot find child_region_name {child_region_name} in child_region_by_name"
                     )
 
-                contest_filter = {"election": self.election}
-                # Get the contest from the DB by name, if the contest in the EML file is set to 'alle'. This means that
-                # the candidates are linked to a contest per reporting unit, so we get the contest by name.
-                if contest_data.contest_identifier.id == "alle":
-                    contest_filter["name"] = child_region_name
-                else:
-                    contest_filter["identifier"] = contest_data.contest_identifier.id
-                contest = Contest.objects.get(**contest_filter)
+                contest = self._get_contest(contest_data.contest_identifier.id, child_region_name)
                 candidate_by_key = {
                     (candidate.party_id, candidate.identifier): candidate
                     for candidate in Candidate.objects.filter(contest=contest)
@@ -636,10 +624,7 @@ class EML510dImporter(EML510BaseImporter):
                 self._collect_turnout_counts(contest, child_region, unit, turnout_counts)
 
             # CSB totals
-            contest = Contest.objects.get(
-                identifier=contest_data.contest_identifier.id,
-                election=self.election,
-            )
+            contest = self._get_contest(contest_data.contest_identifier.id)
             # Get candidates by (party, identifier) and by (None, DB id) key.
             # We need to get candidates by DB id when processing contest-spanning totals. The DB ids are determined by
             # the short code mapping, which is tracked when processing the reporting unit's votes.

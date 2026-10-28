@@ -33,6 +33,7 @@ WS_LABEL = "Waterschapsverkiezingen 2023"
 PS_LABEL = "Provinciale Statenverkiezingen 2023"
 GR_LABEL = "Gemeenteraadsverkiezingen 2026"
 TK_LABEL = "Tweede Kamer Verkiezingen 2025"
+EP_LABEL = "Europees Parlementsverkiezing 2024"
 
 
 def visible_config(*, identifier: str, label: str, category: str) -> ElectionConfig:
@@ -355,7 +356,9 @@ def add_drenthe_csb(ps: PsPortal) -> None:
 
 
 @dataclass
-class TkPortal:
+class NationalPortal:
+    """A TK or EP election: the staat Nederland is the only CSB."""
+
     config: ElectionConfig
     election: Election
     nederland: Region
@@ -364,22 +367,35 @@ class TkPortal:
     schiedam: Region
     vvd: Party
     cda: Party
+    # In TK each kieskring is its own contest, so one person has a candidate record per contest.
+    # In EP both kieskringen fall under the one national contest, so they share its single record.
     rotterdam_contest: Contest | None = None
     leiden_contest: Contest | None = None
-    # One person, with a candidate record on each kieskring's list.
     brekelmans_rotterdam: Candidate | None = None
     brekelmans_leiden: Candidate | None = None
 
 
-def tk_definition() -> TkPortal:
+def tk_definition() -> NationalPortal:
+    return national_definition(
+        identifier="TK2025", label=TK_LABEL, category=ElectionCategory.TK, name="Tweede Kamer der Staten-Generaal 2025"
+    )
+
+
+def ep_definition() -> NationalPortal:
+    return national_definition(
+        identifier="EP2024", label=EP_LABEL, category=ElectionCategory.EP, name="Europees Parlement 2024"
+    )
+
+
+def national_definition(*, identifier: str, label: str, category: ElectionCategory, name: str) -> NationalPortal:
     """Election, region tree and registered parties — as after a 110a."""
     config = ElectionConfigFactory(
-        identifier="TK2025",
-        label=TK_LABEL,
-        category=ElectionCategory.TK.value,
+        identifier=identifier,
+        label=label,
+        category=category.value,
         date=timezone.now() - timedelta(days=1),
     )
-    election = ElectionFactory(election_config=config, name="Tweede Kamer der Staten-Generaal 2025", subcategory="TK")
+    election = ElectionFactory(election_config=config, name=name, subcategory=category.value)
     # The staat has no region number, so its slug is just "nederland".
     nederland = RegionFactory(
         election=election,
@@ -421,7 +437,7 @@ def tk_definition() -> TkPortal:
     )
     vvd = PartyFactory(election=election, registered_name="VVD")
     cda = PartyFactory(election=election, registered_name="CDA")
-    return TkPortal(
+    return NationalPortal(
         config=config,
         election=election,
         nederland=nederland,
@@ -433,14 +449,18 @@ def tk_definition() -> TkPortal:
     )
 
 
-def add_tk_candidate_lists(tk: TkPortal) -> None:
+def _set_list_numbers(portal: NationalPortal) -> None:
+    portal.vvd.list_number = 1
+    portal.vvd.save(update_fields=["list_number", "updated_at"])
+    portal.cda.list_number = 2
+    portal.cda.save(update_fields=["list_number", "updated_at"])
+
+
+def add_tk_candidate_lists(tk: NationalPortal) -> None:
     # HSB matrix selects candidates by contest name == kieskring name.
     tk.rotterdam_contest = ContestFactory(election=tk.election, identifier="10", name="Rotterdam")
     tk.leiden_contest = ContestFactory(election=tk.election, identifier="7", name="Leiden")
-    tk.vvd.list_number = 1
-    tk.vvd.save(update_fields=["list_number", "updated_at"])
-    tk.cda.list_number = 2
-    tk.cda.save(update_fields=["list_number", "updated_at"])
+    _set_list_numbers(tk)
     tk.brekelmans_rotterdam = CandidateFactory(
         contest=tk.rotterdam_contest, party=tk.vvd, identifier=1, position=1, last_name="Brekelmans"
     )
@@ -449,7 +469,16 @@ def add_tk_candidate_lists(tk: TkPortal) -> None:
     )
 
 
-def add_rotterdam_hsb(tk: TkPortal) -> None:
+def add_ep_candidate_list(ep: NationalPortal) -> None:
+    # The one contest the 110a defines; no contest is named after a kieskring, so the HSB matrix takes all candidates.
+    contest = ContestFactory(election=ep.election, identifier="alle")
+    _set_list_numbers(ep)
+    brekelmans = CandidateFactory(contest=contest, party=ep.vvd, identifier=1, position=1, last_name="Brekelmans")
+    ep.rotterdam_contest = ep.leiden_contest = contest
+    ep.brekelmans_rotterdam = ep.brekelmans_leiden = brekelmans
+
+
+def add_rotterdam_hsb(tk: NationalPortal) -> None:
     assert tk.rotterdam_contest is not None and tk.brekelmans_rotterdam is not None
     tk.rotterdam.results_available_at = timezone.now()
     tk.rotterdam.save(update_fields=["results_available_at", "updated_at"])
@@ -462,7 +491,7 @@ def add_rotterdam_hsb(tk: TkPortal) -> None:
     _candidate_count(contest, tk.schiedam, tk.vvd, brekelmans, 250, EmlType.EML_510c)
 
 
-def add_nederland_csb(tk: TkPortal) -> None:
+def add_nederland_csb(tk: NationalPortal) -> None:
     assert tk.rotterdam_contest is not None and tk.leiden_contest is not None
     assert tk.brekelmans_rotterdam is not None and tk.brekelmans_leiden is not None
     tk.nederland.results_available_at = timezone.now()
