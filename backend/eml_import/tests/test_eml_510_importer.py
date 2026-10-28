@@ -606,6 +606,28 @@ def test_ensure_polling_stations_reuses_existing_stations(ws_regions):
     assert Region.objects.filter(parent=ws_regions["gemeente"], region_category=RegionCategory.STEMBUREAU).count() == 2
 
 
+def test_ensure_polling_stations_removes_stations_not_in_the_file(ws_regions):
+    """A stembureau only the 110b listed gets no results, so the 510b removes it."""
+    RegionFactory(
+        election=ws_regions["gemeente"].election,
+        parent=ws_regions["gemeente"],
+        region_category=RegionCategory.STEMBUREAU,
+        region_number="0654::SB9",
+        region_name="Gesloten",
+    )
+    eml = make_polling_station_document(("0654::SB1", "Stembureau A"))
+    importer = EML510bImporter(fake_eml_file(), eml=eml)
+
+    stations = importer._ensure_polling_stations(ws_regions["gemeente"])
+
+    assert set(stations) == {"0654::SB1"}
+    assert list(
+        Region.objects.filter(parent=ws_regions["gemeente"], region_category=RegionCategory.STEMBUREAU).values_list(
+            "region_number", flat=True
+        )
+    ) == ["0654::SB1"]
+
+
 def test_ensure_polling_stations_updates_name_and_postal_code_of_an_existing_station(ws_regions):
     """A 110b created the station under another name; the 510b matches it on number and its name wins."""
     existing = RegionFactory(

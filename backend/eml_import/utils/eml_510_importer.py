@@ -43,6 +43,59 @@ def normalise_postal_code(postal_code: str) -> str | None:
     return postal_code or None
 
 
+def sync_polling_stations(
+    gemeente: Region, name_and_postal_code_by_number: dict[str, tuple[str, str | None]]
+) -> dict[str, Region]:
+    """
+    Make the stembureaus of a gemeente match one file, keyed by number: create, update and delete.
+
+    A bulk DELETE, UPDATE and INSERT for the whole file, not a query per station.
+    """
+    stations = Region.objects.filter(
+        election_id=gemeente.election_id, parent=gemeente, region_category=RegionCategory.STEMBUREAU
+    )
+    existing = {station.region_number: station for station in stations}
+
+    csb = EMLBaseImporter._csb_for_parent(gemeente)
+    missing: list[Region] = []
+    changed: list[Region] = []
+    for region_number, (region_name, postal_code) in name_and_postal_code_by_number.items():
+        # bulk_create and bulk_update bypass Region.save(), so derive the slug here
+        slug = build_region_slug(region_number, region_name)
+        station = existing.get(region_number)
+        if station is None:
+            missing.append(
+                Region(
+                    election_id=gemeente.election_id,
+                    region_number=region_number,
+                    region_name=region_name,
+                    postal_code=postal_code,
+                    parent=gemeente,
+                    csb=csb,
+                    region_category=RegionCategory.STEMBUREAU,
+                    slug=slug,
+                )
+            )
+        elif (station.region_name, station.postal_code) != (region_name, postal_code):
+            station.region_name = region_name
+            station.postal_code = postal_code
+            station.slug = slug
+            station.updated_at = timezone.now()
+            changed.append(station)
+    stale = [station.pk for number, station in existing.items() if number not in name_and_postal_code_by_number]
+
+    if not missing and not changed and not stale:
+        return existing
+
+    stations.filter(pk__in=stale).delete()
+    Region.objects.bulk_update(
+        changed, ["region_name", "postal_code", "slug", "updated_at"], batch_size=EMLBaseImporter.BULK_BATCH_SIZE
+    )
+    Region.objects.bulk_create(missing, batch_size=EMLBaseImporter.BULK_BATCH_SIZE)
+
+    return {station.region_number: station for station in stations.all()}
+
+
 class EML510BaseImporter(EMLStorageMixin, EMLBaseImporter[Eml510], ABC):
     file_type: ElectionDocument.FileType
 
@@ -244,19 +297,7 @@ class EML510bImporter(EML510BaseImporter):
         return normalise_postal_code(match.group(1) if match else "")
 
     def _ensure_polling_stations(self, region: Region) -> dict[str, Region]:
-        """
-        Create or update all polling stations of this file up front, keyed by number.
-
-        A 110b may have created them already; the 510b's name and postcode win. One SELECT,
-        one bulk UPDATE and INSERT and one SELECT for the whole file, not a query per station.
-        """
-        stations_filter = {
-            "election": self.election,
-            "parent": region,
-            "region_category": RegionCategory.STEMBUREAU,
-        }
-        existing = {station.region_number: station for station in Region.objects.filter(**stations_filter)}
-
+        """The polling stations of this file, keyed by number; the 510b replaces the ones a 110b created."""
         name_and_postal_code_by_number: dict[str, tuple[str, str | None]] = {}
         for contest_data in self.eml.count.election.contests.contest:
             for unit in contest_data.reporting_unit_votes:
@@ -264,43 +305,7 @@ class EML510bImporter(EML510BaseImporter):
                     self._polling_station_name(unit),
                     self._polling_station_postal_code(unit),
                 )
-
-        csb = self._csb_for_parent(region)
-        missing: list[Region] = []
-        changed: list[Region] = []
-        for region_number, (region_name, postal_code) in name_and_postal_code_by_number.items():
-            # bulk_create and bulk_update bypass Region.save(), so derive the slug here
-            slug = build_region_slug(region_number, region_name)
-            station = existing.get(region_number)
-            if station is None:
-                missing.append(
-                    Region(
-                        election=self.election,
-                        region_number=region_number,
-                        region_name=region_name,
-                        postal_code=postal_code,
-                        parent=region,
-                        csb=csb,
-                        region_category=RegionCategory.STEMBUREAU,
-                        slug=slug,
-                    )
-                )
-            elif (station.region_name, station.postal_code) != (region_name, postal_code):
-                station.region_name = region_name
-                station.postal_code = postal_code
-                station.slug = slug
-                station.updated_at = timezone.now()
-                changed.append(station)
-
-        if not missing and not changed:
-            return existing
-
-        Region.objects.bulk_update(
-            changed, ["region_name", "postal_code", "slug", "updated_at"], batch_size=self.BULK_BATCH_SIZE
-        )
-        Region.objects.bulk_create(missing, batch_size=self.BULK_BATCH_SIZE)
-
-        return {station.region_number: station for station in Region.objects.filter(**stations_filter)}
+        return sync_polling_stations(region, name_and_postal_code_by_number)
 
     def _parse_data(self) -> None:
         authority_el = self.eml.managing_authority.authority_identifier

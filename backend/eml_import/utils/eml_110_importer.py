@@ -4,10 +4,10 @@ from xml.etree import ElementTree as ET
 from django.db import transaction
 from pyeml_bindings import Eml110a
 
-from election.models import Contest, Election, ElectionDocument
+from election.models import Contest, Election, ElectionDocument, VoteCount
 from eml_import.exceptions import EMLImporterException
 from eml_import.utils.base_importer import BaseImporter
-from eml_import.utils.eml_510_importer import normalise_postal_code
+from eml_import.utils.eml_510_importer import normalise_postal_code, sync_polling_stations
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
@@ -143,35 +143,23 @@ class EML110bImporter(BaseImporter):
                 f"does not exist in the election definition of election {self.election.name}"
             )
 
-        existing = set(
-            Region.objects.filter(
-                election=self.election, parent=municipality, region_category=RegionCategory.STEMBUREAU
-            ).values_list("region_number", flat=True)
-        )
-        csb = EMLBaseImporter._csb_for_parent(municipality)
-        stations = []
+        # Once the 510b is in, its stembureaus are the ones with results
+        if VoteCount.objects.filter(region=municipality, eml_type=EmlType.EML_510b).exists():
+            raise EMLImporterException(
+                f"Cannot import {self.eml_type} for {municipality.region_name}: counting results already imported"
+            )
+
+        name_and_postal_code_by_number: dict[str, tuple[str, str | None]] = {}
         for location in self.root.iterfind(".//eml:PollingPlace/eml:PhysicalLocation", EML_NS):
             # Same number as the 510b ReportingUnitIdentifier, e.g. "0096::SB1"
             region_number = f"{authority_id}::SB{location.find('eml:PollingStation', EML_NS).get('Id')}"
-            if region_number in existing:
-                continue
             locality = location.find("eml:Address/eml:Locality", EML_NS)
             if locality is None:
                 raise EMLImporterException(f"Stembureau {region_number} has no Locality address")
-            region_name = locality.findtext("xal:LocalityName", default="", namespaces=EML_NS).strip()
-            stations.append(
-                Region(
-                    election=self.election,
-                    region_number=region_number,
-                    region_name=region_name,
-                    postal_code=normalise_postal_code(
-                        locality.findtext("xal:PostalCode/xal:PostalCodeNumber", default="", namespaces=EML_NS)
-                    ),
-                    parent=municipality,
-                    csb=csb,
-                    region_category=RegionCategory.STEMBUREAU,
-                    # bulk_create bypasses Region.save(), so derive the slug here
-                    slug=build_region_slug(region_number, region_name),
-                )
+            name_and_postal_code_by_number[region_number] = (
+                locality.findtext("xal:LocalityName", default="", namespaces=EML_NS).strip(),
+                normalise_postal_code(
+                    locality.findtext("xal:PostalCode/xal:PostalCodeNumber", default="", namespaces=EML_NS)
+                ),
             )
-        Region.objects.bulk_create(stations)
+        sync_polling_stations(municipality, name_and_postal_code_by_number)
