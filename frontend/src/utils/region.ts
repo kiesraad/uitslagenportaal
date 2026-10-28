@@ -93,9 +93,9 @@ export function regionWithName(regionType: RegionCategory | undefined, name: str
    return { ...getRegionLabels(regionType).withName, values: { name } };
 }
 
-/** TK, EP and PS always have HSBs, but `has_hsb` only reports them once regions are imported. */
-export function electionHasHsb(electionConfig: Pick<ElectionConfig, "csb_type" | "has_hsb">): boolean {
-   return electionConfig.has_hsb || electionConfig.csb_type === "STAAT" || electionConfig.csb_type === "PROVINCIE";
+/** TK and EP always have HSBs, but `has_hsb` only reports them once regions are imported. */
+export function electionHasHsb(electionConfig: Pick<ElectionConfig, "csb_type" | "has_hsb" | "single_csb">): boolean {
+   return electionConfig.has_hsb || (electionConfig.csb_type === "STAAT" && !electionConfig.single_csb);
 }
 
 export function formatStationLabel(name: string, stationNumber?: number | null): string {
