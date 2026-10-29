@@ -273,6 +273,10 @@ msgstr "The counting results for {regionLabel} have not been published yet"
 msgid "De telresultaten van alle stembureaus in Nederland."
 msgstr "The counting results of every polling station in the Netherlands."
 
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het corrigendum."
+msgstr "The count results were investigated and recounted where necessary. The corrected results are in the corrigendum."
+
 #: src/pages/ReportIssuePage.tsx
 msgid "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
 msgstr "Do you think a mistake was made when the votes were counted, recorded or transcribed? You can report this to the central electoral committee."
@@ -641,6 +645,10 @@ msgstr "The documents below contain the latest counting results for {regionWithA
 #: src/pages/MunicipalityPage/MunicipalityResultsPage.tsx
 msgid "Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
 msgstr "The documents below contain the latest counting results for the municipality, as they are included in the result. The figures in the overview above come from the EML_NL count file."
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "Onderzoek, hertelling en gecorrigeerde resultaten"
+msgstr "Investigation, recount and corrected results"
 
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Ongeldige stemmen"

@@ -131,7 +131,7 @@ export default function TimelineEntry({
             <div className="mb-1.5 text-muted">{formatTimelineDate(resolved)}</div>
             <div className="flex flex-col gap-4 leading-6">{children}</div>
             {selectedDocs.map((doc) => (
-               <ElectionFileEntry key={doc.file_type} file={doc} className="mt-2 bg-info-bg p-3" />
+               <ElectionFileEntry key={doc.url} file={doc} className="mt-2 bg-info-bg p-3" />
             ))}
          </div>
       </li>
@@ -173,6 +173,30 @@ export function GSBVoteCountTimelineEntry() {
                De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware
                en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen
                worden meegenomen in de landelijke uitslag.
+            </Trans>
+         </p>
+      </TimelineEntry>
+   );
+}
+
+export function CorrectionTimelineEntry() {
+   const { region } = useTimelineContext();
+
+   if (!region?.correction_date) {
+      return null;
+   }
+
+   return (
+      <TimelineEntry
+         // TimelineDate requires an event; the date itself comes from the region.
+         date={{ event: "municipality_vote_count", date: region.correction_date, qualifier: "all_day" }}
+         title={t`Onderzoek, hertelling en gecorrigeerde resultaten`}
+         document_types={["PDF_NA14-1", "PDF_NA14-2", "PDF_NA14-2-B1"]}
+      >
+         <p>
+            <Trans>
+               De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het
+               corrigendum.
             </Trans>
          </p>
       </TimelineEntry>

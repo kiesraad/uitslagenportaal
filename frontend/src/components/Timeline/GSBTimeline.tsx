@@ -1,6 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Timeline, type TimelineContextProps, VARIANT_DESCRIPTIONS } from "@/components/Timeline/Timeline.tsx";
 import {
+   CorrectionTimelineEntry,
    CsbCheckTimelineEntry,
    CsbResultPublishTimelineEntry,
    GSBVoteCountTimelineEntry,
@@ -23,6 +24,7 @@ export function GSBTimeline({ variant = "DEFAULT", dates, ...timelineProps }: Pr
          {variantDescription && <p className={"mb-4"}>{t(variantDescription)}</p>}
          <Timeline variant={variant} dates={dates} {...timelineProps}>
             <CsbResultPublishTimelineEntry />
+            <CorrectionTimelineEntry />
             <CsbCheckTimelineEntry />
             <HSBVoteCountTimelineEntry />
             <GSBVoteCountTimelineEntry />

@@ -273,6 +273,10 @@ msgstr "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
 msgid "De telresultaten van alle stembureaus in Nederland."
 msgstr "De telresultaten van alle stembureaus in Nederland."
 
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het corrigendum."
+msgstr "De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het corrigendum."
+
 #: src/pages/ReportIssuePage.tsx
 msgid "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
 msgstr "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
@@ -641,6 +645,10 @@ msgstr "Onderstaande documenten bevatten de laatste telresultaten van {regionWit
 #: src/pages/MunicipalityPage/MunicipalityResultsPage.tsx
 msgid "Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
 msgstr "Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "Onderzoek, hertelling en gecorrigeerde resultaten"
+msgstr "Onderzoek, hertelling en gecorrigeerde resultaten"
 
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Ongeldige stemmen"

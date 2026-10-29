@@ -5,6 +5,7 @@ import type { ElectionDocument, Region, RegionSummary, TimelineVariant } from "@
 import { Timeline } from "@/components/Timeline/Timeline";
 import type { TimelineEntryProps } from "@/components/Timeline/TimelineEntry";
 import {
+   CorrectionTimelineEntry,
    CsbCheckTimelineEntry,
    CsbResultPublishTimelineEntry,
    GSBVoteCountTimelineEntry,
@@ -144,6 +145,34 @@ describe("CSB name in the timeline", () => {
       expect(
          screen.getByRole("heading", { level: 3, name: /^The municipality of Utrecht publishes the results/ }),
       ).toBeInTheDocument();
+   });
+});
+
+describe("CorrectionTimelineEntry", () => {
+   it("is hidden without a correction", () => {
+      renderEntry(<CorrectionTimelineEntry />, { region: region({ correction_date: null }) });
+
+      expect(screen.queryByRole("heading", { level: 3 })).not.toBeInTheDocument();
+   });
+
+   it("lists every correction PV", () => {
+      const documents = [
+         { file_type: "PDF_NA14-2", url: "/api/documents/1/download/" },
+         { file_type: "PDF_NA14-2", url: "/api/documents/2/download/" },
+         { file_type: "PDF_NA31-2", url: "/api/documents/3/download/" },
+      ] as ElectionDocument[];
+      renderEntry(<CorrectionTimelineEntry />, {
+         region: region({ correction_date: "2026-03-18T10:00:00+01:00" }),
+         documents,
+      });
+
+      expect(
+         screen.getByRole("heading", { level: 3, name: /^Onderzoek, hertelling en gecorrigeerde resultaten/ }),
+      ).toBeInTheDocument();
+      expect(screen.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+         "/api/documents/1/download/",
+         "/api/documents/2/download/",
+      ]);
    });
 });
 
