@@ -280,15 +280,24 @@ def test_region_detail_has_correction_only_with_a_correction_pv():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)
     CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/pv.pdf")
 
-    assert region_detail(region, "gsb")["has_correction"] is False
+    data = region_detail(region, "gsb")
+    assert data["has_correction"] is False
+    assert data["correction_date"] is None
 
     CertifiedElectionDocumentFactory(
         region=region,
         storage_key="TK2025/correction.pdf",
         file_type=ElectionDocument.FileType.PDF_NA14_2,
     )
+    last = CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/correction-again.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA14_2,
+    )
 
-    assert region_detail(region, "gsb")["has_correction"] is True
+    data = region_detail(region, "gsb")
+    assert data["has_correction"] is True
+    assert data["correction_date"] == last.created_at
 
 
 @pytest.mark.django_db
