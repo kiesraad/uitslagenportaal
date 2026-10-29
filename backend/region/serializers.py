@@ -35,7 +35,15 @@ class RegionListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Region
-        fields = ("region_name", "slug", "region_category", "csb", "station_number", "same_location_stations")
+        fields = (
+            "region_name",
+            "slug",
+            "region_category",
+            "csb",
+            "station_number",
+            "postal_code",
+            "same_location_stations",
+        )
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):

@@ -102,6 +102,7 @@ export type Region = {
    results_available_at: string | null;
    election_slug?: string;
    station_number?: number | null;
+   postal_code?: string | null;
    has_hsb: boolean;
    hsb: RegionSummary | null;
    is_csb: boolean;

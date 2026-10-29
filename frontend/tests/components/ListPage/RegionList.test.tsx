@@ -192,4 +192,41 @@ describe("RegionList", () => {
       expect(screen.getByRole("option", { name: "001 - De Regenboog" })).toBeInTheDocument();
       expect(screen.queryByRole("option", { name: "003 - Basisschool de Piratenboot" })).not.toBeInTheDocument();
    });
+
+   it.each(["1431 BZ", "1431bz"])("finds a stembureau by its postcode typed as %s", (query) => {
+      const stations: Region[] = [
+         {
+            region_name: "Zorgcentrum Aelsmeer",
+            slug: "sb1-zorgcentrum-aelsmeer",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 1,
+            postal_code: "1431 BZ",
+         },
+         {
+            region_name: "Raadhuis Aalsmeer",
+            slug: "sb15-raadhuis-aalsmeer",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 15,
+            postal_code: "1431 EH",
+         },
+      ];
+      renderRegionList({ regionCategory: "STEMBUREAU", regions: stations, parentRegionSlug: "aalsmeer" });
+
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: query } });
+
+      expect(screen.getByRole("option", { name: "001 - Zorgcentrum Aelsmeer" })).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: "015 - Raadhuis Aalsmeer" })).not.toBeInTheDocument();
+   });
 });
