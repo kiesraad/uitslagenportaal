@@ -1,15 +1,11 @@
-from pathlib import Path
-from xml.etree import ElementTree as ET
-
 from django.db import transaction
-from pyeml_bindings import Eml110a
+from pyeml_bindings import (
+    Eml110a,
+)
 
-from election.models import Contest, Election, ElectionDocument, VoteCount
+from election.models import Contest, ElectionDocument
 from eml_import.exceptions import EMLImporterException
-from eml_import.utils.base_importer import BaseImporter
-from eml_import.utils.eml_510_importer import normalise_postal_code, sync_polling_stations
 from eml_import.utils.eml_base_importer import EMLBaseImporter
-from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
 from region.models import Region, build_region_slug
@@ -103,63 +99,3 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
         Region.objects.filter(election=self.election, region_category__in=self.TREE_CATEGORIES).exclude(
             pk__in=imported_ids
         ).delete()
-
-
-EML_NS = {"eml": "urn:oasis:names:tc:evs:schema:eml", "xal": "urn:oasis:names:tc:ciq:xsdschema:xAL:2.0"}
-
-
-class EML110bImporter(BaseImporter):
-    """Stembureaus. Read with ElementTree: pyeml_bindings has no 110b binding."""
-
-    eml_type = EmlType.EML_110b
-    file_type = ElectionDocument.FileType.EML_110B
-
-    def __init__(self, file_path: Path | NamedBytesIO, *args, **kwargs):
-        super().__init__(file_path, *args, **kwargs)
-        if isinstance(file_path, NamedBytesIO):
-            file_path.seek(0)
-        self.root = ET.parse(file_path).getroot()
-        self.election = self._find_election()
-
-    def _find_election(self) -> Election:
-        identifier = self.root.find("eml:ElectionEvent/eml:Election/eml:ElectionIdentifier", EML_NS)
-        name = identifier.findtext("eml:ElectionName", namespaces=EML_NS)
-        try:
-            return Election.objects.get(election_config__identifier=identifier.get("Id").split("_")[0], name=name)
-        except Election.DoesNotExist:
-            raise EMLImporterException(f"Election {name} does not exist")
-
-    def _parse_data(self) -> None:
-        authority = self.root.find("eml:ManagingAuthority/eml:AuthorityIdentifier", EML_NS)
-        authority_id = authority.get("Id")
-        authority_name = (authority.text or "").strip()
-        try:
-            municipality = Region.objects.get(
-                election=self.election, region_number=int(authority_id), region_name=authority_name
-            )
-        except Region.DoesNotExist:
-            raise EMLImporterException(
-                f"Municipality {authority_name} {authority_id} "
-                f"does not exist in the election definition of election {self.election.name}"
-            )
-
-        # Once the 510b is in, its stembureaus are the ones with results
-        if VoteCount.objects.filter(region=municipality, eml_type=EmlType.EML_510b).exists():
-            raise EMLImporterException(
-                f"Cannot import {self.eml_type} for {municipality.region_name}: counting results already imported"
-            )
-
-        name_and_postal_code_by_number: dict[str, tuple[str, str | None]] = {}
-        for location in self.root.iterfind(".//eml:PollingPlace/eml:PhysicalLocation", EML_NS):
-            # Same number as the 510b ReportingUnitIdentifier, e.g. "0096::SB1"
-            region_number = f"{authority_id}::SB{location.find('eml:PollingStation', EML_NS).get('Id')}"
-            locality = location.find("eml:Address/eml:Locality", EML_NS)
-            if locality is None:
-                raise EMLImporterException(f"Stembureau {region_number} has no Locality address")
-            name_and_postal_code_by_number[region_number] = (
-                locality.findtext("xal:LocalityName", default="", namespaces=EML_NS).strip(),
-                normalise_postal_code(
-                    locality.findtext("xal:PostalCode/xal:PostalCodeNumber", default="", namespaces=EML_NS)
-                ),
-            )
-        sync_polling_stations(municipality, name_and_postal_code_by_number)

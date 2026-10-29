@@ -17,7 +17,7 @@ from xsdata.formats.dataclass.parsers.handlers import XmlEventHandler
 
 from eml_import.utils.base_importer import BaseImporter
 from eml_import.utils.csv_osv43_importer import CSVOsv43Importer
-from eml_import.utils.eml_110_importer import EML110aImporter, EML110bImporter
+from eml_import.utils.eml_110_importer import EML110aImporter
 from eml_import.utils.eml_230_importer import EML230bImporter
 from eml_import.utils.eml_510_importer import EML510bImporter, EML510cImporter, EML510dImporter
 from eml_import.utils.eml_520_importer import EML520Importer
@@ -42,7 +42,6 @@ def build_xml_parser() -> XmlParser:
 class BaseFileHandler(ABC):
     _DOCUMENT_TYPES: dict[str, tuple[type[Emlstructure] | None, type[BaseImporter]]] = {
         EmlType.EML_110a: (Eml110a, EML110aImporter),  # Verkiezingsdefinitie
-        EmlType.EML_110b: (None, EML110bImporter),  # Stembureaus
         EmlType.EML_230b: (Eml230, EML230bImporter),  # Kandidatenlijst
         EmlType.EML_510b: (Eml510, EML510bImporter),  # Telling
         EmlType.EML_510c: (Eml510, EML510cImporter),  # Telling HSB

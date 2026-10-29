@@ -236,7 +236,6 @@ class ElectionDocument(BaseModel):
         """
 
         EML_110A = "EML110a", "Verkiezingsdefinitie"
-        EML_110B = "EML110b", "Stembureaus"
         EML_230B = "EML230b", "Kandidatenlijst"
         EML_510B = "EML510b", "Telling GSB"
         EML_510C = "EML510c", "Totaaltelling HSB"

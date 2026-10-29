@@ -25,17 +25,15 @@ from pyeml_bindings import (
 )
 from xsdata.models.datatype import XmlDate
 
-from election.models import Contest, Election, VoteCount
+from election.models import Contest, Election
 from election.tests.factories import ElectionConfigFactory
 from eml_import.exceptions import EMLImporterException
 from eml_import.tests.fakes import fake_eml_file
 from eml_import.tests.test_eml_230_importer import CONTEST_NAME, make_affiliation, make_candidate
 from eml_import.tests.test_eml_230_importer import make_eml as make_230b_eml
-from eml_import.utils.eml_110_importer import EML110aImporter, EML110bImporter
+from eml_import.utils.eml_110_importer import EML110aImporter
 from eml_import.utils.eml_230_importer import EML230bImporter
-from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
-from mainsite.utils.eml_type import EmlType
 from party.models import Party
 from party.tests.factories import PartyFactory
 from region.models import Region
@@ -293,68 +291,3 @@ def test_correction_keeps_stembureaus(election, regions):
     EML110aImporter(fake_eml_file(), eml=make_eml()).parse()
 
     assert Region.objects.filter(pk=stembureau.pk).exists()
-
-
-def make_110b_file(polling_places: list[tuple[int, str, str]]) -> NamedBytesIO:
-    """A 110b for gemeente Borsele with (station id, name, postcode) per stembureau."""
-    places = "".join(
-        f'<PollingPlace Channel="polling"><PhysicalLocation><Address><Locality>'
-        f"<xal:LocalityName>{name}</xal:LocalityName>"
-        f"<xal:PostalCode><xal:PostalCodeNumber>{postal_code}</xal:PostalCodeNumber></xal:PostalCode>"
-        f'</Locality></Address><PollingStation Id="{station_id}">1000</PollingStation></PhysicalLocation>'
-        f"</PollingPlace>"
-        for station_id, name, postal_code in polling_places
-    )
-    xml = (
-        '<EML xmlns="urn:oasis:names:tc:evs:schema:eml" xmlns:xal="urn:oasis:names:tc:ciq:xsdschema:xAL:2.0" '
-        'Id="110b"><ManagingAuthority><AuthorityIdentifier Id="0654">Borsele</AuthorityIdentifier>'
-        f'</ManagingAuthority><ElectionEvent><Election><ElectionIdentifier Id="{ELECTION_ID}">'
-        f"<ElectionName>{ELECTION_NAME}</ElectionName></ElectionIdentifier>"
-        f"<Contest>{places}</Contest></Election></ElectionEvent></EML>"
-    )
-    return NamedBytesIO(xml.encode(), "stembureaus.eml.xml")
-
-
-def test_110b_creates_stembureaus_under_the_gemeente(regions):
-    gemeente = regions[RegionCategory.GEMEENTE]
-
-    EML110bImporter(make_110b_file([(1, "Gemeentehuis ", "4451AA"), (2, "Dorpshuis", "4454 ab")])).parse()
-
-    stembureaus = Region.objects.filter(parent=gemeente, region_category=RegionCategory.STEMBUREAU)
-    assert {(sb.region_number, sb.region_name, sb.postal_code) for sb in stembureaus} == {
-        ("0654::SB1", "Gemeentehuis", "4451 AA"),
-        ("0654::SB2", "Dorpshuis", "4454 AB"),
-    }
-    assert {sb.csb for sb in stembureaus} == {gemeente.csb}
-
-
-def test_110b_correction_updates_adds_and_removes_stembureaus(regions):
-    gemeente = regions[RegionCategory.GEMEENTE]
-    EML110bImporter(make_110b_file([(1, "Gemeentehuis", "4451 AA"), (2, "Dorpshuis", "4454 AB")])).parse()
-    kept = Region.objects.get(parent=gemeente, region_number="0654::SB1")
-
-    EML110bImporter(make_110b_file([(1, "Raadhuis", "4451 AB"), (3, "School", "4455 AC")])).parse()
-
-    stembureaus = Region.objects.filter(parent=gemeente, region_category=RegionCategory.STEMBUREAU)
-    assert {(sb.region_number, sb.region_name, sb.postal_code, sb.slug) for sb in stembureaus} == {
-        ("0654::SB1", "Raadhuis", "4451 AB", "SB1-raadhuis"),
-        ("0654::SB3", "School", "4455 AC", "SB3-school"),
-    }
-    assert stembureaus.get(region_number="0654::SB1").pk == kept.pk
-
-
-def test_110b_rejected_once_the_gemeente_has_510b_counts(election, regions):
-    gemeente = regions[RegionCategory.GEMEENTE]
-    VoteCount.objects.create(
-        contest=Contest.objects.get(election=election),
-        region=gemeente,
-        party=PartyFactory(election=election, list_number=1),
-        valid_votes=1,
-        result_level=VoteCount.RESULT_LEVEL_PARTY,
-        eml_type=EmlType.EML_510b,
-    )
-
-    with pytest.raises(EMLImporterException, match="counting results already imported"):
-        EML110bImporter(make_110b_file([(1, "Gemeentehuis", "4451 AA")])).parse()
-
-    assert not Region.objects.filter(parent=gemeente, region_category=RegionCategory.STEMBUREAU).exists()
