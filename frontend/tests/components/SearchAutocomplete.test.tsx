@@ -153,4 +153,28 @@ describe("SearchAutocomplete", () => {
       fireEvent.change(input, { target: { value: "xyz" } });
       expect(screen.getByRole("status")).toHaveTextContent("Geen resultaten");
    });
+
+   it("shows how many of the results it lists when there are more", () => {
+      renderWithProviders(
+         <SearchAutocomplete
+            label="Zoek gemeente"
+            placeholder="Bijv. Zoetermeer"
+            value="z"
+            onChange={vi.fn()}
+            options={options}
+            isOpen
+            onSelect={vi.fn()}
+            maxSuggestions={1}
+         />,
+      );
+
+      expect(screen.getAllByRole("option")).toHaveLength(1);
+      expect(screen.getByRole("status")).toHaveTextContent("1 van 2 resultaten");
+      expect(screen.getAllByText("1 van 2 resultaten")).toHaveLength(2);
+   });
+
+   it("shows no count below the list when it lists every result", () => {
+      renderAutocomplete();
+      expect(screen.getAllByText("2 resultaten")).toHaveLength(1);
+   });
 });

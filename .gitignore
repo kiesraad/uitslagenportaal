@@ -18,6 +18,8 @@ playwright-report/
 blob-report/
 playwright/.cache/
 playwright/.auth/
+# Playwright MCP server output (snapshots, screenshots, console logs)
+.playwright-mcp/
 
 
 ### Backend
