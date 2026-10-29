@@ -45,6 +45,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     certified_document_url = serializers.SerializerMethodField()
     certified_document_preview_url = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
+    has_correction = serializers.SerializerMethodField()
     election_slug = serializers.CharField(source="election.slug", read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
     same_location_stations = SameLocationStationsField()
@@ -62,6 +63,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "certified_document_url",
             "certified_document_preview_url",
             "timeline_variant",
+            "has_correction",
             "region_category",
             "results_available_at",
             "election_slug",
@@ -94,6 +96,9 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         if not default_storage.exists(preview_key):
             return None
         return reverse("certified-document-preview", kwargs={"pk": document.pk})
+
+    def get_has_correction(self, region) -> bool:
+        return any(document.file_type in ElectionDocument.CORRECTION_FILE_TYPES for document in region.documents.all())
 
     def get_timeline_variant(self, region) -> str:
         counting_method = region.counting_method or (region.parent.counting_method if region.parent else None)

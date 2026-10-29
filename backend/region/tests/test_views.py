@@ -276,6 +276,22 @@ def test_region_detail_lists_every_correction_and_previews_the_last_one():
 
 
 @pytest.mark.django_db
+def test_region_detail_has_correction_only_with_a_correction_pv():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/pv.pdf")
+
+    assert region_detail(region, "gsb")["has_correction"] is False
+
+    CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/correction.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA14_2,
+    )
+
+    assert region_detail(region, "gsb")["has_correction"] is True
+
+
+@pytest.mark.django_db
 def test_region_detail_previews_the_newer_proces_verbaal_when_there_is_no_correction():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)
     CertifiedElectionDocumentFactory(
