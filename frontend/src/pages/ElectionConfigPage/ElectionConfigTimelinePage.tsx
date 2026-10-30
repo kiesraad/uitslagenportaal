@@ -4,6 +4,7 @@ import { type LoaderFunctionArgs, useLoaderData } from "react-router";
 import ElectionConfigTabs from "@/components/ElectionConfigTabs.tsx";
 import { LayoutMain } from "@/components/LayoutMain.tsx";
 import PageTop from "@/components/PageTop.tsx";
+import { ElectionTimelineSection } from "@/components/Timeline/ElectionTimelineSection.tsx";
 import { electionConfigQuery } from "@/hooks/queries.ts";
 import { useFormatters } from "@/utils/format.ts";
 
@@ -37,6 +38,7 @@ export function ElectionConfigTimelinePage() {
             breadcrumb={[{ href: "/", label: t`Home` }, { label: electionConfig.label }]}
             tabs={<ElectionConfigTabs electionConfig={electionConfig} />}
          />
+         <ElectionTimelineSection electionConfig={electionConfig} />
       </LayoutMain>
    );
 }
