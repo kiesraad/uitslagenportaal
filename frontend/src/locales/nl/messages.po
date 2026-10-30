@@ -245,6 +245,14 @@ msgstr "De resultaten van alle gemeenten in Kieskring {0} worden op het hoofdste
 msgid "De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen worden meegenomen in de landelijke uitslag."
 msgstr "De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen worden meegenomen in de landelijke uitslag."
 
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "De resultaten van hertelde stembureaus worden van papier overgetypt in de uitslagensoftware en verwerkt in de optelling van de gemeente."
+msgstr "De resultaten van hertelde stembureaus worden van papier overgetypt in de uitslagensoftware en verwerkt in de optelling van de gemeente."
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "De resultaten van hertelde stembureaus zijn van papier overgetypt in de uitslagensoftware en verwerkt in de optelling van de gemeente."
+msgstr "De resultaten van hertelde stembureaus zijn van papier overgetypt in de uitslagensoftware en verwerkt in de optelling van de gemeente."
+
 #: src/utils/region.ts
 msgid "de staat"
 msgstr "de staat"
@@ -625,8 +633,16 @@ msgid "Nederland"
 msgstr "Nederland"
 
 #: src/components/Timeline/TimelineEntry.tsx
+msgid "Nieuwe gemeentelijke optelling"
+msgstr "Nieuwe gemeentelijke optelling"
+
+#: src/components/Timeline/TimelineEntry.tsx
 msgid "nog niet gestart"
 msgstr "nog niet gestart"
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "Nog niet verwerkt"
+msgstr "Nog niet verwerkt"
 
 #: src/components/ElectionFileEntry.tsx
 msgid "Officieel resultaat van het centraal stembureau, met de zetelverdeling en de gekozen kandidaten."

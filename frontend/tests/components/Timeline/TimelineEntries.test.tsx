@@ -10,6 +10,7 @@ import {
    CsbResultPublishTimelineEntry,
    GSBVoteCountTimelineEntry,
    HSBVoteCountTimelineEntry,
+   MunicipalityRecountTimelineEntry,
    SBVoteCountTimelineEntry,
 } from "@/components/Timeline/TimelineEntry";
 import { renderWithProviders } from "../../testUtils";
@@ -190,6 +191,36 @@ describe("CorrectionTimelineEntry on a stembureau", () => {
       expect(screen.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
          "/api/documents/1/download/",
       ]);
+   });
+});
+
+describe("MunicipalityRecountTimelineEntry", () => {
+   it("is hidden without a correction", () => {
+      renderEntry(<MunicipalityRecountTimelineEntry />, { region: region({ correction_date: null }) });
+
+      expect(screen.queryByRole("heading", { level: 3 })).not.toBeInTheDocument();
+   });
+
+   it("is pending until the corrected count is processed", () => {
+      renderEntry(<MunicipalityRecountTimelineEntry />, {
+         region: region({ correction_date: "2026-03-18T10:00:00+01:00", municipality_recount_date: null }),
+      });
+
+      expect(
+         screen.getByRole("heading", { level: 3, name: "Nieuwe gemeentelijke optelling, nog niet gestart" }),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Nog niet verwerkt")).toBeInTheDocument();
+   });
+
+   it("is done once the corrected count is processed", () => {
+      renderEntry(<MunicipalityRecountTimelineEntry />, {
+         region: region({
+            correction_date: "2026-03-18T10:00:00+01:00",
+            municipality_recount_date: "2026-03-19T10:00:00+01:00",
+         }),
+      });
+
+      expect(screen.getByText(/zijn van papier overgetypt/)).toBeInTheDocument();
    });
 });
 
