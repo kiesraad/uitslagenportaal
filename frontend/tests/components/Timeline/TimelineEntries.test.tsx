@@ -5,10 +5,12 @@ import type { ElectionDocument, Region, RegionSummary, TimelineVariant } from "@
 import { Timeline } from "@/components/Timeline/Timeline";
 import type { TimelineEntryProps } from "@/components/Timeline/TimelineEntry";
 import {
+   CorrectionTimelineEntry,
    CsbCheckTimelineEntry,
    CsbResultPublishTimelineEntry,
    GSBVoteCountTimelineEntry,
    HSBVoteCountTimelineEntry,
+   MunicipalityRecountTimelineEntry,
    SBVoteCountTimelineEntry,
 } from "@/components/Timeline/TimelineEntry";
 import { renderWithProviders } from "../../testUtils";
@@ -41,7 +43,13 @@ function region(overrides: Partial<Region>): Region {
    } as Region;
 }
 
-type Context = { variant?: TimelineVariant; region?: Region; documents?: ElectionDocument[]; locale?: "nl" | "en" };
+type Context = {
+   variant?: TimelineVariant;
+   region?: Region;
+   municipality?: Region;
+   documents?: ElectionDocument[];
+   locale?: "nl" | "en";
+};
 
 function renderEntry(entry: ReactElement<TimelineEntryProps>, { locale, ...timelineProps }: Context = {}) {
    return renderWithProviders(
@@ -143,6 +151,92 @@ describe("CSB name in the timeline", () => {
 
       expect(
          screen.getByRole("heading", { level: 3, name: /^The municipality of Utrecht publishes the results/ }),
+      ).toBeInTheDocument();
+   });
+});
+
+describe("CorrectionTimelineEntry", () => {
+   it("is hidden without a correction", () => {
+      renderEntry(<CorrectionTimelineEntry />, { region: region({ correction_date: null }) });
+
+      expect(screen.queryByRole("heading", { level: 3 })).not.toBeInTheDocument();
+   });
+
+   it("lists every correction PV", () => {
+      const documents = [
+         { file_type: "PDF_NA14-2", url: "/api/documents/1/download/" },
+         { file_type: "PDF_NA14-2", url: "/api/documents/2/download/" },
+         { file_type: "PDF_NA31-2", url: "/api/documents/3/download/" },
+      ] as ElectionDocument[];
+      renderEntry(<CorrectionTimelineEntry />, {
+         region: region({ correction_date: "2026-03-18T10:00:00+01:00" }),
+         documents,
+      });
+
+      expect(
+         screen.getByRole("heading", { level: 3, name: /^Onderzoek, hertelling en gecorrigeerde resultaten/ }),
+      ).toBeInTheDocument();
+      expect(screen.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+         "/api/documents/1/download/",
+         "/api/documents/2/download/",
+      ]);
+   });
+});
+
+describe("CorrectionTimelineEntry on a stembureau", () => {
+   it("lists only the stembureau's correction PV", () => {
+      const documents = [
+         { file_type: "PDF_NA14-1", url: "/api/documents/1/download/" },
+         { file_type: "PDF_NA14-2", url: "/api/documents/2/download/" },
+      ] as ElectionDocument[];
+      renderEntry(<CorrectionTimelineEntry />, {
+         region: region({ region_category: "STEMBUREAU", correction_date: "2026-03-18T10:00:00+01:00" }),
+         documents,
+      });
+
+      expect(screen.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+         "/api/documents/1/download/",
+      ]);
+   });
+});
+
+describe("MunicipalityRecountTimelineEntry", () => {
+   it("is hidden without a correction", () => {
+      renderEntry(<MunicipalityRecountTimelineEntry />, { region: region({ correction_date: null }) });
+
+      expect(screen.queryByRole("heading", { level: 3 })).not.toBeInTheDocument();
+   });
+
+   it("is pending until the corrected count is processed", () => {
+      renderEntry(<MunicipalityRecountTimelineEntry />, {
+         region: region({ correction_date: "2026-03-18T10:00:00+01:00", municipality_recount_date: null }),
+      });
+
+      expect(
+         screen.getByRole("heading", { level: 3, name: "Nieuwe gemeentelijke optelling, nog niet gestart" }),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Nog niet verwerkt")).toBeInTheDocument();
+   });
+
+   it("is done once the corrected count is processed", () => {
+      renderEntry(<MunicipalityRecountTimelineEntry />, {
+         region: region({
+            correction_date: "2026-03-18T10:00:00+01:00",
+            municipality_recount_date: "2026-03-19T10:00:00+01:00",
+         }),
+      });
+
+      expect(screen.getByText(/zijn van papier overgetypt/)).toBeInTheDocument();
+   });
+
+   it("follows the gemeente on a stembureau page", () => {
+      renderEntry(<MunicipalityRecountTimelineEntry />, {
+         region: region({ region_category: "STEMBUREAU", correction_date: null }),
+         municipality: region({ correction_date: "2026-03-18T10:00:00+01:00", municipality_recount_date: null }),
+      });
+
+      expect(
+         screen.getByRole("heading", { level: 3, name: "Nieuwe gemeentelijke optelling, nog niet gestart" }),
       ).toBeInTheDocument();
    });
 });

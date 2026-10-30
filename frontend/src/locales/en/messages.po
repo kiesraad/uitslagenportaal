@@ -245,6 +245,14 @@ msgstr "The results of all municipalities in electoral district {0} are checked 
 msgid "De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen worden meegenomen in de landelijke uitslag."
 msgstr "The results of all polling stations are checked, transcribed from paper into the results software and added up. The municipal electoral committee draws up a report and shares the counting results so that they can be included in the national result."
 
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "De resultaten van hertelde stembureaus worden van papier overgetypt in de uitslagensoftware en verwerkt in de optelling van de gemeente."
+msgstr "The results of recounted polling stations are being typed over from paper into the results software and processed in the municipality's tally."
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "De resultaten van hertelde stembureaus zijn van papier overgetypt in de uitslagensoftware en verwerkt in de optelling van de gemeente."
+msgstr "The results of recounted polling stations have been typed over from paper into the results software and processed in the municipality's tally."
+
 #: src/utils/region.ts
 msgid "de staat"
 msgstr "the state"
@@ -272,6 +280,10 @@ msgstr "The counting results for {regionLabel} have not been published yet"
 #: src/pages/HomePage.tsx
 msgid "De telresultaten van alle stembureaus in Nederland."
 msgstr "The counting results of every polling station in the Netherlands."
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het corrigendum."
+msgstr "The count results were investigated and recounted where necessary. The corrected results are in the corrigendum."
 
 #: src/pages/ReportIssuePage.tsx
 msgid "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
@@ -621,8 +633,16 @@ msgid "Nederland"
 msgstr "the Netherlands"
 
 #: src/components/Timeline/TimelineEntry.tsx
+msgid "Nieuwe gemeentelijke optelling"
+msgstr "New municipal tally"
+
+#: src/components/Timeline/TimelineEntry.tsx
 msgid "nog niet gestart"
 msgstr "not started yet"
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "Nog niet verwerkt"
+msgstr "Not yet processed"
 
 #: src/components/ElectionFileEntry.tsx
 msgid "Officieel resultaat van het centraal stembureau, met de zetelverdeling en de gekozen kandidaten."
@@ -641,6 +661,10 @@ msgstr "The documents below contain the latest counting results for {regionWithA
 #: src/pages/MunicipalityPage/MunicipalityResultsPage.tsx
 msgid "Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
 msgstr "The documents below contain the latest counting results for the municipality, as they are included in the result. The figures in the overview above come from the EML_NL count file."
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "Onderzoek, hertelling en gecorrigeerde resultaten"
+msgstr "Investigation, recount and corrected results"
 
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Ongeldige stemmen"

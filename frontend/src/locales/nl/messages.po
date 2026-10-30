@@ -245,6 +245,14 @@ msgstr "De resultaten van alle gemeenten in Kieskring {0} worden op het hoofdste
 msgid "De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen worden meegenomen in de landelijke uitslag."
 msgstr "De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen worden meegenomen in de landelijke uitslag."
 
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "De resultaten van hertelde stembureaus worden van papier overgetypt in de uitslagensoftware en verwerkt in de optelling van de gemeente."
+msgstr "De resultaten van hertelde stembureaus worden van papier overgetypt in de uitslagensoftware en verwerkt in de optelling van de gemeente."
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "De resultaten van hertelde stembureaus zijn van papier overgetypt in de uitslagensoftware en verwerkt in de optelling van de gemeente."
+msgstr "De resultaten van hertelde stembureaus zijn van papier overgetypt in de uitslagensoftware en verwerkt in de optelling van de gemeente."
+
 #: src/utils/region.ts
 msgid "de staat"
 msgstr "de staat"
@@ -272,6 +280,10 @@ msgstr "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
 #: src/pages/HomePage.tsx
 msgid "De telresultaten van alle stembureaus in Nederland."
 msgstr "De telresultaten van alle stembureaus in Nederland."
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het corrigendum."
+msgstr "De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het corrigendum."
 
 #: src/pages/ReportIssuePage.tsx
 msgid "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
@@ -621,8 +633,16 @@ msgid "Nederland"
 msgstr "Nederland"
 
 #: src/components/Timeline/TimelineEntry.tsx
+msgid "Nieuwe gemeentelijke optelling"
+msgstr "Nieuwe gemeentelijke optelling"
+
+#: src/components/Timeline/TimelineEntry.tsx
 msgid "nog niet gestart"
 msgstr "nog niet gestart"
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "Nog niet verwerkt"
+msgstr "Nog niet verwerkt"
 
 #: src/components/ElectionFileEntry.tsx
 msgid "Officieel resultaat van het centraal stembureau, met de zetelverdeling en de gekozen kandidaten."
@@ -641,6 +661,10 @@ msgstr "Onderstaande documenten bevatten de laatste telresultaten van {regionWit
 #: src/pages/MunicipalityPage/MunicipalityResultsPage.tsx
 msgid "Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
 msgstr "Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "Onderzoek, hertelling en gecorrigeerde resultaten"
+msgstr "Onderzoek, hertelling en gecorrigeerde resultaten"
 
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Ongeldige stemmen"

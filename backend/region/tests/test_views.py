@@ -276,6 +276,56 @@ def test_region_detail_lists_every_correction_and_previews_the_last_one():
 
 
 @pytest.mark.django_db
+def test_region_detail_has_correction_only_with_a_correction_pv():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/pv.pdf")
+
+    data = region_detail(region, "gsb")
+    assert data["has_correction"] is False
+    assert data["correction_date"] is None
+
+    CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/correction.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA14_2,
+    )
+    last = CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/correction-again.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA14_2,
+    )
+
+    data = region_detail(region, "gsb")
+    assert data["has_correction"] is True
+    assert data["correction_date"] == last.created_at
+
+
+@pytest.mark.django_db
+def test_region_detail_municipality_recount_date_waits_for_a_corrected_510b_per_corrigendum():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    ElectionDocumentFactory(
+        region=region, storage_key="TK2025/telling.xml", file_type=ElectionDocument.FileType.EML_510B, is_current=False
+    )
+    CertifiedElectionDocumentFactory(
+        region=region, storage_key="TK2025/correction.pdf", file_type=ElectionDocument.FileType.PDF_NA14_2
+    )
+
+    assert region_detail(region, "gsb")["municipality_recount_date"] is None
+
+    corrected = ElectionDocumentFactory(
+        region=region, storage_key="TK2025/telling-2.xml", file_type=ElectionDocument.FileType.EML_510B
+    )
+
+    assert region_detail(region, "gsb")["municipality_recount_date"] == corrected.created_at
+
+    CertifiedElectionDocumentFactory(
+        region=region, storage_key="TK2025/correction-2.pdf", file_type=ElectionDocument.FileType.PDF_NA14_2
+    )
+
+    assert region_detail(region, "gsb")["municipality_recount_date"] is None
+
+
+@pytest.mark.django_db
 def test_region_detail_previews_the_newer_proces_verbaal_when_there_is_no_correction():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)
     CertifiedElectionDocumentFactory(

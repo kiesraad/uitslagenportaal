@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 from django.core.files.storage import default_storage
@@ -6,6 +7,7 @@ from rest_framework import serializers
 
 from election.models import ElectionDocument, TimelineVariant
 from election.serializers import ElectionDocumentSerializer
+from mainsite.models import RegionCategory
 from mainsite.serializers import (
     RegionSummarySerializer,
     VoteCountSummarySerializer,
@@ -45,6 +47,9 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     certified_document_url = serializers.SerializerMethodField()
     certified_document_preview_url = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
+    has_correction = serializers.SerializerMethodField()
+    correction_date = serializers.SerializerMethodField()
+    municipality_recount_date = serializers.SerializerMethodField()
     election_slug = serializers.CharField(source="election.slug", read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
     same_location_stations = SameLocationStationsField()
@@ -62,6 +67,9 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "certified_document_url",
             "certified_document_preview_url",
             "timeline_variant",
+            "has_correction",
+            "correction_date",
+            "municipality_recount_date",
             "region_category",
             "results_available_at",
             "election_slug",
@@ -94,6 +102,38 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         if not default_storage.exists(preview_key):
             return None
         return reverse("certified-document-preview", kwargs={"pk": document.pk})
+
+    def _corrections(self, region) -> list[ElectionDocument]:
+        return [
+            document
+            for document in region.documents.all()
+            if document.file_type in ElectionDocument.CORRECTION_FILE_TYPES
+        ]
+
+    def get_has_correction(self, region) -> bool:
+        return bool(self._corrections(region))
+
+    def get_correction_date(self, region) -> datetime | None:
+        return max((document.created_at for document in self._corrections(region)), default=None)
+
+    def get_municipality_recount_date(self, region) -> datetime | None:
+        """When the gemeente's 510b caught up with its Na 14-2 corrigenda; None until it has."""
+        if region.region_category != RegionCategory.GEMEENTE:
+            return None
+        corrections = [
+            document
+            for document in self._corrections(region)
+            if document.file_type == ElectionDocument.FileType.PDF_NA14_2
+        ]
+        if not corrections:
+            return None
+        # The first 510b is the original count; each later one processes one corrigendum.
+        counts = ElectionDocument.all_objects.filter(
+            region=region, file_type=ElectionDocument.FileType.EML_510B
+        ).order_by("-created_at", "-pk")
+        if counts.count() - 1 < len(corrections):
+            return None
+        return counts.first().created_at
 
     def get_timeline_variant(self, region) -> str:
         counting_method = region.counting_method or (region.parent.counting_method if region.parent else None)

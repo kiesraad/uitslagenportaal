@@ -131,7 +131,7 @@ export default function TimelineEntry({
             <div className="mb-1.5 text-muted">{formatTimelineDate(resolved)}</div>
             <div className="flex flex-col gap-4 leading-6">{children}</div>
             {selectedDocs.map((doc) => (
-               <ElectionFileEntry key={doc.file_type} file={doc} className="mt-2 bg-info-bg p-3" />
+               <ElectionFileEntry key={doc.url} file={doc} className="mt-2 bg-info-bg p-3" />
             ))}
          </div>
       </li>
@@ -174,6 +174,72 @@ export function GSBVoteCountTimelineEntry() {
                en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen
                worden meegenomen in de landelijke uitslag.
             </Trans>
+         </p>
+      </TimelineEntry>
+   );
+}
+
+const CORRECTION_DOCUMENT_TYPES: Partial<Record<RegionCategory, ElectionDocumentFileType[]>> = {
+   STEMBUREAU: ["PDF_NA14-1"],
+   GEMEENTE: ["PDF_NA14-2", "PDF_NA14-2-B1"],
+};
+
+export function CorrectionTimelineEntry() {
+   const { region } = useTimelineContext();
+
+   if (!region?.correction_date) {
+      return null;
+   }
+
+   const documentTypes = CORRECTION_DOCUMENT_TYPES[region.region_category];
+   if (!documentTypes) {
+      throw new Error(`No correction step for region category ${region.region_category}`);
+   }
+
+   return (
+      <TimelineEntry
+         // TimelineDate requires an event; the date itself comes from the region.
+         date={{ event: "municipality_vote_count", date: region.correction_date, qualifier: "all_day" }}
+         title={t`Onderzoek, hertelling en gecorrigeerde resultaten`}
+         document_types={documentTypes}
+      >
+         <p>
+            <Trans>
+               De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het
+               corrigendum.
+            </Trans>
+         </p>
+      </TimelineEntry>
+   );
+}
+
+export function MunicipalityRecountTimelineEntry() {
+   const { region, municipality = region } = useTimelineContext();
+
+   if (municipality?.region_category !== "GEMEENTE" || !municipality.correction_date) {
+      return null;
+   }
+
+   const recountDate = municipality.municipality_recount_date;
+
+   return (
+      <TimelineEntry
+         // An unparsable date renders as is and leaves the step pending.
+         date={{ event: "municipality_vote_count", date: recountDate ?? t`Nog niet verwerkt`, qualifier: "all_day" }}
+         title={t`Nieuwe gemeentelijke optelling`}
+      >
+         <p>
+            {recountDate ? (
+               <Trans>
+                  De resultaten van hertelde stembureaus zijn van papier overgetypt in de uitslagensoftware en verwerkt
+                  in de optelling van de gemeente.
+               </Trans>
+            ) : (
+               <Trans>
+                  De resultaten van hertelde stembureaus worden van papier overgetypt in de uitslagensoftware en
+                  verwerkt in de optelling van de gemeente.
+               </Trans>
+            )}
          </p>
       </TimelineEntry>
    );

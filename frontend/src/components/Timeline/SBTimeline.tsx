@@ -1,10 +1,12 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Timeline, type TimelineContextProps, VARIANT_DESCRIPTIONS } from "@/components/Timeline/Timeline.tsx";
 import TimelineEntry, {
+   CorrectionTimelineEntry,
    CsbCheckTimelineEntry,
    CsbResultPublishTimelineEntry,
    GSBVoteCountTimelineEntry,
    HSBVoteCountTimelineEntry,
+   MunicipalityRecountTimelineEntry,
    SBVoteCountTimelineEntry,
 } from "@/components/Timeline/TimelineEntry.tsx";
 
@@ -23,6 +25,8 @@ export function SBTimeline({ variant = "DEFAULT", dates, ...timelineProps }: Pro
          {variantDescription && <p className={"mb-4"}>{t(variantDescription)}</p>}
          <Timeline dates={dates} variant={variant} {...timelineProps}>
             <CsbResultPublishTimelineEntry />
+            <MunicipalityRecountTimelineEntry />
+            <CorrectionTimelineEntry />
             <CsbCheckTimelineEntry />
             <HSBVoteCountTimelineEntry />
             <GSBVoteCountTimelineEntry />
