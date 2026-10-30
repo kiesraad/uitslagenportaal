@@ -176,6 +176,23 @@ describe("CorrectionTimelineEntry", () => {
    });
 });
 
+describe("CorrectionTimelineEntry on a stembureau", () => {
+   it("lists only the stembureau's correction PV", () => {
+      const documents = [
+         { file_type: "PDF_NA14-1", url: "/api/documents/1/download/" },
+         { file_type: "PDF_NA14-2", url: "/api/documents/2/download/" },
+      ] as ElectionDocument[];
+      renderEntry(<CorrectionTimelineEntry />, {
+         region: region({ region_category: "STEMBUREAU", correction_date: "2026-03-18T10:00:00+01:00" }),
+         documents,
+      });
+
+      expect(screen.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+         "/api/documents/1/download/",
+      ]);
+   });
+});
+
 describe("HSBVoteCountTimelineEntry", () => {
    it("is hidden without a region", () => {
       renderEntry(<HSBVoteCountTimelineEntry />);

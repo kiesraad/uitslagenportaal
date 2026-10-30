@@ -179,6 +179,11 @@ export function GSBVoteCountTimelineEntry() {
    );
 }
 
+const CORRECTION_DOCUMENT_TYPES: Partial<Record<RegionCategory, ElectionDocumentFileType[]>> = {
+   STEMBUREAU: ["PDF_NA14-1"],
+   GEMEENTE: ["PDF_NA14-2", "PDF_NA14-2-B1"],
+};
+
 export function CorrectionTimelineEntry() {
    const { region } = useTimelineContext();
 
@@ -186,12 +191,17 @@ export function CorrectionTimelineEntry() {
       return null;
    }
 
+   const documentTypes = CORRECTION_DOCUMENT_TYPES[region.region_category];
+   if (!documentTypes) {
+      throw new Error(`No correction step for region category ${region.region_category}`);
+   }
+
    return (
       <TimelineEntry
          // TimelineDate requires an event; the date itself comes from the region.
          date={{ event: "municipality_vote_count", date: region.correction_date, qualifier: "all_day" }}
          title={t`Onderzoek, hertelling en gecorrigeerde resultaten`}
-         document_types={["PDF_NA14-1", "PDF_NA14-2", "PDF_NA14-2-B1"]}
+         document_types={documentTypes}
       >
          <p>
             <Trans>
