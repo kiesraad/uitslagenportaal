@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef
 from pyeml_bindings import (
     Eml230,
 )
@@ -32,34 +32,36 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
                 self._delete(contest_data)
 
             # The contest can already exist for elections with one contest, but for elections with multiple contests
-            # we still need to create it. name is never set in 110a, so select on id/election only.
+            # we still need to create it. The 110a has no contest name, so select on id/election only.
             contest, _ = Contest.objects.update_or_create(
                 identifier=contest_data.contest_identifier.id,
                 election=self.election,
                 defaults={"name": contest_data.contest_identifier.contest_name},
             )
 
+            # Drops parties (blanco ones too) whose list number is gone after a correction, unless they still run in
+            # another contest (TK/PS kieskringen). Runs first, so the names and numbers it frees can be reused below.
+            list_numbers = {self._list_number(affiliation) for affiliation in contest_data.affiliation}
+            in_other_contest = Candidate.objects.filter(party=OuterRef("pk")).exclude(contest=contest)
+            Party.objects.filter(election=self.election).exclude(list_number__in=list_numbers).exclude(
+                Exists(in_other_contest)
+            ).delete()
+
             candidates: list[Candidate] = []
             for affiliation in contest_data.affiliation:
-                assert affiliation.affiliation_identifier.id, (
-                    f"AffiliationIdentifier/@Id missing for party "
-                    f"{affiliation.affiliation_identifier.registered_name or self.BLANCO_PARTY_REGISTERED_NAME}"
+                # Some candidates are not affiliated to any party, in that case affiliation_identifier.registered_name
+                # is empty and we name the party 'Blanco Lijst <list number>'.
+                list_number = self._list_number(affiliation)
+                registered_name = (
+                    affiliation.affiliation_identifier.registered_name
+                    or f"{self.BLANCO_PARTY_REGISTERED_NAME} {list_number}"
                 )
-                list_number = int(affiliation.affiliation_identifier.id)
-                try:
-                    party = Party.objects.get(
-                        election=self.election,
-                        registered_name=affiliation.affiliation_identifier.registered_name,
-                    )
-                    party.list_number = list_number
-                    party.save(update_fields=["list_number", "updated_at"])
-                except Party.DoesNotExist:
-                    # Some candidates are not affiliated to any party
-                    party, _ = Party.objects.get_or_create(
-                        election=self.election,
-                        registered_name=f"{self.BLANCO_PARTY_REGISTERED_NAME} {list_number}",
-                        list_number=list_number,
-                    )
+                # Matched on list number, so a correction can rename a list, e.g. give a blanco lijst its name.
+                party, _ = Party.objects.update_or_create(
+                    election=self.election,
+                    list_number=list_number,
+                    defaults={"registered_name": registered_name, "slug": Party.slug_for(registered_name)},
+                )
 
                 for candidate in affiliation.candidate:
                     identifier = int(candidate.candidate_identifier.id)
@@ -85,6 +87,13 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
 
             if candidates:
                 Candidate.objects.bulk_create(candidates, batch_size=self.BULK_BATCH_SIZE)
+
+    def _list_number(self, affiliation) -> int:
+        assert affiliation.affiliation_identifier.id, (
+            f"AffiliationIdentifier/@Id missing for party "
+            f"{affiliation.affiliation_identifier.registered_name or self.BLANCO_PARTY_REGISTERED_NAME}"
+        )
+        return int(affiliation.affiliation_identifier.id)
 
     def _is_correction(self, contest_data) -> bool:
         """

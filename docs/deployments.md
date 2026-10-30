@@ -127,6 +127,11 @@ filterable by namespace, container, status and path. The **Celery** dashboard sh
 what beat sent (a gap means beat is down), a table of task runs and the worker and beat logs. Celery's task lines add
 `task`, `task_id` and `runtime` (seconds) to the fields above.
 
+The **Postgres** dashboard reads the postgres-exporter: connections, transactions, rows, locks, temporary files and a
+table of sizes, dead rows and autovacuum runs. Connections count the whole managed instance, which the environments
+share; everything else is the selected database. The exporter's `database` and `wal` collectors are off, because the
+application's role cannot read them on the managed instance, so database sizes come from the per-table metrics.
+
 Dashboards live in `monitoring/dashboards/` and are loaded by Grafana's sidecar; changes made in the Grafana UI are lost
 on the next upgrade, so export them back to that directory.
 

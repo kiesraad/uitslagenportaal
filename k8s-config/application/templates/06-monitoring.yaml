@@ -205,10 +205,11 @@ spec:
             description: "The managed database for {{ `{{ $labels.namespace }}` }} has been unreachable for five minutes."
 
         # Each serving thread holds a persistent connection; fires when the budget in the
-        # ConfigMap comments no longer fits.
+        # ConfigMap comments no longer fits. The max keeps two exporter pods mid-rollout
+        # from counting every connection twice.
         - alert: PostgresConnectionSaturation
           expr: |
-            sum by (namespace) (pg_stat_database_numbackends{namespace="{{ .Release.Namespace }}"})
+            sum by (namespace) (max by (namespace, datname) (pg_stat_database_numbackends{namespace="{{ .Release.Namespace }}"}))
               / max by (namespace) (pg_settings_max_connections{namespace="{{ .Release.Namespace }}"}) > 0.8
           for: 10m
           labels:

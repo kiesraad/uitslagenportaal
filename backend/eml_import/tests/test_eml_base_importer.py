@@ -90,7 +90,7 @@ def test_imports_against_an_expired_election_config():
 def test_raises_when_election_config_is_missing():
     eml_file = fake_eml_file("definitie.eml.xml")
 
-    with pytest.raises(ElectionConfig.DoesNotExist):
+    with pytest.raises(EMLImporterException, match=f"ElectionConfig does not exist for {CONFIG_IDENTIFIER}"):
         EML110aImporter(eml_file, eml=make_110a_eml())
 
     assert not Election.objects.exists()

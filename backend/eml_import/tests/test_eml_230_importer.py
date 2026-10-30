@@ -120,7 +120,7 @@ def make_eml(*, affiliations=None, contest_id=CONTEST_ID) -> Eml230:
 
 @pytest.fixture
 def election(db):
-    """Created up front, so a Party can already exist at import time as it would after a 110a import.
+    """Created up front, so a Party can already exist at import time.
 
     The name/subcategory match what _parse_election() resolves from ElectionIdentifier,
     so the importer's get_or_create() finds this row instead of adding a second one.
@@ -136,8 +136,8 @@ def election(db):
 
 @pytest.fixture
 def party(election):
-    """The party a 110a import registered; 230b only fills in its list number."""
-    return PartyFactory(election=election, registered_name=REGISTERED_NAME)
+    """The party an earlier import of this list created."""
+    return PartyFactory(election=election, registered_name=REGISTERED_NAME, list_number=LIST_NUMBER)
 
 
 @pytest.fixture
@@ -166,11 +166,32 @@ def test_creates_candidates_for_affiliation(contest, party):
     ]
 
 
-def test_assigns_list_number_to_registered_party(contest, party, election):
-    party.refresh_from_db()
+def test_correction_renames_the_party_with_the_same_list_number(election):
+    party = PartyFactory(election=election, registered_name="Blanco Lijst 1", list_number=LIST_NUMBER)
 
-    assert party.list_number == LIST_NUMBER
+    EML230bImporter(fake_eml_file(), eml=make_eml()).parse()
+
+    party.refresh_from_db()
+    assert (party.registered_name, party.slug) == (REGISTERED_NAME, "cda")
     assert Party.objects.filter(election=election).count() == 1
+
+
+def test_correction_replaces_a_party_with_another_list_number(election):
+    stale = PartyFactory(election=election, registered_name=REGISTERED_NAME, list_number=7)
+
+    EML230bImporter(fake_eml_file(), eml=make_eml()).parse()
+
+    party = Party.objects.get(election=election)
+    assert (party.registered_name, party.list_number) == (REGISTERED_NAME, LIST_NUMBER)
+    assert party.pk != stale.pk
+
+
+def test_creates_party_with_list_number(election):
+    EML230bImporter(fake_eml_file(), eml=make_eml()).parse()
+
+    party = Party.objects.get(election=election)
+    assert (party.registered_name, party.list_number) == (REGISTERED_NAME, LIST_NUMBER)
+    assert party.candidates.count() == 2
 
 
 def test_creates_blanco_party_for_affiliation_without_registered_name(election):
@@ -181,6 +202,67 @@ def test_creates_blanco_party_for_affiliation_without_registered_name(election):
     party = Party.objects.get(election=election)
     assert (party.registered_name, party.list_number) == ("Blanco Lijst 12", 12)
     assert party.candidates.get().last_name == "Richel"
+
+
+def test_deletes_party_without_list_number(election, party):
+    without_list = PartyFactory(election=election, registered_name="Partij zonder lijst")
+
+    EML230bImporter(fake_eml_file(), eml=make_eml()).parse()
+
+    assert not Party.objects.filter(pk=without_list.pk).exists()
+    assert Party.objects.filter(pk=party.pk).exists()
+
+
+def test_deletes_party_whose_list_number_is_not_in_the_list(election, party):
+    other_party = PartyFactory(election=election, registered_name="VVD", list_number=2)
+
+    EML230bImporter(fake_eml_file(), eml=make_eml()).parse()
+
+    assert not Party.objects.filter(pk=other_party.pk).exists()
+
+
+CDA = make_affiliation(LIST_NUMBER, REGISTERED_NAME, DEFAULT_CANDIDATES)
+VVD = make_affiliation(2, "VVD", [make_candidate(1, "D.", "Dilan", "Yeşilgöz")])
+
+
+def import_kieskring(contest_id, *affiliations):
+    """One 230b of an election with a contest per kieskring, such as TK and some PS."""
+    EML230bImporter(fake_eml_file(), eml=make_eml(contest_id=contest_id, affiliations=affiliations)).parse()
+
+
+def test_keeps_party_that_runs_in_another_kieskring(election):
+    import_kieskring("1", CDA, VVD)
+
+    import_kieskring("2", CDA)
+
+    vvd = Party.objects.get(election=election, list_number=2)
+    assert list(vvd.candidates.values_list("contest__identifier", flat=True)) == ["1"]
+
+
+def test_correction_deletes_party_that_ran_in_that_kieskring_only(election):
+    import_kieskring("1", CDA, VVD)
+    import_kieskring("2", CDA)
+
+    import_kieskring("1", CDA)
+
+    assert list(Party.objects.filter(election=election).values_list("list_number", flat=True)) == [LIST_NUMBER]
+
+
+def test_correction_keeps_party_that_still_runs_in_another_kieskring(election):
+    import_kieskring("1", CDA, VVD)
+    import_kieskring("2", CDA, VVD)
+
+    import_kieskring("1", CDA)
+
+    vvd = Party.objects.get(election=election, list_number=2)
+    assert list(vvd.candidates.values_list("contest__identifier", flat=True)) == ["2"]
+
+
+def test_correction_deletes_party_dropped_from_the_list(contest, party, election):
+    blanco = make_affiliation(2, None, [make_candidate(1, "T.E.", "Theo", "Richel")])
+    EML230bImporter(fake_eml_file(), eml=make_eml(affiliations=[blanco])).parse()
+
+    assert list(Party.objects.filter(election=election).values_list("registered_name", flat=True)) == ["Blanco Lijst 2"]
 
 
 def test_correction_deletes_prior_contest_and_candidates(contest, party):

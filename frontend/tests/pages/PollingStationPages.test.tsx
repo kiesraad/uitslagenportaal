@@ -28,8 +28,18 @@ const gemeente: Region = {
    vote_counts: [],
    region_category: "GEMEENTE",
    results_available_at: null,
-   csb_name: "Scheldestromen",
-   csb_slug: "17-scheldestromen",
+   has_hsb: false,
+   is_csb: false,
+   hsb: null,
+   csb: {
+      id: 17,
+      election_id: 1,
+      parent_id: 1,
+      region_number: "17",
+      region_category: "WATERSCHAP",
+      region_name: "Scheldestromen",
+      slug: "17-scheldestromen",
+   },
 };
 
 const pollingStation: Region = {
@@ -38,11 +48,14 @@ const pollingStation: Region = {
    vote_counts: [],
    region_category: "STEMBUREAU",
    results_available_at: null,
+   has_hsb: false,
+   is_csb: false,
+   hsb: null,
    station_number: 1,
-   csb_slug: "17-scheldestromen",
+   csb: gemeente.csb,
 };
 
-function seedPollingStationQueries() {
+function seedPollingStationQueries(station: Region = pollingStation) {
    const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
    });
@@ -51,7 +64,7 @@ function seedPollingStationQueries() {
       {
          electionConfigSlug: electionConfig.slug,
          regionSlug: gemeente.slug,
-         csbSlug: gemeente.csb_slug ?? undefined,
+         csbSlug: gemeente.csb?.slug,
       },
       "gsb",
    );
@@ -59,14 +72,14 @@ function seedPollingStationQueries() {
       {
          electionConfigSlug: electionConfig.slug,
          regionSlug: pollingStation.slug,
-         csbSlug: gemeente.csb_slug ?? undefined,
+         csbSlug: gemeente.csb?.slug,
          parentRegionSlug: gemeente.slug,
       },
       "sb",
    );
    queryClient.setQueryData(electionQuery.queryKey, electionConfig);
    queryClient.setQueryData(gemeenteQuery.queryKey, gemeente);
-   queryClient.setQueryData(stationQuery.queryKey, pollingStation);
+   queryClient.setQueryData(stationQuery.queryKey, station);
    return {
       queryClient,
       loaderData: {
@@ -83,7 +96,7 @@ describe("PollingStationPages", () => {
       renderWithProviders(<PollingStationResultsPage />, {
          path: "/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/:pollingStationSlug",
          initialEntries: [
-            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb_slug}/${pollingStation.slug}`,
+            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb?.slug}/${pollingStation.slug}`,
          ],
          loaderData,
          queryClient,
@@ -100,7 +113,7 @@ describe("PollingStationPages", () => {
       renderWithProviders(<PollingStationPartyResultsPage />, {
          path: "/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/:pollingStationSlug/:partySlug",
          initialEntries: [
-            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb_slug}/${pollingStation.slug}/vvd`,
+            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb?.slug}/${pollingStation.slug}/vvd`,
          ],
          loaderData,
          queryClient,
@@ -108,5 +121,49 @@ describe("PollingStationPages", () => {
 
       const crumbs = screen.getByRole("navigation", { name: "Kruimelpad" });
       expect(within(crumbs).getByRole("link", { name: "001 - De Regenboog" })).toBeInTheDocument();
+   });
+
+   it("links a dubbel stembureau to the other stembureau at its location", () => {
+      const { queryClient, loaderData } = seedPollingStationQueries({
+         ...pollingStation,
+         vote_counts: [
+            {
+               id: 1,
+               valid_votes: 10,
+               candidate: null,
+               party: { registered_name: "VVD", slug: "vvd", list_number: 1 },
+               result_level: "PARTY",
+            },
+         ],
+         same_location_stations: [{ station_number: 2, slug: "SB2-de-regenboog" }],
+      });
+      renderWithProviders(<PollingStationResultsPage />, {
+         path: "/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/:pollingStationSlug",
+         initialEntries: [
+            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb?.slug}/${pollingStation.slug}`,
+         ],
+         loaderData,
+         queryClient,
+      });
+
+      expect(screen.getByRole("heading", { name: "Dit is een dubbel stembureau" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "stembureau 2" })).toHaveAttribute(
+         "href",
+         expect.stringContaining("SB2-de-regenboog"),
+      );
+   });
+
+   it("shows no dubbel-stembureau notice for a stembureau alone at its location", () => {
+      const { queryClient, loaderData } = seedPollingStationQueries();
+      renderWithProviders(<PollingStationResultsPage />, {
+         path: "/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/:pollingStationSlug",
+         initialEntries: [
+            `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb?.slug}/${pollingStation.slug}`,
+         ],
+         loaderData,
+         queryClient,
+      });
+
+      expect(screen.queryByText(/dubbel stembureau/)).not.toBeInTheDocument();
    });
 });

@@ -1,6 +1,6 @@
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { Link, type LoaderFunctionArgs, useLoaderData } from "react-router";
 import { SBTimeline } from "@/components/Timeline/SBTimeline.tsx";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop";
@@ -46,13 +46,13 @@ export type PollingStationLoaderData = Awaited<ReturnType<ReturnType<typeof poll
 export default function PollingStationResultsPage() {
    const { electionConfigQuery, regionQuery, pollingStationQuery } = useLoaderData<PollingStationLoaderData>();
    const { t } = useLingui();
-   const { formatDate } = useFormatters();
+   const { formatDate, locale } = useFormatters();
    // The loader has already resolved every query, so the data is never pending here.
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
    const { data: region } = useSuspenseQuery(regionQuery);
    const { data: pollingStation } = useSuspenseQuery(pollingStationQuery);
 
-   const csbSlug = region.csb_slug ?? undefined;
+   const csbSlug = region.csb?.slug;
    const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(
       electionConfig.slug,
       region.slug,
@@ -67,6 +67,25 @@ export default function PollingStationResultsPage() {
    const pageTitle = `${t`Telresultaten stembureau`}\n${stationName}`;
    const documentTitle = t`Telresultaten stembureau – ${stationName}`;
 
+   const sameLocationStations = (pollingStation.same_location_stations ?? []).filter(
+      (station) => station.station_number != null,
+   );
+   const otherStationLinks = new Intl.ListFormat(locale)
+      .formatToParts(sameLocationStations.map((station) => String(station.station_number)))
+      .map((part) => {
+         if (part.type === "literal") return part.value;
+         const stationNumber = part.value;
+         const station = sameLocationStations.find(({ station_number }) => String(station_number) === stationNumber);
+         return (
+            <Link
+               key={stationNumber}
+               to={appRoutes.pollingStationResults(electionConfig.slug, region.slug, station?.slug ?? "", csbSlug)}
+            >
+               {t`stembureau ${stationNumber}`}
+            </Link>
+         );
+      });
+
    return (
       <LayoutMain title={documentTitle} description={documentTitle}>
          <PageTop
@@ -75,7 +94,7 @@ export default function PollingStationResultsPage() {
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
                { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
-               getCsbCrumb(region, electionConfig.slug),
+               getCsbCrumb(region, electionConfig),
                { href: municipalityPollingstationListRoute, label: t`Gemeente ${regionName}` },
                { label: stationLabel },
             ]}
@@ -86,12 +105,31 @@ export default function PollingStationResultsPage() {
          >
             <RegionResultsContent
                intro={t`De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware.`}
+               notice={
+                  sameLocationStations.length > 0 && (
+                     <>
+                        <h2 className="h4">
+                           <Trans>Dit is een dubbel stembureau</Trans>
+                        </h2>
+                        <p>
+                           <Trans>Op dezelfde locatie zit ook {otherStationLinks}.</Trans>
+                        </p>
+                     </>
+                  )
+               }
                voteCounts={pollingStation.vote_counts}
                turnoutVotes={pollingStation.voter_turnout_counts}
                issueReportDeadline={electionConfig.issue_report_deadline}
                notPublishedRegionName={region.region_name}
                notPublishedRegionCategory={region.region_category}
-               timeline={<SBTimeline variant={pollingStation.timeline_variant} dates={electionConfig.timeline_dates} />}
+               timeline={
+                  <SBTimeline
+                     variant={pollingStation.timeline_variant}
+                     dates={electionConfig.timeline_dates}
+                     documents={region.documents}
+                     region={region}
+                  />
+               }
             />
          </ResultsPageColumns>
       </LayoutMain>

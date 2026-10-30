@@ -23,7 +23,7 @@ export default function PollingStationPartyResultsPage() {
    const { data: region } = useSuspenseQuery(regionQuery);
    const { data: pollingStation } = useSuspenseQuery(pollingStationQuery);
 
-   const csbSlug = region.csb_slug ?? undefined;
+   const csbSlug = region.csb?.slug;
    const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(
       electionConfig.slug,
       region.slug,
@@ -58,7 +58,7 @@ export default function PollingStationPartyResultsPage() {
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
                { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
-               getCsbCrumb(region, electionConfig.slug),
+               getCsbCrumb(region, electionConfig),
                { href: municipalityPollingstationListRoute, label: t`Gemeente ${region.region_name}` },
                { href: pollingStationResultsRoute, label: stationLabel },
             ]}

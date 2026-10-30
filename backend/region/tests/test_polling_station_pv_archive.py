@@ -1,21 +1,18 @@
-import datetime
 import zipfile
 from io import BytesIO
 
 import pytest
-from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 
 from election.models import ElectionDocument
 from election.tests.factories import CertifiedElectionDocumentFactory, ElectionFactory
-from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
 from region.polling_station_pv_archive import polling_station_pv_zip_storage_key, write_polling_station_pv_zip
+from region.tasks import build_polling_station_pv_zip
 from region.tests.factories import RegionFactory
-from region.views import RegionDetailView, polling_station_pv_archive
+from region.views import RegionDetailView
 
 factory = APIRequestFactory()
 
@@ -47,14 +44,13 @@ def _detail(municipality, params=None):
     return RegionDetailView.as_view()(request, election_config=slug, region=municipality.slug)
 
 
-def _download(municipality, params=None):
-    slug = municipality.election.election_config.slug
-    request = factory.get(f"/api/{slug}/regions/{municipality.slug}/polling-station-pvs.zip", params or {})
-    return polling_station_pv_archive(request, election_config=slug, region=municipality.slug)
+def _zip_documents(response):
+    documents = response.data["documents"]
+    return [document for document in documents if document["file_type"] == ElectionDocument.FileType.PDF_SB_ZIP]
 
 
 def _member_names(municipality):
-    key = write_polling_station_pv_zip(municipality)
+    key, _ = write_polling_station_pv_zip(municipality)
     with zipfile.ZipFile(BytesIO(default_storage.open(key).read())) as archive:
         return archive.namelist()
 
@@ -69,22 +65,22 @@ def test_municipality_detail_counts_a_polling_station_once_when_it_also_has_a_co
     _pdf(first, ElectionDocument.FileType.PDF_N10_1, b"%PDF-n10", 10)
     _pdf(first, ElectionDocument.FileType.PDF_NA14_1, b"%PDF-na14", 4)
     _pdf(second, ElectionDocument.FileType.PDF_N10_2, b"%PDF-n10-2", 7)
-    write_polling_station_pv_zip(municipality)
+    key = build_polling_station_pv_zip(municipality.pk)
 
-    archive = _detail(municipality).data["polling_station_pv_archive"]
+    [archive] = _zip_documents(_detail(municipality))
 
-    assert archive["present_count"] == 2
-    assert archive["total_count"] == 3
-    assert archive["size"] == 21
-    assert archive["url"] == f"/api/{election.election_config.slug}/regions/{municipality.slug}/polling-station-pvs.zip"
+    assert archive["metadata"] == {"total": 3, "present": 2}
+    assert archive["size"] == default_storage.size(key)
+    assert archive["content_type"] == "application/zip"
 
 
 @pytest.mark.django_db
 def test_municipality_detail_has_no_archive_until_a_polling_station_report_is_in():
     municipality = RegionFactory(region_category=RegionCategory.GEMEENTE)
     _station(municipality, "0203::SB1", "Gemeentehuis")
+    build_polling_station_pv_zip(municipality.pk)
 
-    assert _detail(municipality).data["polling_station_pv_archive"] is None
+    assert _zip_documents(_detail(municipality)) == []
 
 
 @pytest.mark.django_db
@@ -93,31 +89,19 @@ def test_municipality_detail_has_no_archive_until_the_zip_is_written():
     station = _station(municipality, "0203::SB1", "Gemeentehuis")
     _pdf(station, ElectionDocument.FileType.PDF_N10_1, b"%PDF-n10", 8)
 
-    assert _detail(municipality).data["polling_station_pv_archive"] is None
+    assert _zip_documents(_detail(municipality)) == []
 
 
 @pytest.mark.django_db
-def test_archive_download_redirects_to_the_stored_zip():
+def test_archive_zip_stores_each_form_uncompressed_under_a_readable_name():
     election = ElectionFactory(election_config__identifier="TK2025")
-    municipality = RegionFactory(
-        election=election,
-        region_category=RegionCategory.GEMEENTE,
-        region_name="Lisserdam",
-        slug="lisserdam",
-    )
+    municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Lisserdam")
     station = _station(municipality, "0203::SB1", "Gemeentehuis")
     _pdf(station, ElectionDocument.FileType.PDF_N10_1, b"%PDF-n10", 8)
     _pdf(station, ElectionDocument.FileType.PDF_NA14_1, b"%PDF-na14", 9)
-    key = write_polling_station_pv_zip(municipality)
+    key, size = write_polling_station_pv_zip(municipality)
 
-    response = _download(municipality)
-
-    assert response.status_code == 302
-    assert response.url == f"{settings.MEDIA_URL}{key}"
-    assert default_storage.url_parameters[key] == {
-        "ResponseContentType": "application/zip",
-        "ResponseContentDisposition": 'attachment; filename="processen-verbaal-lisserdam.zip"',
-    }
+    assert size == default_storage.size(key)
     with zipfile.ZipFile(BytesIO(default_storage.open(key).read())) as archive:
         assert archive.read("TK2025 Lisserdam SB1 Gemeentehuis N10-1.pdf") == b"%PDF-n10"
         assert archive.read("TK2025 Lisserdam SB1 Gemeentehuis NA14-1.pdf") == b"%PDF-na14"
@@ -148,43 +132,6 @@ def test_archive_zip_numbers_a_second_correction_on_the_same_form():
 
 
 @pytest.mark.django_db
-def test_archive_download_is_not_found_until_a_polling_station_report_is_in():
-    municipality = RegionFactory(region_category=RegionCategory.GEMEENTE)
-    _station(municipality, "0203::SB1", "Gemeentehuis")
-
-    response = _download(municipality)
-
-    assert response.status_code == 404
-    assert response.data["detail"] == "No polling-station reports."
-
-
-@pytest.mark.django_db
-def test_archive_download_is_not_found_when_the_slug_is_not_a_municipality():
-    election = ElectionFactory()
-    kieskring = RegionFactory(election=election, region_category=RegionCategory.KIESKRING, slug="amsterdam")
-
-    response = _download(kieskring)
-
-    assert response.status_code == 404
-    assert response.data["detail"] == "Region not found for this election."
-
-
-@pytest.mark.django_db
-def test_archive_download_is_not_found_for_an_expired_election():
-    started = timezone.now() - datetime.timedelta(days=31 * VISIBILITY_MONTHS + 1)
-    election = ElectionFactory(election_config__date=started)
-    municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE)
-    station = _station(municipality, "0203::SB1", "Gemeentehuis")
-    _pdf(station, ElectionDocument.FileType.PDF_N10_1, b"%PDF-n10", 8)
-    write_polling_station_pv_zip(municipality)
-
-    response = _download(municipality)
-
-    assert response.status_code == 404
-    assert response.data["detail"] == "Region not found for this election."
-
-
-@pytest.mark.django_db
 def test_archive_zip_lists_polling_station_forms_in_station_then_form_order():
     election = ElectionFactory(election_config__identifier="TK2025")
     municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Lisserdam")
@@ -211,9 +158,9 @@ def test_write_polling_station_pv_zip_removes_the_object_when_no_forms_remain():
     municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE)
     station = _station(municipality, "0203::SB1", "Gemeentehuis")
     document = _pdf(station, ElectionDocument.FileType.PDF_N10_1, b"%PDF-n10", 8)
-    key = write_polling_station_pv_zip(municipality)
+    key, _ = write_polling_station_pv_zip(municipality)
     assert default_storage.exists(key)
 
     document.delete()
-    assert write_polling_station_pv_zip(municipality) is None
+    assert write_polling_station_pv_zip(municipality) == (None, None)
     assert not default_storage.exists(polling_station_pv_zip_storage_key(municipality))

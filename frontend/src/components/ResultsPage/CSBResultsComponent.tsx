@@ -1,5 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { SBTimeline } from "@/components/Timeline/SBTimeline.tsx";
+import { CSBTimeline } from "@/components/Timeline/CSBTimeline.tsx";
 import type { ElectionConfig, Region } from "../../api/types";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
@@ -41,7 +41,9 @@ export function CSBResultsComponent({ electionConfig, region }: Props) {
             notPublishedRegionName={region.region_name}
             notPublishedRegionCategory={region.region_category}
             partyHref={(partySlug) => appRoutes.csbPartyResults(electionConfig.slug, region.slug, partySlug)}
-            timeline={<SBTimeline variant={region.timeline_variant} dates={electionConfig.timeline_dates ?? []} />}
+            timeline={
+               <CSBTimeline dates={electionConfig.timeline_dates ?? []} documents={region.documents} region={region} />
+            }
          />
       </ResultsPageColumns>
    );

@@ -1,11 +1,22 @@
-import { faCheck, faFile } from "@fortawesome/free-solid-svg-icons";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+import { msg, t } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { type PropsWithChildren, type ReactNode, useMemo } from "react";
-import type { TimelineDate, TimelineDateEvent } from "@/api/types.ts";
+import type {
+   ElectionDocumentFileType,
+   Region,
+   RegionCategory,
+   TimelineDate,
+   TimelineDateEvent,
+   TimelineVariant,
+} from "@/api/types.ts";
+import ElectionFileEntry from "@/components/ElectionFileEntry.tsx";
+import { useTimelineContext } from "@/components/Timeline/Timeline.tsx";
 import { electionDay, useFormatters } from "@/utils/format.ts";
+import { getRegionLabels, regionWithName } from "@/utils/region.ts";
+import { uppercaseFirst } from "@/utils/text.ts";
 
 // The marker shows the status visually; this is the text screen readers get instead.
 const STATUS_LABELS: Record<TimelineEntryStatus, MessageDescriptor> = {
@@ -49,17 +60,34 @@ export function getTimelineDate(dates: TimelineDate[], event: TimelineDateEvent)
 
 export type TimelineEntryStatus = "pending" | "in-progress" | "done";
 
-export interface TimelineEntryProps {
+export type TimelineEntryProps = {
    title: ReactNode;
-   date: TimelineDate;
-}
+   document_types?: ElectionDocumentFileType[];
+} & (
+   | {
+        date?: TimelineDate;
+        event: TimelineDateEvent;
+     }
+   | {
+        date: TimelineDate;
+        event?: undefined;
+     }
+);
 
-export default function TimelineEntry({ children, title, date }: PropsWithChildren<TimelineEntryProps>) {
+export default function TimelineEntry({
+   children,
+   title,
+   date,
+   event,
+   document_types = [],
+}: PropsWithChildren<TimelineEntryProps>) {
    const { formatTimelineDate } = useFormatters();
    const { t } = useLingui();
+   const { dates, documents } = useTimelineContext();
+   const resolved = event ? date || getTimelineDate(dates, event) : date;
 
    const status = useMemo((): TimelineEntryStatus => {
-      const entryDate = new Date(date.date);
+      const entryDate = new Date(resolved.date);
       if (Number.isNaN(entryDate.getTime())) {
          return "pending";
       }
@@ -70,7 +98,11 @@ export default function TimelineEntry({ children, title, date }: PropsWithChildr
          return "in-progress";
       }
       return entryDay < today ? "done" : "pending";
-   }, [date]);
+   }, [resolved.date]);
+
+   const selectedDocs = useMemo(() => {
+      return documents?.filter((doc) => document_types.includes(doc.file_type)) ?? [];
+   }, [document_types, documents]);
 
    const classes = STATUS_CLASSES[status];
 
@@ -92,37 +124,136 @@ export default function TimelineEntry({ children, title, date }: PropsWithChildr
             </div>
          </div>
          <div className="min-w-0 flex-1 pb-6">
-            <h3 className="mb-0.5 font-sans leading-normal">
+            <h3 className="mb-0.5 font-sans text-lg leading-normal">
                {title}
                <span className="sr-only">, {t(STATUS_LABELS[status])}</span>
             </h3>
-            <div className="mb-1.5 text-muted">{formatTimelineDate(date)}</div>
+            <div className="mb-1.5 text-muted">{formatTimelineDate(resolved)}</div>
             <div className="flex flex-col gap-4 leading-6">{children}</div>
+            {selectedDocs.map((doc) => (
+               <ElectionFileEntry key={doc.file_type} file={doc} className="mt-2 bg-info-bg p-3" />
+            ))}
          </div>
       </li>
    );
 }
 
-export interface TimelineFileProps {
-   file: {
-      name: string;
-      url: string;
-      type: string;
-      size: string;
-      description: string;
-   };
+const SB_VOTE_COUNT_TITLES: Record<TimelineVariant, MessageDescriptor> = {
+   CSO: msg`Sneltelling in de stembureaus`,
+   DSO: msg`Telling in de stembureaus`,
+   DEFAULT: msg`Telling in de stembureaus`,
+};
+
+const SB_VOTE_COUNT_BODIES: Record<TimelineVariant, MessageDescriptor> = {
+   CSO: msg`Op de avond van de stemming tellen de stembureaus alleen de stemmen per lijst. Het GSB telt de volgende dag de stemmen per lijst en per kandidaat. Dit wordt ook wel 'centraal tellen' genoemd.`,
+   DSO: msg`Op de avond van de stemming telt het stembureau de stemmen per lijst én per kandidaat. Het GSB controleert de volgende dag de processen-verbaal van de stembureaus. Bij (vermoedelijke) fouten worden de stemmen van dat stembureau geheel of gedeeltelijk opnieuw geteld.`,
+   DEFAULT: msg`Na het sluiten van de stembussen tellen de leden van het stembureau hoeveel mensen hebben gestemd en hoeveel stemmen elke partij heeft gekregen. De voorlopige uitslag die je in het nieuws ziet is gebaseerd op de eerste tellingen van de stembureaus en wordt gepubliceerd door media en persbureaus.`,
+};
+
+export function SBVoteCountTimelineEntry() {
+   const { variant = "DEFAULT" } = useTimelineContext();
+
+   return (
+      <TimelineEntry event="sb_vote_count" title={t(SB_VOTE_COUNT_TITLES[variant])}>
+         <p>
+            {t(SB_VOTE_COUNT_BODIES[variant])}{" "}
+            <strong>
+               <Trans>Het is dus nog niet de officiële uitslag van de Kiesraad.</Trans>
+            </strong>
+         </p>
+      </TimelineEntry>
+   );
 }
 
-export function TimelineFile({ file }: TimelineFileProps) {
+export function GSBVoteCountTimelineEntry() {
    return (
-      <a href={file.url} key={file.url} className="flex gap-2 bg-box-bg p-3 text-xs hover:no-underline">
-         <FontAwesomeIcon icon={faFile} />
-         <div className="flex flex-col">
-            <span className="mb-1 text-blue">
-               <span className="font-semibold">{file.name}</span> ({file.type}, {file.size})
-            </span>
-            <span className="text-muted">{file.description}</span>
-         </div>
-      </a>
+      <TimelineEntry event="municipality_vote_count" title={t`Optelling per gemeente`} document_types={["EML510b"]}>
+         <p>
+            <Trans>
+               De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware
+               en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen
+               worden meegenomen in de landelijke uitslag.
+            </Trans>
+         </p>
+      </TimelineEntry>
+   );
+}
+
+export function HSBVoteCountTimelineEntry() {
+   const { region } = useTimelineContext();
+
+   let hsb: Pick<Region, "region_name"> | null | undefined = null;
+   if (region?.region_category === "KIESKRING") {
+      hsb = region;
+   } else if (region?.has_hsb) {
+      hsb = region?.hsb;
+   }
+
+   if (!hsb) {
+      return null;
+   }
+
+   return (
+      <TimelineEntry event="electoral_district_vote_count" title={t`Optelling kieskring ${hsb.region_name}`}>
+         <p>
+            <Trans>
+               De resultaten van alle gemeenten in Kieskring {hsb.region_name} worden op het hoofdstembureau
+               gecontroleerd bij elkaar opgeteld.
+            </Trans>
+         </p>
+      </TimelineEntry>
+   );
+}
+
+export function useTimelineCsbName() {
+   const { region } = useTimelineContext();
+   const csb = region?.is_csb ? region : region?.csb;
+
+   let csbName = "Het Centraal Stembureau";
+   if (csb) {
+      const regionLabels = getRegionLabels(csb.region_category as RegionCategory);
+      csbName = uppercaseFirst(
+         t(regionLabels.csbName ?? regionWithName(csb.region_category as RegionCategory, csb.region_name)),
+      );
+   }
+
+   return csbName;
+}
+
+export function CsbCheckTimelineEntry() {
+   const csbName = useTimelineCsbName();
+
+   return (
+      <TimelineEntry event="csb_check" title={t`Centraal Stembureau controleert`} document_types={["EML520"]}>
+         <p>
+            <Trans>
+               {csbName} controleert de telresultaten van alle kieskringen, gemeenten en stembureaus. Zijn alle
+               documenten compleet? Zijn alle stemmen meegeteld? Zijn er meldingen van kiezers die onderzocht moeten
+               worden? Als het nodig is, worden de resultaten van bepaalde stembureaus opnieuw geteld om fouten te
+               herstellen.
+            </Trans>
+         </p>
+         <p>
+            <Trans>
+               Pas als alles klopt worden de resultaten van alle kieskringen bij elkaar opgeteld tot de uiteindelijke
+               uitslag.
+            </Trans>
+         </p>
+      </TimelineEntry>
+   );
+}
+
+export function CsbResultPublishTimelineEntry() {
+   const csbName = useTimelineCsbName();
+
+   return (
+      <TimelineEntry event="csb_result_publish" title={t`${csbName} publiceert de uitslag`}>
+         <p>
+            <Trans>
+               In de uitslag staat hoeveel stemmen elke kandidaat heeft gekregen, hoeveel zetels elke partij krijgt en
+               welke personen zijn verkozen.
+            </Trans>
+         </p>
+      </TimelineEntry>
    );
 }

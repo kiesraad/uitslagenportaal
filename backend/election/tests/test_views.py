@@ -7,8 +7,9 @@ from django.core.files.storage import default_storage
 from django.http import Http404
 from django.test import RequestFactory
 from django.utils import timezone
+from django.utils.http import content_disposition_header
 
-from election.models import ElectionCategory
+from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import (
     CertifiedElectionDocumentFactory,
     ElectionConfigFactory,
@@ -91,6 +92,30 @@ def test_download_document_returns_file_for_valid_storage_key():
     # Source files already have a readable storage key, so the name is taken from it as-is.
     assert default_storage.url_parameters["document.xml"] == {
         "ResponseContentDisposition": 'attachment; filename="document.xml"'
+    }
+
+
+@pytest.mark.django_db
+def test_download_document_names_the_polling_station_zip_after_the_gemeente():
+    default_storage.save("TK2025/polling-station-pvs/7.zip", ContentFile(b"PK"))
+    document = ElectionDocumentFactory(
+        storage_key="TK2025/polling-station-pvs/7.zip",
+        content_type="application/zip",
+        file_type=ElectionDocument.FileType.PDF_SB_ZIP,
+        size=2,
+        region=RegionFactory(
+            election=ElectionFactory(election_config__identifier="TK2025"),
+            region_category=RegionCategory.GEMEENTE,
+            region_name="Súdwest-Fryslân",
+        ),
+    )
+
+    download_document(RequestFactory().get("/"), document.pk)
+
+    assert default_storage.url_parameters["TK2025/polling-station-pvs/7.zip"] == {
+        "ResponseContentDisposition": content_disposition_header(
+            True, "TK2025 Súdwest-Fryslân processen-verbaal stembureaus.zip"
+        )
     }
 
 

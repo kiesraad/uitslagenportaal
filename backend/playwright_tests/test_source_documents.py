@@ -36,13 +36,16 @@ pytestmark = [pytest.mark.playwright, pytest.mark.usefixtures("seeded_database")
 )
 def test_the_results_page_downloads_its_source_document(page: Page, url, name, description, fixture):
     page.goto(url)
-    expect(page.get_by_role("heading", name="Brondocumenten")).to_be_visible()
+    heading = page.get_by_role("heading", name="Brondocumenten")
+    expect(heading).to_be_visible()
 
-    document = page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand"))
+    # The timeline links the same file again, so look only in the source-document list.
+    reports = heading.locator("..")
+    document = reports.get_by_role("link", name=re.compile(r"EML_NL tellingbestand"))
     expect(document).to_have_count(1)
     expect(document).to_contain_text(name)
     expect(document).to_contain_text(re.compile(r"\(xml, [\d,]+ KB\)"))
-    expect(page.get_by_text(description, exact=True)).to_be_visible()
+    expect(reports.get_by_text(description, exact=True)).to_be_visible()
 
     with page.expect_download() as download_info:
         document.click()

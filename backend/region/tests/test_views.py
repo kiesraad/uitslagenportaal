@@ -360,6 +360,25 @@ def test_gsb_returns_510b_and_csb_returns_510d_for_the_same_region():
 
 
 @pytest.mark.django_db
+def test_csb_includes_the_520_document_and_gsb_does_not():
+    region = RegionFactory(
+        election__election_config__category=ElectionCategory.GR.value,
+        region_category=RegionCategory.GEMEENTE,
+    )
+    ElectionDocumentFactory(region=region, file_type=ElectionDocument.FileType.EML_520)
+    ElectionDocumentFactory(region=region, file_type=ElectionDocument.FileType.EML_510D)
+    ElectionDocumentFactory(region=region, file_type=ElectionDocument.FileType.EML_510B)
+
+    assert {item["file_type"] for item in region_detail(region, "csb")["documents"]} == {
+        ElectionDocument.FileType.EML_520,
+        ElectionDocument.FileType.EML_510D,
+    }
+    assert {item["file_type"] for item in region_detail(region, "gsb")["documents"]} == {
+        ElectionDocument.FileType.EML_510B,
+    }
+
+
+@pytest.mark.django_db
 def test_gsb_is_empty_without_a_510b_telling():
     contest = ContestFactory()
     party = PartyFactory(election=contest.election)
@@ -531,8 +550,8 @@ def test_region_detail_disambiguates_waterschap_polling_station_by_csb_and_paren
     assert response.status_code == 200
     assert response.data["region_name"] == stembureau.region_name
     assert response.data["slug"] == stembureau.slug
-    assert response.data["csb_slug"] == waterschap.slug
-    assert response.data["csb_name"] == waterschap.region_name
+    assert response.data["csb"]["slug"] == waterschap.slug
+    assert response.data["csb"]["region_name"] == waterschap.region_name
     assert response.data["station_number"] == 1
 
 
@@ -562,6 +581,63 @@ def test_region_list_includes_station_number_for_stembureaus():
         ("De Regenboog", 1),
         ("De Regenboog", 2),
     }
+
+
+def make_station(gemeente, number, name, postal_code):
+    return RegionFactory(
+        election=gemeente.election,
+        parent=gemeente,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name=name,
+        region_number=f"0352::SB{number}",
+        slug=f"SB{number}-{name.lower().replace(' ', '-')}",
+        postal_code=postal_code,
+    )
+
+
+@pytest.mark.django_db
+def test_region_list_includes_the_other_stations_at_the_same_location():
+    gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE, slug="wijk-bij-duurstede")
+    make_station(gemeente, 1, "Huis van de Gemeente", "3961 BA")
+    make_station(gemeente, 2, "Huis van de Gemeente", "3961 BA")
+    make_station(gemeente, 3, "Gymzaal", "3961 AB")
+    make_station(gemeente, 4, "Gymzaal", "3962 CD")
+
+    response = list_regions(
+        gemeente.election, {"parent_region": gemeente.slug, "region_category": RegionCategory.STEMBUREAU}
+    )
+
+    assert response.status_code == 200
+    assert {region["station_number"]: region["same_location_stations"] for region in response.data} == {
+        1: [{"station_number": 2, "slug": "SB2-huis-van-de-gemeente"}],
+        2: [{"station_number": 1, "slug": "SB1-huis-van-de-gemeente"}],
+        3: [],
+        4: [],
+    }
+
+
+@pytest.mark.django_db
+def test_region_detail_without_postal_code_has_no_same_location_stations():
+    gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE, slug="wijk-bij-duurstede")
+    station = make_station(gemeente, 1, "Huis van de Gemeente", None)
+    make_station(gemeente, 2, "Huis van de Gemeente", None)
+
+    response = get_region(station.election, station.slug, {"level": "sb", "parent_region": gemeente.slug})
+
+    assert response.status_code == 200
+    assert response.data["same_location_stations"] == []
+
+
+@pytest.mark.django_db
+def test_region_detail_includes_the_other_stations_at_the_same_location():
+    gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE, slug="wijk-bij-duurstede")
+    station = make_station(gemeente, 1, "Huis van de Gemeente", "3961 BA")
+    make_station(gemeente, 2, "Huis van de Gemeente", "3961 BA")
+
+    response = get_region(station.election, station.slug, {"level": "sb", "parent_region": gemeente.slug})
+
+    assert response.status_code == 200
+    assert response.data["same_location_stations"] == [{"station_number": 2, "slug": "SB2-huis-van-de-gemeente"}]
 
 
 @pytest.mark.django_db

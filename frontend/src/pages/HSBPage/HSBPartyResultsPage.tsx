@@ -1,7 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
-import { SBTimeline } from "@/components/Timeline/SBTimeline.tsx";
+import { HSBTimeline } from "@/components/Timeline/HSBTimeline.tsx";
 import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -99,7 +99,7 @@ export function HSBPartyResultsPage() {
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               getCsbCrumb(region, electionConfig.slug),
+               getCsbCrumb(region, electionConfig),
                { href: appRoutes.hsbResults(electionConfig.slug, region.slug), label: region.region_name },
                { label: partyName },
             ]}
@@ -111,7 +111,7 @@ export function HSBPartyResultsPage() {
                ) : (
                   resultsPageContent
                )}
-               <SBTimeline variant={region.timeline_variant} dates={electionConfig.timeline_dates ?? []} />
+               <HSBTimeline dates={electionConfig.timeline_dates ?? []} documents={region.documents} region={region} />
                <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
             </div>
          </div>

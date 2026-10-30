@@ -1,39 +1,50 @@
 import { faArrowDown, faArrowUp } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ReactElement } from "react";
+import { createContext, type ReactElement, useContext } from "react";
+import type { ElectionDocument, Region, TimelineDate, TimelineVariant } from "@/api/types.ts";
 import type { TimelineEntryProps } from "@/components/Timeline/TimelineEntry.tsx";
 import { usePersistedState } from "@/hooks/usePersistedState.ts";
 
 const TIMELINE_ORDER_KEY = "timeline-order-desc";
 
-type TimelineProps = {
-   children: ReactElement<TimelineEntryProps>[];
+export const VARIANT_DESCRIPTIONS: Record<TimelineVariant, MessageDescriptor | null> = {
+   CSO: msg`Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam.`,
+   DSO: msg`Het stembureau doet een uitgebreide telling op het stembureau. Het gemeentelijk stembureau telt de volgende dag de uitkomsten bij elkaar op. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam.`,
+   DEFAULT: null,
 };
 
-// An unparseable date counts as the latest step, as TimelineEntry shows it as pending.
-function entryTime(entry: ReactElement<TimelineEntryProps>): number {
-   const time = new Date(entry.props.date.date).getTime();
-   return Number.isNaN(time) ? Number.POSITIVE_INFINITY : time;
-}
+export type TimelineContextProps = {
+   variant?: TimelineVariant;
+   dates: TimelineDate[];
+   documents?: ElectionDocument[];
+   region?: Region;
+};
 
-export function Timeline({ children }: TimelineProps) {
+export const TimelineContext = createContext<TimelineContextProps>({
+   variant: "DEFAULT",
+   dates: [],
+   documents: [],
+});
+
+export const useTimelineContext = () => useContext(TimelineContext);
+
+type TimelineProps = TimelineContextProps & {
+   children: (ReactElement<TimelineEntryProps> | boolean | null | undefined)[];
+};
+
+export function Timeline({ variant, dates, documents, region, children }: TimelineProps) {
    const { t } = useLingui();
    const [sortDesc, setSortDesc] = usePersistedState<boolean>(
       TIMELINE_ORDER_KEY,
       true,
       (value) => typeof value === "boolean",
    );
-   const factor = sortDesc ? -1 : 1;
-
-   const sorted = [...children].sort((a, b) => {
-      const timeA = entryTime(a);
-      const timeB = entryTime(b);
-      return timeA === timeB ? 0 : factor * (timeA < timeB ? -1 : 1);
-   });
 
    return (
-      <>
+      <TimelineContext value={{ variant, dates, documents, region }}>
          <button type="button" onClick={() => setSortDesc((prev) => !prev)} className="result-order-hint">
             <span>
                <FontAwesomeIcon icon={faArrowUp} color={sortDesc ? "Black" : "Grey"} />
@@ -47,7 +58,7 @@ export function Timeline({ children }: TimelineProps) {
                {sortDesc ? t`Laatste stap bovenaan` : t`Eerste stap bovenaan`}
             </span>
          </button>
-         <ol className="flex flex-col">{sorted}</ol>
-      </>
+         <ol className="flex flex-col">{sortDesc ? children : [...children].reverse()}</ol>
+      </TimelineContext>
    );
 }
