@@ -43,7 +43,13 @@ function region(overrides: Partial<Region>): Region {
    } as Region;
 }
 
-type Context = { variant?: TimelineVariant; region?: Region; documents?: ElectionDocument[]; locale?: "nl" | "en" };
+type Context = {
+   variant?: TimelineVariant;
+   region?: Region;
+   municipality?: Region;
+   documents?: ElectionDocument[];
+   locale?: "nl" | "en";
+};
 
 function renderEntry(entry: ReactElement<TimelineEntryProps>, { locale, ...timelineProps }: Context = {}) {
    return renderWithProviders(
@@ -221,6 +227,17 @@ describe("MunicipalityRecountTimelineEntry", () => {
       });
 
       expect(screen.getByText(/zijn van papier overgetypt/)).toBeInTheDocument();
+   });
+
+   it("follows the gemeente on a stembureau page", () => {
+      renderEntry(<MunicipalityRecountTimelineEntry />, {
+         region: region({ region_category: "STEMBUREAU", correction_date: null }),
+         municipality: region({ correction_date: "2026-03-18T10:00:00+01:00", municipality_recount_date: null }),
+      });
+
+      expect(
+         screen.getByRole("heading", { level: 3, name: "Nieuwe gemeentelijke optelling, nog niet gestart" }),
+      ).toBeInTheDocument();
    });
 });
 

@@ -21,6 +21,8 @@ export type TimelineContextProps = {
    dates: TimelineDate[];
    documents?: ElectionDocument[];
    region?: Region;
+   // The gemeente of a stembureau region; on a gemeente page, region is the gemeente itself.
+   municipality?: Region;
 };
 
 export const TimelineContext = createContext<TimelineContextProps>({
@@ -35,7 +37,7 @@ type TimelineProps = TimelineContextProps & {
    children: (ReactElement<TimelineEntryProps> | boolean | null | undefined)[];
 };
 
-export function Timeline({ variant, dates, documents, region, children }: TimelineProps) {
+export function Timeline({ variant, dates, documents, region, municipality, children }: TimelineProps) {
    const { t } = useLingui();
    const [sortDesc, setSortDesc] = usePersistedState<boolean>(
       TIMELINE_ORDER_KEY,
@@ -44,7 +46,7 @@ export function Timeline({ variant, dates, documents, region, children }: Timeli
    );
 
    return (
-      <TimelineContext value={{ variant, dates, documents, region }}>
+      <TimelineContext value={{ variant, dates, documents, region, municipality }}>
          <button type="button" onClick={() => setSortDesc((prev) => !prev)} className="result-order-hint">
             <span>
                <FontAwesomeIcon icon={faArrowUp} color={sortDesc ? "Black" : "Grey"} />

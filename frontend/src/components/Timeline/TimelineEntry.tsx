@@ -214,13 +214,13 @@ export function CorrectionTimelineEntry() {
 }
 
 export function MunicipalityRecountTimelineEntry() {
-   const { region } = useTimelineContext();
+   const { region, municipality = region } = useTimelineContext();
 
-   if (region?.region_category !== "GEMEENTE" || !region.correction_date) {
+   if (municipality?.region_category !== "GEMEENTE" || !municipality.correction_date) {
       return null;
    }
 
-   const recountDate = region.municipality_recount_date;
+   const recountDate = municipality.municipality_recount_date;
 
    return (
       <TimelineEntry

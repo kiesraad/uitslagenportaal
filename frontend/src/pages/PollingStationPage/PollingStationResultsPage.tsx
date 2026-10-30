@@ -128,6 +128,7 @@ export default function PollingStationResultsPage() {
                      dates={electionConfig.timeline_dates}
                      documents={[...(region.documents ?? []), ...(pollingStation.documents ?? [])]}
                      region={pollingStation}
+                     municipality={region}
                   />
                }
             />

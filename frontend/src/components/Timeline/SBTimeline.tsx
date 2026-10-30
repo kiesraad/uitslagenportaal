@@ -6,6 +6,7 @@ import TimelineEntry, {
    CsbResultPublishTimelineEntry,
    GSBVoteCountTimelineEntry,
    HSBVoteCountTimelineEntry,
+   MunicipalityRecountTimelineEntry,
    SBVoteCountTimelineEntry,
 } from "@/components/Timeline/TimelineEntry.tsx";
 
@@ -24,6 +25,7 @@ export function SBTimeline({ variant = "DEFAULT", dates, ...timelineProps }: Pro
          {variantDescription && <p className={"mb-4"}>{t(variantDescription)}</p>}
          <Timeline dates={dates} variant={variant} {...timelineProps}>
             <CsbResultPublishTimelineEntry />
+            <MunicipalityRecountTimelineEntry />
             <CorrectionTimelineEntry />
             <CsbCheckTimelineEntry />
             <HSBVoteCountTimelineEntry />
