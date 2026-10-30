@@ -73,7 +73,7 @@ msgstr "Number of votes"
 msgid "afgerond"
 msgstr "completed"
 
-#: src/pages/HomePage.tsx
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Bekijk de tellingen per stembureau voor {electionLabel}"
 msgstr "View the counts by polling station for {electionLabel}"
 
@@ -96,7 +96,7 @@ msgstr "View the counting results by electoral district for the {electionLabel}.
 msgid "Bekijk het proces-verbaal"
 msgstr "View the certified election results"
 
-#: src/pages/HomePage.tsx
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?"
 msgstr "Curious about the results at the polling station where you voted?"
 
@@ -160,7 +160,7 @@ msgstr "Correction to the certified election results of the district electoral c
 msgid "Corrigendum proces-verbaal stembureau"
 msgstr "Correction to the certified election results of the polling station"
 
-#: src/pages/HomePage.tsx
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Databank verkiezinguitslag"
 msgstr "Election results database"
 
@@ -285,7 +285,7 @@ msgstr "Details:"
 msgid "Deze website in andere talen:"
 msgstr "This website in other languages:"
 
-#: src/pages/HomePage.tsx
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Deze website is actief vanaf 1 dag vóór de verkiezingen tot drie maanden erna. Wilt u uitslagen van eerdere verkiezingen bekijken?"
 msgstr "This website is active from 1 day before the elections until three months afterwards. Would you like to view results of earlier elections?"
 
@@ -337,7 +337,7 @@ msgstr "Error"
 msgid "Fout melden"
 msgstr "Report a mistake"
 
-#: src/pages/HomePage.tsx
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Ga dan naar"
 msgstr "Then go to"
 
@@ -485,11 +485,15 @@ msgstr "the water authority"
 msgid "het waterschap {name}"
 msgstr "the water authority {name}"
 
-#: src/pages/HomePage.tsx
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Hieronder wordt stap voor stap uitgelegd hoe het resultaat van de verkiezing tot stand komt. Het begint bij het stembureau en eindigt bij de definitieve uitslag die de Kiesraad publiceert. Bij iedere stap is er controle, zodat de uitslag klopt."
 msgstr "Below we explain step by step how the election result is determined. It starts at the polling station and ends with the final result published by De Kiesraad. Every step is checked, so that the result is correct."
 
-#: src/pages/HomePage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigTimelinePage.tsx
+msgid "Hoe de uitslag van de {electionLabel} tot stand komt."
+msgstr "How the result of the {electionLabel} is determined."
+
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Hoe komt de uitslag tot stand?"
 msgstr "How is the result determined?"
 
@@ -511,6 +515,7 @@ msgstr "How were these results produced?"
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigTimelinePage.tsx
 #: src/pages/HomePage.tsx
 #: src/pages/HSBPage/HSBMunicipalityListPage.tsx
 #: src/pages/HSBPage/HSBPartyResultsPage.tsx
@@ -863,6 +868,7 @@ msgstr "Counting results"
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigTimelinePage.tsx
 #: src/pages/HSBPage/HSBMunicipalityListPage.tsx
 msgid "Telresultaten {electionLabel}"
 msgstr "Counting results {electionLabel}"
@@ -959,6 +965,14 @@ msgstr "About double polling station {name}"
 msgid "Uitleg over telproces"
 msgstr "About the counting process"
 
+#: src/components/ElectionConfigTabs.tsx
+msgid "Van stem tot uitslag"
+msgstr "From vote to result"
+
+#: src/pages/ElectionConfigPage/ElectionConfigTimelinePage.tsx
+msgid "Van stem tot uitslag {electionLabel}"
+msgstr "From vote to result {electionLabel}"
+
 #: src/pages/HomePage.tsx
 msgid "Verkiezingen laden…"
 msgstr "Loading elections…"
@@ -970,6 +984,7 @@ msgstr "Elections society can rely on"
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigTimelinePage.tsx
 msgid "Verkiezingsdag: {electionDay}"
 msgstr "Polling day: {electionDay}"
 
