@@ -31,6 +31,7 @@ def _wait_for_h1(page: Page) -> None:
     "url",
     [
         pytest.param("/", id="home"),
+        pytest.param("/ab2023/van-stem-tot-uitslag", id="timeline"),
         pytest.param("/ab2023/gsb", id="gsb-list"),
         pytest.param("/ab2023/csb", id="csb-list"),
         pytest.param(CSB, id="csb-gemeenten"),
