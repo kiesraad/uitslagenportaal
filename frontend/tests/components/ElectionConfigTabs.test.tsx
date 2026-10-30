@@ -1,3 +1,4 @@
+import { QueryClient } from "@tanstack/react-query";
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { ElectionConfig } from "@/api/types";
@@ -37,6 +38,32 @@ describe("ElectionConfigTabs", () => {
 
       expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("href", "/ws2023/hsb");
       expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("aria-current", "page");
+   });
+
+   it("shows the timeline tab only when there is more than one election", () => {
+      const queryClient = new QueryClient();
+      queryClient.setQueryData(["election_configs"], [electionConfig, { ...electionConfig, slug: "tk2025" }]);
+      renderWithProviders(<ElectionConfigTabs electionConfig={electionConfig} />, {
+         initialEntries: ["/ws2023/van-stem-tot-uitslag"],
+         queryClient,
+      });
+
+      expect(screen.getByRole("link", { name: "Van stem tot uitslag" })).toHaveAttribute(
+         "href",
+         "/ws2023/van-stem-tot-uitslag",
+      );
+      expect(screen.getByRole("link", { name: "Van stem tot uitslag" })).toHaveAttribute("aria-current", "page");
+   });
+
+   it("hides the timeline tab when there is a single election", () => {
+      const queryClient = new QueryClient();
+      queryClient.setQueryData(["election_configs"], [electionConfig]);
+      renderWithProviders(<ElectionConfigTabs electionConfig={electionConfig} />, {
+         initialEntries: ["/ws2023/gsb"],
+         queryClient,
+      });
+
+      expect(screen.queryByRole("link", { name: "Van stem tot uitslag" })).not.toBeInTheDocument();
    });
 
    it("names the CSB tab after the election's only CSB", () => {
