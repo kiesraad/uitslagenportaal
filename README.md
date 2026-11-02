@@ -12,13 +12,13 @@ zit.
 
 Na afloop van verkiezingen worden in de stembureaus de stembiljetten met de hand geteld en de uitkomsten vastgelegd in
 een proces-verbaal. Vervolgens tellen gemeentelijke stembureaus, hoofdstembureaus en het centraal stembureau de
-uitslagen van de stembureaus digitaal bij elkaar op. Vervolgens[JG1.1] wordt Abacus gebruikt met als doel een
-zorgvuldige invoer en correcte optelling. De optellingen en de zetelverdeling die met de programmatuur worden
-gegenereerd, worden handmatig gecontroleerd, aan de hand van controleprotocollen die de Kiesraad opstelt. EML-bestanden
-worden gemaakt. Het Uitslagenportaal zal de bestanden - wanneer deze worden geupload door de verschillende stembureaus -
+uitslagen van de stembureaus digitaal bij elkaar op. Vervolgens wordt Abacus gebruikt met als doel een zorgvuldige
+invoer en correcte optelling. De optellingen en de zetelverdeling die met de programmatuur worden gegenereerd, worden
+handmatig gecontroleerd, aan de hand van controleprotocollen die de Kiesraad opstelt. Vervolgens worden EML-bestanden
+gemaakt. Het Uitslagenportaal zal de bestanden - wanneer deze worden geupload door de verschillende stembureaus -
 importeren en weergeven in de applicatie. De controleerbaarheid van de digitale telbestanden, gecombineerd met
-mogelijkhied mogelijkheid tot downloaden van de papieren proces-verbalen, zal uiteindelijk moeten bijdragen tot een
-transparanter en controleerbaar verkiezingsproces.
+mogelijkheid tot downloaden van de papieren proces-verbalen, zal uiteindelijk moeten bijdragen tot een transparanter en
+controleerbaar verkiezingsproces.
 
 ## Technische Documentatie
 
