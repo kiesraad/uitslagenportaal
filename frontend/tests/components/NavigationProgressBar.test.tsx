@@ -7,6 +7,19 @@ import { NavigationProgressBar } from "@/components/NavigationProgressBar";
 const SHOW_DELAY_MS = 150;
 const EXIT_DURATION_MS = 350;
 
+function Chrome() {
+   const revalidator = useRevalidator();
+
+   return (
+      <div data-testid="chrome">
+         <NavigationProgressBar />
+         <button type="button" onClick={() => void revalidator.revalidate()}>
+            revalidate
+         </button>
+      </div>
+   );
+}
+
 /**
  * Mounts the bar in a router whose loader hangs until released, so a revalidation — what a
  * language switch performs — can be held open for as long as the assertions need.
@@ -16,19 +29,6 @@ function renderBar() {
    const loading = new Promise<void>((resolve) => {
       releaseLoader = resolve;
    });
-
-   function Chrome() {
-      const revalidator = useRevalidator();
-
-      return (
-         <div data-testid="chrome">
-            <NavigationProgressBar />
-            <button type="button" onClick={() => void revalidator.revalidate()}>
-               revalidate
-            </button>
-         </div>
-      );
-   }
 
    const Stub = createRoutesStub([
       {

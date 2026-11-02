@@ -113,11 +113,11 @@ export default function TimelineEntry({
             className={`absolute top-5 left-2.5 -z-1 h-full border-l-2 group-last:hidden ${classes.line}`}
          ></div>
          <div
-            className="relative -top-1 -z-1 h-9.25 w-5 min-w-5 bg-white max-sm:-top-2 max-lg:-top-1.75"
+            className="relative -top-1 -z-1 h-9.25 w-5 min-w-5 bg-white max-lg:-top-1.75 max-sm:-top-2"
             aria-hidden="true"
          >
             <div
-               className={`relative mt-1.5 flex shrink-0 items-center justify-center rounded-full text-muted ${classes.marker}`}
+               className={`text-muted relative mt-1.5 flex shrink-0 items-center justify-center rounded-full ${classes.marker}`}
             >
                {classes.halo && <div className={`absolute -z-1 size-6 rounded-full ${classes.halo}`}></div>}
                {status === "done" ? <FontAwesomeIcon icon={faCheck} /> : null}
@@ -128,10 +128,10 @@ export default function TimelineEntry({
                {title}
                <span className="sr-only">, {t(STATUS_LABELS[status])}</span>
             </h3>
-            <div className="mb-1.5 text-muted">{formatTimelineDate(resolved)}</div>
+            <div className="text-muted mb-1.5">{formatTimelineDate(resolved)}</div>
             <div className="flex flex-col gap-4 leading-6">{children}</div>
             {selectedDocs.map((doc) => (
-               <ElectionFileEntry key={doc.file_type} file={doc} className="mt-2 bg-info-bg p-3" />
+               <ElectionFileEntry key={doc.file_type} file={doc} className="bg-info-bg mt-2 p-3" />
             ))}
          </div>
       </li>

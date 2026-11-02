@@ -2,7 +2,7 @@ import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type RenderOptions, render } from "@testing-library/react";
-import { type ReactElement, type ReactNode, useRef, useState } from "react";
+import { createContext, type ReactElement, type ReactNode, use, useState } from "react";
 import { createRoutesStub } from "react-router";
 import { localeLoader } from "@/i18n";
 import type { Locale } from "@/i18n/locales";
@@ -33,6 +33,12 @@ type Options = Omit<RenderOptions, "wrapper"> & {
    queryClient?: QueryClient;
 };
 
+const ChildrenContext = createContext<ReactNode>(null);
+
+function RouteChildren() {
+   return use(ChildrenContext);
+}
+
 /**
  * Renders a component inside the providers the app itself mounts: query client,
  * router and i18n.
@@ -48,10 +54,7 @@ export function renderWithProviders(
    const wrapper = ({ children }: { children: ReactNode }) => {
       // `createRoutesStub` returns a fresh component type per call, and the stub only
       // keeps its router across re-renders of the same type. Building it once — and
-      // reading the children through a ref — keeps a re-render from remounting the tree.
-      const childrenRef = useRef(children);
-      childrenRef.current = children;
-
+      // passing the children through context — keeps a re-render from remounting the tree.
       const [Stub] = useState(() =>
          createRoutesStub([
             {
@@ -63,7 +66,7 @@ export function renderWithProviders(
                   await localeLoader();
                   return loaderData;
                },
-               Component: () => <>{childrenRef.current}</>,
+               Component: RouteChildren,
             },
          ]),
       );
@@ -73,7 +76,9 @@ export function renderWithProviders(
             <QueryClientProvider client={client}>
                {/* `activateLocale` above stands in for the catalogue the app loads before its first
                    render, so the stub hydrates rather than running the loader and rendering async. */}
-               <Stub initialEntries={initialEntries} hydrationData={{ loaderData: { root: loaderData } }} />
+               <ChildrenContext value={children}>
+                  <Stub initialEntries={initialEntries} hydrationData={{ loaderData: { root: loaderData } }} />
+               </ChildrenContext>
             </QueryClientProvider>
          </I18nProvider>
       );
