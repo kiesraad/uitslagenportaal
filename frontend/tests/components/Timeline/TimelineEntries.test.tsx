@@ -89,10 +89,11 @@ describe("GSBVoteCountTimelineEntry", () => {
 });
 
 describe("CsbCheckTimelineEntry", () => {
-   it("attaches the 520 document only", () => {
+   it("attaches the 510d and 520 documents only", () => {
       const documents = [
          { file_type: "EML520", url: "/api/documents/11/download/" },
          { file_type: "EML510d", url: "/api/documents/10/download/" },
+         { file_type: "EML510c", url: "/api/documents/12/download/" },
       ] as ElectionDocument[];
       renderEntry(<CsbCheckTimelineEntry />, { documents });
 
@@ -100,7 +101,11 @@ describe("CsbCheckTimelineEntry", () => {
          "href",
          "/api/documents/11/download/",
       );
-      expect(screen.queryByRole("link", { name: /^EML_NL tellingbestand 510d/ })).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /^EML_NL tellingbestand 510d/ })).toHaveAttribute(
+         "href",
+         "/api/documents/10/download/",
+      );
+      expect(screen.queryByRole("link", { name: /^EML_NL tellingbestand 510c/ })).not.toBeInTheDocument();
    });
 });
 

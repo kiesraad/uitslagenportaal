@@ -239,7 +239,7 @@ export function CsbCheckTimelineEntry() {
       <TimelineEntry
          event="csb_check"
          title={t`Centraal Stembureau controleert`}
-         document_types={["EML510d", "PDF_P22-1", "PDF_P22-2"]}
+         document_types={["EML510d", "EML520", "PDF_P22-1", "PDF_P22-2"]}
       >
          <p>
             <Trans>
