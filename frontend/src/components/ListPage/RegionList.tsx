@@ -1,3 +1,4 @@
+import { faHourglass } from "@fortawesome/free-regular-svg-icons";
 import { faChevronRight, faInfo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
@@ -102,6 +103,7 @@ export function RegionList({
                ? (region.same_location_stations ?? []).flatMap((station) => station.station_number ?? [])
                : undefined,
             csbSlug: region.csb?.slug,
+            inactive: region.has_results === false,
          };
       });
    }, [regions, isPollingStationList]);
@@ -188,12 +190,20 @@ function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: 
    const isDoubleStation = sameLocationNumbers.length > 0;
    const otherNumbers = new Intl.ListFormat(locale).format(sameLocationNumbers.map(String));
    return (
-      <li className="relative col-span-3 grid grid-cols-subgrid odd:bg-blue-50">
+      <li className="relative col-span-3 grid grid-cols-subgrid odd:bg-blue-50 hover:bg-blue-100">
          <Link
             to={to}
-            className="col-span-3 grid min-h-18 grid-cols-subgrid items-center px-6 hover:bg-blue-100 hover:no-underline"
+            className={twMerge(
+               "col-span-3 grid min-h-18 grid-cols-subgrid items-center px-6 hover:no-underline",
+               listOption.inactive && "text-gray-500",
+            )}
          >
-            <span className={twMerge(listOption.stationNumber && "pr-2 font-light text-gray-700")}>
+            <span
+               className={twMerge(
+                  listOption.stationNumber && "pr-2 font-light text-gray-700",
+                  listOption.inactive && "text-gray-500",
+               )}
+            >
                {listOption.stationNumber}
                {/* Grid items have no whitespace between them, so screen readers would glue the number to the name. */}
                {listOption.stationNumber !== undefined && <span className="sr-only">&nbsp;</span>}
@@ -205,8 +215,15 @@ function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: 
                      , <Trans>Dubbel stembureau</Trans>, <Trans>Ook stembureau {otherNumbers} op deze locatie</Trans>
                   </span>
                )}
+               {listOption.inactive && (
+                  <span className="sr-only">
+                     , <Trans>Nog geen telresultaten</Trans>
+                  </span>
+               )}
             </span>
-            <span>
+            {/* Right-aligned so the chevrons line up whether or not a row has the hourglass. */}
+            <span className="flex items-center justify-end gap-2">
+               {listOption.inactive && <FontAwesomeIcon icon={faHourglass} />}
                <FontAwesomeIcon icon={faChevronRight} />
             </span>
          </Link>

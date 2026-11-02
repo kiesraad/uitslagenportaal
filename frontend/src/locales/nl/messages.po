@@ -608,6 +608,10 @@ msgstr "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand i
 msgid "Nederland"
 msgstr "Nederland"
 
+#: src/components/ListPage/RegionList.tsx
+msgid "Nog geen telresultaten"
+msgstr "Nog geen telresultaten"
+
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "nog niet gestart"
 msgstr "nog niet gestart"

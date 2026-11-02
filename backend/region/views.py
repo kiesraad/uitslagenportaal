@@ -1,5 +1,5 @@
 from django.contrib.postgres.expressions import ArraySubquery
-from django.db.models import OuterRef, Prefetch
+from django.db.models import BooleanField, Case, Exists, OuterRef, Prefetch, When
 from django.db.models.functions import JSONObject
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
@@ -35,6 +35,24 @@ def _with_same_location_stations(queryset):
     return queryset.annotate(same_location_stations=ArraySubquery(others))
 
 
+def _has_results():
+    """Whether the page a list row links to has counts: a CSB's 510d, a kieskring's 510c, otherwise 510b."""
+
+    def counted(level):
+        return Exists(VoteCount.objects.filter(region=OuterRef("pk"), eml_type=EML_TYPE_BY_REPORTING_LEVEL[level]))
+
+    # 510c and 510d also hold counts for the child regions, so any count at all is not enough.
+    return Case(
+        When(
+            region_category__in=[RegionCategory.WATERSCHAP, RegionCategory.PROVINCIE],
+            then=counted(ReportingLevel.CSB),
+        ),
+        When(region_category=RegionCategory.KIESKRING, then=counted(ReportingLevel.HSB)),
+        default=counted(ReportingLevel.GSB),
+        output_field=BooleanField(),
+    )
+
+
 class RegionListView(ListAPIView):
     serializer_class = RegionListSerializer
 
@@ -62,6 +80,7 @@ class RegionListView(ListAPIView):
                 # Expired elections are hidden everywhere, not just on the home page.
                 election__election_config__date__gte=visibility_cutoff(),
             )
+            .annotate(has_results=_has_results())
             .select_related("csb")
             .order_by("region_name")
         )

@@ -109,6 +109,7 @@ export type Region = {
    csb: RegionSummary | null;
    // The other stembureaus with the same name and postcode: a dubbel stembureau.
    same_location_stations?: SameLocationStation[];
+   has_results?: boolean;
 };
 
 export type SameLocationStation = {

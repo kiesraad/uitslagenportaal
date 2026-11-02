@@ -20,6 +20,7 @@ export type SearchListOption = {
    sortName?: string;
    stationNumber?: number;
    sameLocationStationNumbers?: number[];
+   inactive?: boolean;
 };
 
 type Props = {
