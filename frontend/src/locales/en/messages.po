@@ -17,11 +17,6 @@ msgstr ""
 msgid "(opent in nieuw venster)"
 msgstr "(opens in new window)"
 
-#. placeholder {0}: suggestions.length
-#: src/components/SearchAutocomplete.tsx
-msgid "{0, plural, =0 {Geen resultaten} one {# resultaat} other {# resultaten}}"
-msgstr "{0, plural, =0 {No results} one {# result} other {# results}}"
-
 #. placeholder {0}: sortedPollingStations.length
 #: src/components/ListPage/RegionList.tsx
 msgid "{0, plural, one {# stembureau in {regionTitle}} other {# stembureaus in {regionTitle}}}"
@@ -56,6 +51,14 @@ msgstr "{csbName} publishes the results"
 #: src/pages/HSBPage/HSBResultsPage.tsx
 msgid "{regionType} - {regionName}"
 msgstr "{regionType} - {regionName}"
+
+#: src/components/SearchAutocomplete.tsx
+msgid "{shown} van {total} resultaten"
+msgstr "{shown} of {total} results"
+
+#: src/components/SearchAutocomplete.tsx
+msgid "{total, plural, =0 {Geen resultaten} one {# resultaat} other {# resultaten}}"
+msgstr "{total, plural, =0 {No results} one {# result} other {# results}}"
 
 #: src/components/ResultsPage/ResultsPageIndex.tsx
 msgid "<0>Telresultaten</0> zoals ze meetellen in de officiële uitslag"
