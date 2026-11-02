@@ -220,10 +220,15 @@ function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: 
                      , <Trans>Nog geen telresultaten</Trans>
                   </span>
                )}
+               {/* After the sr-only texts, so it does not split the accessible name; they take no space on screen. */}
+               {listOption.inactive && (
+                  <>
+                     {" "}
+                     <FontAwesomeIcon icon={faHourglass} className="align-middle!" />
+                  </>
+               )}
             </span>
-            {/* Right-aligned so the chevrons line up whether or not a row has the hourglass. */}
-            <span className="flex items-center justify-end gap-2">
-               {listOption.inactive && <FontAwesomeIcon icon={faHourglass} />}
+            <span>
                <FontAwesomeIcon icon={faChevronRight} />
             </span>
          </Link>
@@ -295,7 +300,7 @@ function DoubleStationInfo({ label, otherNumbers }: { label: string; otherNumber
             onBlur={() => !isPointerOver.current && setOpen(false)}
             className="bg-blue focus-visible:outline-blue absolute top-1/2 right-14 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xs text-white focus-visible:outline-2 focus-visible:outline-offset-2"
          >
-            <FontAwesomeIcon icon={faInfo} className="text-[0.7rem]" />
+            <FontAwesomeIcon icon={faInfo} className="text-xs" />
          </Button>
          {/* Non-modal, so opening on hover neither moves focus nor hides the rest of the page. */}
          <Popover
