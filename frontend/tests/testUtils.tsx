@@ -1,10 +1,9 @@
-import { i18n } from "@lingui/core";
-import { I18nProvider } from "@lingui/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type RenderOptions, render } from "@testing-library/react";
 import { createContext, type ReactElement, type ReactNode, use, useState } from "react";
-import { createRoutesStub } from "react-router";
-import { localeLoader } from "@/i18n";
+import { createRoutesStub, Outlet } from "react-router";
+import { LocaleProvider } from "@/components/LocaleProvider";
+import { getI18n, localeLoader } from "@/i18n";
 import type { Locale } from "@/i18n/locales";
 import { messages as enMessages } from "@/locales/en/messages.po";
 import { messages as nlMessages } from "@/locales/nl/messages.po";
@@ -14,11 +13,13 @@ import { messages as nlMessages } from "@/locales/nl/messages.po";
 const catalogs = { nl: nlMessages, en: enMessages };
 
 /**
- * Activates a locale for the assertions that follow. Call it in the test body
- * (or a `beforeEach`) whenever a test asserts on translated text.
+ * Loads a locale's catalogue into its instance and returns that instance. Call it in the test body
+ * (or a `beforeEach`) whenever a test asserts on translated text outside `renderWithProviders`.
  */
 export function activateLocale(locale: Locale) {
+   const i18n = getI18n(locale);
    i18n.loadAndActivate({ locale, messages: catalogs[locale] });
+   return i18n;
 }
 
 type Options = Omit<RenderOptions, "wrapper"> & {
@@ -39,6 +40,14 @@ function RouteChildren() {
    return use(ChildrenContext);
 }
 
+function RootLayout() {
+   return (
+      <LocaleProvider>
+         <Outlet />
+      </LocaleProvider>
+   );
+}
+
 /**
  * Renders a component inside the providers the app itself mounts: query client,
  * router and i18n.
@@ -55,32 +64,36 @@ export function renderWithProviders(
       // `createRoutesStub` returns a fresh component type per call, and the stub only
       // keeps its router across re-renders of the same type. Building it once — and
       // passing the children through context — keeps a re-render from remounting the tree.
+      // The root route mirrors the app's: its locale loader is what a language switch revalidates.
       const [Stub] = useState(() =>
          createRoutesStub([
             {
                id: "root",
-               path: path ?? "*",
-               loader: async () => {
-                  // The app carries the locale loader on its root route, so anything that
-                  // switches language has one to revalidate.
-                  await localeLoader();
-                  return loaderData;
-               },
-               Component: RouteChildren,
+               loader: localeLoader,
+               Component: RootLayout,
+               children: [
+                  {
+                     id: "page",
+                     path: path ?? "*",
+                     loader: () => loaderData,
+                     Component: RouteChildren,
+                  },
+               ],
             },
          ]),
       );
 
       return (
-         <I18nProvider i18n={i18n}>
-            <QueryClientProvider client={client}>
-               {/* `activateLocale` above stands in for the catalogue the app loads before its first
-                   render, so the stub hydrates rather than running the loader and rendering async. */}
-               <ChildrenContext value={children}>
-                  <Stub initialEntries={initialEntries} hydrationData={{ loaderData: { root: loaderData } }} />
-               </ChildrenContext>
-            </QueryClientProvider>
-         </I18nProvider>
+         <QueryClientProvider client={client}>
+            {/* `activateLocale` above stands in for the catalogue the app loads before its first
+                render, so the stub hydrates rather than running the loaders and rendering async. */}
+            <ChildrenContext value={children}>
+               <Stub
+                  initialEntries={initialEntries}
+                  hydrationData={{ loaderData: { root: { locale }, page: loaderData } }}
+               />
+            </ChildrenContext>
+         </QueryClientProvider>
       );
    };
 

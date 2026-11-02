@@ -23,12 +23,14 @@ export function ReportIssuePage() {
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
    const electionConfigSlug = electionConfig.slug;
    const deadline = electionConfig.issue_report_deadline;
-   const [now, setNow] = useState(() => new Date());
-   const { t } = useLingui();
+   // Set after mount: the clock at render time would differ between server and browser.
+   const [now, setNow] = useState<Date | null>(null);
+   const { i18n, t } = useLingui();
    const { formatDate } = useFormatters();
 
    useEffect(() => {
       const tick = () => setNow(new Date());
+      tick();
       const intervalId = window.setInterval(tick, DEADLINE_TICK_MS);
 
       const deadlineTime = new Date(deadline).getTime();
@@ -48,8 +50,8 @@ export function ReportIssuePage() {
       };
    }, [deadline]);
 
-   const reportingOpen = getRemainingReportTime(deadline, now) !== null;
-   const heading = formatIssueReportDeadlineHeading(deadline, now);
+   const reportingOpen = now !== null && getRemainingReportTime(deadline, now) !== null;
+   const heading = now && formatIssueReportDeadlineHeading(i18n, deadline, now);
 
    const opensAt = formatDate(electionConfig.issue_report_opens_at);
    const closesAt = formatDate(electionConfig.issue_report_deadline);
@@ -82,7 +84,7 @@ export function ReportIssuePage() {
             </p>
 
             <InfoBox>
-               <h2 className="h4 font-semibold">{heading}</h2>
+               {heading && <h2 className="h4 font-semibold">{heading}</h2>}
                <p>
                   <Trans>
                      Een melding aan het centraal stembureau kan van {opensAt} tot {closesAt} (uiterlijk 48 uur voor de

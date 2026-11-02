@@ -1,12 +1,16 @@
-import { I18nProvider } from "@lingui/react";
+import { config as fontAwesomeConfig } from "@fortawesome/fontawesome-svg-core";
+import "@fortawesome/fontawesome-svg-core/styles.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router/dom";
 import "./index.css";
-import { detectLocale, i18n, loadCatalog } from "./i18n";
+import { detectLocale, loadCatalog } from "./i18n";
 import { queryClient } from "./queryClient.ts";
 import { router } from "./router.tsx";
+
+// The icon styles ship with the page's CSS; injected at runtime, server-rendered icons show unstyled until then.
+fontAwesomeConfig.autoAddCss = false;
 
 const rootElem = document.getElementById("root");
 
@@ -20,10 +24,8 @@ await loadCatalog(detectLocale());
 
 createRoot(rootElem).render(
    <StrictMode>
-      <I18nProvider i18n={i18n}>
-         <QueryClientProvider client={queryClient}>
-            <RouterProvider router={router} />
-         </QueryClientProvider>
-      </I18nProvider>
+      <QueryClientProvider client={queryClient}>
+         <RouterProvider router={router} />
+      </QueryClientProvider>
    </StrictMode>,
 );

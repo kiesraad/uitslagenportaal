@@ -10,7 +10,8 @@ export type Locale = (typeof locales)[number];
 /** Source language of the messages written in the source files. */
 export const sourceLocale: Locale = "nl";
 
-export const LOCALE_STORAGE_KEY = "lang";
+/** Name of the cookie holding the chosen locale. */
+export const LOCALE_COOKIE = "lang";
 
 function isLocale(candidate: string): candidate is Locale {
    return (locales as readonly string[]).includes(candidate);
@@ -21,8 +22,8 @@ function isLocale(candidate: string): candidate is Locale {
  * source locale. Regional tags resolve to their base language, so `en-GB` and
  * `en-US` both become `en`.
  *
- * `null` and `undefined` are accepted because both `detect()` and
- * `localStorage.getItem()` can return them.
+ * `null` and `undefined` are accepted because `detect()` and a missing cookie
+ * produce them.
  */
 export function resolveLocale(candidate: string | null | undefined): Locale {
    if (!candidate) return sourceLocale;

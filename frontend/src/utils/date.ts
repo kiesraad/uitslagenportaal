@@ -1,4 +1,6 @@
-import { plural, t } from "@lingui/core/macro";
+import type { I18n } from "@lingui/core";
+// biome-ignore lint/style/noRestrictedImports: `plural` is only used nested in `msg`, which compiles it into the descriptor
+import { msg, plural } from "@lingui/core/macro";
 
 const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
@@ -40,27 +42,39 @@ export function getRemainingReportTime(
  * The plural forms live in the message catalogue rather than in this function,
  * so a translator decides how many forms their language needs.
  */
-export function formatIssueReportDeadlineHeading(isoDeadline: string, now = new Date()): string {
+export function formatIssueReportDeadlineHeading(i18n: I18n, isoDeadline: string, now = new Date()): string {
    const remaining = getRemainingReportTime(isoDeadline, now);
    if (!remaining) {
-      return t`U kunt geen fout meer melden`;
+      return i18n._(msg`U kunt geen fout meer melden`);
    }
 
    switch (remaining.unit) {
       case "day":
-         return plural(remaining.value, {
-            one: "U heeft nog # dag om een melding te maken",
-            other: "U heeft nog # dagen om een melding te maken",
-         });
+         return i18n._(
+            msg({
+               message: plural(remaining.value, {
+                  one: "U heeft nog # dag om een melding te maken",
+                  other: "U heeft nog # dagen om een melding te maken",
+               }),
+            }),
+         );
       case "hour":
-         return plural(remaining.value, {
-            one: "U heeft nog # uur om een melding te maken",
-            other: "U heeft nog # uur om een melding te maken",
-         });
+         return i18n._(
+            msg({
+               message: plural(remaining.value, {
+                  one: "U heeft nog # uur om een melding te maken",
+                  other: "U heeft nog # uur om een melding te maken",
+               }),
+            }),
+         );
       case "minute":
-         return plural(remaining.value, {
-            one: "U heeft nog # minuut om een melding te maken",
-            other: "U heeft nog # minuten om een melding te maken",
-         });
+         return i18n._(
+            msg({
+               message: plural(remaining.value, {
+                  one: "U heeft nog # minuut om een melding te maken",
+                  other: "U heeft nog # minuten om een melding te maken",
+               }),
+            }),
+         );
    }
 }

@@ -350,12 +350,25 @@ Each locale becomes its own lazily loaded chunk; a visitor downloads only their 
 
 Marking text for translation:
 
-| Case                                                         | Use                                                                             |
-|--------------------------------------------------------------|---------------------------------------------------------------------------------|
-| Text in JSX                                                  | `<Trans>` from `@lingui/react/macro`                                            |
-| A count-dependent message                                    | `<Plural>` / `plural` — never a ternary between two strings                     |
-| A string inside a component (`aria-label`, `title`, a prop)  | `` t`…` `` from `useLingui()`                                                   |
-| A constant outside a component (lookup maps, config objects) | `msg` from `@lingui/core/macro`, resolved at the call site with `t(descriptor)` |
+| Case                                                         | Use                                                                                                     |
+|--------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| Text in JSX                                                  | `<Trans>` / `<Plural>` from `@lingui/react/macro`                                                       |
+| A string inside a component (`aria-label`, `title`, a prop)  | `` t`…` `` from `useLingui()` (`@lingui/react/macro`)                                                    |
+| A constant outside a component (lookup maps, config objects) | `msg` from `@lingui/core/macro`, resolved in the component with `t(descriptor)` from `useLingui()`      |
+| A plain function outside React (`utils/`)                    | take an `i18n: I18n` parameter and return `i18n._(msg…)`; the component passes `i18n` from `useLingui()` |
+| A count-dependent message                                    | `<Plural>`, or `plural` nested in `msg`: `msg({ message: plural(n, {…}) })` — never a ternary            |
+
+There is **no global i18n instance**. Each locale has its own instance (`getI18n(locale)` in
+`frontend/src/i18n`), and `LocaleProvider` provides the one the root loader loaded. Anything that
+reaches for the global instance renders in the wrong language or, on a server, in another visitor's.
+So:
+
+- From `@lingui/core/macro`, import only `msg`. Its `t`, `plural` and `select` called on their own
+  translate through the global instance.
+- Never import `i18n` from `@lingui/core`; get it from `useLingui()`, or pass it in, as
+  `utils/format.ts` and `utils/date.ts` do.
+- In tests, `activateLocale(locale)` from `tests/testUtils.tsx` loads a catalogue and returns that
+  locale's instance; `renderWithProviders` takes a `locale` option.
 
 Translation rules:
 
@@ -368,10 +381,12 @@ Numbers and dates go through `useFormatters()` in `frontend/src/utils/format.ts`
 active locale. Dates keep the `Europe/Amsterdam` zone whatever the interface language, because
 election times are always Dutch local time.
 
-The language switcher lives in the footer; the choice is stored in `localStorage` and is
-deliberately not part of the URL. Activating a catalogue is the root route's loader
-(`localeLoader`), and the switcher only saves the choice and revalidates: that way a language
-change is router work like any other, and the navigation progress bar covers the download.
+The language switcher lives in the footer; the choice is stored in the `lang` cookie
+(`LOCALE_COOKIE`), so a server render can read it too (`localeFromCookieHeader`), and is
+deliberately not part of the URL. Loading a catalogue is the root route's loader (`localeLoader`),
+which returns the locale `LocaleProvider` renders in; the switcher only saves the choice and
+revalidates. That way a language change is router work like any other, and the navigation progress
+bar covers the download.
 
 > **When changing the build config:** the Lingui macros need a Babel pass, added in
 > `vite.config.ts` via `@rolldown/plugin-babel`. `@vitejs/plugin-react` v6 removed the `babel`

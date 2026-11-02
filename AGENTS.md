@@ -114,6 +114,11 @@ the election visibility/deletion rules.
 See the Internationalisation section in [development.md](docs/development.md) for the setup,
 marking text for translations and translation rules.
 
+There is no global i18n instance: one instance exists per locale, provided by `LocaleProvider`.
+Translate through `useLingui()` (`@lingui/react/macro`) or an `i18n` passed in as a parameter.
+From `@lingui/core/macro` import only `msg`; its `t`, `plural` and `select` used on their own, and
+`i18n` imported from `@lingui/core`, read the global instance and render in the wrong language.
+
 When working on translations, use the Lingui agent skills (`lingui:lingui-best-practices`,
 `lingui:find-unwrapped-strings`). Lingui also publishes context files and an MCP server:
 <https://lingui.dev/ai-tools>.
