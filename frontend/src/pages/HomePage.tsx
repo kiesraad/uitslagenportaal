@@ -23,7 +23,7 @@ export function HomePage() {
       <LayoutMain title={t`Home`} description={t`De telresultaten van alle stembureaus in Nederland.`}>
          <PageSection className="relative grid flex-1 grid-cols-1 overflow-hidden bg-blue-100 lg:grid-cols-2 lg:gap-20">
             <div className="flex flex-col justify-center gap-3.5 sm:gap-6.5">
-               <h1 className="max-w-xl font-bold font-title text-3xl sm:text-4xl">
+               <h1 className="font-title max-w-xl text-3xl font-bold sm:text-4xl">
                   <Trans>De telresultaten van alle stembureaus in Nederland.</Trans>
                </h1>
                <p>

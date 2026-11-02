@@ -145,7 +145,7 @@ export default function SearchAutocomplete({
                               id={id}
                               textValue={option.label}
                               onAction={() => handleSelect(option)}
-                              className="flex min-h-12 cursor-pointer select-none items-center p-3 data-focused:bg-blue-50 data-hovered:bg-blue-50"
+                              className="flex min-h-12 cursor-pointer items-center p-3 select-none data-focused:bg-blue-50 data-hovered:bg-blue-50"
                            >
                               {option.content ?? option.label}
                            </ListBoxItem>
@@ -155,7 +155,7 @@ export default function SearchAutocomplete({
                   <p
                      aria-hidden="true"
                      onMouseDown={(e) => e.preventDefault()}
-                     className="border-gray-200 border-t bg-gray-50 px-3 py-1 text-gray-700 text-sm"
+                     className="border-t border-gray-200 bg-gray-50 px-3 py-1 text-sm text-gray-700"
                   >
                      <Trans>
                         {shown} van {total} resultaten
