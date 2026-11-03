@@ -91,9 +91,11 @@ export function RegionList({
          const isAmbiguous = nameCounts[region.region_name] > 1 && Boolean(region.csb);
          const name = isAmbiguous ? `${region.region_name} - ${region.csb?.region_name}` : region.region_name;
          const stationNumber = isPollingStationList ? (region.station_number ?? undefined) : undefined;
+         const postalCode = isPollingStationList ? region.postal_code : undefined;
          return {
             id: region.slug,
             label: formatStationLabel(name, stationNumber),
+            searchText: postalCode ? `${postalCode} ${postalCode.replace(" ", "")}` : undefined,
             sortName: region.region_name,
             stationNumber,
             sameLocationStationNumbers: isPollingStationList
