@@ -97,8 +97,8 @@ Gateway. One forward covers all of it.
 kubectl -n monitoring port-forward svc/monitoring-proxy 9090:80
 ```
 
-<http://localhost:9090> lists the services and links to each: `/grafana`, `/prometheus` and
-`/alertmanager`. Port 9090 rather than 8080 because `docker compose` publishes the application stack on 8080, and
+<http://localhost:9090> lists the services and links to each: `/grafana`, `/prometheus`,
+`/alertmanager` and `/bugsink`. Port 9090 rather than 8080 because `docker compose` publishes the application stack on 8080, and
 wanting monitoring while that is running is exactly when the two would collide.
 
 Grafana's login is `admin`, with a password the chart generates on first install:
@@ -106,6 +106,19 @@ Grafana's login is `admin`, with a password the chart generates on first install
 ```bash
 kubectl -n monitoring get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d
 ```
+
+Bugsink's login is the `CREATE_SUPERUSER` pair from the `bugsink-creds` secret.
+
+#### Error tracking
+
+Bugsink builds each project's DSN from its `BASE_URL`, the port-forwarded address, which pods cannot reach. Give an
+application in the cluster the DSN with the Service in place of `localhost:9090/bugsink`:
+
+```
+http://<key>@bugsink.monitoring.svc.cluster.local:8000/<project-id>
+```
+
+Bugsink authenticates events on the key and project ID only, so the host in the DSN does not matter to it.
 
 #### Logs
 
@@ -245,6 +258,23 @@ kubectl -n monitoring create secret generic alertmanager-config \
   --from-file=alertmanager.yaml=monitoring/alertmanager.yaml \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
+
+For Bugsink we need to configure the DB URL and email credentials:
+
+```bash
+kubectl -n monitoring create secret generic bugsink-creds \
+  --from-literal=DATABASE_URL="postgresql://user:password@host:port/database_name" \
+  --from-literal=SECRET_KEY="$(openssl rand -base64 48)" \
+  --from-literal=EMAIL_HOST="smtp.tem.scaleway.com" \
+  --from-literal=EMAIL_PORT="2587" \
+  --from-literal=EMAIL_USE_TLS="True" \
+  --from-literal=EMAIL_HOST_USER="" \
+  --from-literal=EMAIL_HOST_PASSWORD="" \
+  --from-literal=DEFAULT_FROM_EMAIL="" \
+  --from-literal=CREATE_SUPERUSER="email:password"
+```
+
+Make sure to not update the SECRET_KEY after deploying the stack.
 
 **Basic authentication**
 

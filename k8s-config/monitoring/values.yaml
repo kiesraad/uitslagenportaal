@@ -476,3 +476,16 @@ alloy:
   # create a ServiceMonitor before there is a reason to read it.
   serviceMonitor:
     enabled: false
+
+bugsink:
+  siteTitle: "Bugsink"
+  # The port-forwarded address, so DSNs shown in the UI do not work from pods; see docs/deployments.md.
+  baseUrl: http://localhost:9090/bugsink
+  credsSecret: bugsink-creds
+  emailBackend: "django.core.mail.backends.smtp.EmailBackend"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
