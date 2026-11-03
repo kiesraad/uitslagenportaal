@@ -73,6 +73,17 @@ export const routes: RouteObject[] = [
                   ),
                },
                {
+                  path: "van-stem-tot-uitslag",
+                  id: "ElectionConfigTimelinePage",
+                  lazy: lazyPage(
+                     () => import("./pages/ElectionConfigPage/ElectionConfigTimelinePage"),
+                     (m) => ({
+                        Component: m.ElectionConfigTimelinePage,
+                        loader: m.electionConfigTimelineLoader(queryClient),
+                     }),
+                  ),
+               },
+               {
                   path: "csb",
                   id: "ElectionConfigCSBListPage",
                   lazy: lazyPage(
