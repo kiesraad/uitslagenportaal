@@ -125,21 +125,14 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         return max((document.created_at for document in self._corrections(region)), default=None)
 
     def get_municipality_recount_date(self, region) -> datetime | None:
-        """When the gemeente's 510b caught up with its Na 14-2 corrigenda; None until it has."""
+        """When the gemeente's latest corrected 510b came in; None while it has only the original."""
         if region.region_category != RegionCategory.GEMEENTE:
             return None
-        corrections = [
-            document
-            for document in self._corrections(region)
-            if document.file_type == ElectionDocument.FileType.PDF_NA14_2
-        ]
-        if not corrections:
-            return None
-        # The first 510b is the original count; each later one processes one corrigendum.
+        # Identical files are skipped on import, so every 510b after the first is a corrigendum.
         counts = ElectionDocument.all_objects.filter(
             region=region, file_type=ElectionDocument.FileType.EML_510B
         ).order_by("-created_at", "-pk")
-        if counts.count() - 1 < len(corrections):
+        if counts.count() < 2:
             return None
         return counts.first().created_at
 

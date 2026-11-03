@@ -224,30 +224,21 @@ export function CorrectionTimelineEntry() {
 export function MunicipalityRecountTimelineEntry() {
    const { region, municipality = region } = useTimelineContext();
 
-   if (municipality?.region_category !== "GEMEENTE" || !municipality.correction_date) {
+   if (municipality?.region_category !== "GEMEENTE" || !municipality.municipality_recount_date) {
       return null;
    }
 
-   const recountDate = municipality.municipality_recount_date;
-
    return (
       <TimelineEntry
-         // An unparsable date renders as is and leaves the step pending.
-         date={{ event: "municipality_vote_count", date: recountDate ?? t`Nog niet verwerkt`, qualifier: "all_day" }}
+         // TimelineDate requires an event; the date itself comes from the region.
+         date={{ event: "municipality_vote_count", date: municipality.municipality_recount_date, qualifier: "all_day" }}
          title={t`Nieuwe gemeentelijke optelling`}
       >
          <p>
-            {recountDate ? (
-               <Trans>
-                  De resultaten van hertelde stembureaus zijn van papier overgetypt in de uitslagensoftware en verwerkt
-                  in de optelling van de gemeente.
-               </Trans>
-            ) : (
-               <Trans>
-                  De resultaten van hertelde stembureaus worden van papier overgetypt in de uitslagensoftware en
-                  verwerkt in de optelling van de gemeente.
-               </Trans>
-            )}
+            <Trans>
+               De resultaten van hertelde stembureaus zijn van papier overgetypt in de uitslagensoftware en verwerkt in
+               de optelling van de gemeente.
+            </Trans>
          </p>
       </TimelineEntry>
    );
