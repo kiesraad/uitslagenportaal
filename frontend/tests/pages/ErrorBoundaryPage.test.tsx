@@ -8,6 +8,10 @@ import { ApiError } from "@/api/client";
 import ErrorBoundaryPage from "@/pages/ErrorBoundaryPage";
 import { activateLocale } from "../testUtils";
 
+function Empty() {
+   return null;
+}
+
 /** Mounts the boundary the way the root route does: as the catcher for a failing loader. */
 function renderThrownError(error: unknown) {
    activateLocale("nl");
@@ -20,8 +24,8 @@ function renderThrownError(error: unknown) {
          loader: () => {
             throw error;
          },
-         HydrateFallback: () => null,
-         Component: () => null,
+         HydrateFallback: Empty,
+         Component: Empty,
          ErrorBoundary: ErrorBoundaryPage,
       },
    ]);

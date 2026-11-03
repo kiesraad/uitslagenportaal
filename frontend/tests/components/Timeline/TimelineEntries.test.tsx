@@ -97,10 +97,11 @@ describe("GSBVoteCountTimelineEntry", () => {
 });
 
 describe("CsbCheckTimelineEntry", () => {
-   it("attaches the 520 document only", () => {
+   it("attaches the 510d and 520 documents only", () => {
       const documents = [
          { file_type: "EML520", url: "/api/documents/11/download/" },
          { file_type: "EML510d", url: "/api/documents/10/download/" },
+         { file_type: "EML510c", url: "/api/documents/12/download/" },
       ] as ElectionDocument[];
       renderEntry(<CsbCheckTimelineEntry />, { documents });
 
@@ -108,7 +109,11 @@ describe("CsbCheckTimelineEntry", () => {
          "href",
          "/api/documents/11/download/",
       );
-      expect(screen.queryByRole("link", { name: /^EML_NL tellingbestand 510d/ })).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /^EML_NL tellingbestand 510d/ })).toHaveAttribute(
+         "href",
+         "/api/documents/10/download/",
+      );
+      expect(screen.queryByRole("link", { name: /^EML_NL tellingbestand 510c/ })).not.toBeInTheDocument();
    });
 });
 
@@ -124,7 +129,7 @@ describe("CSB name in the timeline", () => {
    it("names the gemeente, capitalised, for a gemeente CSB", () => {
       renderEntry(<CsbCheckTimelineEntry />, { region: region({ csb: summary({ region_name: "Utrecht" }) }) });
 
-      expect(screen.getByText(/^De gemeente Utrecht controleert de telresultaten/)).toBeInTheDocument();
+      expect(screen.getByText(/^Gemeente Utrecht controleert de telresultaten/)).toBeInTheDocument();
    });
 
    it("uses the region itself when it is the CSB", () => {
@@ -133,7 +138,7 @@ describe("CSB name in the timeline", () => {
       });
 
       expect(
-         screen.getByRole("heading", { level: 3, name: /^Het waterschap Delfland publiceert de uitslag/ }),
+         screen.getByRole("heading", { level: 3, name: /^Waterschap Delfland publiceert de uitslag/ }),
       ).toBeInTheDocument();
    });
 

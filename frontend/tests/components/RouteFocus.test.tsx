@@ -4,30 +4,39 @@ import { describe, expect, it } from "vitest";
 import { RouteFocus } from "@/components/RouteFocus";
 
 // RouteFocus sits in a layout route, as in the app's RootLayout, so it stays mounted across navigations.
+function Layout() {
+   return (
+      <>
+         <RouteFocus />
+         <main>
+            <Outlet />
+         </main>
+      </>
+   );
+}
+
+function HomeRoute() {
+   return (
+      <>
+         <h1>Home</h1>
+         <Link to="/gemeente">Naar gemeente</Link>
+         <Link to="/#uitleg">Naar uitleg</Link>
+      </>
+   );
+}
+
+function GemeenteRoute() {
+   return <h1>Gemeente</h1>;
+}
+
 function renderRoutes() {
    const Stub = createRoutesStub([
       {
          path: "/",
-         Component: () => (
-            <>
-               <RouteFocus />
-               <main>
-                  <Outlet />
-               </main>
-            </>
-         ),
+         Component: Layout,
          children: [
-            {
-               index: true,
-               Component: () => (
-                  <>
-                     <h1>Home</h1>
-                     <Link to="/gemeente">Naar gemeente</Link>
-                     <Link to="/#uitleg">Naar uitleg</Link>
-                  </>
-               ),
-            },
-            { path: "gemeente", Component: () => <h1>Gemeente</h1> },
+            { index: true, Component: HomeRoute },
+            { path: "gemeente", Component: GemeenteRoute },
          ],
       },
    ]);

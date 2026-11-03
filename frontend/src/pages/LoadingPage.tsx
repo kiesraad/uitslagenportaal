@@ -11,7 +11,7 @@ export default function LoadingPage() {
       <BaseLayout>
          <LayoutMain title={t`Laden…`}>
             <div className="flex w-full flex-1 items-center justify-center">
-               <div role="status" className="flex items-center gap-2 text-gray-700 text-lg">
+               <div role="status" className="flex items-center gap-2 text-lg text-gray-700">
                   <FontAwesomeIcon icon={faCircleNotch} className="animate-spin motion-reduce:animate-none" />
                   <Trans>Laden…</Trans>
                </div>
