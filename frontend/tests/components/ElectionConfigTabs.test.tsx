@@ -25,9 +25,9 @@ describe("ElectionConfigTabs", () => {
          initialEntries: ["/ws2023/gsb"],
       });
 
-      expect(screen.getByRole("link", { name: "Gemeenten" })).toHaveAttribute("href", "/ws2023/gsb");
-      expect(screen.getByRole("link", { name: "Waterschappen" })).toHaveAttribute("href", "/ws2023/csb");
-      expect(screen.queryByRole("link", { name: "Kieskringen" })).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Gemeente" })).toHaveAttribute("href", "/ws2023/gsb");
+      expect(screen.getByRole("link", { name: "Waterschap" })).toHaveAttribute("href", "/ws2023/csb");
+      expect(screen.queryByRole("link", { name: "Kieskring" })).not.toBeInTheDocument();
    });
 
    it("shows kieskringen when the election has HSBs", () => {
@@ -35,8 +35,8 @@ describe("ElectionConfigTabs", () => {
          initialEntries: ["/ws2023/hsb"],
       });
 
-      expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("href", "/ws2023/hsb");
-      expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("aria-current", "page");
+      expect(screen.getByRole("link", { name: "Kieskring" })).toHaveAttribute("href", "/ws2023/hsb");
+      expect(screen.getByRole("link", { name: "Kieskring" })).toHaveAttribute("aria-current", "page");
    });
 
    it("names the CSB tab after the election's only CSB", () => {
@@ -63,7 +63,7 @@ describe("ElectionConfigTabs", () => {
          { initialEntries: ["/tk2025/gsb"] },
       );
 
-      expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("href", "/tk2025/hsb");
+      expect(screen.getByRole("link", { name: "Kieskring" })).toHaveAttribute("href", "/tk2025/hsb");
       expect(screen.getByRole("link", { name: "Nederland" })).toHaveAttribute("href", "/tk2025/csb");
    });
 });

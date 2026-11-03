@@ -13,18 +13,18 @@ export default function ElectionConfigTabs({ electionConfig }: Props) {
    const csbLabel =
       electionConfig.csb_type === "STAAT"
          ? (electionConfig.single_csb?.region_name ?? t({ message: "Nederland", context: "tab" }))
-         : t(getRegionLabels(electionConfig.csb_type).plural);
+         : t(getRegionLabels(electionConfig.csb_type).singular);
 
    return (
       <SharedTabs
          tabs={[
             {
-               label: t(getRegionLabels("GEMEENTE").plural),
+               label: t(getRegionLabels("GEMEENTE").singular),
                value: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                activePatterns: ["/:electionConfigSlug/gsb"],
             },
             electionConfig.has_hsb && {
-               label: t(getRegionLabels("KIESKRING").plural),
+               label: t(getRegionLabels("KIESKRING").singular),
                value: appRoutes.electionConfigHSBList(electionConfig.slug),
                activePatterns: ["/:electionConfigSlug/hsb"],
             },
