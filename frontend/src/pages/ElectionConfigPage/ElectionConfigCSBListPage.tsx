@@ -28,6 +28,7 @@ export function electionConfigCSBListLoader(queryClient: QueryClient) {
          };
       }
 
+      // Single-CSB election whose staat region isn't imported yet: nothing to list.
       if (electionConfig.csb_type === "STAAT") {
          return { electionConfigQuery: electionConfigQueryOptions, regionsQuery: undefined, regionQuery: undefined };
       }
