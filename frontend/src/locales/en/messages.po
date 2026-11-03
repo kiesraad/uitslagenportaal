@@ -234,7 +234,7 @@ msgstr "The results of all polling stations are checked, transcribed from paper 
 
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "De resultaten van hertelde stembureaus zijn van papier overgetypt in de uitslagensoftware en verwerkt in de optelling van de gemeente."
-msgstr "The results of recounted polling stations have been typed over from paper into the results software and processed in the municipality's tally."
+msgstr "The results of recounted polling stations have been transcribed from paper into the results software and processed in the municipality's tally."
 
 #: src/utils/region.ts
 msgid "de staat"

@@ -276,13 +276,11 @@ def test_region_detail_lists_every_correction_and_previews_the_last_one():
 
 
 @pytest.mark.django_db
-def test_region_detail_has_correction_only_with_a_correction_pv():
+def test_region_detail_correction_date_only_with_a_correction_pv():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)
     CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/pv.pdf")
 
-    data = region_detail(region, "gsb")
-    assert data["has_correction"] is False
-    assert data["correction_date"] is None
+    assert region_detail(region, "gsb")["correction_date"] is None
 
     CertifiedElectionDocumentFactory(
         region=region,
@@ -295,9 +293,7 @@ def test_region_detail_has_correction_only_with_a_correction_pv():
         file_type=ElectionDocument.FileType.PDF_NA14_2,
     )
 
-    data = region_detail(region, "gsb")
-    assert data["has_correction"] is True
-    assert data["correction_date"] == last.created_at
+    assert region_detail(region, "gsb")["correction_date"] == last.created_at
 
 
 @pytest.mark.django_db

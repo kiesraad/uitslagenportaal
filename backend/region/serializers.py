@@ -55,7 +55,6 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     certified_document_url = serializers.SerializerMethodField()
     certified_document_preview_url = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
-    has_correction = serializers.SerializerMethodField()
     correction_date = serializers.SerializerMethodField()
     municipality_recount_date = serializers.SerializerMethodField()
     election_slug = serializers.CharField(source="election.slug", read_only=True)
@@ -75,7 +74,6 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "certified_document_url",
             "certified_document_preview_url",
             "timeline_variant",
-            "has_correction",
             "correction_date",
             "municipality_recount_date",
             "region_category",
@@ -117,9 +115,6 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             for document in region.documents.all()
             if document.file_type in ElectionDocument.CORRECTION_FILE_TYPES
         ]
-
-    def get_has_correction(self, region) -> bool:
-        return bool(self._corrections(region))
 
     def get_correction_date(self, region) -> datetime | None:
         return max((document.created_at for document in self._corrections(region)), default=None)
