@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import type { ElectionConfig } from "@/api/types";
 import SharedTabs from "@/components/SharedTabs.tsx";
+import { useElectionConfigs } from "@/hooks/queries.ts";
 import { getRegionLabels } from "@/utils/region.ts";
 import { appRoutes } from "@/utils/routes.ts";
 import { uppercaseFirst } from "@/utils/text.ts";
@@ -15,10 +16,18 @@ export default function ElectionConfigTabs({ electionConfig }: Props) {
       electionConfig.csb_type === "STAAT"
          ? (electionConfig.single_csb?.region_name ?? uppercaseFirst(t(getRegionLabels("STAAT").name)))
          : t(getRegionLabels(electionConfig.csb_type).singular);
+   // With a single election the homepage shows the timeline instead.
+   const { data: electionConfigs } = useElectionConfigs();
+   const showTimeline = (electionConfigs?.length ?? 0) > 1;
 
    return (
       <SharedTabs
          tabs={[
+            showTimeline && {
+               label: t`Van stem tot uitslag`,
+               value: appRoutes.electionConfigTimeline(electionConfig.slug),
+               activePatterns: ["/:electionConfigSlug/van-stem-tot-uitslag"],
+            },
             {
                label: t(getRegionLabels("GEMEENTE").singular),
                value: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
