@@ -1,6 +1,7 @@
 import { Trans } from "@lingui/react/macro";
 import { Timeline, type TimelineContextProps } from "@/components/Timeline/Timeline.tsx";
 import {
+   CorrectionTimelineEntry,
    CsbCheckTimelineEntry,
    CsbResultPublishTimelineEntry,
    GSBVoteCountTimelineEntry,
@@ -18,6 +19,7 @@ export function HSBTimeline({ dates, ...timelineProps }: Props) {
          </h2>
          <Timeline dates={dates} {...timelineProps}>
             <CsbResultPublishTimelineEntry />
+            <CorrectionTimelineEntry />
             <CsbCheckTimelineEntry />
             <HSBVoteCountTimelineEntry />
             <GSBVoteCountTimelineEntry />

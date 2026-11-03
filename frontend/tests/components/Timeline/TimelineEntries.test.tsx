@@ -205,6 +205,23 @@ describe("CorrectionTimelineEntry on a stembureau", () => {
    });
 });
 
+describe("CorrectionTimelineEntry on a kieskring", () => {
+   it("lists only the kieskring's correction PV", () => {
+      const documents = [
+         { file_type: "PDF_P1F-1", url: "/api/documents/1/download/" },
+         { file_type: "PDF_NA14-2", url: "/api/documents/2/download/" },
+      ] as ElectionDocument[];
+      renderEntry(<CorrectionTimelineEntry />, {
+         region: region({ region_category: "KIESKRING", correction_date: "2026-03-18T10:00:00+01:00" }),
+         documents,
+      });
+
+      expect(screen.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+         "/api/documents/1/download/",
+      ]);
+   });
+});
+
 describe("MunicipalityRecountTimelineEntry", () => {
    it("is hidden without a corrected count", () => {
       renderEntry(<MunicipalityRecountTimelineEntry />, {
