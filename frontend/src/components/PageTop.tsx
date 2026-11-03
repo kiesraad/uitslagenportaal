@@ -28,7 +28,7 @@ export default function PageTop({ title, subtitle, breadcrumb, tabs }: Props) {
          )}
 
          <div className="pb-12">
-            <h1 className="mb-3 hyphens-auto font-bold font-title text-3xl sm:whitespace-pre-line sm:text-4xl">
+            <h1 className="font-title mb-3 text-3xl font-bold hyphens-auto sm:text-4xl sm:whitespace-pre-line">
                {title}
             </h1>
             {subtitle && <p>{subtitle}</p>}

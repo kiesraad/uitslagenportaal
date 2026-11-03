@@ -42,6 +42,18 @@ def test_list_serializer_exposes_station_number():
     assert RegionListSerializer(region).data["station_number"] == 1
 
 
+def test_list_serializer_exposes_postal_code():
+    region = Region(
+        region_category=RegionCategory.STEMBUREAU,
+        region_number="0203::SB1",
+        region_name="De Regenboog",
+        postal_code="4451 AA",
+        slug="sb1-de-regenboog",
+    )
+
+    assert RegionListSerializer(region).data["postal_code"] == "4451 AA"
+
+
 def test_list_serializer_station_number_is_none_for_a_gemeente():
     region = Region(
         region_category=RegionCategory.GEMEENTE,

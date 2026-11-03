@@ -10,11 +10,20 @@ zit.
 
 ## Papieren proces is leidend
 
-Na afloop van verkiezingen worden in de stembureaus de stembiljetten met de hand geteld en de uitkomsten vastgelegd in een proces-verbaal. Vervolgens tellen gemeentelijke stembureaus, hoofdstembureaus en het centraal stembureau de uitslagen van de stembureaus digitaal bij elkaar op. Vervolgens wordt Abacus worden gebruikt met als doel een zorgvuldige invoer en correcte optelling. De optellingen en de zetelverdeling die met de programmatuur worden gegenereerd, worden handmatig gecontroleerd, aan de hand van controleprotocollen die de Kiesraad opstelt. EML-bestanden worden gemaakt. Het Uitslagenportaal zal de bestanden - wanneer deze worden geupload door de verschillende stembureaus - importeren en weergeven in de applicatie. De controleerbaarheid van de digitale telbestanden, gecombineerd met mogelijkhied tot downloaden van de papieren proces-verbalen, zal uiteindelijk moeten bijdragen tot een transparanter en controleerbaar verkiezingsproces.
+Na afloop van verkiezingen worden in de stembureaus de stembiljetten met de hand geteld en de uitkomsten vastgelegd in
+een proces-verbaal. Vervolgens tellen gemeentelijke stembureaus, hoofdstembureaus en het centraal stembureau de
+uitslagen van de stembureaus digitaal bij elkaar op. Vervolgens wordt Abacus gebruikt met als doel een zorgvuldige
+invoer en correcte optelling. De optellingen en de zetelverdeling die met de programmatuur worden gegenereerd, worden
+handmatig gecontroleerd, aan de hand van controleprotocollen die de Kiesraad opstelt. Vervolgens worden EML-bestanden
+gemaakt. Het Uitslagenportaal zal de bestanden - wanneer deze worden geupload door de verschillende stembureaus -
+importeren en weergeven in de applicatie. De controleerbaarheid van de digitale telbestanden, gecombineerd met
+mogelijkheid tot downloaden van de papieren proces-verbalen, zal uiteindelijk moeten bijdragen tot een transparanter en
+controleerbaar verkiezingsproces.
 
 ## Technische Documentatie
 
-Er is een beschrijving voor opzetten van de ontwikkelomgeving, tooling, testen en operationele documentatie van het Uitslagenportaal. Kijk hiervoor in de sectie [development.md](docs/development.md).
+Er is een beschrijving voor opzetten van de ontwikkelomgeving, tooling, testen en operationele documentatie van het
+Uitslagenportaal. Kijk hiervoor in de sectie [development.md](docs/development.md).
 
 ## Bijdragen
 
@@ -26,12 +35,15 @@ Alle beveiligingsmeldingen over onze software zijn welkom. Kijk hiervoor in de s
 
 ## Over de Kiesraad
 
-De Kiesraad is de onafhankelijke autoriteit in Nederland op het gebied van verkiezingen. De missie van de Kiesraad is dat iedereen de uitslag van de verkiezingen kan vertrouwen.
+De Kiesraad is de onafhankelijke autoriteit in Nederland op het gebied van verkiezingen. De missie van de Kiesraad is
+dat iedereen de uitslag van de verkiezingen kan vertrouwen.
 
-Meer informatie over de Kiesraad en de verkiezingen is te vinden op onze [GitHub organisatie-pagina](https://github.com/kiesraad) en op [www.kiesraad.nl](https://www.kiesraad.nl)
+Meer informatie over de Kiesraad en de verkiezingen is te vinden op
+onze [GitHub organisatie-pagina](https://github.com/kiesraad) en op [www.kiesraad.nl](https://www.kiesraad.nl)
 
 ## Auteursrecht en licenties
 
 Auteursrecht © 2026 Kiesraad. Gelicentieerd onder EUPL-1.2 of hoger, tenzij anders aangegeven.
 
-Versies van EUPL-1.2 in alle officiële EU-talen zijn beschikbaar op https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12. De Engelse versie is te vinden onder LICENSE.
+Versies van EUPL-1.2 in alle officiële EU-talen zijn beschikbaar
+op https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12. De Engelse versie is te vinden onder LICENSE.

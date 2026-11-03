@@ -26,7 +26,7 @@ export function NavigationProgressBar() {
       >
          <div
             className={twMerge(
-               "h-full origin-left rounded-full bg-blue-400 shadow-blue-700/50 shadow-md",
+               "h-full origin-left rounded-full bg-blue-400 shadow-md shadow-blue-700/50",
                // Only animate transforms when visible
                isVisible && "transition-transform duration-300 ease-in-out will-change-transform",
                "motion-reduce:transition-none",

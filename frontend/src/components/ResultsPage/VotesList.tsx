@@ -64,7 +64,7 @@ export function VotesListItem({ number, title, voteCount, href }: VotesListItemP
             <span className="sr-only">&nbsp;</span>
          </span>
          <span className="in-[a]:text-blue-500 in-[a]:underline">{title}</span>
-         <span className={twMerge("text-right font-number", voteCount && "font-semibold text-gray-700")}>
+         <span className={twMerge("font-number text-right", voteCount && "font-semibold text-gray-700")}>
             {voteCount ? formatNumber(voteCount) : "–"}
          </span>
          <span>{isClickable && <FontAwesomeIcon icon={faChevronRight} />}</span>
