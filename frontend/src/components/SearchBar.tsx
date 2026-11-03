@@ -27,7 +27,7 @@ const ALIASES: Record<string, string> = {
    Tytsjerksteradiel: "Tietjerksteradeel",
 };
 
-export default function SearchBar({ regionCategory, options, onSelect, maxSuggestions = 8, children }: Props) {
+export default function SearchBar({ regionCategory, options, onSelect, maxSuggestions = 10, children }: Props) {
    const { t } = useLingui();
 
    const SEARCH_CONFIG = {

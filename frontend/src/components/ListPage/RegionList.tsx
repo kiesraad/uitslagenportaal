@@ -91,9 +91,11 @@ export function RegionList({
          const isAmbiguous = nameCounts[region.region_name] > 1 && Boolean(region.csb);
          const name = isAmbiguous ? `${region.region_name} - ${region.csb?.region_name}` : region.region_name;
          const stationNumber = isPollingStationList ? (region.station_number ?? undefined) : undefined;
+         const postalCode = isPollingStationList ? region.postal_code : undefined;
          return {
             id: region.slug,
             label: formatStationLabel(name, stationNumber),
+            searchText: postalCode ? `${postalCode} ${postalCode.replace(" ", "")}` : undefined,
             sortName: region.region_name,
             stationNumber,
             sameLocationStationNumbers: isPollingStationList
@@ -274,7 +276,7 @@ function DoubleStationInfo({ label, otherNumbers }: { label: string; otherNumber
             onHoverStart={pointerEnter}
             onHoverEnd={pointerLeave}
             onBlur={() => !isPointerOver.current && setOpen(false)}
-            className="absolute top-1/2 right-14 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xs bg-blue text-white focus-visible:outline-2 focus-visible:outline-blue focus-visible:outline-offset-2"
+            className="bg-blue focus-visible:outline-blue absolute top-1/2 right-14 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xs text-white focus-visible:outline-2 focus-visible:outline-offset-2"
          >
             <FontAwesomeIcon icon={faInfo} className="text-[0.7rem]" />
          </Button>
@@ -285,7 +287,7 @@ function DoubleStationInfo({ label, otherNumbers }: { label: string; otherNumber
             onOpenChange={setOpen}
             isNonModal
             placement="top end"
-            className="max-w-xs rounded-xs border border-blue-200 bg-white text-gray-700 text-sm shadow-md"
+            className="max-w-xs rounded-xs border border-blue-200 bg-white text-sm text-gray-700 shadow-md"
          >
             <div ref={popoverRef} onPointerEnter={pointerEnter} onPointerLeave={pointerLeave} className="px-3 py-2">
                <p>
