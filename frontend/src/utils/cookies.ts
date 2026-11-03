@@ -25,6 +25,6 @@ export function writeCookie(name: string, value: string): void {
       // biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is async and not widely supported
       document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${ONE_YEAR_IN_SECONDS}; SameSite=Lax`;
    } catch {
-      // Sandboxed iframe: the value simply does not survive a reload.
+      // Sandboxed iframes throw on any cookie access; the value is simply not stored.
    }
 }

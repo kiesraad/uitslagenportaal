@@ -17,6 +17,19 @@ export function getI18n(locale: Locale): I18n {
    return instance;
 }
 
+/**
+ * The instance for a locale if its catalogue is loaded, otherwise the source locale's or any other
+ * loaded one. An instance without a catalogue makes `I18nProvider` render nothing, so an error page
+ * shown after a catalogue failed to load would stay blank.
+ */
+export function getLoadedI18n(locale: Locale): I18n {
+   const requested = getI18n(locale);
+   if (requested.locale) return requested;
+   const source = getI18n(sourceLocale);
+   if (source.locale) return source;
+   return [...instances.values()].find((instance) => instance.locale) ?? requested;
+}
+
 // The choice made in this session, which also outlives a cookie the browser refuses to store
 let selectedLocale: Locale | null = null;
 

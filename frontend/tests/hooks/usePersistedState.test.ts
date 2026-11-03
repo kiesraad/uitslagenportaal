@@ -1,4 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
+import { createElement } from "react";
+import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import { readCookie, writeCookie } from "@/utils/cookies";
@@ -6,6 +8,10 @@ import { readCookie, writeCookie } from "@/utils/cookies";
 const KEY = "testKey";
 
 const isNumber = (value: unknown): value is number => typeof value === "number";
+
+function Value() {
+   return usePersistedState(KEY, 1, isNumber)[0];
+}
 
 describe("usePersistedState", () => {
    it("Returns the default when nothing is stored", () => {
@@ -21,7 +27,7 @@ describe("usePersistedState", () => {
       expect(result.current[0]).toBe(5);
    });
 
-   it("Renders the default first and keeps the stored value in storage", () => {
+   it("Renders a stored value from the first render", () => {
       writeCookie(KEY, JSON.stringify(5));
       const renders: number[] = [];
       renderHook(() => {
@@ -30,10 +36,37 @@ describe("usePersistedState", () => {
          return state;
       });
 
-      // The first render matches markup rendered without a browser; the stored value follows.
-      expect(renders[0]).toBe(1);
-      expect(renders.at(-1)).toBe(5);
-      expect(readCookie(KEY)).toBe("5");
+      expect(renders[0]).toBe(5);
+   });
+
+   it("Keeps an object value and the setter stable between renders", () => {
+      writeCookie(KEY, JSON.stringify({ count: 5 }));
+      const { result, rerender } = renderHook(() => usePersistedState(KEY, { count: 1 }));
+      const [firstValue, firstSetter] = result.current;
+
+      rerender();
+      expect(result.current[0]).toBe(firstValue);
+      expect(result.current[1]).toBe(firstSetter);
+   });
+
+   it("Renders the default without a browser", () => {
+      writeCookie(KEY, JSON.stringify(5));
+
+      expect(renderToString(createElement(Value))).toBe("1");
+   });
+
+   it("Does not write a cookie until a value is set", () => {
+      renderHook(() => usePersistedState(KEY, 1));
+
+      expect(readCookie(KEY)).toBeNull();
+   });
+
+   it("Updates every component reading the same key", () => {
+      const first = renderHook(() => usePersistedState(KEY, 1));
+      const second = renderHook(() => usePersistedState(KEY, 1));
+
+      act(() => first.result.current[1](2));
+      expect(second.result.current[0]).toBe(2);
    });
 
    it("Writes every update to storage, functional ones included", () => {
