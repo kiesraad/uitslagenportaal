@@ -48,7 +48,7 @@ def national(request: pytest.FixtureRequest) -> NationalElection:
 
 def expect_national_tabs(page: Page) -> None:
     expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
-    expect(page.get_by_role("link", name="Kieskringen")).to_be_visible()
+    expect(page.get_by_role("link", name="Kieskring")).to_be_visible()
     expect(page.get_by_role("link", name="Nederland")).to_be_visible()
 
 
@@ -71,7 +71,7 @@ def test_after_definition_kieskringen_and_nederland_are_unpublished(page: Page, 
     page.goto(f"/{slug}/gsb")
     expect_national_tabs(page)
 
-    page.get_by_role("link", name="Kieskringen").click()
+    page.get_by_role("link", name="Kieskring").click()
     expect(page.get_by_role("link", name="Leiden")).to_be_visible()
     page.get_by_role("link", name="Rotterdam").click()
     expect(page).to_have_url(re.compile(rf"/{slug}/hsb/10-rotterdam/resultaten/?$"))
