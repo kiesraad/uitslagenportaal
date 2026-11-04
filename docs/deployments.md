@@ -279,6 +279,8 @@ With `scraper.enabled`, the chart runs the scraper worker and beat queues up to
 
 ### Automatic deploy
 
+See [the release procedure](release-procedure.md) for how to create releases.
+
 #### Service account
 
 For the CD pipeline we need a service account and store a token for this account in a GitHub secret.
@@ -304,7 +306,7 @@ namespace. Install it as an administrator, once per environment.
 
 #### The deployment pipeline
 
-A push to `dev` deploys itself. Once the backend, frontend, Playwright and Helm suites have
+A push to `dev` or `main` trigger the CD pipeline. Once the backend, frontend, Playwright and Helm suites have
 all passed and both images are published, the `deploy` job in `branch-ci-cd.yml` upgrades the
 release.
 
