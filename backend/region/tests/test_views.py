@@ -654,6 +654,76 @@ def test_region_list_includes_the_other_stations_at_the_same_location():
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("region_category", "eml_types", "has_results"),
+    [
+        (RegionCategory.WATERSCHAP, [EmlType.EML_510d], True),
+        (RegionCategory.WATERSCHAP, [EmlType.EML_510b], False),
+        (RegionCategory.KIESKRING, [EmlType.EML_510c], True),
+        (RegionCategory.KIESKRING, [EmlType.EML_510d], False),
+        (RegionCategory.GEMEENTE, [EmlType.EML_510b, EmlType.EML_510c, EmlType.EML_510d], True),
+        (RegionCategory.GEMEENTE, [EmlType.EML_510c, EmlType.EML_510d], False),
+        (RegionCategory.STEMBUREAU, [EmlType.EML_510b], True),
+        (RegionCategory.STEMBUREAU, [], False),
+    ],
+)
+def test_region_list_has_results_only_with_the_count_its_page_shows(region_category, eml_types, has_results):
+    """A region counts as having results once the telling its linked page reads is in, not any higher one."""
+    contest = ContestFactory()
+    party = PartyFactory(election=contest.election)
+    parent = RegionFactory(election=contest.election, region_category=RegionCategory.STAAT)
+    region = RegionFactory(election=contest.election, parent=parent, region_category=region_category)
+    for eml_type in eml_types:
+        VoteCount.objects.create(
+            contest=contest,
+            region=region,
+            party=party,
+            valid_votes=100,
+            result_level=VoteCount.RESULT_LEVEL_PARTY,
+            eml_type=eml_type,
+        )
+
+    response = list_regions(contest.election, {"parent_region": parent.slug})
+
+    assert response.status_code == 200
+    assert [row["has_results"] for row in response.data] == [has_results]
+
+
+@pytest.mark.django_db
+def test_region_list_of_kieskringen_has_results_from_their_hsb_count():
+    contest = ContestFactory()
+    party = PartyFactory(election=contest.election)
+    provincie = RegionFactory(election=contest.election, region_category=RegionCategory.PROVINCIE)
+    leiden, rotterdam = (
+        RegionFactory(
+            election=contest.election,
+            parent=provincie,
+            csb=provincie,
+            region_category=RegionCategory.KIESKRING,
+            region_name=name,
+        )
+        for name in ("Leiden", "Rotterdam")
+    )
+    for region, eml_type in [(leiden, EmlType.EML_510c), (rotterdam, EmlType.EML_510d)]:
+        VoteCount.objects.create(
+            contest=contest,
+            region=region,
+            party=party,
+            valid_votes=100,
+            result_level=VoteCount.RESULT_LEVEL_PARTY,
+            eml_type=eml_type,
+        )
+
+    response = list_regions(contest.election, {"region_category": RegionCategory.KIESKRING})
+
+    assert response.status_code == 200
+    assert [(row["region_name"], row["has_results"]) for row in response.data] == [
+        ("Leiden", True),
+        ("Rotterdam", False),
+    ]
+
+
+@pytest.mark.django_db
 def test_region_detail_without_postal_code_has_no_same_location_stations():
     gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE, slug="wijk-bij-duurstede")
     station = make_station(gemeente, 1, "Huis van de Gemeente", None)

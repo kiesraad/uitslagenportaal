@@ -72,6 +72,17 @@ describe("RegionList", () => {
       expect(screen.queryByRole("heading", { name: "De gemeenten zijn nog niet beschikbaar" })).not.toBeInTheDocument();
    });
 
+   it("says so in text when a region has no counting results yet", () => {
+      const zwolle: Region = { ...zoetermeer, region_name: "Zwolle", slug: "zwolle", has_results: false };
+      renderRegionList({ regions: [{ ...zoetermeer, has_results: true }, zwolle] });
+
+      const inactive = screen.getByRole("link", { name: "Zwolle, Nog geen telresultaten" });
+      const active = screen.getByRole("link", { name: "Zoetermeer" });
+      // The hourglass is the visible cue besides the grey; it is decorative, so it has no role to query by.
+      expect(inactive.querySelector('[data-icon="hourglass"]')).toBeInTheDocument();
+      expect(active.querySelector('[data-icon="hourglass"]')).not.toBeInTheDocument();
+   });
+
    it("prefixes stembureau search suggestions with a zero-padded station number", () => {
       const stations: Region[] = [
          {
