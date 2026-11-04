@@ -379,6 +379,39 @@ def test_csb_includes_the_520_document_and_gsb_does_not():
 
 
 @pytest.mark.django_db
+def test_gsb_and_csb_each_list_and_preview_their_own_proces_verbaal_for_the_same_region():
+    region = RegionFactory(
+        election__election_config__category=ElectionCategory.GR.value,
+        region_category=RegionCategory.GEMEENTE,
+    )
+    documents = {
+        file_type: CertifiedElectionDocumentFactory(
+            region=region, storage_key=f"GR2026/{file_type}.pdf", file_type=file_type
+        )
+        for file_type in (
+            ElectionDocument.FileType.PDF_NA31_1,
+            ElectionDocument.FileType.PDF_NA14_2,
+            ElectionDocument.FileType.PDF_P22_2,
+        )
+    }
+    for file_type in documents:
+        default_storage.save(f"GR2026/{file_type}.pdf", ContentFile(b"%PDF"))
+
+    gsb = region_detail(region, "gsb")
+    csb = region_detail(region, "csb")
+
+    assert {item["file_type"] for item in gsb["documents"]} == {
+        ElectionDocument.FileType.PDF_NA31_1,
+        ElectionDocument.FileType.PDF_NA14_2,
+    }
+    gsb_preview = documents[ElectionDocument.FileType.PDF_NA14_2]
+    assert gsb["certified_document_url"] == f"/api/certified-documents/{gsb_preview.pk}/"
+    assert {item["file_type"] for item in csb["documents"]} == {ElectionDocument.FileType.PDF_P22_2}
+    csb_preview = documents[ElectionDocument.FileType.PDF_P22_2]
+    assert csb["certified_document_url"] == f"/api/certified-documents/{csb_preview.pk}/"
+
+
+@pytest.mark.django_db
 def test_gsb_is_empty_without_a_510b_telling():
     contest = ContestFactory()
     party = PartyFactory(election=contest.election)

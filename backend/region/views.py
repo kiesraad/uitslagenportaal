@@ -11,12 +11,29 @@ from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, ReportingLevel
 from region.models import Region, hsb_kieskringen
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
+FileType = ElectionDocument.FileType
+
 # FileType values are EML510b, not the EmlType strings 510b used on vote counts.
+# A GR gemeente is both GSB and CSB, so each level names its own PVs rather than taking all of the region's.
 _DOCUMENT_FILE_TYPES_BY_REPORTING_LEVEL = {
-    ReportingLevel.SB: [ElectionDocument.FileType.EML_510B],
-    ReportingLevel.GSB: [ElectionDocument.FileType.EML_510B, ElectionDocument.FileType.PDF_SB_ZIP],
-    ReportingLevel.HSB: [ElectionDocument.FileType.EML_510C],
-    ReportingLevel.CSB: [ElectionDocument.FileType.EML_510D, ElectionDocument.FileType.EML_520],
+    ReportingLevel.SB: [
+        FileType.EML_510B,
+        FileType.PDF_N10_1,
+        FileType.PDF_N10_2,
+        FileType.PDF_NA14_1,
+        FileType.PDF_NA31_2_B1,
+    ],
+    ReportingLevel.GSB: [
+        FileType.EML_510B,
+        FileType.PDF_SB_ZIP,
+        FileType.PDF_NA31_1,
+        FileType.PDF_NA31_2,
+        FileType.PDF_NA31_2_B2,
+        FileType.PDF_NA14_2,
+        FileType.PDF_NA14_2_B1,
+    ],
+    ReportingLevel.HSB: [FileType.EML_510C, FileType.PDF_O7, FileType.PDF_P1F_1],
+    ReportingLevel.CSB: [FileType.EML_510D, FileType.EML_520, FileType.PDF_P22_1, FileType.PDF_P22_2],
 }
 
 
@@ -113,7 +130,6 @@ class RegionDetailView(RetrieveAPIView):
         document_file_type = [
             *_DOCUMENT_FILE_TYPES_BY_REPORTING_LEVEL[level],
             ElectionDocument.FileType.CSV_OSV43,
-            *ElectionDocument.CERTIFIED_FILE_TYPES,
         ]
 
         election_config = ElectionConfig.objects.filter(slug=election_config_slug).first()
