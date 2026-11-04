@@ -268,15 +268,15 @@ Bugsink needs the database URL, a secret key, email credentials and the login. G
 the managed Postgres instance, not the application's:
 
 ```bash
-kubectl -n monitoring create secret generic bugsink-creds `
-  --from-literal=DATABASE_URL="postgresql://user:password@host:port/database_name" `
-  --from-literal=SECRET_KEY="$(openssl rand -base64 48)" `
-  --from-literal=EMAIL_HOST="smtp.tem.scaleway.com" `
-  --from-literal=EMAIL_PORT="2587" `
-  --from-literal=EMAIL_USE_TLS="True" `
-  --from-literal=EMAIL_HOST_USER="" `
-  --from-literal=EMAIL_HOST_PASSWORD="" `
-  --from-literal=DEFAULT_FROM_EMAIL="" `
+kubectl -n monitoring create secret generic bugsink-creds \
+  --from-literal=DATABASE_URL="postgresql://user:password@host:port/database_name" \
+  --from-literal=SECRET_KEY="$(openssl rand -base64 48)" \
+  --from-literal=EMAIL_HOST="smtp.tem.scaleway.com" \
+  --from-literal=EMAIL_PORT="2587" \
+  --from-literal=EMAIL_USE_TLS="True" \
+  --from-literal=EMAIL_HOST_USER="" \
+  --from-literal=EMAIL_HOST_PASSWORD="" \
+  --from-literal=DEFAULT_FROM_EMAIL="" \
   --from-literal=CREATE_SUPERUSER="email:password"
 ```
 
@@ -286,8 +286,8 @@ On a local cluster, the secret key and the login are enough. Without `DATABASE_U
 inside the container, which is lost on every restart, like the local logs:
 
 ```bash
-kubectl -n monitoring create secret generic bugsink-creds `
-  --from-literal=SECRET_KEY="$(openssl rand -base64 48)" `
+kubectl -n monitoring create secret generic bugsink-creds \
+  --from-literal=SECRET_KEY="$(openssl rand -base64 48)" \
   --from-literal=CREATE_SUPERUSER="admin@localhost:admin"
 ```
 
