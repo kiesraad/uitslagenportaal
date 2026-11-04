@@ -1,7 +1,7 @@
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
-import { msg, t } from "@lingui/core/macro";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type PropsWithChildren, type ReactNode, useMemo } from "react";
 import type {
@@ -151,6 +151,7 @@ const SB_VOTE_COUNT_BODIES: Record<TimelineVariant, MessageDescriptor> = {
 };
 
 export function SBVoteCountTimelineEntry() {
+   const { t } = useLingui();
    const { variant = "DEFAULT" } = useTimelineContext();
 
    return (
@@ -170,6 +171,7 @@ export function SBVoteCountTimelineEntry() {
 }
 
 export function GSBVoteCountTimelineEntry() {
+   const { t } = useLingui();
    return (
       <TimelineEntry
          event="municipality_vote_count"
@@ -188,6 +190,7 @@ export function GSBVoteCountTimelineEntry() {
 }
 
 export function HSBVoteCountTimelineEntry() {
+   const { t } = useLingui();
    const { region } = useTimelineContext();
 
    let hsb: Pick<Region, "region_name"> | null | undefined = null;
@@ -218,6 +221,7 @@ export function HSBVoteCountTimelineEntry() {
 }
 
 export function useTimelineCsbName() {
+   const { t } = useLingui();
    const { region } = useTimelineContext();
    const csb = region?.is_csb ? region : region?.csb;
 
@@ -233,6 +237,7 @@ export function useTimelineCsbName() {
 }
 
 export function CsbCheckTimelineEntry() {
+   const { t } = useLingui();
    const csbName = useTimelineCsbName();
 
    return (
@@ -260,6 +265,7 @@ export function CsbCheckTimelineEntry() {
 }
 
 export function CsbResultPublishTimelineEntry() {
+   const { t } = useLingui();
    const csbName = useTimelineCsbName();
 
    return (

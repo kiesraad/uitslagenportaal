@@ -1,4 +1,3 @@
-import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
@@ -14,7 +13,7 @@ function Empty() {
 
 /** Mounts the boundary the way the root route does: as the catcher for a failing loader. */
 function renderThrownError(error: unknown) {
-   activateLocale("nl");
+   const i18n = activateLocale("nl");
 
    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
    const Stub = createRoutesStub([

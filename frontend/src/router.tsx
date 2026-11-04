@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { createBrowserRouter, type LazyRouteFunction, Outlet, type RouteObject, ScrollRestoration } from "react-router";
 import { BaseLayout } from "@/components/BaseLayout.tsx";
+import { LocaleProvider } from "@/components/LocaleProvider.tsx";
 import { RouteFocus } from "@/components/RouteFocus.tsx";
 import ErrorBoundaryPage from "@/pages/ErrorBoundaryPage.tsx";
 import LoadingPage from "@/pages/LoadingPage.tsx";
@@ -12,7 +13,7 @@ import { queryClient } from "./queryClient.ts";
 // evicted by the garbage collector while the page stayed mounted.
 function RootLayout() {
    return (
-      <>
+      <LocaleProvider>
          <ScrollRestoration />
          <RouteFocus />
          <Suspense fallback={<LoadingPage />}>
@@ -20,7 +21,23 @@ function RootLayout() {
                <Outlet />
             </BaseLayout>
          </Suspense>
-      </>
+      </LocaleProvider>
+   );
+}
+
+function RootErrorBoundary() {
+   return (
+      <LocaleProvider>
+         <ErrorBoundaryPage />
+      </LocaleProvider>
+   );
+}
+
+function RootHydrateFallback() {
+   return (
+      <LocaleProvider>
+         <LoadingPage />
+      </LocaleProvider>
    );
 }
 
@@ -36,11 +53,12 @@ function lazyPage<TModule>(
 // inline in the child path rather than adding an empty level.
 export const routes: RouteObject[] = [
    {
+      id: "root",
       path: "/",
       loader: localeLoader,
       Component: RootLayout,
-      ErrorBoundary: ErrorBoundaryPage,
-      HydrateFallback: LoadingPage,
+      ErrorBoundary: RootErrorBoundary,
+      HydrateFallback: RootHydrateFallback,
       children: [
          {
             index: true,
