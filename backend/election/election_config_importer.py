@@ -93,7 +93,7 @@ def wipe_election_data(election_config: ElectionConfig) -> None:
 
     _, failed = delete_stored_documents(storage_keys, prefixes)
     if failed:
-        logger.warning(
+        logger.error(
             "%d stored document(s) for election config %s could not be deleted and are now orphaned: %s",
             len(failed),
             election_config.identifier,

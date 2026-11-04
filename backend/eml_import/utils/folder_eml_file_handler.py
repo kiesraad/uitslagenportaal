@@ -33,11 +33,8 @@ class FolderEMLFileHandler(BaseFileHandler):
             try:
                 with transaction.atomic():
                     importer_cls(xml_file_path, eml=eml).parse()
-            except Exception as e:
-                self.logger.error(
-                    f"\033[31mFailed importing {parser_type} file {xml_file_path} "
-                    f"with exception: {type(e).__name__} {e}\033[0m"
-                )
+            except Exception:
+                self.logger.exception("Failed importing %s file %s", parser_type, xml_file_path)
 
     def run(self) -> tuple[int, bool]:
         """
@@ -111,11 +108,9 @@ class FolderEMLFileHandler(BaseFileHandler):
                 processed_path = future.result()
                 done += 1
                 self.logger.info(f"[{done}/{len(ordered)}] Processed {parser_type} file {processed_path}...")
-            except EMLImporterException as e:
+            except EMLImporterException:
                 # With any error the importer should continue as to not have everything fail
-                self.logger.error(
-                    f"\033[31mFailed importing {parser_type} file {path} with exception: {type(e).__name__} {e}\033[0m"
-                )
+                self.logger.exception("Failed importing %s file %s", parser_type, path)
                 continue
 
     @classmethod
