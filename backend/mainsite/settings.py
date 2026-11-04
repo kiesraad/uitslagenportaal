@@ -285,6 +285,13 @@ LOGGING = {
             "()": "colorlog.ColoredFormatter",
             "format": "{log_color}{asctime} {processName} - {levelname} - {name} - {message}",
             "style": "{",
+            "log_colors": {
+                "DEBUG": "light_black",
+                "INFO": "",  # Use the default terminal colour
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "bold_red",
+            },
         },
         # Fields passed as `extra` become keys of their own.
         "json": {
