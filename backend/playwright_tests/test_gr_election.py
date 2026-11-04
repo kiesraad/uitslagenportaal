@@ -17,8 +17,9 @@ def test_gemeente_tab_leads_to_westerwolde_its_stembureau_and_party_results(page
     page.goto("/")
     page.get_by_role("link", name="Gemeenteraadsverkiezingen 2026", exact=True).click()
     expect(page).to_have_url(re.compile(r"/gsb/?$"))
-    # The GSB and the CSB tab both name the gemeente.
-    expect(page.get_by_role("link", name="Gemeente", exact=True)).to_have_count(2)
+    tabs = page.get_by_role("navigation", name="Subnavigatie")
+    expect(tabs.locator('a[href$="/gsb"]')).to_be_visible()
+    expect(tabs.locator('a[href$="/csb"]')).to_be_visible()
 
     page.get_by_role("link", name="Westerwolde").click()
     expect(page).to_have_url(re.compile(r"/gsb/1950-westerwolde/?$"))
