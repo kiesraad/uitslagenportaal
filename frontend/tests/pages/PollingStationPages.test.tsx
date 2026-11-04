@@ -2,9 +2,10 @@ import { QueryClient } from "@tanstack/react-query";
 import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { ElectionConfig, Region } from "@/api/types";
-import { electionConfigQuery, regionQuery } from "@/hooks/queries";
-import PollingStationPartyResultsPage from "@/pages/PollingStationPage/PollingStationPartyResultsPage";
-import PollingStationResultsPage from "@/pages/PollingStationPage/PollingStationResultsPage";
+import PollingStationPartyResultsPage, {
+   loadPollingStationPartyResults,
+} from "@/pages/PollingStationPage/PollingStationPartyResultsPage";
+import PollingStationResultsPage, { pollingStationQueries } from "@/pages/PollingStationPage/PollingStationResultsPage";
 import { renderWithProviders } from "../testUtils";
 
 const electionConfig: ElectionConfig = {
@@ -55,50 +56,63 @@ const pollingStation: Region = {
    csb: gemeente.csb,
 };
 
+const params = {
+   electionConfigSlug: electionConfig.slug,
+   regionSlug: gemeente.slug,
+   csbSlug: gemeente.csb?.slug,
+   pollingStationSlug: pollingStation.slug,
+};
+
+const vvdVotes = {
+   id: 1,
+   valid_votes: 10,
+   candidate: null,
+   party: { registered_name: "VVD", slug: "vvd", list_number: 1 },
+   result_level: "PARTY" as const,
+};
+
+/** A client holding what the stembureau loaders fetch, so neither pages nor loaders hit the network. */
 function seedPollingStationQueries(station: Region = pollingStation) {
    const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
    });
-   const electionQuery = electionConfigQuery(electionConfig.slug);
-   const gemeenteQuery = regionQuery(
-      {
-         electionConfigSlug: electionConfig.slug,
-         regionSlug: gemeente.slug,
-         csbSlug: gemeente.csb?.slug,
-      },
-      "gsb",
-   );
-   const stationQuery = regionQuery(
-      {
-         electionConfigSlug: electionConfig.slug,
-         regionSlug: pollingStation.slug,
-         csbSlug: gemeente.csb?.slug,
-         parentRegionSlug: gemeente.slug,
-      },
-      "sb",
-   );
-   queryClient.setQueryData(electionQuery.queryKey, electionConfig);
-   queryClient.setQueryData(gemeenteQuery.queryKey, gemeente);
-   queryClient.setQueryData(stationQuery.queryKey, station);
-   return {
-      queryClient,
-      loaderData: {
-         electionConfigQuery: electionQuery,
-         regionQuery: gemeenteQuery,
-         pollingStationQuery: stationQuery,
-      },
-   };
+   const queries = pollingStationQueries(params);
+   queryClient.setQueryData(queries.electionConfig.queryKey, electionConfig);
+   queryClient.setQueryData(queries.region.queryKey, gemeente);
+   queryClient.setQueryData(queries.pollingStation.queryKey, station);
+   return queryClient;
 }
+
+function loadPartyResults(queryClient: QueryClient, partySlug: string) {
+   return loadPollingStationPartyResults(queryClient, { params: { ...params, partySlug } });
+}
+
+describe("loadPollingStationPartyResults", () => {
+   it("throws a 404 for a party the stembureau has no results for", async () => {
+      const queryClient = seedPollingStationQueries({ ...pollingStation, vote_counts: [vvdVotes] });
+
+      await expect(loadPartyResults(queryClient, "onbekend")).rejects.toMatchObject({ status: 404 });
+   });
+
+   it("accepts a party the stembureau has results for", async () => {
+      const queryClient = seedPollingStationQueries({ ...pollingStation, vote_counts: [vvdVotes] });
+
+      await expect(loadPartyResults(queryClient, "vvd")).resolves.toBeUndefined();
+   });
+
+   it("accepts any party while no results are published", async () => {
+      await expect(loadPartyResults(seedPollingStationQueries(), "onbekend")).resolves.toBeUndefined();
+   });
+});
 
 describe("PollingStationPages", () => {
    it("puts the padded station number on the stembureau breadcrumb, not the heading", () => {
-      const { queryClient, loaderData } = seedPollingStationQueries();
+      const queryClient = seedPollingStationQueries();
       renderWithProviders(<PollingStationResultsPage />, {
          path: "/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/:pollingStationSlug",
          initialEntries: [
             `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb?.slug}/${pollingStation.slug}`,
          ],
-         loaderData,
          queryClient,
       });
 
@@ -109,13 +123,12 @@ describe("PollingStationPages", () => {
    });
 
    it("keeps the padded station number on the party-results breadcrumb", () => {
-      const { queryClient, loaderData } = seedPollingStationQueries();
+      const queryClient = seedPollingStationQueries();
       renderWithProviders(<PollingStationPartyResultsPage />, {
          path: "/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/:pollingStationSlug/:partySlug",
          initialEntries: [
             `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb?.slug}/${pollingStation.slug}/vvd`,
          ],
-         loaderData,
          queryClient,
       });
 
@@ -124,17 +137,9 @@ describe("PollingStationPages", () => {
    });
 
    it("links a dubbel stembureau to the other stembureau at its location", () => {
-      const { queryClient, loaderData } = seedPollingStationQueries({
+      const queryClient = seedPollingStationQueries({
          ...pollingStation,
-         vote_counts: [
-            {
-               id: 1,
-               valid_votes: 10,
-               candidate: null,
-               party: { registered_name: "VVD", slug: "vvd", list_number: 1 },
-               result_level: "PARTY",
-            },
-         ],
+         vote_counts: [vvdVotes],
          same_location_stations: [{ station_number: 2, slug: "SB2-de-regenboog" }],
       });
       renderWithProviders(<PollingStationResultsPage />, {
@@ -142,7 +147,6 @@ describe("PollingStationPages", () => {
          initialEntries: [
             `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb?.slug}/${pollingStation.slug}`,
          ],
-         loaderData,
          queryClient,
       });
 
@@ -154,13 +158,12 @@ describe("PollingStationPages", () => {
    });
 
    it("shows no dubbel-stembureau notice for a stembureau alone at its location", () => {
-      const { queryClient, loaderData } = seedPollingStationQueries();
+      const queryClient = seedPollingStationQueries();
       renderWithProviders(<PollingStationResultsPage />, {
          path: "/:electionConfigSlug/gsb/:regionSlug/csb/:csbSlug/:pollingStationSlug",
          initialEntries: [
             `/${electionConfig.slug}/gsb/${gemeente.slug}/csb/${gemeente.csb?.slug}/${pollingStation.slug}`,
          ],
-         loaderData,
          queryClient,
       });
 

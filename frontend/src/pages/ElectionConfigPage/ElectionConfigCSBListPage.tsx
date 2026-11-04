@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { type LoaderFunctionArgs, type Params, useParams } from "react-router";
 import type { ElectionConfig } from "@/api/types";
 import ElectionConfigTabs from "@/components/ElectionConfigTabs.tsx";
 import { LayoutMain } from "@/components/LayoutMain.tsx";
@@ -11,43 +11,33 @@ import ResultsNotPublished from "@/components/ResultsPage/ResultsNotPublished.ts
 import { electionConfigQuery, regionQuery, regionsQuery } from "@/hooks/queries.ts";
 import { useFormatters } from "@/utils/format.ts";
 
-export function electionConfigCSBListLoader(queryClient: QueryClient) {
-   return async ({ params }: LoaderFunctionArgs) => {
-      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const electionConfig = await queryClient.query(electionConfigQueryOptions);
-
-      const singleCSB = electionConfig.single_csb;
-
-      if (singleCSB) {
-         const regionQueryOptions = regionQuery({ ...params, regionSlug: singleCSB.slug }, "csb");
-         await queryClient.query(regionQueryOptions);
-         return {
-            electionConfigQuery: electionConfigQueryOptions,
-            regionsQuery: undefined,
-            regionQuery: regionQueryOptions,
-         };
-      }
-
-      // Single-CSB election whose staat region isn't imported yet: nothing to list.
-      if (electionConfig.csb_type === "STAAT") {
-         return { electionConfigQuery: electionConfigQueryOptions, regionsQuery: undefined, regionQuery: undefined };
-      }
-
-      const regionsQueryOptions = regionsQuery(params, electionConfig.csb_type);
-      await queryClient.query(regionsQueryOptions);
-      return {
-         electionConfigQuery: electionConfigQueryOptions,
-         regionsQuery: regionsQueryOptions,
-         regionQuery: undefined,
-      };
-   };
+/** The query for what the page lists: the one CSB's results, the CSBs, or nothing. */
+function contentQueries(params: Params, electionConfig: ElectionConfig) {
+   const singleCSB = electionConfig.single_csb;
+   if (singleCSB) {
+      return { singleCsbQuery: regionQuery({ ...params, regionSlug: singleCSB.slug }, "csb") };
+   }
+   // Single-CSB election whose staat region isn't imported yet: nothing to list.
+   if (electionConfig.csb_type === "STAAT") {
+      return {};
+   }
+   return { csbListQuery: regionsQuery(params, electionConfig.csb_type) };
 }
 
-type LoaderData = Awaited<ReturnType<ReturnType<typeof electionConfigCSBListLoader>>>;
+export async function loadElectionConfigCSBList(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
+   const electionConfig = await client.query(electionConfigQuery(params.electionConfigSlug));
+   const { singleCsbQuery, csbListQuery } = contentQueries(params, electionConfig);
+
+   if (singleCsbQuery) {
+      await client.query(singleCsbQuery);
+   } else if (csbListQuery) {
+      await client.query(csbListQuery);
+   }
+}
 
 type SingleCsbResultsProps = {
    electionConfig: ElectionConfig;
-   regionQuery: NonNullable<LoaderData["regionQuery"]>;
+   regionQuery: ReturnType<typeof regionQuery>;
 };
 
 function SingleCsbResults({ electionConfig, regionQuery }: SingleCsbResultsProps) {
@@ -57,7 +47,7 @@ function SingleCsbResults({ electionConfig, regionQuery }: SingleCsbResultsProps
 
 type CsbRegionListProps = {
    electionConfig: ElectionConfig;
-   regionsQuery: NonNullable<LoaderData["regionsQuery"]>;
+   regionsQuery: ReturnType<typeof regionsQuery>;
 };
 
 function CsbRegionList({ electionConfig, regionsQuery }: CsbRegionListProps) {
@@ -74,11 +64,12 @@ function CsbRegionList({ electionConfig, regionsQuery }: CsbRegionListProps) {
    );
 }
 
-export function ElectionConfigCSBListPage() {
-   const { electionConfigQuery, regionsQuery, regionQuery } = useLoaderData<LoaderData>();
+export default function ElectionConfigCSBListPage() {
+   const params = useParams();
    const { t } = useLingui();
    const { formatElectionDate } = useFormatters();
-   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(params.electionConfigSlug));
+   const { singleCsbQuery, csbListQuery } = contentQueries(params, electionConfig);
 
    const electionLabel = electionConfig.label;
    const electionDay = electionConfig.date ? formatElectionDate(electionConfig.date) : "";
@@ -99,9 +90,9 @@ export function ElectionConfigCSBListPage() {
             ]}
             tabs={<ElectionConfigTabs electionConfig={electionConfig} />}
          />
-         {regionQuery && <SingleCsbResults electionConfig={electionConfig} regionQuery={regionQuery} />}
-         {regionsQuery && <CsbRegionList electionConfig={electionConfig} regionsQuery={regionsQuery} />}
-         {!regionQuery && !regionsQuery && (
+         {singleCsbQuery && <SingleCsbResults electionConfig={electionConfig} regionQuery={singleCsbQuery} />}
+         {csbListQuery && <CsbRegionList electionConfig={electionConfig} regionsQuery={csbListQuery} />}
+         {!singleCsbQuery && !csbListQuery && (
             <div className="page-main">
                <ResultsNotPublished regionName="" regionCategory="STAAT" />
             </div>

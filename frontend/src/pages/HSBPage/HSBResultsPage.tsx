@@ -1,6 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { type LoaderFunctionArgs, useParams } from "react-router";
 import { HSBTimeline } from "@/components/Timeline/HSBTimeline.tsx";
 import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
@@ -13,36 +13,23 @@ import { useFormatters } from "../../utils/format.ts";
 import { getCsbCrumb, getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 
-export function hsbResultsLoader(queryClient: QueryClient) {
-   return async ({ params }: LoaderFunctionArgs) => {
-      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params, "hsb");
+export async function loadHSBResults(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
+   const [electionConfig] = await Promise.all([
+      client.query(electionConfigQuery(params.electionConfigSlug)),
+      client.query(regionQuery(params, "hsb")),
+   ]);
 
-      const [electionConfig] = await Promise.all([
-         queryClient.query(electionConfigQueryOptions),
-         queryClient.query(regionQueryOptions),
-      ]);
-
-      if (!electionConfig.has_hsb) {
-         throw new ApiError("Election has no HSBs", 404);
-      }
-
-      return {
-         electionConfigQuery: electionConfigQueryOptions,
-         regionQuery: regionQueryOptions,
-      };
-   };
+   if (!electionConfig.has_hsb) {
+      throw new ApiError("Election has no HSBs", 404);
+   }
 }
 
-type LoaderData = Awaited<ReturnType<ReturnType<typeof hsbResultsLoader>>>;
-
-export function HSBResultsPage() {
-   const { electionConfigQuery, regionQuery } = useLoaderData<LoaderData>();
+export default function HSBResultsPage() {
+   const params = useParams();
    const { t } = useLingui();
    const { formatDate } = useFormatters();
-   // The loader has already resolved both queries, so the data is never pending here.
-   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
-   const { data: region } = useSuspenseQuery(regionQuery);
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(params.electionConfigSlug));
+   const { data: region } = useSuspenseQuery(regionQuery(params, "hsb"));
 
    const regionLabels = getRegionLabels("KIESKRING");
    const hsbResultsRoute = appRoutes.hsbResults(electionConfig.slug, region.slug);
