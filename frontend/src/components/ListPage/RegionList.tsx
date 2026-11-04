@@ -27,6 +27,8 @@ type Props = {
    parentCsbSlug?: string;
    regionTitle?: string;
    emptyPlaceholder?: boolean;
+   // A GR gemeente is listed both as GSB and as CSB; only the list knows which.
+   isCsbList?: boolean;
 };
 
 export function RegionList({
@@ -37,6 +39,7 @@ export function RegionList({
    parentCsbSlug,
    regionTitle,
    emptyPlaceholder = false,
+   isCsbList = false,
 }: Props) {
    const navigate = useNavigate();
    const { t } = useLingui();
@@ -57,12 +60,12 @@ export function RegionList({
       PROVINCIE: appRoutes.csbResults,
       KIESKRING: appRoutes.hsbResults,
    };
+   const detailRoute = isCsbList ? appRoutes.csbResults : REGION_DETAIL_ROUTE_BUILDERS[regionCategory];
 
    function getRegionRoute(option: SearchListOption) {
       if (regionCategory === "STEMBUREAU" && parentRegionSlug) {
          return appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id, parentCsbSlug);
       }
-      const detailRoute = REGION_DETAIL_ROUTE_BUILDERS[regionCategory];
       if (detailRoute) {
          return detailRoute(electionConfig.slug, option.id);
       }
@@ -72,7 +75,7 @@ export function RegionList({
    let navigateToRegion: (option: SearchListOption) => void;
    if (regionCategory === "STEMBUREAU") {
       navigateToRegion = navigateToPollingStation;
-   } else if (regionCategory in REGION_DETAIL_ROUTE_BUILDERS) {
+   } else if (detailRoute) {
       navigateToRegion = (option) => navigate(getRegionRoute(option));
    } else {
       navigateToRegion = navigateToGemeente;
