@@ -32,10 +32,20 @@ class RegionListSerializer(serializers.ModelSerializer):
     csb = RegionSummarySerializer(read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
     same_location_stations = SameLocationStationsField()
+    has_results = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Region
-        fields = ("region_name", "slug", "region_category", "csb", "station_number", "same_location_stations")
+        fields = (
+            "region_name",
+            "slug",
+            "region_category",
+            "csb",
+            "station_number",
+            "postal_code",
+            "same_location_stations",
+            "has_results",
+        )
 
 
 class RegionDetailSerializer(serializers.ModelSerializer):

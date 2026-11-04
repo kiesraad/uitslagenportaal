@@ -1,3 +1,4 @@
+import { QueryClient } from "@tanstack/react-query";
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { ElectionConfig } from "@/api/types";
@@ -26,8 +27,8 @@ describe("ElectionConfigTabs", () => {
       });
 
       expect(screen.getByRole("link", { name: "Gemeente" })).toHaveAttribute("href", "/ws2023/gsb");
-      expect(screen.getByRole("link", { name: "Waterschappen" })).toHaveAttribute("href", "/ws2023/csb");
-      expect(screen.queryByRole("link", { name: "Kieskringen" })).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Waterschap" })).toHaveAttribute("href", "/ws2023/csb");
+      expect(screen.queryByRole("link", { name: "Kieskring" })).not.toBeInTheDocument();
    });
 
    it("shows kieskringen when the election has HSBs", () => {
@@ -35,8 +36,34 @@ describe("ElectionConfigTabs", () => {
          initialEntries: ["/ws2023/hsb"],
       });
 
-      expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("href", "/ws2023/hsb");
-      expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("aria-current", "page");
+      expect(screen.getByRole("link", { name: "Kieskring" })).toHaveAttribute("href", "/ws2023/hsb");
+      expect(screen.getByRole("link", { name: "Kieskring" })).toHaveAttribute("aria-current", "page");
+   });
+
+   it("shows the timeline tab only when there is more than one election", () => {
+      const queryClient = new QueryClient();
+      queryClient.setQueryData(["election_configs"], [electionConfig, { ...electionConfig, slug: "tk2025" }]);
+      renderWithProviders(<ElectionConfigTabs electionConfig={electionConfig} />, {
+         initialEntries: ["/ws2023/van-stem-tot-uitslag"],
+         queryClient,
+      });
+
+      expect(screen.getByRole("link", { name: "Van stem tot uitslag" })).toHaveAttribute(
+         "href",
+         "/ws2023/van-stem-tot-uitslag",
+      );
+      expect(screen.getByRole("link", { name: "Van stem tot uitslag" })).toHaveAttribute("aria-current", "page");
+   });
+
+   it("hides the timeline tab when there is a single election", () => {
+      const queryClient = new QueryClient();
+      queryClient.setQueryData(["election_configs"], [electionConfig]);
+      renderWithProviders(<ElectionConfigTabs electionConfig={electionConfig} />, {
+         initialEntries: ["/ws2023/gsb"],
+         queryClient,
+      });
+
+      expect(screen.queryByRole("link", { name: "Van stem tot uitslag" })).not.toBeInTheDocument();
    });
 
    it("names the CSB tab after the election's only CSB", () => {
@@ -52,6 +79,18 @@ describe("ElectionConfigTabs", () => {
          { initialEntries: ["/tk2025/gsb"] },
       );
 
+      expect(screen.getByRole("link", { name: "Nederland" })).toHaveAttribute("href", "/tk2025/csb");
+   });
+
+   it("shows kieskringen and Nederland for a TK election before any results are imported", () => {
+      renderWithProviders(
+         <ElectionConfigTabs
+            electionConfig={{ ...electionConfig, slug: "tk2025", csb_type: "STAAT", has_hsb: true }}
+         />,
+         { initialEntries: ["/tk2025/gsb"] },
+      );
+
+      expect(screen.getByRole("link", { name: "Kieskring" })).toHaveAttribute("href", "/tk2025/hsb");
       expect(screen.getByRole("link", { name: "Nederland" })).toHaveAttribute("href", "/tk2025/csb");
    });
 });

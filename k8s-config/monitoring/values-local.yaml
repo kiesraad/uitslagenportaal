@@ -38,3 +38,6 @@ loki:
   # No object storage, so no loki-s3-creds secret to read.
   singleBinary:
     extraEnv: []
+
+bugsink:
+  emailBackend: "django.core.mail.backends.dummy.EmailBackend"

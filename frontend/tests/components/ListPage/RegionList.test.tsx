@@ -72,6 +72,17 @@ describe("RegionList", () => {
       expect(screen.queryByRole("heading", { name: "De gemeenten zijn nog niet beschikbaar" })).not.toBeInTheDocument();
    });
 
+   it("says so in text when a region has no counting results yet", () => {
+      const zwolle: Region = { ...zoetermeer, region_name: "Zwolle", slug: "zwolle", has_results: false };
+      renderRegionList({ regions: [{ ...zoetermeer, has_results: true }, zwolle] });
+
+      const inactive = screen.getByRole("link", { name: "Zwolle, Nog geen telresultaten" });
+      const active = screen.getByRole("link", { name: "Zoetermeer" });
+      // The hourglass is the visible cue besides the grey; it is decorative, so it has no role to query by.
+      expect(inactive.querySelector('[data-icon="hourglass"]')).toBeInTheDocument();
+      expect(active.querySelector('[data-icon="hourglass"]')).not.toBeInTheDocument();
+   });
+
    it("prefixes stembureau search suggestions with a zero-padded station number", () => {
       const stations: Region[] = [
          {
@@ -191,5 +202,42 @@ describe("RegionList", () => {
 
       expect(screen.getByRole("option", { name: "001 - De Regenboog" })).toBeInTheDocument();
       expect(screen.queryByRole("option", { name: "003 - Basisschool de Piratenboot" })).not.toBeInTheDocument();
+   });
+
+   it.each(["1431 BZ", "1431bz"])("finds a stembureau by its postcode typed as %s", (query) => {
+      const stations: Region[] = [
+         {
+            region_name: "Zorgcentrum Aelsmeer",
+            slug: "sb1-zorgcentrum-aelsmeer",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 1,
+            postal_code: "1431 BZ",
+         },
+         {
+            region_name: "Raadhuis Aalsmeer",
+            slug: "sb15-raadhuis-aalsmeer",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 15,
+            postal_code: "1431 EH",
+         },
+      ];
+      renderRegionList({ regionCategory: "STEMBUREAU", regions: stations, parentRegionSlug: "aalsmeer" });
+
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: query } });
+
+      expect(screen.getByRole("option", { name: "001 - Zorgcentrum Aelsmeer" })).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: "015 - Raadhuis Aalsmeer" })).not.toBeInTheDocument();
    });
 });

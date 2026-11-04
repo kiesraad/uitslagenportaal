@@ -17,11 +17,6 @@ msgstr ""
 msgid "(opent in nieuw venster)"
 msgstr "(opens in new window)"
 
-#. placeholder {0}: suggestions.length
-#: src/components/SearchAutocomplete.tsx
-msgid "{0, plural, =0 {Geen resultaten} one {# resultaat} other {# resultaten}}"
-msgstr "{0, plural, =0 {No results} one {# result} other {# results}}"
-
 #. placeholder {0}: sortedPollingStations.length
 #: src/components/ListPage/RegionList.tsx
 msgid "{0, plural, one {# stembureau in {regionTitle}} other {# stembureaus in {regionTitle}}}"
@@ -57,6 +52,14 @@ msgstr "{csbName} publishes the results"
 msgid "{regionType} - {regionName}"
 msgstr "{regionType} - {regionName}"
 
+#: src/components/SearchAutocomplete.tsx
+msgid "{shown} van {total} resultaten"
+msgstr "{shown} of {total} results"
+
+#: src/components/SearchAutocomplete.tsx
+msgid "{total, plural, =0 {Geen resultaten} one {# resultaat} other {# resultaten}}"
+msgstr "{total, plural, =0 {No results} one {# result} other {# results}}"
+
 #: src/components/ResultsPage/ResultsPageIndex.tsx
 msgid "<0>Telresultaten</0> zoals ze meetellen in de officiële uitslag"
 msgstr "<0>Counting results</0> as they count towards the official result"
@@ -73,7 +76,7 @@ msgstr "Number of votes"
 msgid "afgerond"
 msgstr "completed"
 
-#: src/pages/HomePage.tsx
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Bekijk de tellingen per stembureau voor {electionLabel}"
 msgstr "View the counts by polling station for {electionLabel}"
 
@@ -96,7 +99,7 @@ msgstr "View the counting results by electoral district for the {electionLabel}.
 msgid "Bekijk het proces-verbaal"
 msgstr "View the certified election results"
 
-#: src/pages/HomePage.tsx
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?"
 msgstr "Curious about the results at the polling station where you voted?"
 
@@ -160,7 +163,7 @@ msgstr "Correction to the certified election results of the district electoral c
 msgid "Corrigendum proces-verbaal stembureau"
 msgstr "Correction to the certified election results of the polling station"
 
-#: src/pages/HomePage.tsx
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Databank verkiezinguitslag"
 msgstr "Election results database"
 
@@ -172,10 +175,6 @@ msgstr "The {regionPlural} are not yet available"
 msgid "de gemeente"
 msgstr "the municipality"
 
-#: src/utils/region.ts
-msgid "de gemeente {name}"
-msgstr "the municipality of {name}"
-
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
 msgid "De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
 msgstr "The municipality transcribes the count data of every polling station into the results software so that all votes can be added up. Below you can see how the data from this polling station was entered into the results software."
@@ -183,10 +182,6 @@ msgstr "The municipality transcribes the count data of every polling station int
 #: src/utils/region.ts
 msgid "de kieskring"
 msgstr "the electoral district"
-
-#: src/utils/region.ts
-msgid "de kieskring {name}"
-msgstr "the electoral district {name}"
 
 #: src/components/Timeline/GenericTimeline.tsx
 msgid "De kieskringen in Nederland tellen de resultaten van alle gemeenten in de kieskring bij elkaar op."
@@ -225,16 +220,8 @@ msgid "de provincie"
 msgstr "the province"
 
 #: src/utils/region.ts
-msgid "de provincie {name}"
-msgstr "the province of {name}"
-
-#: src/utils/region.ts
 msgid "de regio"
 msgstr "the region"
-
-#: src/utils/region.ts
-msgid "de regio {name}"
-msgstr "the region {name}"
 
 #. placeholder {0}: hsb.region_name
 #: src/components/Timeline/TimelineEntry.tsx
@@ -248,10 +235,6 @@ msgstr "The results of all polling stations are checked, transcribed from paper 
 #: src/utils/region.ts
 msgid "de staat"
 msgstr "the state"
-
-#: src/utils/region.ts
-msgid "de staat {name}"
-msgstr "the state {name}"
 
 #: src/components/ResultsPage/ResultsNotPublished.tsx
 msgid "De telresultaten en processen-verbaal van {regionLabel} zijn hier te zien zodra {csbName} ze publiceert."
@@ -285,7 +268,7 @@ msgstr "Details:"
 msgid "Deze website in andere talen:"
 msgstr "This website in other languages:"
 
-#: src/pages/HomePage.tsx
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Deze website is actief vanaf 1 dag vóór de verkiezingen tot drie maanden erna. Wilt u uitslagen van eerdere verkiezingen bekijken?"
 msgstr "This website is active from 1 day before the elections until three months afterwards. Would you like to view results of earlier elections?"
 
@@ -337,11 +320,10 @@ msgstr "Error"
 msgid "Fout melden"
 msgstr "Report a mistake"
 
-#: src/pages/HomePage.tsx
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Ga dan naar"
 msgstr "Then go to"
 
-#: src/components/ElectionConfigTabs.tsx
 #: src/utils/region.ts
 msgid "Gemeente"
 msgstr "Municipality"
@@ -350,6 +332,10 @@ msgstr "Municipality"
 #: src/pages/PollingStationPage/PollingStationPartyResultsPage.tsx
 msgid "Gemeente {0}"
 msgstr "Municipality {0}"
+
+#: src/utils/region.ts
+msgid "gemeente {name}"
+msgstr "the municipality of {name}"
 
 #: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
 #: src/pages/MunicipalityPage/MunicipalityPollingstationListPage.tsx
@@ -465,10 +451,6 @@ msgstr "The signed certified election results of the polling station."
 msgid "het stembureau"
 msgstr "the polling station"
 
-#: src/utils/region.ts
-msgid "het stembureau {name}"
-msgstr "the polling station {name}"
-
 #: src/components/Timeline/Timeline.tsx
 msgid "Het stembureau doet een sneltelling per partij. Het gemeentelijk stembureau telt de volgende dag alles nog een keer na en telt de stemmen per kandidaat op een centrale tellocatie. Die telresultaten staan in het verslag van het gemeentelijk stembureau/stembureau voor het openbaar lichaam."
 msgstr "The polling station carries out a rapid count per party. The next day the municipal electoral committee recounts everything and counts the votes per candidate at a central counting location. Those counting results are recorded in the report of the municipal electoral committee / public entity electoral committee."
@@ -481,15 +463,15 @@ msgstr "The polling station carries out a full count at the polling station. The
 msgid "het waterschap"
 msgstr "the water authority"
 
-#: src/utils/region.ts
-msgid "het waterschap {name}"
-msgstr "the water authority {name}"
-
-#: src/pages/HomePage.tsx
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Hieronder wordt stap voor stap uitgelegd hoe het resultaat van de verkiezing tot stand komt. Het begint bij het stembureau en eindigt bij de definitieve uitslag die de Kiesraad publiceert. Bij iedere stap is er controle, zodat de uitslag klopt."
 msgstr "Below we explain step by step how the election result is determined. It starts at the polling station and ends with the final result published by De Kiesraad. Every step is checked, so that the result is correct."
 
-#: src/pages/HomePage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigTimelinePage.tsx
+msgid "Hoe de uitslag van de {electionLabel} tot stand komt."
+msgstr "How the result of the {electionLabel} is determined."
+
+#: src/components/Timeline/ElectionTimelineSection.tsx
 msgid "Hoe komt de uitslag tot stand?"
 msgstr "How is the result determined?"
 
@@ -511,6 +493,7 @@ msgstr "How were these results produced?"
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigTimelinePage.tsx
 #: src/pages/HomePage.tsx
 #: src/pages/HSBPage/HSBMunicipalityListPage.tsx
 #: src/pages/HSBPage/HSBPartyResultsPage.tsx
@@ -546,6 +529,10 @@ msgstr "Candidate"
 #: src/utils/region.ts
 msgid "Kieskring"
 msgstr "Electoral district"
+
+#: src/utils/region.ts
+msgid "kieskring {name}"
+msgstr "the electoral district {name}"
 
 #: src/utils/region.ts
 msgid "Kieskringen"
@@ -616,9 +603,13 @@ msgstr "Skip to main content"
 msgid "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand is. Als dat nodig is, nemen we contact op met de gemeente of het stembureau. In sommige gevallen kan er een hertelling plaatsvinden. Als blijkt dat er inderdaad een fout is gemaakt, bijvoorbeeld bij het tellen van de stemmen, dan wordt die fout hersteld. De correctie wordt vastgelegd in een corrigendum en openbaar gemaakt door dit te publiceren. Je ontvangt geen persoonlijk bericht over wat er met je melding is gedaan."
 msgstr "After we receive your report, we investigate what is going on. If necessary, we contact the municipality or the polling station. In some cases a recount may take place. If it turns out that a mistake was indeed made, for example when counting the votes, that mistake is corrected. The correction is recorded in a corrigendum and made public by publishing it. You will not receive a personal message about what was done with your report."
 
-#: src/components/ResultsPage/ResultsNotPublished.tsx
+#: src/utils/region.ts
 msgid "Nederland"
 msgstr "the Netherlands"
+
+#: src/components/ListPage/RegionList.tsx
+msgid "Nog geen telresultaten"
+msgstr "No counting results yet"
 
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "nog niet gestart"
@@ -771,6 +762,10 @@ msgid "Provincie"
 msgstr "Province"
 
 #: src/utils/region.ts
+msgid "provincie {name}"
+msgstr "the province of {name}"
+
+#: src/utils/region.ts
 msgid "Provincies"
 msgstr "Provinces"
 
@@ -781,6 +776,10 @@ msgstr "Requirements your report must meet"
 #: src/utils/region.ts
 msgid "Regio"
 msgstr "Region"
+
+#: src/utils/region.ts
+msgid "regio {name}"
+msgstr "the region {name}"
 
 #: src/utils/region.ts
 msgid "Regio's"
@@ -818,6 +817,10 @@ msgstr "States"
 #: src/utils/region.ts
 msgid "Stembureau"
 msgstr "Polling station"
+
+#: src/utils/region.ts
+msgid "stembureau {name}"
+msgstr "the polling station {name}"
 
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
 msgid "stembureau {stationNumber}"
@@ -863,6 +866,7 @@ msgstr "Counting results"
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigTimelinePage.tsx
 #: src/pages/HSBPage/HSBMunicipalityListPage.tsx
 msgid "Telresultaten {electionLabel}"
 msgstr "Counting results {electionLabel}"
@@ -959,6 +963,14 @@ msgstr "About double polling station {name}"
 msgid "Uitleg over telproces"
 msgstr "About the counting process"
 
+#: src/components/ElectionConfigTabs.tsx
+msgid "Van stem tot uitslag"
+msgstr "From vote to result"
+
+#: src/pages/ElectionConfigPage/ElectionConfigTimelinePage.tsx
+msgid "Van stem tot uitslag {electionLabel}"
+msgstr "From vote to result {electionLabel}"
+
 #: src/pages/HomePage.tsx
 msgid "Verkiezingen laden…"
 msgstr "Loading elections…"
@@ -970,6 +982,7 @@ msgstr "Elections society can rely on"
 #: src/pages/ElectionConfigPage/ElectionConfigCSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigHSBListPage.tsx
 #: src/pages/ElectionConfigPage/ElectionConfigMunicipalityListPage.tsx
+#: src/pages/ElectionConfigPage/ElectionConfigTimelinePage.tsx
 msgid "Verkiezingsdag: {electionDay}"
 msgstr "Polling day: {electionDay}"
 
@@ -1008,6 +1021,10 @@ msgstr "What happens to a report?"
 #: src/utils/region.ts
 msgid "Waterschap"
 msgstr "Water authority"
+
+#: src/utils/region.ts
+msgid "waterschap {name}"
+msgstr "the water authority {name}"
 
 #: src/utils/region.ts
 msgid "Waterschappen"

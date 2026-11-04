@@ -65,8 +65,8 @@ data:
           try_files /index.html =404;
         }
 
-        # Each backend serves under the same prefix it is reached by, so the original URI
-        # is forwarded unchanged and the backend's own links keep working.
+        # Each backend builds its links with the prefix it is reached by. Most also expect
+        # that prefix on incoming requests, so the original URI is forwarded unchanged.
         #
         # The upstream goes through a variable so it is looked up at request time, through
         # the resolver above and its 30s cache. Written as a literal, nginx resolves it at
@@ -90,11 +90,20 @@ data:
           proxy_pass http://$alertmanager:9093$request_uri;
         }
 
+        # Bugsink takes its prefix from BASE_URL for links only and routes on the bare
+        # path, so the prefix is stripped. With no URI on proxy_pass, the rewritten one goes.
+        location /bugsink/ {
+          set $bugsink bugsink.{{ .Release.Namespace }}.svc.cluster.local;
+          rewrite ^/bugsink(/.*)$ $1 break;
+          proxy_pass http://$bugsink:8000;
+        }
+
         # Reaching a service without its trailing slash is the common way to land on a
         # page whose assets all resolve one level too high.
         location = /grafana      { return 301 /grafana/; }
         location = /prometheus   { return 301 /prometheus/; }
         location = /alertmanager { return 301 /alertmanager/; }
+        location = /bugsink      { return 301 /bugsink/; }
       }
     }
 
@@ -183,7 +192,13 @@ data:
       <li>
         <a href="/alertmanager/">
           <strong>Alertmanager</strong>
-          <span>Firing alerts and silences. Delivers nowhere yet.</span>
+          <span>Firing alerts and silences.</span>
+        </a>
+      </li>
+      <li>
+        <a href="/bugsink/">
+          <strong>Bugsink</strong>
+          <span>App error tracking.</span>
         </a>
       </li>
     </ul>

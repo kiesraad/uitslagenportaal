@@ -25,3 +25,6 @@ kube-prometheus-stack:
                 summary: "Cluster has overcommitted memory resource requests."
                 description: "Cluster {{ $labels.cluster }} has overcommitted memory resource requests for Pods by {{ $value | humanize }} bytes."
                 runbook_url: "https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubememoryovercommit"
+
+bugsink:
+  siteTitle: "Bugsink (staging cluster)"

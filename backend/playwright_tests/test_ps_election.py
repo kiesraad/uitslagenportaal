@@ -18,7 +18,7 @@ pytestmark = pytest.mark.playwright
 _seeded = pytest.mark.usefixtures("seeded_database")
 
 # Drenthe is a single kieskring, which its CSB counts: there is no HSB step.
-PS_STEPS = ["De provincie Drenthe publiceert de uitslag", CHECK, GSB, SB]
+PS_STEPS = ["Provincie Drenthe publiceert de uitslag", CHECK, GSB, SB]
 
 
 @_seeded
@@ -28,9 +28,9 @@ def test_homepage_leads_through_the_provincie_list_to_the_drenthe_party_matrix(p
     page.get_by_role("link", name="Provinciale Statenverkiezingen 2023").click()
     expect(page).to_have_url(re.compile(r"/gsb/?$"))
     expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
-    expect(page.get_by_role("link", name="Provincies")).to_be_visible()
+    expect(page.get_by_role("link", name="Provincie")).to_be_visible()
 
-    page.get_by_role("link", name="Provincies").click()
+    page.get_by_role("link", name="Provincie").click()
     expect(page).to_have_url(re.compile(r"/csb/?$"))
     expect(page.get_by_role("link", name="Drenthe")).to_be_visible()
 
@@ -121,15 +121,15 @@ def test_csb_per_gemeente_lists_the_drenthe_gemeenten(page: Page):
 
 def expect_ps_tabs(page: Page) -> None:
     expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
-    expect(page.get_by_role("link", name="Provincies")).to_be_visible()
+    expect(page.get_by_role("link", name="Provincie")).to_be_visible()
     # Drenthe is a single kieskring, which its CSB counts: there is no HSB.
-    expect(page.get_by_role("link", name="Kieskringen")).to_have_count(0)
+    expect(page.get_by_role("link", name="Kieskring")).to_have_count(0)
 
 
 def expect_unpublished_gemeente(page: Page, name: str) -> None:
     expect(page.get_by_role("heading", level=1, name=f"Gemeente {name}")).to_be_visible()
     expect(
-        page.get_by_role("heading", name=f"De telresultaten van de gemeente {name} zijn nog niet gepubliceerd")
+        page.get_by_role("heading", name=f"De telresultaten van gemeente {name} zijn nog niet gepubliceerd")
     ).to_be_visible()
     expect(page.get_by_role("link", name="Hele gemeente")).to_have_count(0)
     expect(page.get_by_role("link", name="Resultaten per stembureau")).to_have_count(0)
@@ -137,7 +137,7 @@ def expect_unpublished_gemeente(page: Page, name: str) -> None:
 
 def expect_unpublished_csb(page: Page) -> None:
     expect(
-        page.get_by_role("heading", name="De telresultaten van de provincie Drenthe zijn nog niet gepubliceerd")
+        page.get_by_role("heading", name="De telresultaten van provincie Drenthe zijn nog niet gepubliceerd")
     ).to_be_visible()
     expect(page.get_by_role("link", name="VVD")).to_have_count(0)
 

@@ -1,3 +1,4 @@
+import { faHourglass } from "@fortawesome/free-regular-svg-icons";
 import { faChevronRight, faInfo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
@@ -91,15 +92,18 @@ export function RegionList({
          const isAmbiguous = nameCounts[region.region_name] > 1 && Boolean(region.csb);
          const name = isAmbiguous ? `${region.region_name} - ${region.csb?.region_name}` : region.region_name;
          const stationNumber = isPollingStationList ? (region.station_number ?? undefined) : undefined;
+         const postalCode = isPollingStationList ? region.postal_code : undefined;
          return {
             id: region.slug,
             label: formatStationLabel(name, stationNumber),
+            searchText: postalCode ? `${postalCode} ${postalCode.replace(" ", "")}` : undefined,
             sortName: region.region_name,
             stationNumber,
             sameLocationStationNumbers: isPollingStationList
                ? (region.same_location_stations ?? []).flatMap((station) => station.station_number ?? [])
                : undefined,
             csbSlug: region.csb?.slug,
+            inactive: region.has_results === false,
          };
       });
    }, [regions, isPollingStationList]);
@@ -186,12 +190,20 @@ function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: 
    const isDoubleStation = sameLocationNumbers.length > 0;
    const otherNumbers = new Intl.ListFormat(locale).format(sameLocationNumbers.map(String));
    return (
-      <li className="relative col-span-3 grid grid-cols-subgrid odd:bg-blue-50">
+      <li className="relative col-span-3 grid grid-cols-subgrid odd:bg-blue-50 hover:bg-blue-100">
          <Link
             to={to}
-            className="col-span-3 grid min-h-18 grid-cols-subgrid items-center px-6 hover:bg-blue-100 hover:no-underline"
+            className={twMerge(
+               "col-span-3 grid min-h-18 grid-cols-subgrid items-center px-6 hover:no-underline",
+               listOption.inactive && "text-gray-500",
+            )}
          >
-            <span className={twMerge(listOption.stationNumber && "pr-2 font-light text-gray-700")}>
+            <span
+               className={twMerge(
+                  listOption.stationNumber && "pr-2 font-light text-gray-700",
+                  listOption.inactive && "text-gray-500",
+               )}
+            >
                {listOption.stationNumber}
                {/* Grid items have no whitespace between them, so screen readers would glue the number to the name. */}
                {listOption.stationNumber !== undefined && <span className="sr-only">&nbsp;</span>}
@@ -202,6 +214,18 @@ function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: 
                   <span className="sr-only">
                      , <Trans>Dubbel stembureau</Trans>, <Trans>Ook stembureau {otherNumbers} op deze locatie</Trans>
                   </span>
+               )}
+               {listOption.inactive && (
+                  <span className="sr-only">
+                     , <Trans>Nog geen telresultaten</Trans>
+                  </span>
+               )}
+               {/* After the sr-only texts, so it does not split the accessible name; they take no space on screen. */}
+               {listOption.inactive && (
+                  <>
+                     {" "}
+                     <FontAwesomeIcon icon={faHourglass} className="align-middle!" />
+                  </>
                )}
             </span>
             <span>
@@ -274,9 +298,9 @@ function DoubleStationInfo({ label, otherNumbers }: { label: string; otherNumber
             onHoverStart={pointerEnter}
             onHoverEnd={pointerLeave}
             onBlur={() => !isPointerOver.current && setOpen(false)}
-            className="absolute top-1/2 right-14 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xs bg-blue text-white focus-visible:outline-2 focus-visible:outline-blue focus-visible:outline-offset-2"
+            className="bg-blue focus-visible:outline-blue absolute top-1/2 right-14 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xs text-white focus-visible:outline-2 focus-visible:outline-offset-2"
          >
-            <FontAwesomeIcon icon={faInfo} className="text-[0.7rem]" />
+            <FontAwesomeIcon icon={faInfo} className="text-xs" />
          </Button>
          {/* Non-modal, so opening on hover neither moves focus nor hides the rest of the page. */}
          <Popover
@@ -285,7 +309,7 @@ function DoubleStationInfo({ label, otherNumbers }: { label: string; otherNumber
             onOpenChange={setOpen}
             isNonModal
             placement="top end"
-            className="max-w-xs rounded-xs border border-blue-200 bg-white text-gray-700 text-sm shadow-md"
+            className="max-w-xs rounded-xs border border-blue-200 bg-white text-sm text-gray-700 shadow-md"
          >
             <div ref={popoverRef} onPointerEnter={pointerEnter} onPointerLeave={pointerLeave} className="px-3 py-2">
                <p>

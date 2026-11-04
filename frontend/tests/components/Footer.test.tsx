@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ElectionConfig } from "@/api/types";
 import { Footer } from "@/components/Footer";
 import type { Locale } from "@/i18n/locales";
@@ -36,10 +36,6 @@ function mockElectionConfigs(configs: ElectionConfig[]) {
 function renderFooter(locale: Locale = "nl") {
    return renderWithProviders(<Footer />, { locale });
 }
-
-beforeEach(() => {
-   localStorage.clear();
-});
 
 afterEach(() => {
    vi.unstubAllGlobals();
@@ -117,7 +113,7 @@ describe("Footer", () => {
       });
       // The switcher now offers the way back, and the choice is persisted.
       expect(screen.getByRole("button", { name: "Nederlands" })).toBeInTheDocument();
-      expect(localStorage.getItem("lang")).toBe("en");
+      expect(document.cookie).toContain("lang=en");
       expect(document.documentElement.lang).toBe("en");
    });
 });

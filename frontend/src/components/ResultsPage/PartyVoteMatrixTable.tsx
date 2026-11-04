@@ -32,14 +32,14 @@ export default function PartyVoteMatrixTable({ matrix, caption }: Props) {
             </caption>
             <thead>
                <tr className="bg-white text-left align-middle font-bold">
-                  <th scope="col" className="z-20 border-gray-200 border-r border-b bg-inherit sm:sticky sm:left-0">
+                  <th scope="col" className="z-20 border-r border-b border-gray-200 bg-inherit sm:sticky sm:left-0">
                      <Trans>Kandidaat</Trans>
                   </th>
-                  <th scope="col" className="min-w-24 border-gray-200 border-b bg-inherit">
+                  <th scope="col" className="min-w-24 border-b border-gray-200 bg-inherit">
                      <Trans>Totaal</Trans>
                   </th>
                   {matrix.columns.map((column) => (
-                     <th key={column.slug} scope="col" className="min-w-24 border-gray-200 border-b bg-inherit">
+                     <th key={column.slug} scope="col" className="min-w-24 border-b border-gray-200 bg-inherit">
                         {column.region_name}
                      </th>
                   ))}
@@ -50,7 +50,7 @@ export default function PartyVoteMatrixTable({ matrix, caption }: Props) {
                   <tr key={candidate.position} className="bg-white odd:bg-blue-50">
                      <th
                         scope="row"
-                        className="border-gray-200 border-r bg-inherit text-left font-normal sm:sticky sm:left-0"
+                        className="border-r border-gray-200 bg-inherit text-left font-normal sm:sticky sm:left-0"
                      >
                         <div className="flex items-center sm:gap-3.5">
                            <span className="min-w-6 text-gray-500" aria-hidden="true">
@@ -59,18 +59,18 @@ export default function PartyVoteMatrixTable({ matrix, caption }: Props) {
                            <span>{formatCandidateName(candidate)}</span>
                         </div>
                      </th>
-                     <td className="min-w-20 font-bold font-number">{formatVotes(total)}</td>
+                     <td className="font-number min-w-20 font-bold">{formatVotes(total)}</td>
                      {matrix.columns.map((column) => (
-                        <td key={column.slug} className="min-w-16 font-number">
+                        <td key={column.slug} className="font-number min-w-16">
                            {formatVotes(votes[column.slug])}
                         </td>
                      ))}
                   </tr>
                ))}
-               <tr className="border-gray-200 border-t bg-white">
+               <tr className="border-t border-gray-200 bg-white">
                   <th
                      scope="row"
-                     className="border-gray-200 border-t border-r bg-inherit text-left font-normal sm:sticky sm:left-0"
+                     className="border-t border-r border-gray-200 bg-inherit text-left font-normal sm:sticky sm:left-0"
                   >
                      <div className="flex items-center gap-3.5">
                         <span className="font-bold">
@@ -78,11 +78,11 @@ export default function PartyVoteMatrixTable({ matrix, caption }: Props) {
                         </span>
                      </div>
                   </th>
-                  <td className="bold min-w-20 border-gray-200 border-t font-number">
+                  <td className="bold font-number min-w-20 border-t border-gray-200">
                      {formatVotes(matrix.totals.total)}
                   </td>
                   {matrix.columns.map((column) => (
-                     <td key={column.slug} className="min-w-16 border-gray-200 border-t font-number">
+                     <td key={column.slug} className="font-number min-w-16 border-t border-gray-200">
                         {formatVotes(matrix.totals.votes[column.slug])}
                      </td>
                   ))}

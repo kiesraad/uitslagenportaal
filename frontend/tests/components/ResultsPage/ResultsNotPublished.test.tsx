@@ -11,24 +11,24 @@ function renderBox(regionName: string, regionCategory: RegionCategory, locale: "
 }
 
 describe("ResultsNotPublished", () => {
-   it("Names the municipality with its type and article", () => {
+   it("Names the municipality with its type", () => {
       renderBox("Blaricum", "GEMEENTE");
 
-      expect(screen.getByRole("heading", { name: /de gemeente Blaricum/ })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /van gemeente Blaricum/ })).toBeInTheDocument();
       expect(
          screen.getByText(
-            "De telresultaten en processen-verbaal van de gemeente Blaricum zijn hier te zien zodra de gemeente ze publiceert.",
+            "De telresultaten en processen-verbaal van gemeente Blaricum zijn hier te zien zodra de gemeente ze publiceert.",
          ),
       ).toBeInTheDocument();
    });
 
-   it("Uses het for a waterschap and a polling station", () => {
+   it("Names a waterschap and a polling station without an article", () => {
       const { unmount } = renderBox("Delfland", "WATERSCHAP");
-      expect(screen.getByRole("heading", { name: /het waterschap Delfland/ })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /van waterschap Delfland/ })).toBeInTheDocument();
       unmount();
 
       renderBox("De Regenboog", "STEMBUREAU");
-      expect(screen.getByRole("heading", { name: /het stembureau De Regenboog/ })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /van stembureau De Regenboog/ })).toBeInTheDocument();
    });
 
    it("Uses Nederland and De Kiesraad for a STAAT CSB", () => {

@@ -142,8 +142,8 @@ export default function ElectionFileEntry({ file, className }: FileEntryProps) {
    );
 
    return (
-      <div key={file.url} className={twMerge("not-last:mb-2 flex", className)}>
-         <div className="size-8 shrink-0 text-blue">
+      <div key={file.url} className={twMerge("flex not-last:mb-2", className)}>
+         <div className="text-blue size-8 shrink-0">
             <FontAwesomeIcon icon={mapping?.icon ?? faFile} />
          </div>
          <div className="flex flex-col">

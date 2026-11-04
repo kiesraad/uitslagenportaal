@@ -102,12 +102,14 @@ export type Region = {
    results_available_at: string | null;
    election_slug?: string;
    station_number?: number | null;
+   postal_code?: string | null;
    has_hsb: boolean;
    hsb: RegionSummary | null;
    is_csb: boolean;
    csb: RegionSummary | null;
    // The other stembureaus with the same name and postcode: a dubbel stembureau.
    same_location_stations?: SameLocationStation[];
+   has_results?: boolean;
 };
 
 export type SameLocationStation = {

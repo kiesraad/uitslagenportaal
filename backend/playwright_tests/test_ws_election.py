@@ -28,7 +28,7 @@ pytestmark = pytest.mark.playwright
 _seeded = pytest.mark.usefixtures("seeded_database")
 
 # Scheldestromen is a single kieskring, which its CSB counts: there is no HSB step.
-WS_PUBLISH = "Het waterschap Scheldestromen publiceert de uitslag"
+WS_PUBLISH = "Waterschap Scheldestromen publiceert de uitslag"
 WS_STEPS = [WS_PUBLISH, CHECK, GSB, SB]
 
 
@@ -39,11 +39,11 @@ def test_homepage_leads_through_the_waterschappen_list_to_the_party_matrix(page:
     page.get_by_role("link", name="Waterschapsverkiezingen 2023").click()
     expect(page).to_have_url(re.compile(r"/gsb/?$"))
     expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
-    expect(page.get_by_role("link", name="Waterschappen")).to_be_visible()
+    expect(page.get_by_role("link", name="Waterschap")).to_be_visible()
     expect(page.get_by_role("link", name="Borsele")).to_be_visible()
     expect(page.get_by_role("link", name="Goes")).to_be_visible()
 
-    page.get_by_role("link", name="Waterschappen").click()
+    page.get_by_role("link", name="Waterschap").click()
     expect(page).to_have_url(re.compile(r"/csb/?$"))
     expect(page.get_by_role("link", name="Scheldestromen")).to_be_visible()
 
@@ -108,7 +108,7 @@ def test_csb_per_gemeente_shows_that_goes_has_no_results(page: Page):
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/resultaten/?$"))
     expect(page.get_by_role("heading", level=1, name="Gemeente Goes")).to_be_visible()
     expect(
-        page.get_by_role("heading", name="De telresultaten van de gemeente Goes zijn nog niet gepubliceerd")
+        page.get_by_role("heading", name="De telresultaten van gemeente Goes zijn nog niet gepubliceerd")
     ).to_be_visible()
     expect(page.get_by_role("link", name="Hele gemeente")).to_have_count(0)
     expect(page.get_by_role("link", name="Partij voor Zeeland")).to_have_count(0)
@@ -138,14 +138,14 @@ def test_stembureau_list_leads_to_stembureau_results_and_party_results(page: Pag
 
 def expect_ws_tabs_without_hsb(page: Page) -> None:
     expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
-    expect(page.get_by_role("link", name="Waterschappen")).to_be_visible()
-    expect(page.get_by_role("link", name="Kieskringen")).to_have_count(0)
+    expect(page.get_by_role("link", name="Waterschap")).to_be_visible()
+    expect(page.get_by_role("link", name="Kieskring")).to_have_count(0)
 
 
 def expect_unpublished_gemeente(page: Page, name: str) -> None:
     expect(page.get_by_role("heading", level=1, name=f"Gemeente {name}")).to_be_visible()
     expect(
-        page.get_by_role("heading", name=f"De telresultaten van de gemeente {name} zijn nog niet gepubliceerd")
+        page.get_by_role("heading", name=f"De telresultaten van gemeente {name} zijn nog niet gepubliceerd")
     ).to_be_visible()
     expect(page.get_by_role("link", name="Hele gemeente")).to_have_count(0)
     expect(page.get_by_role("link", name="Resultaten per stembureau")).to_have_count(0)
@@ -153,9 +153,7 @@ def expect_unpublished_gemeente(page: Page, name: str) -> None:
 
 def expect_unpublished_csb(page: Page) -> None:
     expect(
-        page.get_by_role(
-            "heading", name="De telresultaten van het waterschap Scheldestromen zijn nog niet gepubliceerd"
-        )
+        page.get_by_role("heading", name="De telresultaten van waterschap Scheldestromen zijn nog niet gepubliceerd")
     ).to_be_visible()
     expect(page.get_by_role("link", name="Partij voor Zeeland")).to_have_count(0)
 
@@ -165,7 +163,7 @@ def expect_empty_region_lists(page: Page) -> None:
     expect_ws_tabs_without_hsb(page)
     expect(page.get_by_role("heading", name="De gemeenten zijn nog niet beschikbaar")).to_be_visible()
 
-    page.get_by_role("link", name="Waterschappen").click()
+    page.get_by_role("link", name="Waterschap").click()
     expect(page.get_by_role("heading", name="De waterschappen zijn nog niet beschikbaar")).to_be_visible()
 
 

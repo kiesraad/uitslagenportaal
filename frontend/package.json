@@ -20,7 +20,6 @@
       "@fortawesome/free-solid-svg-icons": "^7.2.0",
       "@fortawesome/react-fontawesome": "^3.3.1",
       "@lingui/core": "^6.6.0",
-      "@lingui/detect-locale": "^6.6.0",
       "@lingui/react": "^6.6.0",
       "@tailwindcss/vite": "^4.3.3",
       "@tanstack/react-query": "^5.101.0",
@@ -34,7 +33,7 @@
    "devDependencies": {
       "@babel/core": "^8.0.1",
       "@babel/types": "^8.0.4",
-      "@biomejs/biome": "2.5.15",
+      "@biomejs/biome": "2.6.3",
       "@lingui/babel-plugin-lingui-macro": "^6.6.0",
       "@lingui/cli": "^6.6.0",
       "@lingui/format-po": "^6.6.0",

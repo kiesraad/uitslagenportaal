@@ -1,7 +1,7 @@
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { MessageDescriptor } from "@lingui/core";
-import { msg, t } from "@lingui/core/macro";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type PropsWithChildren, type ReactNode, useMemo } from "react";
 import type {
@@ -113,11 +113,11 @@ export default function TimelineEntry({
             className={`absolute top-5 left-2.5 -z-1 h-full border-l-2 group-last:hidden ${classes.line}`}
          ></div>
          <div
-            className="relative -top-1 -z-1 h-9.25 w-5 min-w-5 bg-white max-sm:-top-2 max-lg:-top-1.75"
+            className="relative -top-1 -z-1 h-9.25 w-5 min-w-5 bg-white max-lg:-top-1.75 max-sm:-top-2"
             aria-hidden="true"
          >
             <div
-               className={`relative mt-1.5 flex shrink-0 items-center justify-center rounded-full text-muted ${classes.marker}`}
+               className={`text-muted relative mt-1.5 flex shrink-0 items-center justify-center rounded-full ${classes.marker}`}
             >
                {classes.halo && <div className={`absolute -z-1 size-6 rounded-full ${classes.halo}`}></div>}
                {status === "done" ? <FontAwesomeIcon icon={faCheck} /> : null}
@@ -128,10 +128,10 @@ export default function TimelineEntry({
                {title}
                <span className="sr-only">, {t(STATUS_LABELS[status])}</span>
             </h3>
-            <div className="mb-1.5 text-muted">{formatTimelineDate(resolved)}</div>
+            <div className="text-muted mb-1.5">{formatTimelineDate(resolved)}</div>
             <div className="flex flex-col gap-4 leading-6">{children}</div>
             {selectedDocs.map((doc) => (
-               <ElectionFileEntry key={doc.file_type} file={doc} className="mt-2 bg-info-bg p-3" />
+               <ElectionFileEntry key={doc.file_type} file={doc} className="bg-info-bg mt-2 p-3" />
             ))}
          </div>
       </li>
@@ -151,10 +151,15 @@ const SB_VOTE_COUNT_BODIES: Record<TimelineVariant, MessageDescriptor> = {
 };
 
 export function SBVoteCountTimelineEntry() {
+   const { t } = useLingui();
    const { variant = "DEFAULT" } = useTimelineContext();
 
    return (
-      <TimelineEntry event="sb_vote_count" title={t(SB_VOTE_COUNT_TITLES[variant])}>
+      <TimelineEntry
+         event="sb_vote_count"
+         title={t(SB_VOTE_COUNT_TITLES[variant])}
+         document_types={["PDF_N10-1", "PDF_N10-2"]}
+      >
          <p>
             {t(SB_VOTE_COUNT_BODIES[variant])}{" "}
             <strong>
@@ -166,8 +171,13 @@ export function SBVoteCountTimelineEntry() {
 }
 
 export function GSBVoteCountTimelineEntry() {
+   const { t } = useLingui();
    return (
-      <TimelineEntry event="municipality_vote_count" title={t`Optelling per gemeente`} document_types={["EML510b"]}>
+      <TimelineEntry
+         event="municipality_vote_count"
+         title={t`Optelling per gemeente`}
+         document_types={["EML510b", "PDF_NA31-1", "PDF_NA31-2", "PDF_NA31-2-B2"]}
+      >
          <p>
             <Trans>
                De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware
@@ -180,6 +190,7 @@ export function GSBVoteCountTimelineEntry() {
 }
 
 export function HSBVoteCountTimelineEntry() {
+   const { t } = useLingui();
    const { region } = useTimelineContext();
 
    let hsb: Pick<Region, "region_name"> | null | undefined = null;
@@ -194,7 +205,11 @@ export function HSBVoteCountTimelineEntry() {
    }
 
    return (
-      <TimelineEntry event="electoral_district_vote_count" title={t`Optelling kieskring ${hsb.region_name}`}>
+      <TimelineEntry
+         event="electoral_district_vote_count"
+         title={t`Optelling kieskring ${hsb.region_name}`}
+         document_types={["EML510c", "PDF_O7"]}
+      >
          <p>
             <Trans>
                De resultaten van alle gemeenten in Kieskring {hsb.region_name} worden op het hoofdstembureau
@@ -206,6 +221,7 @@ export function HSBVoteCountTimelineEntry() {
 }
 
 export function useTimelineCsbName() {
+   const { t } = useLingui();
    const { region } = useTimelineContext();
    const csb = region?.is_csb ? region : region?.csb;
 
@@ -221,10 +237,15 @@ export function useTimelineCsbName() {
 }
 
 export function CsbCheckTimelineEntry() {
+   const { t } = useLingui();
    const csbName = useTimelineCsbName();
 
    return (
-      <TimelineEntry event="csb_check" title={t`Centraal Stembureau controleert`} document_types={["EML520"]}>
+      <TimelineEntry
+         event="csb_check"
+         title={t`Centraal Stembureau controleert`}
+         document_types={["EML510d", "EML520", "PDF_P22-1", "PDF_P22-2"]}
+      >
          <p>
             <Trans>
                {csbName} controleert de telresultaten van alle kieskringen, gemeenten en stembureaus. Zijn alle
@@ -244,6 +265,7 @@ export function CsbCheckTimelineEntry() {
 }
 
 export function CsbResultPublishTimelineEntry() {
+   const { t } = useLingui();
    const csbName = useTimelineCsbName();
 
    return (
