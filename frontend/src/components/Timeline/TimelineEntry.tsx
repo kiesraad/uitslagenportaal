@@ -196,6 +196,7 @@ const CORRECTION_DOCUMENT_TYPES: Partial<Record<RegionCategory, ElectionDocument
 };
 
 export function CorrectionTimelineEntry() {
+   const { t } = useLingui();
    const { region } = useTimelineContext();
 
    if (!region?.correction_date) {
@@ -225,6 +226,7 @@ export function CorrectionTimelineEntry() {
 }
 
 export function MunicipalityRecountTimelineEntry() {
+   const { t } = useLingui();
    const { region, municipality = region } = useTimelineContext();
 
    if (municipality?.region_category !== "GEMEENTE" || !municipality.municipality_recount_date) {
