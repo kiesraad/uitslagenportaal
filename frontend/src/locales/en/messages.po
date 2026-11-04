@@ -107,6 +107,10 @@ msgstr "Curious about the results at the polling station where you voted?"
 msgid "bezig"
 msgstr "in progress"
 
+#: src/components/ElectionFileEntry.tsx
+msgid "Bijlage 1 bij corrigendum proces-verbaal gemeentelijk stembureau"
+msgstr "Annex 1 to the correction to the certified election results of the municipal electoral committee"
+
 #: src/components/SearchBar.tsx
 msgid "Bijv. {regionSingular}"
 msgstr "E.g. {regionSingular}"
@@ -1002,6 +1006,10 @@ msgstr "Polling day: {electionDay}"
 #: src/pages/ReportIssuePage.tsx
 msgid "Vermeld geen persoonsgegevens in uw melding; dat is niet nodig."
 msgstr "Do not include personal data in your report; that is not necessary."
+
+#: src/components/ElectionFileEntry.tsx
+msgid "Verslagen van de hertelde stembureaus."
+msgstr "Reports of the recounted polling stations."
 
 #: src/utils/format.ts
 msgid "Verwacht: {dateText}"

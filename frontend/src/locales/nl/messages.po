@@ -107,6 +107,10 @@ msgstr "Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?"
 msgid "bezig"
 msgstr "bezig"
 
+#: src/components/ElectionFileEntry.tsx
+msgid "Bijlage 1 bij corrigendum proces-verbaal gemeentelijk stembureau"
+msgstr "Bijlage 1 bij corrigendum proces-verbaal gemeentelijk stembureau"
+
 #: src/components/SearchBar.tsx
 msgid "Bijv. {regionSingular}"
 msgstr "Bijv. {regionSingular}"
@@ -1002,6 +1006,10 @@ msgstr "Verkiezingsdag: {electionDay}"
 #: src/pages/ReportIssuePage.tsx
 msgid "Vermeld geen persoonsgegevens in uw melding; dat is niet nodig."
 msgstr "Vermeld geen persoonsgegevens in uw melding; dat is niet nodig."
+
+#: src/components/ElectionFileEntry.tsx
+msgid "Verslagen van de hertelde stembureaus."
+msgstr "Verslagen van de hertelde stembureaus."
 
 #: src/utils/format.ts
 msgid "Verwacht: {dateText}"

@@ -80,6 +80,12 @@ const FILE_TYPE_MAPPINGS: Record<
       icon: faFilePdf,
       description: msg`Corrigendum op het proces-verbaal van het gemeentelijk stembureau.`,
    },
+   "PDF_NA14-2-B1": {
+      name: msg`Bijlage 1 bij corrigendum proces-verbaal gemeentelijk stembureau`,
+      fileType: "pdf",
+      icon: faFilePdf,
+      description: msg`Verslagen van de hertelde stembureaus.`,
+   },
    PDF_O7: {
       name: msg`Proces-verbaal hoofdstembureau`,
       fileType: "pdf",
