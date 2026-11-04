@@ -1,9 +1,20 @@
 ## Release Procedure
 
-### Dev/staging releases
+### Dev deploys
 
-The CD pipeline automatically deploys development and staging releases for each commit to the `dev` and `main` branch respectively. 
+The CD pipeline automatically deploys development releases for each commit to the `dev` branch. 
 They are identified by their git commit sha hash or `git describe --tags --long --always`.
+
+### Staging releases
+
+Follow these steps:
+
+1. Create a PR from `dev` to `main`
+2. List all changes that are included in the PR, e.g. using the auto-generated release notes from the create-releases page 
+   and selecting the relevant range of commits. (but make sure to not draft/save the release)
+3. Test the changes on the dev environment
+4. Merge the PR with a merge commit (important, so no rebase or squash merge).
+5. The CD pipeline of `main` will deploy the new version automatically.
 
 ### Production releases
 
@@ -13,7 +24,7 @@ They are identified by their git commit sha hash or `git describe --tags --long 
 For production deploys follow these steps:
 
 1. Make sure the version of the code is merged to `main` and deployed on the staging environment.
-2. Test the changes that are included in the release on the staging environment.
+2. Test the changes that are included in the release on the staging environment, if not recently tested for a staging release.
    A way to see all new changes is by drafting a release through GitHub, targeting the `main` branch and auto-generating release notes. 
    Make sure to use the version tag which the new release will get, using the version scheme as described below.
 3. Finalize the draft release or add the release, if none was drafted, in GitHub. 
