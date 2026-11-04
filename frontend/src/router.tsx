@@ -1,8 +1,10 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { createBrowserRouter, type LazyRouteFunction, Outlet, type RouteObject, ScrollRestoration } from "react-router";
 import { BaseLayout } from "@/components/BaseLayout.tsx";
 import { LocaleProvider } from "@/components/LocaleProvider.tsx";
 import { RouteFocus } from "@/components/RouteFocus.tsx";
+import { electionConfigsQuery } from "@/hooks/queries.ts";
 import ErrorBoundaryPage from "@/pages/ErrorBoundaryPage.tsx";
 import LoadingPage from "@/pages/LoadingPage.tsx";
 import { localeLoader } from "./i18n";
@@ -41,6 +43,12 @@ function RootHydrateFallback() {
    );
 }
 
+/** Loads the locale; the Footer's election list is prefetched without holding up the page. */
+export function loadRoot(client: QueryClient) {
+   void client.query(electionConfigsQuery());
+   return localeLoader();
+}
+
 function lazyPage<TModule>(
    importer: () => Promise<TModule>,
    select: (module: TModule) => Awaited<ReturnType<LazyRouteFunction<RouteObject>>>,
@@ -55,7 +63,7 @@ export const routes: RouteObject[] = [
    {
       id: "root",
       path: "/",
-      loader: localeLoader,
+      loader: () => loadRoot(queryClient),
       Component: RootLayout,
       ErrorBoundary: RootErrorBoundary,
       HydrateFallback: RootHydrateFallback,
@@ -65,7 +73,7 @@ export const routes: RouteObject[] = [
             id: "HomePage",
             lazy: lazyPage(
                () => import("./pages/HomePage"),
-               (m) => ({ Component: m.HomePage }),
+               (m) => ({ Component: m.default, loader: () => m.loadHome(queryClient) }),
             ),
          },
          {
@@ -83,11 +91,8 @@ export const routes: RouteObject[] = [
                   path: "fout-melden",
                   id: "ReportIssuePage",
                   lazy: lazyPage(
-                     () => Promise.all([import("./pages/ReportIssuePage"), import("./pages/ReportIssuePage.loader")]),
-                     ([page, loader]) => ({
-                        Component: page.ReportIssuePage,
-                        loader: loader.reportIssueLoader(queryClient),
-                     }),
+                     () => import("./pages/ReportIssuePage"),
+                     (m) => ({ Component: m.default, loader: (args) => m.loadReportIssue(queryClient, args) }),
                   ),
                },
                {
@@ -96,8 +101,8 @@ export const routes: RouteObject[] = [
                   lazy: lazyPage(
                      () => import("./pages/ElectionConfigPage/ElectionConfigTimelinePage"),
                      (m) => ({
-                        Component: m.ElectionConfigTimelinePage,
-                        loader: m.electionConfigTimelineLoader(queryClient),
+                        Component: m.default,
+                        loader: (args) => m.loadElectionConfigTimeline(queryClient, args),
                      }),
                   ),
                },
@@ -107,8 +112,8 @@ export const routes: RouteObject[] = [
                   lazy: lazyPage(
                      () => import("./pages/ElectionConfigPage/ElectionConfigCSBListPage"),
                      (m) => ({
-                        Component: m.ElectionConfigCSBListPage,
-                        loader: m.electionConfigCSBListLoader(queryClient),
+                        Component: m.default,
+                        loader: (args) => m.loadElectionConfigCSBList(queryClient, args),
                      }),
                   ),
                },
@@ -121,8 +126,8 @@ export const routes: RouteObject[] = [
                         lazy: lazyPage(
                            () => import("./pages/CSBPage/CSBMunicipalityListPage.tsx"),
                            (m) => ({
-                              Component: m.CSBMunicipalityListPage,
-                              loader: m.csbMunicipalityListLoader(queryClient),
+                              Component: m.default,
+                              loader: (args) => m.loadCSBMunicipalityList(queryClient, args),
                            }),
                         ),
                      },
@@ -131,10 +136,7 @@ export const routes: RouteObject[] = [
                         id: "CSBResultsPage",
                         lazy: lazyPage(
                            () => import("./pages/CSBPage/CSBResultsPage.tsx"),
-                           (m) => ({
-                              Component: m.CSBResultsPage,
-                              loader: m.csbResultsLoader(queryClient),
-                           }),
+                           (m) => ({ Component: m.default, loader: (args) => m.loadCSBResults(queryClient, args) }),
                         ),
                      },
                      {
@@ -143,8 +145,8 @@ export const routes: RouteObject[] = [
                         lazy: lazyPage(
                            () => import("./pages/CSBPage/CSBPartyResultsPage.tsx"),
                            (m) => ({
-                              Component: m.CSBPartyResultsPage,
-                              loader: m.csbPartyResultsLoader(queryClient),
+                              Component: m.default,
+                              loader: (args) => m.loadCSBPartyResults(queryClient, args),
                            }),
                         ),
                      },
@@ -156,8 +158,8 @@ export const routes: RouteObject[] = [
                   lazy: lazyPage(
                      () => import("./pages/ElectionConfigPage/ElectionConfigHSBListPage"),
                      (m) => ({
-                        Component: m.ElectionConfigHSBListPage,
-                        loader: m.electionConfigHSBListLoader(queryClient),
+                        Component: m.default,
+                        loader: (args) => m.loadElectionConfigHSBList(queryClient, args),
                      }),
                   ),
                },
@@ -170,8 +172,8 @@ export const routes: RouteObject[] = [
                         lazy: lazyPage(
                            () => import("./pages/HSBPage/HSBMunicipalityListPage.tsx"),
                            (m) => ({
-                              Component: m.HSBMunicipalityListPage,
-                              loader: m.hsbMunicipalityListLoader(queryClient),
+                              Component: m.default,
+                              loader: (args) => m.loadHSBMunicipalityList(queryClient, args),
                            }),
                         ),
                      },
@@ -180,10 +182,7 @@ export const routes: RouteObject[] = [
                         id: "HSBResultsPage",
                         lazy: lazyPage(
                            () => import("./pages/HSBPage/HSBResultsPage.tsx"),
-                           (m) => ({
-                              Component: m.HSBResultsPage,
-                              loader: m.hsbResultsLoader(queryClient),
-                           }),
+                           (m) => ({ Component: m.default, loader: (args) => m.loadHSBResults(queryClient, args) }),
                         ),
                      },
                      {
@@ -192,8 +191,8 @@ export const routes: RouteObject[] = [
                         lazy: lazyPage(
                            () => import("./pages/HSBPage/HSBPartyResultsPage.tsx"),
                            (m) => ({
-                              Component: m.HSBPartyResultsPage,
-                              loader: m.hsbPartyResultsLoader(queryClient),
+                              Component: m.default,
+                              loader: (args) => m.loadHSBPartyResults(queryClient, args),
                            }),
                         ),
                      },
@@ -205,8 +204,8 @@ export const routes: RouteObject[] = [
                   lazy: lazyPage(
                      () => import("./pages/ElectionConfigPage/ElectionConfigMunicipalityListPage"),
                      (m) => ({
-                        Component: m.ElectionConfigMunicipalityListPage,
-                        loader: m.electionConfigMunicipalityListLoader(queryClient),
+                        Component: m.default,
+                        loader: (args) => m.loadElectionConfigMunicipalityList(queryClient, args),
                      }),
                   ),
                },
@@ -219,8 +218,8 @@ export const routes: RouteObject[] = [
                         lazy: lazyPage(
                            () => import("./pages/MunicipalityPage/MunicipalityPollingstationListPage"),
                            (m) => ({
-                              Component: m.MunicipalityPollingstationListPage,
-                              loader: m.municipalityPollingstationListLoader(queryClient),
+                              Component: m.default,
+                              loader: (args) => m.loadMunicipalityPollingstationList(queryClient, args),
                            }),
                         ),
                      },
@@ -230,24 +229,21 @@ export const routes: RouteObject[] = [
                         lazy: lazyPage(
                            () => import("./pages/MunicipalityPage/MunicipalityResultsPage"),
                            (m) => ({
-                              Component: m.MunicipalityResultsPage,
-                              loader: m.municipalityResultsLoader(queryClient),
+                              Component: m.default,
+                              loader: (args) => m.loadMunicipalityResults(queryClient, args),
                            }),
                         ),
                      },
                      {
                         path: "resultaten/:partySlug",
                         id: "MunicipalityPartyResultsPage",
-                        lazy: async () => {
-                           const [page, results] = await Promise.all([
-                              import("./pages/MunicipalityPage/MunicipalityPartyResultsPage"),
-                              import("./pages/MunicipalityPage/MunicipalityResultsPage"),
-                           ]);
-                           return {
-                              Component: page.MunicipalityPartyResultsPage,
-                              loader: results.municipalityResultsLoader(queryClient),
-                           };
-                        },
+                        lazy: lazyPage(
+                           () => import("./pages/MunicipalityPage/MunicipalityPartyResultsPage"),
+                           (m) => ({
+                              Component: m.default,
+                              loader: (args) => m.loadMunicipalityPartyResults(queryClient, args),
+                           }),
+                        ),
                      },
                      {
                         path: ":pollingStationSlug",
@@ -256,23 +252,20 @@ export const routes: RouteObject[] = [
                            () => import("./pages/PollingStationPage/PollingStationResultsPage.tsx"),
                            (m) => ({
                               Component: m.default,
-                              loader: m.pollingStationLoader(queryClient),
+                              loader: (args) => m.loadPollingStationResults(queryClient, args),
                            }),
                         ),
                      },
                      {
                         path: ":pollingStationSlug/:partySlug",
                         id: "PollingStationPartyResultsPage",
-                        lazy: async () => {
-                           const [page, results] = await Promise.all([
-                              import("./pages/PollingStationPage/PollingStationPartyResultsPage.tsx"),
-                              import("./pages/PollingStationPage/PollingStationResultsPage.tsx"),
-                           ]);
-                           return {
-                              Component: page.default,
-                              loader: results.pollingStationLoader(queryClient),
-                           };
-                        },
+                        lazy: lazyPage(
+                           () => import("./pages/PollingStationPage/PollingStationPartyResultsPage.tsx"),
+                           (m) => ({
+                              Component: m.default,
+                              loader: (args) => m.loadPollingStationPartyResults(queryClient, args),
+                           }),
+                        ),
                      },
                   ],
                },

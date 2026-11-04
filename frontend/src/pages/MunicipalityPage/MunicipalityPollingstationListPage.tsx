@@ -1,41 +1,29 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { type LoaderFunctionArgs, Navigate, useLoaderData } from "react-router";
+import { type LoaderFunctionArgs, Navigate, useParams } from "react-router";
 import HtmlHead from "@/components/HtmlHead.tsx";
 import { electionConfigQuery, regionQuery, regionsQuery } from "@/hooks/queries.ts";
 import { appRoutes } from "@/utils/routes.ts";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
 import MunicipalityPageLayout from "./MunicipalityPageLayout.tsx";
 
-export function municipalityPollingstationListLoader(queryClient: QueryClient) {
-   return async ({ params }: LoaderFunctionArgs) => {
-      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params, "gsb");
-      const pollingStationsQueryOptions = regionsQuery(params, "STEMBUREAU");
-
-      await Promise.all([
-         queryClient.query(electionConfigQueryOptions),
-         queryClient.query(regionQueryOptions),
-         queryClient.query(pollingStationsQueryOptions),
-      ]);
-
-      return {
-         electionConfigQuery: electionConfigQueryOptions,
-         regionQuery: regionQueryOptions,
-         pollingStationsQuery: pollingStationsQueryOptions,
-      };
-   };
+export async function loadMunicipalityPollingstationList(
+   client: QueryClient,
+   { params }: Pick<LoaderFunctionArgs, "params">,
+) {
+   await Promise.all([
+      client.query(electionConfigQuery(params.electionConfigSlug)),
+      client.query(regionQuery(params, "gsb")),
+      client.query(regionsQuery(params, "STEMBUREAU")),
+   ]);
 }
 
-type LoaderData = Awaited<ReturnType<ReturnType<typeof municipalityPollingstationListLoader>>>;
-
-export function MunicipalityPollingstationListPage() {
-   const { electionConfigQuery, regionQuery, pollingStationsQuery } = useLoaderData<LoaderData>();
+export default function MunicipalityPollingstationListPage() {
+   const params = useParams();
    const { t } = useLingui();
-   // The loader has already resolved the query, so the data is never pending here.
-   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
-   const { data: region } = useSuspenseQuery(regionQuery);
-   const { data: pollingStations } = useSuspenseQuery(pollingStationsQuery);
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(params.electionConfigSlug));
+   const { data: region } = useSuspenseQuery(regionQuery(params, "gsb"));
+   const { data: pollingStations } = useSuspenseQuery(regionsQuery(params, "STEMBUREAU"));
 
    const csbSlug = region.csb?.slug;
    // Named rather than inlined, so the catalogue carries `{regionName}` instead of `{0}`.

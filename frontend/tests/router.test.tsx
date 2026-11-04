@@ -1,6 +1,7 @@
+import { QueryClient } from "@tanstack/react-query";
 import { matchRoutes } from "react-router";
-import { describe, expect, it } from "vitest";
-import { routes } from "@/router.tsx";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { loadRoot, routes } from "@/router.tsx";
 
 function match(pathname: string) {
    const matches = matchRoutes(routes, pathname) ?? [];
@@ -8,7 +9,7 @@ function match(pathname: string) {
    return {
       chain: matches.map((m) => m.route.id),
       params: matches.at(-1)?.params ?? {},
-      // The root route is skipped: its loader carries the language catalogue, not page data.
+      // The root route is skipped: its loader loads the catalogue and prefetches the Footer's election list, which is not page data.
       // Page loaders live inside `lazy`, so a single lazy leaf means data is fetched once.
       loaders: matches.slice(1).filter((m) => m.route.lazy).length,
    };
@@ -38,6 +39,7 @@ describe("router", () => {
 
    // Each page owns its own loader, so no ancestor may fetch the same data again.
    it.each([
+      ["/"],
       ["/ab2023/gsb"],
       ["/ab2023/csb"],
       ["/ab2023/csb/kieskring-1"],
@@ -50,5 +52,18 @@ describe("router", () => {
       ["/ab2023/gsb/utrecht/csb/csb-1/sb-3/vvd"],
    ])("loads the data of %s exactly once", (pathname) => {
       expect(match(pathname).loaders).toBe(1);
+   });
+});
+
+describe("loadRoot", () => {
+   afterEach(() => vi.unstubAllGlobals());
+
+   it("resolves with the locale while the election list never arrives", async () => {
+      vi.stubGlobal(
+         "fetch",
+         vi.fn(() => new Promise<Response>(() => {})),
+      );
+
+      await expect(loadRoot(new QueryClient())).resolves.toEqual({ locale: expect.stringMatching(/^(nl|en)$/) });
    });
 });
