@@ -607,6 +607,10 @@ msgstr "After we receive your report, we investigate what is going on. If necess
 msgid "Nederland"
 msgstr "the Netherlands"
 
+#: src/components/ListPage/RegionList.tsx
+msgid "Nog geen telresultaten"
+msgstr "No counting results yet"
+
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "nog niet gestart"
 msgstr "not started yet"
