@@ -338,7 +338,7 @@ BUGSINK_DSN = os.environ.get("BUGSINK_DSN")
 if BUGSINK_DSN:
     sentry_sdk.init(
         BUGSINK_DSN,
-        send_default_pii=True,
+        data_collection={"user_info": False},
         max_request_body_size="always",
         # Don't send event types which are not supported by Bugsink:
         traces_sample_rate=0,
