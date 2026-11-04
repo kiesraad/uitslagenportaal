@@ -109,8 +109,8 @@ class EML230bImporter(EMLBaseImporter[Eml230]):
             if contest.candidate_count == 0:
                 return False
 
-            self.logger.info(
-                "\033[32mCorrection detected for contest '%s', eml_type: %s\033[0m",
+            self.logger.warning(
+                "Correction detected for contest '%s', eml_type: %s",
                 contest.identifier,
                 self.eml_type,
             )

@@ -32,8 +32,10 @@ spec:
               value: "True"
             - name: EMAIL_BACKEND
               value: {{ .Values.bugsink.emailBackend | quote }}
-            - name: SINGLE_USER
+            - name: SINGLE_TEAM
               value: "True"
+            - name: USER_REGISTRATION
+              value: "CB_MEMBERS"
             - name: TIME_ZONE
               value: "Europe/Amsterdam"
           envFrom:

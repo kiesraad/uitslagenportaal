@@ -42,8 +42,8 @@ class EML110aImporter(EMLBaseImporter[Eml110a]):
     def _is_correction(self) -> bool:
         # Only a 110a creates the election tree; a 230b also creates contests, but no regions.
         if Region.objects.filter(election=self.election, region_category__in=self.TREE_CATEGORIES).exists():
-            self.logger.info(
-                "\033[32mCorrection detected for election '%s', eml_type: %s\033[0m",
+            self.logger.warning(
+                "Correction detected for election '%s', eml_type: %s",
                 self.election.name,
                 self.eml_type,
             )

@@ -125,6 +125,8 @@ http://<key>@bugsink.monitoring.svc.cluster.local:8000/<project-id>
 
 Bugsink authenticates events on the key and project ID; the Service's name is in the `ALLOWED_HOSTS` the chart sets.
 
+To receive error emails at your own address, invite yourself to the Single Team in the Bugsink UI. 
+
 #### Logs
 
 The backend and Celery pods log one JSON object per line (`LOG_FORMAT=json`, set in `backend/prod.dockerfile`), and
@@ -214,7 +216,8 @@ have access to this bucket as well, make sure the configured policy allows this.
 
 ```bash
 kubectl -n uitslagenportaal-[env] create secret generic uitslagenportaal-secrets \
-  --from-literal=SECRET_KEY="$(openssl rand -base64 48)"
+  --from-literal=SECRET_KEY="$(openssl rand -base64 48)" \
+  --from-literal=BUGSINK_DSN=""
 ```
 
 **Importer secrets**

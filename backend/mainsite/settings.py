@@ -4,6 +4,7 @@ import ssl
 from pathlib import Path
 from urllib.parse import quote
 
+import sentry_sdk
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -268,7 +269,7 @@ STORAGES = {
 # https://docs.djangoproject.com/en/6.0/topics/logging/
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "DEBUG" if DEBUG else "INFO")
-# The prod image sets "json" so Loki can parse every field; "simple" is for reading by eye.
+# The prod image sets "json" so Loki can parse every field; "simple" and "color" (Compose) are for reading by eye.
 LOG_FORMAT = os.environ.get("LOG_FORMAT", "simple")
 
 LOGGING = {
@@ -278,6 +279,19 @@ LOGGING = {
         "simple": {
             "format": "{asctime} {processName} - {levelname} - {name} - {message}",
             "style": "{",
+        },
+        # Colours the whole line by level. Messages carry no ANSI codes of their own, so the other formats stay plain.
+        "color": {
+            "()": "colorlog.ColoredFormatter",
+            "format": "{log_color}{asctime} {processName} - {levelname} - {name} - {message}",
+            "style": "{",
+            "log_colors": {
+                "DEBUG": "light_black",
+                "INFO": "",  # Use the default terminal colour
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "bold_red",
+            },
         },
         # Fields passed as `extra` become keys of their own.
         "json": {
@@ -318,3 +332,16 @@ LOGGING = {
 # PV scraper-specific settings
 # Number of tasks to dispatch every run of dispatch_scrape_tasks, defaults to 0 (disabled) for now
 PV_SCRAPER_DISPATCH_MAX_TASKS = int(os.environ.get("PV_SCRAPER_DISPATCH_MAX_TASKS", 0))
+
+# Bugsink
+BUGSINK_DSN = os.environ.get("BUGSINK_DSN")
+if BUGSINK_DSN:
+    sentry_sdk.init(
+        BUGSINK_DSN,
+        data_collection={"user_info": False},
+        max_request_body_size="always",
+        # Don't send event types which are not supported by Bugsink:
+        traces_sample_rate=0,
+        send_client_reports=False,
+        auto_session_tracking=False,
+    )
