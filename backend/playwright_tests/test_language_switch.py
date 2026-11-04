@@ -38,9 +38,9 @@ def test_election_content_is_translated_for_the_active_locale(page: Page):
     page.get_by_role("link", name="Waterschapsverkiezingen 2023").click()
     # Region labels come from the catalogue, not from concatenated fragments.
     expect(page.get_by_role("link", name="Municipality")).to_be_visible()
-    expect(page.get_by_role("link", name="Water authorities")).to_be_visible()
+    expect(page.get_by_role("link", name="Water authority")).to_be_visible()
 
-    page.get_by_role("link", name="Water authorities").click()
+    page.get_by_role("link", name="Water authority").click()
     page.get_by_role("link", name="Scheldestromen").click()
     expect(page.get_by_role("link", name="Entire water authority")).to_be_visible()
     expect(page.get_by_role("heading", name="Counting results", exact=True)).to_be_visible()

@@ -21,6 +21,24 @@
       "rules": {
          "preset": "recommended",
          "a11y": "error",
+         "style": {
+            // These translate through Lingui's global instance; the app has one instance per locale.
+            "noRestrictedImports": {
+               "level": "error",
+               "options": {
+                  "paths": {
+                     "@lingui/core/macro": {
+                        "importNames": ["t", "plural", "select", "selectOrdinal"],
+                        "message": "Use t from useLingui() (@lingui/react/macro), or msg resolved with a passed-in i18n: there is no global i18n instance."
+                     },
+                     "@lingui/core": {
+                        "importNames": ["i18n"],
+                        "message": "Get i18n from useLingui() or take it as a parameter: there is no global i18n instance."
+                     }
+                  }
+               }
+            }
+         },
          "nursery": {
             "useTailwindSortedClasses": {
                "level": "warn",

@@ -51,13 +51,19 @@ def _csb_with_kieskringen(config, *names):
 
 @pytest.mark.django_db
 def test_has_hsb_false_without_any_kieskring():
-    assert ElectionConfigFactory().has_hsb is False
+    assert ElectionConfigFactory(category=ElectionCategory.PS.value).has_hsb is False
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("category", [ElectionCategory.TK, ElectionCategory.EP])
+def test_has_hsb_true_for_tk_and_ep_before_any_region_is_imported(category):
+    assert ElectionConfigFactory(category=category.value).has_hsb is True
 
 
 @pytest.mark.django_db
 def test_has_hsb_false_when_each_csb_has_a_single_kieskring():
     """A CSB with one kieskring (a WS, or a PS province such as Drenthe) counts it itself; there is no HSB."""
-    config = ElectionConfigFactory()
+    config = ElectionConfigFactory(category=ElectionCategory.PS.value)
     _csb_with_kieskringen(config, "Assen")
 
     assert config.has_hsb is False
@@ -65,7 +71,7 @@ def test_has_hsb_false_when_each_csb_has_a_single_kieskring():
 
 @pytest.mark.django_db
 def test_has_hsb_true_when_a_csb_has_several_kieskringen_without_results():
-    config = ElectionConfigFactory()
+    config = ElectionConfigFactory(category=ElectionCategory.PS.value)
     _csb_with_kieskringen(config, "Assen")
     _csb_with_kieskringen(config, "Leiden", "Rotterdam")
 

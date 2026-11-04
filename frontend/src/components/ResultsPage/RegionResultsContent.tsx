@@ -1,5 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
+import { useLocation } from "react-router";
 import type { ElectionDocument, RegionCategory, VoteCount, VoteCounts, VoterTurnoutCount } from "@/api/types.ts";
 import { getPartyLevelVoteCounts } from "@/utils/voteCounts.ts";
 import { InfoBox } from "../InfoBox";
@@ -36,9 +37,11 @@ export default function RegionResultsContent({
    issueReportDeadline,
    notPublishedRegionName,
    notPublishedRegionCategory,
-   partyHref = (partySlug) => `${location.pathname}/${partySlug}`,
+   partyHref,
 }: Props) {
    const { t } = useLingui();
+   const { pathname } = useLocation();
+   const partyLink = partyHref ?? ((partySlug: string) => `${pathname}/${partySlug}`);
    const hasResults = Array.isArray(voteCounts) && voteCounts.length > 0;
    const partyLevelVoteCounts = getPartyLevelVoteCounts(voteCounts);
 
@@ -67,7 +70,7 @@ export default function RegionResultsContent({
                      number={voteCount.party.list_number}
                      title={voteCount.party.registered_name}
                      voteCount={voteCount.valid_votes}
-                     href={partyHref(voteCount.party.slug)}
+                     href={partyLink(voteCount.party.slug)}
                   />
                ))}
             </VotesList>

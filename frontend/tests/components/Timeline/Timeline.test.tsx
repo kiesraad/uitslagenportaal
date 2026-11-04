@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ElectionDocument, TimelineDate } from "@/api/types";
 import { Timeline, TimelineContext, type TimelineContextProps } from "@/components/Timeline/Timeline";
 import TimelineEntry, { getTimelineDate, type TimelineEntryProps } from "@/components/Timeline/TimelineEntry";
+import { readCookie, writeCookie } from "@/utils/cookies";
 import { renderWithProviders } from "../../testUtils";
 
 const counted: TimelineDate = { event: "sb_vote_count", date: "2026-03-17T21:00:00+01:00", qualifier: "from" };
@@ -52,7 +53,6 @@ function headingTexts() {
 }
 
 beforeEach(() => {
-   localStorage.clear();
    vi.useFakeTimers({ toFake: ["Date"] });
    vi.setSystemTime(new Date("2026-03-18T12:00:00+01:00"));
 });
@@ -74,7 +74,7 @@ describe("Timeline", () => {
    });
 
    it("starts in the order stored by an earlier page", () => {
-      localStorage.setItem("timeline-order-desc", JSON.stringify(false));
+      writeCookie("timeline-order-desc", JSON.stringify(false));
       renderTimeline();
 
       expect(screen.getByRole("button", { name: /Eerste stap bovenaan/ })).toBeInTheDocument();
@@ -87,7 +87,7 @@ describe("Timeline", () => {
       fireEvent.click(screen.getByRole("button", { name: /Volgorde omdraaien/ }));
 
       expect(headingTexts()[0]).toMatch(/^Stemmen tellen/);
-      expect(localStorage.getItem("timeline-order-desc")).toBe(JSON.stringify(false));
+      expect(readCookie("timeline-order-desc")).toBe(JSON.stringify(false));
    });
 });
 

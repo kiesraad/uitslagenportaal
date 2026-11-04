@@ -27,8 +27,8 @@ describe("ElectionConfigTabs", () => {
       });
 
       expect(screen.getByRole("link", { name: "Gemeente" })).toHaveAttribute("href", "/ws2023/gsb");
-      expect(screen.getByRole("link", { name: "Waterschappen" })).toHaveAttribute("href", "/ws2023/csb");
-      expect(screen.queryByRole("link", { name: "Kieskringen" })).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Waterschap" })).toHaveAttribute("href", "/ws2023/csb");
+      expect(screen.queryByRole("link", { name: "Kieskring" })).not.toBeInTheDocument();
    });
 
    it("shows kieskringen when the election has HSBs", () => {
@@ -36,8 +36,8 @@ describe("ElectionConfigTabs", () => {
          initialEntries: ["/ws2023/hsb"],
       });
 
-      expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("href", "/ws2023/hsb");
-      expect(screen.getByRole("link", { name: "Kieskringen" })).toHaveAttribute("aria-current", "page");
+      expect(screen.getByRole("link", { name: "Kieskring" })).toHaveAttribute("href", "/ws2023/hsb");
+      expect(screen.getByRole("link", { name: "Kieskring" })).toHaveAttribute("aria-current", "page");
    });
 
    it("shows the timeline tab only when there is more than one election", () => {
@@ -79,6 +79,18 @@ describe("ElectionConfigTabs", () => {
          { initialEntries: ["/tk2025/gsb"] },
       );
 
+      expect(screen.getByRole("link", { name: "Nederland" })).toHaveAttribute("href", "/tk2025/csb");
+   });
+
+   it("shows kieskringen and Nederland for a TK election before any results are imported", () => {
+      renderWithProviders(
+         <ElectionConfigTabs
+            electionConfig={{ ...electionConfig, slug: "tk2025", csb_type: "STAAT", has_hsb: true }}
+         />,
+         { initialEntries: ["/tk2025/gsb"] },
+      );
+
+      expect(screen.getByRole("link", { name: "Kieskring" })).toHaveAttribute("href", "/tk2025/hsb");
       expect(screen.getByRole("link", { name: "Nederland" })).toHaveAttribute("href", "/tk2025/csb");
    });
 });
