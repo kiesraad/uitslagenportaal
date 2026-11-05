@@ -228,7 +228,7 @@ export function MunicipalityRecountTimelineEntry() {
    const { t } = useLingui();
    const { region, municipality = region } = useTimelineContext();
 
-   if (municipality?.region_category !== "GEMEENTE" || !municipality.municipality_recount_date) {
+   if (!municipality?.municipality_recount_date) {
       return null;
    }
 
