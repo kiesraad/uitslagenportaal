@@ -22,6 +22,9 @@ ENV LOG_FORMAT=json
 ENV PATH="/app/.venv/bin:$PATH"
 
 RUN groupadd --system backend \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-nld \
+    && rm -rf /var/lib/apt/lists/* \
     && useradd --system --gid backend --no-create-home backend \
     && mkdir /app \
     && chown -R backend /app
@@ -60,7 +63,7 @@ COPY --from=builder --chown=backend:backend /app/.venv /app/.venv
 # Playwright is a dev dependency, so the venv from the builder lacks it.
 RUN uv pip install --python /app/.venv/bin/python "playwright>=1.62.0" \
     && apt-get update \
-    && apt-get install -y --no-install-recommends git tesseract-ocr tesseract-ocr-nld \
+    && apt-get install -y --no-install-recommends git \
     && playwright install --no-progress --with-deps --only-shell chromium \
     && rm -rf /var/lib/apt/lists/*
 

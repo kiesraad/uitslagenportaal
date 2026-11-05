@@ -11,7 +11,7 @@ import django
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from pv_scraper.utils.pv_classifier import BASES, MODELS, ClassificationResult, PvClassificationException, PvClassifier
+from pv_ocr.utils.pv_classifier import BASES, MODELS, ClassificationResult, PvClassificationException, PvClassifier
 
 PVS = settings.BASE_DIR / ".data" / "PVs"
 

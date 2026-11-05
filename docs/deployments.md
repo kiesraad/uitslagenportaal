@@ -25,8 +25,9 @@ The application chart is divided into several yaml files, see ./k8s-config/appli
 - `06-monitoring.yaml`: The `ServiceMonitor`s for the backend and the exporters, and the `PrometheusRule` with the
   application's alerts (only with `monitoring.enabled`).
 - `07-exporters.yaml`: Prometheus exporters for PostgreSQL, Redis and Celery (only with `monitoring.enabled`).
-- `08-scraper.yaml`: The Celery worker for the PV scraper's `scraper` queue, in the Playwright worker image (only with
+- `08-scraper-worker.yaml`: The Celery worker for the PV scraper's `scraper` queue, in the Playwright worker image (only with
   `scraper.enabled`).
+- `09-ocr-worker.yaml`: The Celery worker for the `ocr` queue (PV classification with Tesseract), in the backend image.
 - `99-services.yaml`: Several `StatefulSet`s for PostgreSQL/Redis/Object storage services (local deployments only).
 
 There is one main `values.yaml` file, and a file per environment. Each environment file overrides certain values for the
@@ -316,7 +317,8 @@ Gateway, and that route carries no auth filter.
 ### PV scraper
 
 With `scraper.enabled`, the chart runs the scraper worker and beat queues up to
-`scraper.dispatchMaxTasks` due sources every 10 minutes; without it, beat queues none. See
+`scraper.dispatchMaxTasks` due sources every 10 minutes; without it, beat queues none. The
+scraped files are classified in a separate `celery-ocr` Deployment, configured under `ocr.*`. See
 [pv-scraper.md](pv-scraper.md) for what it does. Before enabling it in an environment:
 
 1. Create the PV bucket named in `PV_IMPORT_BUCKET` in the `s3-creds` secret (see Secrets above).
