@@ -340,6 +340,8 @@ if BUGSINK_DSN:
         BUGSINK_DSN,
         data_collection={"user_info": False},
         max_request_body_size="always",
+        # Importer frames hold whole EML files; Bugsink refuses events over its size limit
+        max_value_length=1024,
         # Don't send event types which are not supported by Bugsink:
         traces_sample_rate=0,
         send_client_reports=False,
