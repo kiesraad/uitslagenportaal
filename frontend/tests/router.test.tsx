@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { matchRoutes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { electionConfigsQuery } from "@/hooks/queries.ts";
 import { loadRoot, routes } from "@/router.tsx";
 
 function match(pathname: string) {
@@ -71,5 +72,16 @@ describe("loadRoot", () => {
       );
 
       await expect(loadRoot(new QueryClient())).resolves.toEqual({ locale: expect.stringMatching(/^(nl|en)$/) });
+   });
+
+   it("resolves with the locale and swallows the rejection when the election list fails to load", async () => {
+      vi.stubGlobal(
+         "fetch",
+         vi.fn(() => Promise.reject(new Error("network down"))),
+      );
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+      await expect(loadRoot(client)).resolves.toEqual({ locale: expect.stringMatching(/^(nl|en)$/) });
+      await vi.waitFor(() => expect(client.getQueryState(electionConfigsQuery().queryKey)?.status).toBe("error"));
    });
 });
