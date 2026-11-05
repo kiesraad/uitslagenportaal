@@ -40,5 +40,7 @@ data:
   SITE_ROOT: "https://{{ .Values.app.hostname }}"
   SITE_NAME: "{{ .Values.app.site_name }}"
   ALLOWED_HOSTS: "{{ .Values.app.hostname }}"
+  # ensure_bucket lets this origin read the document bucket, for the PDF viewer.
+  CORS_ALLOWED_ORIGINS: "https://{{ .Values.app.hostname }}"
   # Behind a TLS-terminating proxy.
   SECURE_PROXY_SSL_HEADER: "HTTP_X_FORWARDED_PROTO,https"

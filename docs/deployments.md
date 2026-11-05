@@ -209,6 +209,10 @@ kubectl -n uitslagenportaal-[env] create secret generic s3-creds \
 `PV_IMPORT_BUCKET` is the bucket the PV import reads and the PV scraper writes to. S3_ACCESS_KEY/S3_SECRET_KEY should 
 have access to this bucket as well, make sure the configured policy allows this. 
 
+On every install and upgrade the ensure-bucket Job sets a CORS rule on `S3_BUCKET_NAME`, so the PDF viewer can fetch
+documents from the site's origin. The key therefore also needs permission to change the bucket's CORS configuration
+(`PutBucketCors`); without it the Job fails and so does the release.
+
 **Application secrets**
 
 > [!NOTE]

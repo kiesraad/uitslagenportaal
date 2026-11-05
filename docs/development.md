@@ -292,7 +292,7 @@ Run these from `backend/` with `uv run manage.py <command>`, or against the runn
 | `import_election_configs` | Imports new/changed election_config JSON files from object storage (`election_configs/*.json`) |
 | `generate_election_config_template [--output PATH]` | Prints a descriptive election_config.json template; writes to a file instead of stdout if `--output` is given |
 | `validate_election_config <path>` | Validates a filled-in election_config JSON file against the shape the importer expects |
-| `ensure_bucket` | (Re)creates the object storage bucket |
+| `ensure_bucket` | (Re)creates the object storage buckets and lets `CORS_ALLOWED_ORIGINS` read the default one |
 | `delete_expired_elections [--confirm]` | Removes elections past their retention window |
 
 ## Object storage configuration
