@@ -15,6 +15,11 @@ from mainsite.serializers import (
 )
 from region.models import Region, parse_station_number
 
+CORRECTION_COUNT_FILE_TYPES = {
+    RegionCategory.GEMEENTE: ElectionDocument.FileType.EML_510B,
+    RegionCategory.KIESKRING: ElectionDocument.FileType.EML_510C,
+}
+
 
 class SameLocationStationsField(serializers.Field):
     """The other stembureaus at the same location, from the view's `same_location_stations` annotation."""
@@ -58,7 +63,6 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     certified_document_preview_url = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
     correction_date = serializers.SerializerMethodField()
-    municipality_recount_date = serializers.SerializerMethodField()
     election_slug = serializers.CharField(source="election.slug", read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
     same_location_stations = SameLocationStationsField()
@@ -77,7 +81,6 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "certified_document_preview_url",
             "timeline_variant",
             "correction_date",
-            "municipality_recount_date",
             "region_category",
             "results_available_at",
             "election_slug",
@@ -111,24 +114,13 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             return None
         return reverse("certified-document-preview", kwargs={"pk": document.pk})
 
-    def _corrections(self, region) -> list[ElectionDocument]:
-        return [
-            document
-            for document in region.documents.all()
-            if document.file_type in ElectionDocument.CORRECTION_FILE_TYPES
-        ]
-
     def get_correction_date(self, region) -> datetime | None:
-        return max((document.created_at for document in self._corrections(region)), default=None)
-
-    def get_municipality_recount_date(self, region) -> datetime | None:
-        """When the gemeente's latest corrected 510b came in; None while it has only the original."""
-        if region.region_category != RegionCategory.GEMEENTE:
+        """When the region's latest corrected count EML came in; None while it has only the original."""
+        file_type = CORRECTION_COUNT_FILE_TYPES.get(region.region_category)
+        if file_type is None:
             return None
-        # Identical files are skipped on import, so every 510b after the first is a corrigendum.
-        counts = ElectionDocument.all_objects.filter(
-            region=region, file_type=ElectionDocument.FileType.EML_510B
-        ).order_by("-created_at", "-pk")
+        # Identical files are skipped on import, so every count after the first is a corrigendum.
+        counts = ElectionDocument.all_objects.filter(region=region, file_type=file_type).order_by("-created_at", "-pk")
         if counts.count() < 2:
             return None
         return counts.first().created_at

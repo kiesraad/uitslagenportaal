@@ -197,9 +197,9 @@ const CORRECTION_DOCUMENT_TYPES: Partial<Record<RegionCategory, ElectionDocument
 
 export function CorrectionTimelineEntry() {
    const { t } = useLingui();
-   const { region } = useTimelineContext();
+   const { region, municipality = region } = useTimelineContext();
 
-   if (!region?.correction_date) {
+   if (!region || !municipality?.correction_date) {
       return null;
    }
 
@@ -210,7 +210,7 @@ export function CorrectionTimelineEntry() {
 
    return (
       <TimelineEntry
-         date={{ date: region.correction_date, qualifier: "all_day" }}
+         date={{ date: municipality.correction_date, qualifier: "all_day" }}
          title={t`Onderzoek, hertelling en gecorrigeerde resultaten`}
          document_types={documentTypes}
       >
@@ -228,13 +228,13 @@ export function MunicipalityRecountTimelineEntry() {
    const { t } = useLingui();
    const { region, municipality = region } = useTimelineContext();
 
-   if (!municipality?.municipality_recount_date) {
+   if (!municipality?.correction_date) {
       return null;
    }
 
    return (
       <TimelineEntry
-         date={{ date: municipality.municipality_recount_date, qualifier: "all_day" }}
+         date={{ date: municipality.correction_date, qualifier: "all_day" }}
          title={t`Nieuwe gemeentelijke optelling`}
       >
          <p>

@@ -276,40 +276,35 @@ def test_region_detail_lists_every_correction_and_previews_the_last_one():
 
 
 @pytest.mark.django_db
-def test_region_detail_correction_date_only_with_a_correction_pv():
-    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
-    CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/pv.pdf")
-
-    assert region_detail(region, "gsb")["correction_date"] is None
-
-    CertifiedElectionDocumentFactory(
-        region=region,
-        storage_key="TK2025/correction.pdf",
-        file_type=ElectionDocument.FileType.PDF_NA14_2,
-    )
-    last = CertifiedElectionDocumentFactory(
-        region=region,
-        storage_key="TK2025/correction-again.pdf",
-        file_type=ElectionDocument.FileType.PDF_NA14_2,
-    )
-
-    assert region_detail(region, "gsb")["correction_date"] == last.created_at
-
-
-@pytest.mark.django_db
-def test_region_detail_municipality_recount_date_is_the_latest_corrected_510b():
+def test_region_detail_correction_date_is_the_latest_corrected_510b():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)
     ElectionDocumentFactory(
         region=region, storage_key="TK2025/telling.xml", file_type=ElectionDocument.FileType.EML_510B, is_current=False
     )
+    CertifiedElectionDocumentFactory(
+        region=region, storage_key="TK2025/correction.pdf", file_type=ElectionDocument.FileType.PDF_NA14_2
+    )
 
-    assert region_detail(region, "gsb")["municipality_recount_date"] is None
+    assert region_detail(region, "gsb")["correction_date"] is None
 
     corrected = ElectionDocumentFactory(
         region=region, storage_key="TK2025/telling-2.xml", file_type=ElectionDocument.FileType.EML_510B
     )
 
-    assert region_detail(region, "gsb")["municipality_recount_date"] == corrected.created_at
+    assert region_detail(region, "gsb")["correction_date"] == corrected.created_at
+
+
+@pytest.mark.django_db
+def test_region_detail_correction_date_of_a_kieskring_is_the_latest_corrected_510c():
+    region = RegionFactory(region_category=RegionCategory.KIESKRING)
+    ElectionDocumentFactory(
+        region=region, storage_key="TK2025/telling.xml", file_type=ElectionDocument.FileType.EML_510C, is_current=False
+    )
+    corrected = ElectionDocumentFactory(
+        region=region, storage_key="TK2025/telling-2.xml", file_type=ElectionDocument.FileType.EML_510C
+    )
+
+    assert region_detail(region, "hsb")["correction_date"] == corrected.created_at
 
 
 @pytest.mark.django_db

@@ -195,7 +195,8 @@ describe("CorrectionTimelineEntry on a stembureau", () => {
          { file_type: "PDF_NA14-2", url: "/api/documents/2/download/" },
       ] as ElectionDocument[];
       renderEntry(<CorrectionTimelineEntry />, {
-         region: region({ region_category: "STEMBUREAU", correction_date: "2026-03-18T10:00:00+01:00" }),
+         region: region({ region_category: "STEMBUREAU", correction_date: null }),
+         municipality: region({ correction_date: "2026-03-18T10:00:00+01:00" }),
          documents,
       });
 
@@ -224,16 +225,14 @@ describe("CorrectionTimelineEntry on a kieskring", () => {
 
 describe("MunicipalityRecountTimelineEntry", () => {
    it("is hidden without a corrected count", () => {
-      renderEntry(<MunicipalityRecountTimelineEntry />, {
-         region: region({ correction_date: "2026-03-18T10:00:00+01:00", municipality_recount_date: null }),
-      });
+      renderEntry(<MunicipalityRecountTimelineEntry />, { region: region({ correction_date: null }) });
 
       expect(screen.queryByRole("heading", { level: 3 })).not.toBeInTheDocument();
    });
 
-   it("is shown with a corrected count, also without a correction PV", () => {
+   it("is shown with a corrected count", () => {
       renderEntry(<MunicipalityRecountTimelineEntry />, {
-         region: region({ correction_date: null, municipality_recount_date: "2026-03-19T10:00:00+01:00" }),
+         region: region({ correction_date: "2026-03-19T10:00:00+01:00" }),
       });
 
       expect(screen.getByRole("heading", { level: 3, name: /^Nieuwe gemeentelijke optelling/ })).toBeInTheDocument();
@@ -242,8 +241,8 @@ describe("MunicipalityRecountTimelineEntry", () => {
 
    it("follows the gemeente on a stembureau page", () => {
       renderEntry(<MunicipalityRecountTimelineEntry />, {
-         region: region({ region_category: "STEMBUREAU", municipality_recount_date: null }),
-         municipality: region({ municipality_recount_date: "2026-03-19T10:00:00+01:00" }),
+         region: region({ region_category: "STEMBUREAU", correction_date: null }),
+         municipality: region({ correction_date: "2026-03-19T10:00:00+01:00" }),
       });
 
       expect(screen.getByRole("heading", { level: 3, name: /^Nieuwe gemeentelijke optelling/ })).toBeInTheDocument();

@@ -96,7 +96,6 @@ export type Region = {
    voter_turnout_counts?: VoterTurnoutCount[];
    timeline_variant?: TimelineVariant;
    correction_date?: string | null;
-   municipality_recount_date?: string | null;
    documents?: ElectionDocument[];
    certified_document_url?: string | null;
    certified_document_preview_url?: string | null;
