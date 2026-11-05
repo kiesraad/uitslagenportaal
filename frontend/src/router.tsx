@@ -43,9 +43,9 @@ function RootHydrateFallback() {
    );
 }
 
-/** Loads the locale; the Footer's election list is prefetched without holding up the page. */
+/** Loads the locale; the Footer's election list is prefetched without awaiting it or surfacing its failure. */
 export function loadRoot(client: QueryClient) {
-   void client.query(electionConfigsQuery());
+   client.query(electionConfigsQuery()).catch(() => {});
    return localeLoader();
 }
 
