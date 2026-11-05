@@ -228,7 +228,7 @@ class CurrentManager(models.Manager.from_queryset(CurrentQuerySet)):
 
 
 # Spelled as raw values because a model's Meta cannot reach its own class attributes.
-_CORRECTION_FILE_TYPES = ("PDF_NA14-1", "PDF_NA14-2", "PDF_P1F-1")
+_CORRECTION_FILE_TYPES = ("PDF_NA14-1", "PDF_NA14-2", "PDF_NA14-2-B1", "PDF_P1F-1")
 
 
 class ElectionDocument(BaseModel):
