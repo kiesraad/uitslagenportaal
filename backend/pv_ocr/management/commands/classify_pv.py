@@ -3,7 +3,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-from pv_scraper.utils.pv_classifier import PvClassifier
+from pv_ocr.utils.pv_classifier import PvClassifier
 
 
 class Command(BaseCommand):

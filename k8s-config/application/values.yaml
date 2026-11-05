@@ -108,6 +108,22 @@ celery:
       limits:
         memory: 256Mi
 
+ocr:
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
+  pullPolicy: "Always"
+  replicas: 1
+  # The resources below are sized for one task at a time.
+  concurrency: 1
+  terminationGracePeriodSeconds: 300
+  resources:
+    # The idle worker uses 135Mi and classifying a PV peaks at 270Mi. Pages render at most at A4 at 300 DPI, so only the
+    # file size adds to that. Single-threaded Tesseract uses no more than one core.
+    requests:
+      cpu: 1000m
+      memory: 300Mi
+    limits:
+      memory: 512Mi
+
 # The PV scraper's worker, see docs/pv-scraper.md. Off unless an environment enables it.
 scraper:
   enabled: false
@@ -121,7 +137,7 @@ scraper:
   dispatchMaxTasks: 5
   terminationGracePeriodSeconds: 300
   resources:
-    # A scrape peaks at 600Mi to 1Gi depending on the site, the idle worker uses 130Mi; OCR stays under 500Mi.
+    # A scrape peaks at 600Mi to 1Gi depending on the site, the idle worker uses 130Mi.
     requests:
       cpu: 250m
       memory: 768Mi
