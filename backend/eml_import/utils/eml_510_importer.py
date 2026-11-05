@@ -186,8 +186,8 @@ class EML510BaseImporter(EMLStorageMixin, EMLBaseImporter[Eml510], ABC):
             or VoterTurnoutCount.objects.filter(region=region, eml_type=self.eml_type).exists()
         )
         if is_correction:
-            self.logger.info(
-                "\033[32mCorrection detected for region %s (%s) eml_type: %s\033[0m",
+            self.logger.warning(
+                "Correction detected for region %s (%s) eml_type: %s",
                 region.region_number,
                 region.region_name,
                 self.eml_type,

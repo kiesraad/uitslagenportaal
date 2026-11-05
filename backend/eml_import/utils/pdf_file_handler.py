@@ -116,12 +116,12 @@ class PDFFileHandler:
             try:
                 if self._import_pv(file):
                     imported += 1
-            except InvalidPDFException as exc:
+            except InvalidPDFException:
                 # A bad file must not stop the rest of this sweep. An invalid PDF stays invalid, so it is not retried.
-                logger.error("Failed to import proces-verbaal %s: %s", name, exc)
+                logger.exception("Failed to import proces-verbaal %s", name)
                 self._move_to_failed(file)
-            except (IntegrityError, PDFImporterException) as exc:
-                logger.error("Failed to import proces-verbaal %s: %s", name, exc)
+            except IntegrityError, PDFImporterException:
+                logger.exception("Failed to import proces-verbaal %s", name)
                 self._schedule_retry(file, retry["failures"] if retry else 0)
             else:
                 cache.delete(file.retry_key)

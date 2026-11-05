@@ -33,8 +33,8 @@ class BaseImporter(ABC):
         except ElectionConfig.DoesNotExist:
             self.logger.warning("Election is not configured, skipping %s data import", self.file_type.value)
         except FileAlreadyImported:
-            self.logger.info(
-                "\033[32mSkipping duplicate %s file %s\033[0m",
+            self.logger.warning(
+                "Skipping duplicate %s file %s",
                 self.file_type.value,
                 self.file_path,
             )

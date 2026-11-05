@@ -125,6 +125,8 @@ http://<key>@bugsink.monitoring.svc.cluster.local:8000/<project-id>
 
 Bugsink authenticates events on the key and project ID; the Service's name is in the `ALLOWED_HOSTS` the chart sets.
 
+To receive error emails at your own address, invite yourself to the Single Team in the Bugsink UI. 
+
 #### Logs
 
 The backend and Celery pods log one JSON object per line (`LOG_FORMAT=json`, set in `backend/prod.dockerfile`), and
@@ -214,7 +216,8 @@ have access to this bucket as well, make sure the configured policy allows this.
 
 ```bash
 kubectl -n uitslagenportaal-[env] create secret generic uitslagenportaal-secrets \
-  --from-literal=SECRET_KEY="$(openssl rand -base64 48)"
+  --from-literal=SECRET_KEY="$(openssl rand -base64 48)" \
+  --from-literal=BUGSINK_DSN=""
 ```
 
 **Importer secrets**
@@ -324,6 +327,8 @@ With `scraper.enabled`, the chart runs the scraper worker and beat queues up to
 
 ### Automatic deploy
 
+See [the release procedure](release-procedure.md) for how to create releases.
+
 #### Service account
 
 For the CD pipeline we need a service account and store a token for this account in a GitHub secret.
@@ -349,7 +354,7 @@ namespace. Install it as an administrator, once per environment.
 
 #### The deployment pipeline
 
-A push to `dev` deploys itself. Once the backend, frontend, Playwright and Helm suites have
+A push to `dev` or `main` trigger the CD pipeline. Once the backend, frontend, Playwright and Helm suites have
 all passed and both images are published, the `deploy` job in `branch-ci-cd.yml` upgrades the
 release.
 
