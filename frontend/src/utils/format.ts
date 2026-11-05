@@ -125,7 +125,7 @@ export function formatDate(
    return [datePart, separatorText, timePart].filter(Boolean).join(" ");
 }
 
-export function formatTimelineDate(i18n: I18n, locale: Locale, date: TimelineDate): string {
+export function formatTimelineDate(i18n: I18n, locale: Locale, date: Omit<TimelineDate, "event">): string {
    switch (date.qualifier) {
       case "all_day":
          return formatDate(i18n, locale, date.date, { withYear: false, withTime: false });
@@ -200,7 +200,7 @@ export function useFormatters() {
          formatNumber: (value: number, options?: Intl.NumberFormatOptions) => formatNumber(locale, value, options),
          formatDate: (isoDate: string, options?: DateTimeOptions) => formatDate(i18n, locale, isoDate, options),
          formatElectionDate: (isoDate: string) => formatElectionDate(locale, isoDate),
-         formatTimelineDate: (date: TimelineDate) => formatTimelineDate(i18n, locale, date),
+         formatTimelineDate: (date: Omit<TimelineDate, "event">) => formatTimelineDate(i18n, locale, date),
          formatFileSize: (bytes: number) => formatFileSize(locale, bytes),
          collator: getCollator(locale),
       }),

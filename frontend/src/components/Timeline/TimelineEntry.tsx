@@ -65,11 +65,11 @@ export type TimelineEntryProps = {
    document_types?: ElectionDocumentFileType[];
 } & (
    | {
-        date?: TimelineDate;
+        date?: Omit<TimelineDate, "event">;
         event: TimelineDateEvent;
      }
    | {
-        date: TimelineDate;
+        date: Omit<TimelineDate, "event">;
         event?: undefined;
      }
 );
@@ -210,8 +210,7 @@ export function CorrectionTimelineEntry() {
 
    return (
       <TimelineEntry
-         // TimelineDate requires an event; the date itself comes from the region.
-         date={{ event: "municipality_vote_count", date: region.correction_date, qualifier: "all_day" }}
+         date={{ date: region.correction_date, qualifier: "all_day" }}
          title={t`Onderzoek, hertelling en gecorrigeerde resultaten`}
          document_types={documentTypes}
       >
@@ -235,8 +234,7 @@ export function MunicipalityRecountTimelineEntry() {
 
    return (
       <TimelineEntry
-         // TimelineDate requires an event; the date itself comes from the region.
-         date={{ event: "municipality_vote_count", date: municipality.municipality_recount_date, qualifier: "all_day" }}
+         date={{ date: municipality.municipality_recount_date, qualifier: "all_day" }}
          title={t`Nieuwe gemeentelijke optelling`}
       >
          <p>
