@@ -721,6 +721,7 @@ msgstr "By municipality"
 msgid "Probeer opnieuw"
 msgstr "Try again"
 
+#: src/components/ResultsPage/PdfViewerPanel.tsx
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Proces-verbaal"
 msgstr "Certified election results"
@@ -796,6 +797,10 @@ msgstr "Results {municipalityTitle} by polling station"
 #: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
 msgid "Resultaten per stembureau"
 msgstr "Results by polling station"
+
+#: src/components/ResultsPage/PdfViewerPanel.tsx
+msgid "Sluiten"
+msgstr "Close"
 
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "Sneltelling in de stembureaus"

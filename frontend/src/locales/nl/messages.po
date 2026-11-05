@@ -721,6 +721,7 @@ msgstr "Per gemeente"
 msgid "Probeer opnieuw"
 msgstr "Probeer opnieuw"
 
+#: src/components/ResultsPage/PdfViewerPanel.tsx
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Proces-verbaal"
 msgstr "Proces-verbaal"
@@ -796,6 +797,10 @@ msgstr "Resultaten {municipalityTitle} per stembureau"
 #: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
 msgid "Resultaten per stembureau"
 msgstr "Resultaten per stembureau"
+
+#: src/components/ResultsPage/PdfViewerPanel.tsx
+msgid "Sluiten"
+msgstr "Sluiten"
 
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "Sneltelling in de stembureaus"

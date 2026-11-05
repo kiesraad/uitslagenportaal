@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { ElectionConfig } from "@/api/types";
 import ResultsSourceBox from "@/components/ResultsPage/ResultsSourceBox";
@@ -53,7 +53,9 @@ describe("ResultsSourceBox", () => {
       const documentUrl = "/api/certified-documents/7/";
       renderBox("nl", previewUrl, documentUrl);
 
-      expect(screen.getByRole("img", { name: "Proces-verbaal" })).toHaveAttribute("src", previewUrl);
+      for (const image of screen.getAllByRole("img", { name: "Proces-verbaal" })) {
+         expect(image).toHaveAttribute("src", previewUrl);
+      }
       const links = screen.getAllByRole("link", { name: /proces-verbaal/i });
       expect(links).toHaveLength(2);
       for (const link of links) {
@@ -65,6 +67,20 @@ describe("ResultsSourceBox", () => {
          "/ws2023/fout-melden",
       );
       expect(screen.getByText(/14 december om 10:00/)).toBeInTheDocument();
+   });
+
+   it("Opens the viewer from the picture and returns focus to it when closed", () => {
+      renderBox("nl", "/api/certified-documents/7/preview/", "/api/certified-documents/7/");
+
+      fireEvent.click(screen.getByRole("button", { name: "Proces-verbaal" }));
+
+      expect(screen.getByRole("heading", { level: 2, name: "Proces-verbaal" })).toHaveFocus();
+      expect(screen.queryByRole("heading", { name: "Waar komen deze telresultaten vandaan?" })).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: "Sluiten" }));
+
+      expect(screen.getByRole("button", { name: "Proces-verbaal" })).toHaveFocus();
+      expect(screen.getByRole("heading", { name: "Waar komen deze telresultaten vandaan?" })).toBeInTheDocument();
    });
 
    it("Says the certified election document is not published when only the document exists", () => {
