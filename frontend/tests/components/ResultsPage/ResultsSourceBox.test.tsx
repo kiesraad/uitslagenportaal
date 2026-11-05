@@ -1,10 +1,13 @@
 import { QueryClient } from "@tanstack/react-query";
 import { fireEvent, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { ElectionConfig } from "@/api/types";
 import ResultsSourceBox from "@/components/ResultsPage/ResultsSourceBox";
 import { electionConfigQuery } from "@/hooks/queries";
 import { renderWithProviders } from "../../testUtils";
+
+// PDF.js needs a canvas and a worker, which jsdom does not have.
+vi.mock("@/components/ResultsPage/PdfDocument", () => ({ default: () => null }));
 
 const electionConfig: ElectionConfig = {
    slug: "ws2023",

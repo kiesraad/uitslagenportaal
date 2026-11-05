@@ -54,7 +54,7 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
    }
 
    if (isViewerOpen) {
-      return <PdfViewerPanel onClose={closeViewer} />;
+      return <PdfViewerPanel documentUrl={documentUrl} onClose={closeViewer} />;
    }
 
    const thumbnail = (

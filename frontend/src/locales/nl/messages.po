@@ -447,6 +447,10 @@ msgstr "Het ondertekende proces-verbaal van het stembureau in een gemeente die C
 msgid "Het ondertekende proces-verbaal van het stembureau."
 msgstr "Het ondertekende proces-verbaal van het stembureau."
 
+#: src/components/ResultsPage/PdfDocument.tsx
+msgid "Het proces-verbaal kon niet worden geladen."
+msgstr "Het proces-verbaal kon niet worden geladen."
+
 #: src/utils/region.ts
 msgid "het stembureau"
 msgstr "het stembureau"
@@ -745,6 +749,11 @@ msgstr "Proces-verbaal gemeentelijk stembureau (DSO)"
 #: src/components/ElectionFileEntry.tsx
 msgid "Proces-verbaal hoofdstembureau"
 msgstr "Proces-verbaal hoofdstembureau"
+
+#: src/components/ResultsPage/PdfDocument.tsx
+#: src/components/ResultsPage/PdfViewerPanel.tsx
+msgid "Proces-verbaal laden…"
+msgstr "Proces-verbaal laden…"
 
 #: src/components/ElectionFileEntry.tsx
 msgid "Proces-verbaal stembureau"

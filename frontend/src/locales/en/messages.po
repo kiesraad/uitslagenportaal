@@ -447,6 +447,10 @@ msgstr "The signed certified election results of the polling station in a munici
 msgid "Het ondertekende proces-verbaal van het stembureau."
 msgstr "The signed certified election results of the polling station."
 
+#: src/components/ResultsPage/PdfDocument.tsx
+msgid "Het proces-verbaal kon niet worden geladen."
+msgstr "The certified election results could not be loaded."
+
 #: src/utils/region.ts
 msgid "het stembureau"
 msgstr "the polling station"
@@ -745,6 +749,11 @@ msgstr "Certified election results of the municipal electoral committee (decentr
 #: src/components/ElectionFileEntry.tsx
 msgid "Proces-verbaal hoofdstembureau"
 msgstr "Certified election results of the district electoral committee"
+
+#: src/components/ResultsPage/PdfDocument.tsx
+#: src/components/ResultsPage/PdfViewerPanel.tsx
+msgid "Proces-verbaal laden…"
+msgstr "Loading the certified election results…"
 
 #: src/components/ElectionFileEntry.tsx
 msgid "Proces-verbaal stembureau"

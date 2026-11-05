@@ -59,7 +59,8 @@ export default defineConfig({
                   },
                   {
                      name: "vendor",
-                     test: /node_modules[/\\]/,
+                     // A group chunk loads on every page; PDF.js stays in the viewer's lazy chunk.
+                     test: /node_modules[/\\](?!react-pdf[/\\]|pdfjs-dist[/\\])/,
                      priority: 10,
                   },
                ],
