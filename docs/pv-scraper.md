@@ -72,9 +72,9 @@ file are decided afterwards, by `PvClassifier`.
 ### Classification
 
 `run_scrape_for_source` stores each downloaded file in the `pv_import` storage (the `pvs` bucket by default) under
-`classification_queue/<source code>_<file name>.pdf` and queues `classify_scraped_file` for it on the `scraper` queue,
+`classification_queue/<source code>_<file name>.pdf` and queues `classify_scraped_file` for it on the `ocr` queue,
 whose worker has Tesseract; the browser does not wait on OCR. That task hands the file to `PvClassifier`
-(`pv_scraper/utils/pv_classifier.py`), which runs Tesseract on the first page or two. Classified files of known models
+(`pv_ocr/utils/pv_classifier.py`), which runs Tesseract on the first page or two. Classified files of known models
 are stored in the same storage at `pv_import_queue/<generated file name>.pdf`, where the PV import picks them up, and
 leave the classification queue. A file whose model is not certain is deleted; one that is classified but cannot be
 named or is refused (see the naming convention) stays in the classification queue.
