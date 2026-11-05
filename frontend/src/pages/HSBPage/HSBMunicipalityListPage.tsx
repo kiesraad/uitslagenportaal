@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { type LoaderFunctionArgs, useParams } from "react-router";
 import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
@@ -11,40 +11,25 @@ import { useFormatters } from "../../utils/format.ts";
 import { getCsbCrumb, getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 
-export function hsbMunicipalityListLoader(queryClient: QueryClient) {
-   return async ({ params }: LoaderFunctionArgs) => {
-      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params, "hsb");
-      const regionsQueryOptions = regionsQuery(params, "GEMEENTE");
+export async function loadHSBMunicipalityList(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
+   const [electionConfig] = await Promise.all([
+      client.query(electionConfigQuery(params.electionConfigSlug)),
+      client.query(regionQuery(params, "hsb")),
+      client.query(regionsQuery(params, "GEMEENTE")),
+   ]);
 
-      const [electionConfig] = await Promise.all([
-         queryClient.query(electionConfigQueryOptions),
-         queryClient.query(regionQueryOptions),
-         queryClient.query(regionsQueryOptions),
-      ]);
-
-      if (!electionConfig.has_hsb) {
-         throw new ApiError("Election has no HSBs", 404);
-      }
-
-      return {
-         electionConfigQuery: electionConfigQueryOptions,
-         regionQuery: regionQueryOptions,
-         regionsQuery: regionsQueryOptions,
-      };
-   };
+   if (!electionConfig.has_hsb) {
+      throw new ApiError("Election has no HSBs", 404);
+   }
 }
 
-type LoaderData = Awaited<ReturnType<ReturnType<typeof hsbMunicipalityListLoader>>>;
-
-export function HSBMunicipalityListPage() {
-   const { electionConfigQuery, regionQuery, regionsQuery } = useLoaderData<LoaderData>();
+export default function HSBMunicipalityListPage() {
+   const params = useParams();
    const { t } = useLingui();
    const { formatDate } = useFormatters();
-   // The loader has already resolved every query, so the data is never pending here.
-   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
-   const { data: region } = useSuspenseQuery(regionQuery);
-   const { data: regions } = useSuspenseQuery(regionsQuery);
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(params.electionConfigSlug));
+   const { data: region } = useSuspenseQuery(regionQuery(params, "hsb"));
+   const { data: regions } = useSuspenseQuery(regionsQuery(params, "GEMEENTE"));
 
    const regionLabels = getRegionLabels("KIESKRING");
    const hsbResultsRoute = appRoutes.hsbResults(electionConfig.slug, region.slug);
