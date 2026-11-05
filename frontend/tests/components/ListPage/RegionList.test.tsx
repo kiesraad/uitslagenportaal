@@ -72,6 +72,21 @@ describe("RegionList", () => {
       expect(screen.queryByRole("heading", { name: "De gemeenten zijn nog niet beschikbaar" })).not.toBeInTheDocument();
    });
 
+   it("links a gemeente to its GSB page by default", () => {
+      renderRegionList({ regions: [zoetermeer] });
+
+      expect(screen.getByRole("link", { name: "Zoetermeer" })).toHaveAttribute("href", "/ws2023/gsb/zoetermeer");
+   });
+
+   it("links a gemeente listed as CSB to its CSB results", () => {
+      renderRegionList({ regions: [zoetermeer], isCsbList: true });
+
+      expect(screen.getByRole("link", { name: "Zoetermeer" })).toHaveAttribute(
+         "href",
+         "/ws2023/csb/zoetermeer/resultaten",
+      );
+   });
+
    it("says so in text when a region has no counting results yet", () => {
       const zwolle: Region = { ...zoetermeer, region_name: "Zwolle", slug: "zwolle", has_results: false };
       renderRegionList({ regions: [{ ...zoetermeer, has_results: true }, zwolle] });

@@ -84,11 +84,20 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         )
 
     def _certified_document(self, region):
-        documents = ElectionDocument.objects.filter(
-            region=region,
-            file_type__in=ElectionDocument.CERTIFIED_FILE_TYPES,
-        ).order_by("-created_at", "-pk")
-        return documents.filter(file_type__in=ElectionDocument.CORRECTION_FILE_TYPES).first() or documents.first()
+        # The view prefetches only the documents of the requested level.
+        documents = sorted(
+            (
+                document
+                for document in region.documents.all()
+                if document.file_type in ElectionDocument.CERTIFIED_FILE_TYPES
+            ),
+            key=lambda document: (document.created_at, document.pk),
+            reverse=True,
+        )
+        corrections = (
+            document for document in documents if document.file_type in ElectionDocument.CORRECTION_FILE_TYPES
+        )
+        return next(corrections, None) or next(iter(documents), None)
 
     def get_certified_document_url(self, region) -> str | None:
         document = self._certified_document(region)
