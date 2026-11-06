@@ -1,0 +1,740 @@
+<?xml version="1.0"?>
+<EML xmlns="urn:oasis:names:tc:evs:schema:eml" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:kr="http://www.kiesraad.nl/extensions" xmlns:xal="urn:oasis:names:tc:ciq:xsdschema:xAL:2.0" xmlns:xnl="urn:oasis:names:tc:ciq:xsdschema:xNL:2.0" Id="510d" SchemaVersion="5">
+  <TransactionId>1</TransactionId>
+  <ManagingAuthority>
+    <AuthorityIdentifier Id="CSB">Westerwolde</AuthorityIdentifier>
+    <AuthorityAddress/>
+  </ManagingAuthority>
+  <kr:CreationDateTime>2026-03-25T13:42:12.863</kr:CreationDateTime>
+  <ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"/>
+  <Count>
+    <EventIdentifier/>
+    <Election>
+      <ElectionIdentifier Id="GR2026_Westerwolde">
+        <ElectionName>Gemeenteraad Westerwolde 2026</ElectionName>
+        <ElectionCategory>GR</ElectionCategory>
+        <kr:ElectionSubcategory>GR2</kr:ElectionSubcategory>
+        <kr:ElectionDomain Id="1950">Westerwolde</kr:ElectionDomain>
+        <kr:ElectionDate>2026-03-18</kr:ElectionDate>
+      </ElectionIdentifier>
+      <Contests>
+        <Contest>
+          <ContestIdentifier Id="geen"/>
+          <TotalVotes>
+            <Selection>
+              <AffiliationIdentifier Id="1">
+                <RegisteredName>Gemeentebelangen Westerwolde</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>1969</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>1176</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>225</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="3"/>
+              </Candidate>
+              <ValidVotes>124</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="4"/>
+              </Candidate>
+              <ValidVotes>28</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="5"/>
+              </Candidate>
+              <ValidVotes>65</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="6"/>
+              </Candidate>
+              <ValidVotes>49</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="7"/>
+              </Candidate>
+              <ValidVotes>16</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="8"/>
+              </Candidate>
+              <ValidVotes>53</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="9"/>
+              </Candidate>
+              <ValidVotes>75</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="10"/>
+              </Candidate>
+              <ValidVotes>30</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="11"/>
+              </Candidate>
+              <ValidVotes>39</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="12"/>
+              </Candidate>
+              <ValidVotes>33</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="13"/>
+              </Candidate>
+              <ValidVotes>19</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="14"/>
+              </Candidate>
+              <ValidVotes>18</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="15"/>
+              </Candidate>
+              <ValidVotes>19</ValidVotes>
+            </Selection>
+            <Selection>
+              <AffiliationIdentifier Id="2">
+                <RegisteredName>Partij van de Arbeid (PvdA)</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>663</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>289</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>165</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="3"/>
+              </Candidate>
+              <ValidVotes>43</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="4"/>
+              </Candidate>
+              <ValidVotes>47</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="5"/>
+              </Candidate>
+              <ValidVotes>18</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="6"/>
+              </Candidate>
+              <ValidVotes>10</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="7"/>
+              </Candidate>
+              <ValidVotes>4</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="8"/>
+              </Candidate>
+              <ValidVotes>3</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="9"/>
+              </Candidate>
+              <ValidVotes>20</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="10"/>
+              </Candidate>
+              <ValidVotes>10</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="11"/>
+              </Candidate>
+              <ValidVotes>17</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="12"/>
+              </Candidate>
+              <ValidVotes>37</ValidVotes>
+            </Selection>
+            <Selection>
+              <AffiliationIdentifier Id="3">
+                <RegisteredName>CDA</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>1626</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>1074</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>158</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="3"/>
+              </Candidate>
+              <ValidVotes>123</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="4"/>
+              </Candidate>
+              <ValidVotes>46</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="5"/>
+              </Candidate>
+              <ValidVotes>22</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="6"/>
+              </Candidate>
+              <ValidVotes>8</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="7"/>
+              </Candidate>
+              <ValidVotes>15</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="8"/>
+              </Candidate>
+              <ValidVotes>41</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="9"/>
+              </Candidate>
+              <ValidVotes>25</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="10"/>
+              </Candidate>
+              <ValidVotes>14</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="11"/>
+              </Candidate>
+              <ValidVotes>10</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="12"/>
+              </Candidate>
+              <ValidVotes>36</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="13"/>
+              </Candidate>
+              <ValidVotes>1</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="14"/>
+              </Candidate>
+              <ValidVotes>15</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="15"/>
+              </Candidate>
+              <ValidVotes>1</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="16"/>
+              </Candidate>
+              <ValidVotes>13</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="17"/>
+              </Candidate>
+              <ValidVotes>8</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="18"/>
+              </Candidate>
+              <ValidVotes>1</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="19"/>
+              </Candidate>
+              <ValidVotes>6</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="20"/>
+              </Candidate>
+              <ValidVotes>9</ValidVotes>
+            </Selection>
+            <Selection>
+              <AffiliationIdentifier Id="4">
+                <RegisteredName>PVV (Partij voor de Vrijheid)</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>1322</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>909</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>123</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="3"/>
+              </Candidate>
+              <ValidVotes>79</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="4"/>
+              </Candidate>
+              <ValidVotes>154</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="5"/>
+              </Candidate>
+              <ValidVotes>57</ValidVotes>
+            </Selection>
+            <Selection>
+              <AffiliationIdentifier Id="5">
+                <RegisteredName>GROENLINKS</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>858</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>564</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>69</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="3"/>
+              </Candidate>
+              <ValidVotes>86</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="4"/>
+              </Candidate>
+              <ValidVotes>54</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="5"/>
+              </Candidate>
+              <ValidVotes>5</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="6"/>
+              </Candidate>
+              <ValidVotes>40</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="7"/>
+              </Candidate>
+              <ValidVotes>6</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="8"/>
+              </Candidate>
+              <ValidVotes>23</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="9"/>
+              </Candidate>
+              <ValidVotes>11</ValidVotes>
+            </Selection>
+            <Selection>
+              <AffiliationIdentifier Id="6">
+                <RegisteredName>VVD</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>388</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>219</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>47</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="3"/>
+              </Candidate>
+              <ValidVotes>32</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="4"/>
+              </Candidate>
+              <ValidVotes>24</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="5"/>
+              </Candidate>
+              <ValidVotes>7</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="6"/>
+              </Candidate>
+              <ValidVotes>18</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="7"/>
+              </Candidate>
+              <ValidVotes>26</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="8"/>
+              </Candidate>
+              <ValidVotes>6</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="9"/>
+              </Candidate>
+              <ValidVotes>9</ValidVotes>
+            </Selection>
+            <Selection>
+              <AffiliationIdentifier Id="7">
+                <RegisteredName>Samen voor Westerwolde</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>1737</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>1080</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>174</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="3"/>
+              </Candidate>
+              <ValidVotes>42</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="4"/>
+              </Candidate>
+              <ValidVotes>20</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="5"/>
+              </Candidate>
+              <ValidVotes>174</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="6"/>
+              </Candidate>
+              <ValidVotes>21</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="7"/>
+              </Candidate>
+              <ValidVotes>26</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="8"/>
+              </Candidate>
+              <ValidVotes>21</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="9"/>
+              </Candidate>
+              <ValidVotes>18</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="10"/>
+              </Candidate>
+              <ValidVotes>32</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="11"/>
+              </Candidate>
+              <ValidVotes>81</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="12"/>
+              </Candidate>
+              <ValidVotes>48</ValidVotes>
+            </Selection>
+            <Selection>
+              <AffiliationIdentifier Id="8">
+                <RegisteredName>D66</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>599</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>323</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>24</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="3"/>
+              </Candidate>
+              <ValidVotes>134</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="4"/>
+              </Candidate>
+              <ValidVotes>65</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="5"/>
+              </Candidate>
+              <ValidVotes>28</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="6"/>
+              </Candidate>
+              <ValidVotes>25</ValidVotes>
+            </Selection>
+            <Selection>
+              <AffiliationIdentifier Id="9">
+                <RegisteredName>Westerwolde Lokaal</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>429</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>266</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>68</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="3"/>
+              </Candidate>
+              <ValidVotes>7</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="4"/>
+              </Candidate>
+              <ValidVotes>15</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="5"/>
+              </Candidate>
+              <ValidVotes>2</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="6"/>
+              </Candidate>
+              <ValidVotes>30</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="7"/>
+              </Candidate>
+              <ValidVotes>4</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="8"/>
+              </Candidate>
+              <ValidVotes>22</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="9"/>
+              </Candidate>
+              <ValidVotes>8</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="10"/>
+              </Candidate>
+              <ValidVotes>7</ValidVotes>
+            </Selection>
+            <Selection>
+              <AffiliationIdentifier Id="10">
+                <RegisteredName>BBB</RegisteredName>
+              </AffiliationIdentifier>
+              <ValidVotes>1112</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="1"/>
+              </Candidate>
+              <ValidVotes>620</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="2"/>
+              </Candidate>
+              <ValidVotes>71</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="3"/>
+              </Candidate>
+              <ValidVotes>265</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="4"/>
+              </Candidate>
+              <ValidVotes>45</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="5"/>
+              </Candidate>
+              <ValidVotes>8</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="6"/>
+              </Candidate>
+              <ValidVotes>18</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="7"/>
+              </Candidate>
+              <ValidVotes>17</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="8"/>
+              </Candidate>
+              <ValidVotes>17</ValidVotes>
+            </Selection>
+            <Selection>
+              <Candidate>
+                <CandidateIdentifier Id="9"/>
+              </Candidate>
+              <ValidVotes>51</ValidVotes>
+            </Selection>
+            <Cast>20712</Cast>
+            <TotalCounted>10703</TotalCounted>
+            <RejectedVotes ReasonCode="ongeldig">30</RejectedVotes>
+            <RejectedVotes ReasonCode="blanco">57</RejectedVotes>
+            <UncountedVotes ReasonCode="geldige stempassen">9729</UncountedVotes>
+            <UncountedVotes ReasonCode="geldige volmachtbewijzen">1064</UncountedVotes>
+            <UncountedVotes ReasonCode="toegelaten kiezers">10793</UncountedVotes>
+            <UncountedVotes ReasonCode="meer getelde stembiljetten">0</UncountedVotes>
+            <UncountedVotes ReasonCode="minder getelde stembiljetten">3</UncountedVotes>
+          </TotalVotes>
+        </Contest>
+      </Contests>
+    </Election>
+  </Count>
+</EML>

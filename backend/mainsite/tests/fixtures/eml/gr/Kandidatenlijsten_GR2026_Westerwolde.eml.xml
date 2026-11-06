@@ -1,0 +1,1793 @@
+<?xml version="1.0"?>
+<EML xmlns="urn:oasis:names:tc:evs:schema:eml" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:kr="http://www.kiesraad.nl/extensions" xmlns:xal="urn:oasis:names:tc:ciq:xsdschema:xAL:2.0" xmlns:xnl="urn:oasis:names:tc:ciq:xsdschema:xNL:2.0" Id="230b" SchemaVersion="5">
+  <TransactionId>1</TransactionId>
+  <ManagingAuthority>
+    <AuthorityIdentifier Id="CSB">Centraal stembureau Westerwolde</AuthorityIdentifier>
+    <AuthorityAddress/>
+  </ManagingAuthority>
+  <IssueDate>2026-02-06</IssueDate>
+  <kr:CreationDateTime>2026-02-06T10:21:06.487</kr:CreationDateTime>
+  <ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"/>
+  <CandidateList>
+    <Election>
+      <ElectionIdentifier Id="GR2026_Westerwolde">
+        <ElectionName>Gemeenteraad Westerwolde 2026</ElectionName>
+        <ElectionCategory>GR</ElectionCategory>
+        <kr:ElectionSubcategory>GR2</kr:ElectionSubcategory>
+        <kr:ElectionDomain Id="1950">Westerwolde</kr:ElectionDomain>
+        <kr:ElectionDate>2026-03-18</kr:ElectionDate>
+        <kr:NominationDate>2026-02-02</kr:NominationDate>
+      </ElectionIdentifier>
+      <Contest>
+        <ContestIdentifier Id="geen"/>
+        <Affiliation>
+          <AffiliationIdentifier Id="1">
+            <RegisteredName>Gemeentebelangen Westerwolde</RegisteredName>
+          </AffiliationIdentifier>
+          <Type>op zichzelf staande lijst</Type>
+          <kr:ListData PublicationLanguage="nl" PublishGender="true"/>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">F.J.</xnl:NameLine>
+                <xnl:FirstName>Giny</xnl:FirstName>
+                <xnl:LastName>Luth</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">M.</xnl:NameLine>
+                <xnl:FirstName>Marco</xnl:FirstName>
+                <xnl:LastName>Visscher</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="3"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">R.</xnl:NameLine>
+                <xnl:FirstName>Ronald</xnl:FirstName>
+                <xnl:LastName>Koskamp</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="4"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">H.J.H.</xnl:NameLine>
+                <xnl:FirstName>Erik</xnl:FirstName>
+                <xnl:LastName>Geukes</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bourtange</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="5"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">E.</xnl:NameLine>
+                <xnl:FirstName>Esther</xnl:FirstName>
+                <xnl:NamePrefix>van de</xnl:NamePrefix>
+                <xnl:LastName>Bund</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bourtange</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="6"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">P.</xnl:NameLine>
+                <xnl:FirstName>Peter</xnl:FirstName>
+                <xnl:LastName>Warntjes</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Wedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="7"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.D.</xnl:NameLine>
+                <xnl:FirstName>Jan Derk</xnl:FirstName>
+                <xnl:LastName>Elinga</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="8"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">B.G.</xnl:NameLine>
+                <xnl:FirstName>Bas</xnl:FirstName>
+                <xnl:LastName>Peters</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="9"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">R.A.</xnl:NameLine>
+                <xnl:FirstName>Richard</xnl:FirstName>
+                <xnl:NamePrefix>van den</xnl:NamePrefix>
+                <xnl:LastName>Broek</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Blijham</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="10"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.</xnl:NameLine>
+                <xnl:FirstName>Jeroen</xnl:FirstName>
+                <xnl:LastName>Visscher</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="11"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">D.R.</xnl:NameLine>
+                <xnl:FirstName>Derk</xnl:FirstName>
+                <xnl:LastName>Boerma</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bourtange</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="12"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">W.W.</xnl:NameLine>
+                <xnl:FirstName>Wilke</xnl:FirstName>
+                <xnl:LastName>Zijlstra</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Veelerveen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="13"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">K.K.</xnl:NameLine>
+                <xnl:FirstName>Karolien</xnl:FirstName>
+                <xnl:LastName>Geukes</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bourtange</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="14"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">R.E.</xnl:NameLine>
+                <xnl:FirstName>Richard</xnl:FirstName>
+                <xnl:LastName>Gerlofs</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Wedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="15"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.R.</xnl:NameLine>
+                <xnl:FirstName>Janneke</xnl:FirstName>
+                <xnl:LastName>Draadjer</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+        </Affiliation>
+        <Affiliation>
+          <AffiliationIdentifier Id="2">
+            <RegisteredName>Partij van de Arbeid (PvdA)</RegisteredName>
+          </AffiliationIdentifier>
+          <Type>op zichzelf staande lijst</Type>
+          <kr:ListData PublicationLanguage="nl" PublishGender="true"/>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">B.</xnl:NameLine>
+                <xnl:FirstName>Brunie</xnl:FirstName>
+                <xnl:LastName>Batterman</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bourtange</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">E.</xnl:NameLine>
+                <xnl:FirstName>Evelien</xnl:FirstName>
+                <xnl:LastName>Duursma-Kooman</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bellingwolde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="3"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">S.</xnl:NameLine>
+                <xnl:FirstName>Sander</xnl:FirstName>
+                <xnl:LastName>Keizer</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Blijham</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="4"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">D.</xnl:NameLine>
+                <xnl:FirstName>Diana</xnl:FirstName>
+                <xnl:LastName>Gruben-Abbas</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Wedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="5"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.</xnl:NameLine>
+                <xnl:FirstName>Jan</xnl:FirstName>
+                <xnl:LastName>Feiken</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="6"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.H.</xnl:NameLine>
+                <xnl:FirstName>Leny</xnl:FirstName>
+                <xnl:LastName>Hempen</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Country>
+                <xal:CountryNameCode>DE</xal:CountryNameCode>
+                <xal:Locality>
+                  <xal:LocalityName>Heede</xal:LocalityName>
+                </xal:Locality>
+              </xal:Country>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="7"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">H.W.H.</xnl:NameLine>
+                <xnl:FirstName>Harm</xnl:FirstName>
+                <xnl:LastName>Scheper</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Emmen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="8"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.J.</xnl:NameLine>
+                <xnl:FirstName>Arthur</xnl:FirstName>
+                <xnl:LastName>Doornebosch</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="9"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">H.</xnl:NameLine>
+                <xnl:FirstName>Hennie</xnl:FirstName>
+                <xnl:LastName>Meijer-Geertsma</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="10"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">M.M.</xnl:NameLine>
+                <xnl:FirstName>Marga</xnl:FirstName>
+                <xnl:LastName>Kieffer-Naaijer</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="11"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">H.L.</xnl:NameLine>
+                <xnl:FirstName>Henk</xnl:FirstName>
+                <xnl:LastName>Brouwer</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Blijham</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="12"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">L.A.M.</xnl:NameLine>
+                <xnl:FirstName>Leontien</xnl:FirstName>
+                <xnl:LastName>Kompier</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+        </Affiliation>
+        <Affiliation>
+          <AffiliationIdentifier Id="3">
+            <RegisteredName>CDA</RegisteredName>
+          </AffiliationIdentifier>
+          <Type>op zichzelf staande lijst</Type>
+          <kr:ListData PublicationLanguage="nl" PublishGender="true"/>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">H.J.</xnl:NameLine>
+                <xnl:FirstName>Harm-Jan</xnl:FirstName>
+                <xnl:LastName>Kuper</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">M.</xnl:NameLine>
+                <xnl:FirstName>Marjan</xnl:FirstName>
+                <xnl:LastName>Heidekamp-Prins</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="3"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">S.</xnl:NameLine>
+                <xnl:FirstName>Seine</xnl:FirstName>
+                <xnl:LastName>Lok</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="4"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">S.J.</xnl:NameLine>
+                <xnl:FirstName>Stefanie</xnl:FirstName>
+                <xnl:LastName>Water-van Meekeren</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bellingwolde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="5"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">E.</xnl:NameLine>
+                <xnl:FirstName>Erik</xnl:FirstName>
+                <xnl:LastName>Wubs</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="6"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.A.C.H.</xnl:NameLine>
+                <xnl:FirstName>John</xnl:FirstName>
+                <xnl:NamePrefix>van</xnl:NamePrefix>
+                <xnl:LastName>Meekeren</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bellingwolde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="7"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.E.</xnl:NameLine>
+                <xnl:FirstName>Jasper</xnl:FirstName>
+                <xnl:LastName>Tammes</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="8"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">G.</xnl:NameLine>
+                <xnl:FirstName>Gertjan</xnl:FirstName>
+                <xnl:LastName>Bos</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="9"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">W.F.</xnl:NameLine>
+                <xnl:FirstName>Wilt</xnl:FirstName>
+                <xnl:LastName>Meendering</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vriescheloo</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="10"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.J.</xnl:NameLine>
+                <xnl:FirstName>Alfred</xnl:FirstName>
+                <xnl:LastName>Stenekes</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="11"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.</xnl:NameLine>
+                <xnl:FirstName>Ton</xnl:FirstName>
+                <xnl:LastName>Kuper</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="12"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.</xnl:NameLine>
+                <xnl:FirstName>Jan</xnl:FirstName>
+                <xnl:LastName>Deuring</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apelkanaal</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="13"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.</xnl:NameLine>
+                <xnl:FirstName>Arie</xnl:FirstName>
+                <xnl:NamePrefix>van</xnl:NamePrefix>
+                <xnl:LastName>Heeringen</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="14"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">H.</xnl:NameLine>
+                <xnl:FirstName>Hilbrand</xnl:FirstName>
+                <xnl:LastName>Sinnema</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="15"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.B.</xnl:NameLine>
+                <xnl:FirstName>Bouwie</xnl:FirstName>
+                <xnl:LastName>Huiting</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="16"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.</xnl:NameLine>
+                <xnl:FirstName>Jan</xnl:FirstName>
+                <xnl:NamePrefix>de</xnl:NamePrefix>
+                <xnl:LastName>Boer</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Veelerveen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="17"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.H.</xnl:NameLine>
+                <xnl:FirstName>Jan</xnl:FirstName>
+                <xnl:LastName>Borg</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bourtange</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="18"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">K.M.</xnl:NameLine>
+                <xnl:FirstName>Klaas</xnl:FirstName>
+                <xnl:LastName>Mulder</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="19"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">D.J.</xnl:NameLine>
+                <xnl:FirstName>Dirk</xnl:FirstName>
+                <xnl:NamePrefix>van der</xnl:NamePrefix>
+                <xnl:LastName>Wal</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Wedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="20"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.</xnl:NameLine>
+                <xnl:FirstName>Aike</xnl:FirstName>
+                <xnl:LastName>Kuper</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+        </Affiliation>
+        <Affiliation>
+          <AffiliationIdentifier Id="4">
+            <RegisteredName>PVV (Partij voor de Vrijheid)</RegisteredName>
+          </AffiliationIdentifier>
+          <Type>op zichzelf staande lijst</Type>
+          <kr:ListData PublicationLanguage="nl" PublishGender="true"/>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">R.J.H.H.</xnl:NameLine>
+                <xnl:FirstName>Robert</xnl:FirstName>
+                <xnl:LastName>Rep</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.B.P.</xnl:NameLine>
+                <xnl:FirstName>Judith</xnl:FirstName>
+                <xnl:LastName>Reurink</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="3"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">N.</xnl:NameLine>
+                <xnl:FirstName>Nick</xnl:FirstName>
+                <xnl:LastName>Groenewolt</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="4"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">T.J.</xnl:NameLine>
+                <xnl:FirstName>Dorien</xnl:FirstName>
+                <xnl:LastName>Spijker</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="5"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">V.J.T.</xnl:NameLine>
+                <xnl:FirstName>Vincent</xnl:FirstName>
+                <xnl:LastName>Weits</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+        </Affiliation>
+        <Affiliation>
+          <AffiliationIdentifier Id="5">
+            <RegisteredName>GROENLINKS</RegisteredName>
+          </AffiliationIdentifier>
+          <Type>op zichzelf staande lijst</Type>
+          <kr:ListData PublicationLanguage="nl" PublishGender="false"/>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.</xnl:NameLine>
+                <xnl:FirstName>Astrid</xnl:FirstName>
+                <xnl:LastName>Warntjes</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Wedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">R.</xnl:NameLine>
+                <xnl:FirstName>Ruurd</xnl:FirstName>
+                <xnl:LastName>Brekveld</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="3"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.</xnl:NameLine>
+                <xnl:FirstName>Ineke</xnl:FirstName>
+                <xnl:NamePrefix>van den</xnl:NamePrefix>
+                <xnl:LastName>Bos</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Blijham</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="4"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">R.H.J.</xnl:NameLine>
+                <xnl:FirstName>Ren&#xE9;</xnl:FirstName>
+                <xnl:LastName>Kriek</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="5"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.N.</xnl:NameLine>
+                <xnl:FirstName>Nico</xnl:FirstName>
+                <xnl:LastName>Falke</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Oudeschans</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="6"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">R.F.</xnl:NameLine>
+                <xnl:FirstName>Frank</xnl:FirstName>
+                <xnl:LastName>Ploeg</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bellingwolde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="7"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">D.</xnl:NameLine>
+                <xnl:FirstName>Dik</xnl:FirstName>
+                <xnl:LastName>Koopmans</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="8"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.</xnl:NameLine>
+                <xnl:FirstName>Jansje</xnl:FirstName>
+                <xnl:LastName>Bouman</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="9"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">F.A.</xnl:NameLine>
+                <xnl:FirstName>Frank</xnl:FirstName>
+                <xnl:LastName>Broersma</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+        </Affiliation>
+        <Affiliation>
+          <AffiliationIdentifier Id="6">
+            <RegisteredName>VVD</RegisteredName>
+          </AffiliationIdentifier>
+          <Type>op zichzelf staande lijst</Type>
+          <kr:ListData PublicationLanguage="nl" PublishGender="true"/>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">K.R.P.</xnl:NameLine>
+                <xnl:FirstName>Klaas</xnl:FirstName>
+                <xnl:LastName>Buigel</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.T.</xnl:NameLine>
+                <xnl:FirstName>Johannes</xnl:FirstName>
+                <xnl:NamePrefix>van</xnl:NamePrefix>
+                <xnl:LastName>Nieukerken</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Blijham</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="3"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">D.</xnl:NameLine>
+                <xnl:FirstName>David</xnl:FirstName>
+                <xnl:LastName>Bakker</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="4"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.</xnl:NameLine>
+                <xnl:FirstName>Alain</xnl:FirstName>
+                <xnl:LastName>Veldkamp</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bellingwolde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="5"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.</xnl:NameLine>
+                <xnl:FirstName>Jarno</xnl:FirstName>
+                <xnl:LastName>Pit</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="6"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.</xnl:NameLine>
+                <xnl:FirstName>Anne</xnl:FirstName>
+                <xnl:LastName>Buter</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="7"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">R.</xnl:NameLine>
+                <xnl:FirstName>Roy</xnl:FirstName>
+                <xnl:LastName>Gerding</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="8"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.N.O.</xnl:NameLine>
+                <xnl:FirstName>Nico</xnl:FirstName>
+                <xnl:LastName>Rookmaker</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="9"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">W.L.</xnl:NameLine>
+                <xnl:FirstName>Wim</xnl:FirstName>
+                <xnl:NamePrefix>'t</xnl:NamePrefix>
+                <xnl:LastName>Mannetje</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bellingwolde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+        </Affiliation>
+        <Affiliation>
+          <AffiliationIdentifier Id="7">
+            <RegisteredName>Samen voor Westerwolde</RegisteredName>
+          </AffiliationIdentifier>
+          <Type>op zichzelf staande lijst</Type>
+          <kr:ListData PublicationLanguage="nl" PublishGender="true"/>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">W.</xnl:NameLine>
+                <xnl:FirstName>Wietze</xnl:FirstName>
+                <xnl:LastName>Potze</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">W.J.</xnl:NameLine>
+                <xnl:FirstName>Wim</xnl:FirstName>
+                <xnl:LastName>Eilert</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apelkanaal</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="3"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">R.A.L.</xnl:NameLine>
+                <xnl:FirstName>Richard</xnl:FirstName>
+                <xnl:NamePrefix>ter</xnl:NamePrefix>
+                <xnl:LastName>Veen</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apelkanaal</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="4"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">R.</xnl:NameLine>
+                <xnl:FirstName>Roelof</xnl:FirstName>
+                <xnl:NamePrefix>van</xnl:NamePrefix>
+                <xnl:LastName>Dam</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="5"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.</xnl:NameLine>
+                <xnl:FirstName>Anita</xnl:FirstName>
+                <xnl:LastName>Klompsma-Bolk</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apelkanaal</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="6"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">T.</xnl:NameLine>
+                <xnl:FirstName>Timothy</xnl:FirstName>
+                <xnl:LastName>Nicolaas</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="7"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">H.</xnl:NameLine>
+                <xnl:FirstName>Harm</xnl:FirstName>
+                <xnl:LastName>Kuil</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Wedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="8"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.D.</xnl:NameLine>
+                <xnl:FirstName>Diana</xnl:FirstName>
+                <xnl:LastName>Lettink</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="9"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">P.A.J.</xnl:NameLine>
+                <xnl:FirstName>Peter</xnl:FirstName>
+                <xnl:LastName>Zijlstra</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="10"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">L.</xnl:NameLine>
+                <xnl:FirstName>Lars</xnl:FirstName>
+                <xnl:LastName>Eilert</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apelkanaal</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="11"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">L.H.</xnl:NameLine>
+                <xnl:FirstName>Linda</xnl:FirstName>
+                <xnl:NamePrefix>de</xnl:NamePrefix>
+                <xnl:LastName>Jonge</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bellingwolde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="12"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">H.P.</xnl:NameLine>
+                <xnl:FirstName>Harry</xnl:FirstName>
+                <xnl:NamePrefix>van der</xnl:NamePrefix>
+                <xnl:LastName>Weerd</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Blijham</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+        </Affiliation>
+        <Affiliation>
+          <AffiliationIdentifier Id="8">
+            <RegisteredName>D66</RegisteredName>
+          </AffiliationIdentifier>
+          <Type>op zichzelf staande lijst</Type>
+          <kr:ListData PublicationLanguage="nl" PublishGender="false"/>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">E.</xnl:NameLine>
+                <xnl:FirstName>Eize</xnl:FirstName>
+                <xnl:LastName>Hoomoedt</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">R.</xnl:NameLine>
+                <xnl:FirstName>Rob</xnl:FirstName>
+                <xnl:LastName>Gomersbach</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="3"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">H.</xnl:NameLine>
+                <xnl:FirstName>Henk-Jan</xnl:FirstName>
+                <xnl:LastName>Meijer</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Blijham</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="4"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">D.C.</xnl:NameLine>
+                <xnl:FirstName>Dineke</xnl:FirstName>
+                <xnl:LastName>Westerbeek</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="5"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">H.K.</xnl:NameLine>
+                <xnl:FirstName>Hester</xnl:FirstName>
+                <xnl:NamePrefix>van</xnl:NamePrefix>
+                <xnl:LastName>Geuns</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Sellingen</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="6"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">S.</xnl:NameLine>
+                <xnl:FirstName>Sandra</xnl:FirstName>
+                <xnl:LastName>Gomersbach</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Oudeschans</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+        </Affiliation>
+        <Affiliation>
+          <AffiliationIdentifier Id="9">
+            <RegisteredName>Westerwolde Lokaal</RegisteredName>
+          </AffiliationIdentifier>
+          <Type>op zichzelf staande lijst</Type>
+          <kr:ListData PublicationLanguage="nl" PublishGender="true"/>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">S.H.H.</xnl:NameLine>
+                <xnl:LastName>Schreuder</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Blijham</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.</xnl:NameLine>
+                <xnl:LastName>Sweertman</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vriescheloo</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="3"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">M.M.A.</xnl:NameLine>
+                <xnl:LastName>Smit</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Blijham</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="4"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">M.B.</xnl:NameLine>
+                <xnl:LastName>Brugma</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Blijham</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="5"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.W.J.</xnl:NameLine>
+                <xnl:LastName>Peper</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Blijham</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="6"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.H.</xnl:NameLine>
+                <xnl:LastName>Kiewiet</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bellingwolde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="7"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">R.</xnl:NameLine>
+                <xnl:LastName>Bronsema</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Blijham</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="8"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">M.</xnl:NameLine>
+                <xnl:NamePrefix>van der</xnl:NamePrefix>
+                <xnl:LastName>Laan</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>female</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bellingwolde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="9"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">D.</xnl:NameLine>
+                <xnl:LastName>Klap</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Wedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="10"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">M.K.E.</xnl:NameLine>
+                <xnl:LastName>Bronsema</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <Gender>male</Gender>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bellingwolde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+        </Affiliation>
+        <Affiliation>
+          <AffiliationIdentifier Id="10">
+            <RegisteredName>BBB</RegisteredName>
+          </AffiliationIdentifier>
+          <Type>op zichzelf staande lijst</Type>
+          <kr:ListData PublicationLanguage="nl" PublishGender="false"/>
+          <Candidate>
+            <CandidateIdentifier Id="1"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">H.M.</xnl:NameLine>
+                <xnl:FirstName>Herma</xnl:FirstName>
+                <xnl:LastName>Hemmen</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="2"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.J.</xnl:NameLine>
+                <xnl:FirstName>Jochem</xnl:FirstName>
+                <xnl:NamePrefix>van der</xnl:NamePrefix>
+                <xnl:LastName>Woude</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="3"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">A.</xnl:NameLine>
+                <xnl:FirstName>Annet</xnl:FirstName>
+                <xnl:LastName>Boonman-van Lenning</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bellingwolde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="4"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.J.</xnl:NameLine>
+                <xnl:FirstName>Joeri</xnl:FirstName>
+                <xnl:LastName>Folkers</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="5"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">H.</xnl:NameLine>
+                <xnl:FirstName>Heleen</xnl:FirstName>
+                <xnl:LastName>Meijer-Zwerver</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="6"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">J.B.</xnl:NameLine>
+                <xnl:FirstName>Benny</xnl:FirstName>
+                <xnl:LastName>Bredek</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Ter Apel</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="7"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">H.J.</xnl:NameLine>
+                <xnl:FirstName>Hendrik-Jan</xnl:FirstName>
+                <xnl:LastName>Kieft</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bellingwolde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="8"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">F.E.</xnl:NameLine>
+                <xnl:FirstName>Erik</xnl:FirstName>
+                <xnl:LastName>Smelt</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Bellingwolde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+          <Candidate>
+            <CandidateIdentifier Id="9"/>
+            <CandidateFullName>
+              <xnl:PersonName>
+                <xnl:NameLine NameType="Initials">G.W.J.</xnl:NameLine>
+                <xnl:FirstName>Gerwin</xnl:FirstName>
+                <xnl:LastName>Roelofs</xnl:LastName>
+              </xnl:PersonName>
+            </CandidateFullName>
+            <QualifyingAddress>
+              <xal:Locality>
+                <xal:LocalityName>Vlagtwedde</xal:LocalityName>
+              </xal:Locality>
+            </QualifyingAddress>
+          </Candidate>
+        </Affiliation>
+      </Contest>
+    </Election>
+  </CandidateList>
+</EML>

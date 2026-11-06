@@ -347,6 +347,50 @@ def test_imports_p22_onto_the_csb_of_that_election():
     assert attached == expected
 
 
+@pytest.mark.django_db
+def test_imports_gr_proces_verbalen_onto_their_own_gemeente_of_the_config():
+    config = ElectionConfigFactory(identifier="GR2026", category=ElectionCategory.GR.value)
+    # Each gemeente is its own election and its own CSB, so both have a stembureau 1.
+    regions = {}
+    for name, number in (("Westerwolde", "1950"), ("Westerkwartier", "1969")):
+        election = ElectionFactory(election_config=config, name=f"Gemeenteraad {name} 2026", subcategory="GR2")
+        gemeente = RegionFactory(
+            election=election,
+            region_category=RegionCategory.GEMEENTE,
+            region_name=name,
+            region_number=number,
+        )
+        station = RegionFactory(
+            election=election,
+            parent=gemeente,
+            csb=gemeente,
+            region_category=RegionCategory.STEMBUREAU,
+            region_name="Dorpshuis",
+            region_number=f"{number}::SB1",
+        )
+        regions[name] = (gemeente, station)
+    for model, stembureau in (("N10-2", "SB1"), ("NA14-1", "SB1"), ("NA31-1", ""), ("NA14-2", ""), ("P22-2", "")):
+        write_pdf(
+            f"{model}.pdf",
+            pv_pdf(
+                model.encode(), PvElection="GR2026", PvModel=model, PvRegionName="Westerwolde", PvStembureau=stembureau
+            ),
+        )
+
+    PDFFileHandler(storages["pv_import"]).run()
+
+    gemeente, station = regions["Westerwolde"]
+    file_type = ElectionDocument.FileType
+    attached = {(document.region_id, document.file_type) for document in ElectionDocument.objects.all()}
+    assert attached == {
+        (station.id, file_type.PDF_N10_2),
+        (station.id, file_type.PDF_NA14_1),
+        (gemeente.id, file_type.PDF_NA31_1),
+        (gemeente.id, file_type.PDF_NA14_2),
+        (gemeente.id, file_type.PDF_P22_2),
+    }
+
+
 def _board_with_shared_station(config, board_name, board_number):
     """The same Haarlemmermeer polling station as it is stored under one of its two waterschappen."""
     election = ElectionFactory(election_config=config, name=board_name, subcategory="AB2")

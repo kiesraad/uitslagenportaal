@@ -68,6 +68,7 @@ function CsbRegionList({ electionConfig, regionsQuery }: CsbRegionListProps) {
          electionConfig={electionConfig}
          regions={regions}
          regionCategory={electionConfig.csb_type}
+         isCsbList
          emptyPlaceholder
       />
    );
