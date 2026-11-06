@@ -217,7 +217,8 @@ have access to this bucket as well, make sure the configured policy allows this.
 ```bash
 kubectl -n uitslagenportaal-[env] create secret generic uitslagenportaal-secrets \
   --from-literal=SECRET_KEY="$(openssl rand -base64 48)" \
-  --from-literal=BUGSINK_DSN=""
+  --from-literal=BUGSINK_DSN="" \
+  --from-literal=TECHNICAL_ISSUE_EMAIL=""
 ```
 
 **Importer secrets**

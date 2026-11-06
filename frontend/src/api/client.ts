@@ -1,5 +1,5 @@
 // Empty when the API is served from the same origin
-const API_ORIGIN = import.meta.env.VITE_API_BASE_URL ?? "";
+export const API_ORIGIN = import.meta.env.VITE_API_BASE_URL ?? "";
 
 export class ApiError extends Error {
    readonly status: number;
