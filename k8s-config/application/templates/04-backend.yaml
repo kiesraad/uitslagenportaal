@@ -25,6 +25,33 @@ spec:
           {{- include "uitslagenportaal.caVolumeMounts" . | nindent 10 }}
       {{- include "uitslagenportaal.caVolumes" . | nindent 6 }}
 ---
+# Compose runs this as the backend's post_start; here it waits for the release
+# to be up. Idempotent, so re-running it on every upgrade costs nothing. On the
+# managed storage the buckets exist already and only the CORS rule is set.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-ensure-bucket
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    # Only the previous Job is cleared, so the last run's logs stay readable.
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  # Local object storage may still be starting; let the Job retry rather than
+  # fail the release.
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: ensure-bucket
+          image: {{ .Values.backend.image }}
+          imagePullPolicy: {{ .Values.backend.pullPolicy }}
+          command: ["python", "manage.py", "ensure_bucket"]
+          envFrom:
+            {{- include "uitslagenportaal.backendEnvFrom" . | nindent 12 }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:

@@ -33,6 +33,20 @@ def test_creates_the_missing_bucket_of_each_storage():
     pv_import.connection.meta.client.create_bucket.assert_called_once_with(Bucket="pvs")
 
 
+def test_lets_the_frontend_origins_read_the_default_bucket(settings):
+    settings.CORS_ALLOWED_ORIGINS = ["http://localhost:8080"]
+    default = s3_storage("uitslagenportaal")
+    pv_import = s3_storage("pvs")
+
+    run_ensure_bucket(default, pv_import)
+
+    default.connection.meta.client.put_bucket_cors.assert_called_once_with(
+        Bucket="uitslagenportaal",
+        CORSConfiguration={"CORSRules": [{"AllowedOrigins": ["http://localhost:8080"], "AllowedMethods": ["GET"]}]},
+    )
+    pv_import.connection.meta.client.put_bucket_cors.assert_not_called()
+
+
 def test_skips_a_storage_without_a_bucket():
     default = s3_storage("uitslagenportaal", head_error="404")
 

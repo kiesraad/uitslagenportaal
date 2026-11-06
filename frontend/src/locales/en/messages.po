@@ -95,6 +95,7 @@ msgstr "View the counting results by municipality for the {electionLabel}."
 msgid "Bekijk de telresultaten per kieskring van de {electionLabel}."
 msgstr "View the counting results by electoral district for the {electionLabel}."
 
+#: src/components/ResultsPage/PdfViewerPanel.tsx
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Bekijk het proces-verbaal"
 msgstr "View the certified election results"
@@ -447,6 +448,10 @@ msgstr "The signed certified election results of the polling station in a munici
 msgid "Het ondertekende proces-verbaal van het stembureau."
 msgstr "The signed certified election results of the polling station."
 
+#: src/components/ResultsPage/PdfDocument.tsx
+msgid "Het proces-verbaal kon niet worden geladen."
+msgstr "The certified election results could not be loaded."
+
 #: src/utils/region.ts
 msgid "het stembureau"
 msgstr "the polling station"
@@ -702,6 +707,10 @@ msgstr "Output of the tabulation software; contains the results of all underlyin
 msgid "Output van de optelsoftware, bevat de resultaten van alle stembureaus en de optelling van de hele gemeente."
 msgstr "Output of the tabulation software; contains the results of all polling stations and the total for the entire municipality."
 
+#: src/components/ResultsPage/PdfDocument.tsx
+msgid "Pagina {pageNumber} van {numPages}"
+msgstr "Page {pageNumber} of {numPages}"
+
 #: src/pages/NotFoundPage.tsx
 msgid "Pagina niet gevonden"
 msgstr "Page not found"
@@ -721,6 +730,8 @@ msgstr "By municipality"
 msgid "Probeer opnieuw"
 msgstr "Try again"
 
+#: src/components/ResultsPage/PdfDocument.tsx
+#: src/components/ResultsPage/PdfViewerPanel.tsx
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Proces-verbaal"
 msgstr "Certified election results"
@@ -744,6 +755,11 @@ msgstr "Certified election results of the municipal electoral committee (decentr
 #: src/components/ElectionFileEntry.tsx
 msgid "Proces-verbaal hoofdstembureau"
 msgstr "Certified election results of the district electoral committee"
+
+#: src/components/ResultsPage/PdfDocument.tsx
+#: src/components/ResultsPage/PdfViewerPanel.tsx
+msgid "Proces-verbaal laden…"
+msgstr "Loading the certified election results…"
 
 #: src/components/ElectionFileEntry.tsx
 msgid "Proces-verbaal stembureau"
@@ -796,6 +812,10 @@ msgstr "Results {municipalityTitle} by polling station"
 #: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
 msgid "Resultaten per stembureau"
 msgstr "Results by polling station"
+
+#: src/components/ResultsPage/PdfViewerPanel.tsx
+msgid "Sluiten"
+msgstr "Close"
 
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "Sneltelling in de stembureaus"
@@ -998,6 +1018,10 @@ msgstr "Expected: {dateText}"
 msgid "Vind een {regionInline} van A tot Z"
 msgstr "Find a {regionInline} from A to Z"
 
+#: src/components/ResultsPage/PdfDocument.tsx
+msgid "Volgende pagina"
+msgstr "Next page"
+
 #: src/components/Timeline/Timeline.tsx
 msgid "Volgorde omdraaien, nu:"
 msgstr "Reverse order, currently:"
@@ -1005,6 +1029,10 @@ msgstr "Reverse order, currently:"
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Volmachtbewijzen"
 msgstr "Proxy certificates"
+
+#: src/components/ResultsPage/PdfDocument.tsx
+msgid "Vorige pagina"
+msgstr "Previous page"
 
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Waar komen deze telresultaten vandaan?"
