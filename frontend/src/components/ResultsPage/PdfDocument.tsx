@@ -1,6 +1,9 @@
-import { useLingui } from "@lingui/react/macro";
+import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
+import Button from "@/elements/Button.tsx";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -13,23 +16,67 @@ type Props = {
 
 export default function PdfDocument({ file }: Props) {
    const { t } = useLingui();
-   const containerRef = useRef<HTMLDivElement>(null);
+   const containerRef = useRef<HTMLElement>(null);
    const [width, setWidth] = useState<number>();
+   const [numPages, setNumPages] = useState<number>();
+   const [pageNumber, setPageNumber] = useState(1);
 
    useEffect(() => {
       setWidth(containerRef.current?.clientWidth);
    }, []);
 
+   function goToPage(page: number) {
+      setPageNumber(page);
+      if (containerRef.current) {
+         containerRef.current.scrollTop = 0;
+      }
+   }
+
    const loading = <p role="status">{t`Proces-verbaal laden…`}</p>;
    const error = <p role="alert">{t`Het proces-verbaal kon niet worden geladen.`}</p>;
 
    return (
-      <div ref={containerRef}>
-         {width !== undefined && (
-            <Document file={file} suspense={false} loading={loading} error={error}>
-               <Page pageNumber={1} width={width} loading={loading} error={error} />
-            </Document>
-         )}
-      </div>
+      <>
+         <div className="flex items-center justify-between gap-4">
+            <Button aria-label={t`Vorige pagina`} disabled={pageNumber === 1} onClick={() => goToPage(pageNumber - 1)}>
+               <FontAwesomeIcon icon={faChevronLeft} />
+            </Button>
+            {/* Rendered always, so screen readers pick up changes to its text. */}
+            <p role="status">
+               {numPages !== undefined && (
+                  <Trans>
+                     Pagina {pageNumber} van {numPages}
+                  </Trans>
+               )}
+            </p>
+            <Button
+               aria-label={t`Volgende pagina`}
+               disabled={pageNumber === (numPages ?? 1)}
+               onClick={() => goToPage(pageNumber + 1)}
+            >
+               <FontAwesomeIcon icon={faChevronRight} />
+            </Button>
+         </div>
+         {/* The stable gutter keeps the measured width correct once the scrollbar appears. */}
+         {/* biome-ignore lint/a11y/noNoninteractiveTabindex: focusable so keyboard users can scroll the page */}
+         <section
+            ref={containerRef}
+            aria-label={t`Proces-verbaal`}
+            tabIndex={0}
+            className="overflow-y-auto [scrollbar-gutter:stable]"
+         >
+            {width !== undefined && (
+               <Document
+                  file={file}
+                  suspense={false}
+                  loading={loading}
+                  error={error}
+                  onLoadSuccess={(pdf) => setNumPages(pdf.numPages)}
+               >
+                  <Page pageNumber={pageNumber} width={width} loading={loading} error={error} />
+               </Document>
+            )}
+         </section>
+      </>
    );
 }

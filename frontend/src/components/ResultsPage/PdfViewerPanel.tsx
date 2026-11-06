@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans } from "@lingui/react/macro";
 import { lazy, Suspense, useEffect, useRef } from "react";
 import Button from "@/elements/Button.tsx";
+import { ExternalLinkIcon } from "@/elements/ExternalLinkIcon.tsx";
 
 // Keeps react-pdf and PDF.js out of the main bundle until a visitor opens the viewer.
 const PdfDocument = lazy(() => import("./PdfDocument"));
@@ -21,7 +22,8 @@ export default function PdfViewerPanel({ documentUrl, onClose }: Props) {
    }, []);
 
    return (
-      <div className="flex flex-col gap-4">
+      // Sits in a column that sticks 1.5rem from the top; keeps the same space below it.
+      <div className="flex max-h-[calc(100dvh-3rem)] flex-col gap-4">
          <div className="flex items-center justify-between gap-4">
             <h2 ref={headingRef} tabIndex={-1} className="h4">
                <Trans>Proces-verbaal</Trans>
@@ -38,8 +40,13 @@ export default function PdfViewerPanel({ documentUrl, onClose }: Props) {
                </p>
             }
          >
-            <PdfDocument file={documentUrl} />
+            <PdfDocument key={documentUrl} file={documentUrl} />
          </Suspense>
+         <p>
+            <a href={documentUrl} target="_blank" rel="noopener noreferrer">
+               <Trans>Bekijk het proces-verbaal</Trans> <ExternalLinkIcon />
+            </a>
+         </p>
       </div>
    );
 }
