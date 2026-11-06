@@ -58,12 +58,12 @@ export default function PdfDocument({ file }: Props) {
             </Button>
          </div>
          {/* The stable gutter keeps the measured width correct once the scrollbar appears. */}
-         {/* biome-ignore lint/a11y/noNoninteractiveTabindex: focusable so keyboard users can scroll the page */}
          <section
             ref={containerRef}
             aria-label={t`Proces-verbaal`}
+            // biome-ignore lint/a11y/noNoninteractiveTabindex: focusable so keyboard users can scroll the page
             tabIndex={0}
-            className="overflow-y-auto [scrollbar-gutter:stable]"
+            className="[scrollbar-gutter:stable] overflow-y-auto"
          >
             {width !== undefined && (
                <Document
@@ -73,7 +73,8 @@ export default function PdfDocument({ file }: Props) {
                   error={error}
                   onLoadSuccess={(pdf) => setNumPages(pdf.numPages)}
                >
-                  <Page pageNumber={pageNumber} width={width} loading={loading} error={error} />
+                  {/* No loading text on a page change: it would flash, and the indicator already announces it. */}
+                  <Page pageNumber={pageNumber} width={width} loading={null} error={error} />
                </Document>
             )}
          </section>
