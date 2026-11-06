@@ -1,13 +1,14 @@
 import { QueryClient } from "@tanstack/react-query";
-import { fireEvent, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ElectionConfig } from "@/api/types";
 import ResultsSourceBox from "@/components/ResultsPage/ResultsSourceBox";
 import { electionConfigQuery } from "@/hooks/queries";
 import { renderWithProviders } from "../../testUtils";
 
 // PDF.js needs a canvas and a worker, which jsdom does not have.
-vi.mock("@/components/ResultsPage/PdfDocument", () => ({ default: () => null }));
+const PdfDocument = vi.hoisted(() => vi.fn((_props: { file: string }) => null));
+vi.mock("@/components/ResultsPage/PdfDocument", () => ({ default: PdfDocument }));
 
 const electionConfig: ElectionConfig = {
    slug: "ws2023",
@@ -40,6 +41,10 @@ function renderBox(locale: "nl" | "en" = "nl", previewUrl?: string | null, docum
 }
 
 describe("ResultsSourceBox", () => {
+   beforeEach(() => {
+      PdfDocument.mockClear();
+   });
+
    it("Only says the certified election document is not published yet when the region has none", () => {
       renderBox();
 
@@ -84,6 +89,22 @@ describe("ResultsSourceBox", () => {
 
       expect(screen.getByRole("button", { name: "Proces-verbaal" })).toHaveFocus();
       expect(screen.getByRole("heading", { name: "Waar komen deze telresultaten vandaan?" })).toBeInTheDocument();
+   });
+
+   it("Loads the PDF only once the viewer opens, and hands it the document", async () => {
+      const documentUrl = "/api/certified-documents/7/";
+      renderBox("nl", "/api/certified-documents/7/preview/", documentUrl);
+
+      // One column links to the PDF instead of opening the viewer.
+      const narrowLink = screen.getByRole("link", { name: "Proces-verbaal" });
+      expect(narrowLink).toHaveAttribute("href", documentUrl);
+      expect(narrowLink).toHaveAttribute("target", "_blank");
+      expect(PdfDocument).not.toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole("button", { name: "Proces-verbaal" }));
+
+      await waitFor(() => expect(PdfDocument).toHaveBeenCalled());
+      expect(PdfDocument.mock.lastCall?.[0].file).toBe(documentUrl);
    });
 
    it("Says the certified election document is not published when only the document exists", () => {
