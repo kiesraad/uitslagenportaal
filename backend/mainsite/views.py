@@ -26,5 +26,5 @@ def healthz(request):
 
 
 def report_technical_issue(request):
-    """Redirect to a mailto link, so the address appears only once someone follows the link."""
+    """Redirect to the technical issue mailbox, keeping its address out of the page source."""
     return HttpResponseMailtoRedirect(f"mailto:{settings.TECHNICAL_ISSUE_EMAIL}")

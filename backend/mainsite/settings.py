@@ -222,8 +222,8 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_INGRESS_REPO = os.environ.get("GITHUB_INGRESS_REPO")  # "owner/repo"
 
 
-# Recipient of technical problem reports; kept out of the repository and the frontend bundle.
-TECHNICAL_ISSUE_EMAIL = os.environ.get("TECHNICAL_ISSUE_EMAIL", "")
+# Recipient of technical problem reports
+TECHNICAL_ISSUE_EMAIL = os.environ.get("TECHNICAL_ISSUE_EMAIL", "").strip()
 
 
 # Object storage

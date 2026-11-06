@@ -11,9 +11,8 @@ import KiesraadGridHexagon from "@/elements/KiesraadGridHexagon.tsx";
 import { type Locale, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
 import { electionConfigQuery, useElectionConfigs } from "../hooks/queries.ts";
 
-// Fixed URLs for non-changing elements
 const KIESRAAD_URL = "https://www.kiesraad.nl/";
-// The backend redirects to a mailto link, keeping the address out of the bundle.
+// Served by the backend so the email address stays out of the bundle.
 const REPORT_TECHNICAL_ISSUE_URL = `${API_ORIGIN}/api/report-technical-issue/`;
 
 function LanguageSwitcher() {
@@ -99,7 +98,7 @@ export function Footer() {
                      <h2 className="h4">
                         <Trans>Technisch probleem op de pagina?</Trans>
                      </h2>
-                     <a href={REPORT_TECHNICAL_ISSUE_URL}>
+                     <a href={REPORT_TECHNICAL_ISSUE_URL} rel="nofollow">
                         <FontAwesomeIcon icon={faChevronRight} />
                         <Trans>Technisch probleem melden</Trans>
                      </a>
