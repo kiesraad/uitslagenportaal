@@ -8,7 +8,7 @@ import RegionResultsContent from "../../components/ResultsPage/RegionResultsCont
 import ResultsPageColumns from "../../components/ResultsPage/ResultsPageColumns";
 import { electionConfigQuery, regionQuery } from "../../hooks/queries";
 import { useFormatters } from "../../utils/format";
-import { formatStationLabel, getCsbCrumb } from "../../utils/region";
+import { formatStationLabel, getCsbCrumb, getRegionLabels } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
 
 /** The stembureau and the gemeente it belongs to, for both stembureau pages. */
@@ -66,6 +66,7 @@ export default function PollingStationResultsPage() {
    const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
    const pageTitle = `${t`Telresultaten stembureau`}\n${stationName}`;
    const documentTitle = t`Telresultaten stembureau – ${stationName}`;
+   const regionWithArticle = t(getRegionLabels("STEMBUREAU").withArticle);
 
    const sameLocationStations = (pollingStation.same_location_stations ?? []).filter(
       (station) => station.station_number != null,
@@ -119,6 +120,10 @@ export default function PollingStationResultsPage() {
                }
                voteCounts={pollingStation.vote_counts}
                turnoutVotes={pollingStation.voter_turnout_counts}
+               reports={{
+                  description: t`De getallen hierboven laten zien hoe de resultaten van ${regionWithArticle} worden meegeteld in de uitslag. Ze komen uit de uitslagensoftware. Ze zijn door de gemeente overgetypt uit onderstaande documenten. `,
+                  documents: pollingStation.documents,
+               }}
                issueReportDeadline={electionConfig.issue_report_deadline}
                notPublishedRegionName={region.region_name}
                notPublishedRegionCategory={region.region_category}
@@ -126,7 +131,7 @@ export default function PollingStationResultsPage() {
                   <SBTimeline
                      variant={pollingStation.timeline_variant}
                      dates={electionConfig.timeline_dates}
-                     documents={[...(region.documents ?? []), ...(pollingStation.documents ?? [])]}
+                     documents={pollingStation.documents}
                      region={pollingStation}
                      municipality={region}
                   />
