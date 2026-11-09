@@ -183,6 +183,10 @@ msgstr "the municipality"
 msgid "De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
 msgstr "The municipality transcribes the count data of every polling station into the results software so that all votes can be added up. Below you can see how the data from this polling station was entered into the results software."
 
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "De getallen hierboven laten zien hoe de resultaten van {regionWithArticle} worden meegeteld in de uitslag. Ze komen uit de uitslagensoftware. Ze zijn door de gemeente overgetypt uit onderstaande documenten. "
+msgstr "The figures above show how the results of {regionWithArticle} are included in the result. They come from the results software. They were transcribed by the municipality from the documents below. "
+
 #: src/utils/region.ts
 msgid "de kieskring"
 msgstr "the electoral district"

@@ -183,6 +183,10 @@ msgstr "de gemeente"
 msgid "De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
 msgstr "De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
 
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "De getallen hierboven laten zien hoe de resultaten van {regionWithArticle} worden meegeteld in de uitslag. Ze komen uit de uitslagensoftware. Ze zijn door de gemeente overgetypt uit onderstaande documenten. "
+msgstr "De getallen hierboven laten zien hoe de resultaten van {regionWithArticle} worden meegeteld in de uitslag. Ze komen uit de uitslagensoftware. Ze zijn door de gemeente overgetypt uit onderstaande documenten. "
+
 #: src/utils/region.ts
 msgid "de kieskring"
 msgstr "de kieskring"
