@@ -5,6 +5,7 @@ import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { ElectionTimelineSection } from "@/components/Timeline/ElectionTimelineSection.tsx";
 import PageSection from "@/elements/PageSection.tsx";
+import { queryClient } from "@/queryClient.ts";
 import { HeroGrid } from "../components/HomePage/HeroGrid.tsx";
 import { LayoutMain } from "../components/LayoutMain.tsx";
 import { electionConfigsQuery } from "../hooks/queries.ts";
@@ -13,6 +14,8 @@ import { appRoutes } from "../utils/routes.ts";
 export async function loadHome(client: QueryClient) {
    await client.query(electionConfigsQuery());
 }
+
+export const clientLoader = () => loadHome(queryClient);
 
 export default function HomePage() {
    const { t } = useLingui();

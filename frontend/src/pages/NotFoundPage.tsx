@@ -39,3 +39,6 @@ export function NotFoundPage() {
       </LayoutMain>
    );
 }
+
+// The default export makes this module a route module rather than a resource route.
+export default NotFoundPage;

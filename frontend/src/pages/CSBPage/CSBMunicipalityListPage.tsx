@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, type Params, useParams } from "react-router";
+import { queryClient } from "@/queryClient.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -9,6 +10,7 @@ import { electionConfigQuery, regionQuery, regionsQuery } from "../../hooks/quer
 import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
+import type { Route } from "./+types/CSBMunicipalityListPage";
 
 // The region parameter names the CSB the gemeentes report to, not their parent region.
 function municipalitiesQuery(params: Params) {
@@ -22,6 +24,8 @@ export async function loadCSBMunicipalityList(client: QueryClient, { params }: P
       client.query(municipalitiesQuery(params)),
    ]);
 }
+
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadCSBMunicipalityList(queryClient, args);
 
 export default function CSBMunicipalityListPage() {
    const params = useParams();

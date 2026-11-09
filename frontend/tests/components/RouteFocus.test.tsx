@@ -3,7 +3,7 @@ import { createRoutesStub, Link, Outlet } from "react-router";
 import { describe, expect, it } from "vitest";
 import { RouteFocus } from "@/components/RouteFocus";
 
-// RouteFocus sits in a layout route, as in the app's RootLayout, so it stays mounted across navigations.
+// RouteFocus sits in a layout route, as in the app's `App` in root.tsx, so it stays mounted across navigations.
 function Layout() {
    return (
       <>

@@ -105,7 +105,7 @@ jobs:
       - name: Start the backend
         run: nohup uv run python manage.py runserver 127.0.0.1:8000 --noreload > "$RUNNER_TEMP/django.log" 2>&1 &
         working-directory: backend
-      # Serves frontend/dist and proxies /api to the backend (see vite.config.ts).
+      # Serves frontend/build/client and proxies /api to the backend (see vite.config.ts).
       - name: Serve the built frontend
         run: nohup npm run preview -- --port 8081 --strictPort > "$RUNNER_TEMP/vite-preview.log" 2>&1 &
         working-directory: frontend

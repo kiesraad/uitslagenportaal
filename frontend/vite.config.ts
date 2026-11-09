@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { fileURLToPath } from "node:url";
 import { lingui, linguiTransformerBabelPreset } from "@lingui/vite-plugin";
+import { reactRouter } from "@react-router/dev/vite";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
@@ -14,7 +15,8 @@ const hmrClientPort = process.env.VITE_HMR_CLIENT_PORT ? Number(process.env.VITE
 // https://vite.dev/config/
 export default defineConfig({
    plugins: [
-      react(),
+      // Vitest renders components without the framework build, so it keeps the plain React plugin.
+      process.env.VITEST ? react() : reactRouter(),
       // Makes `.po` catalogues importable as compiled message modules, so there
       // is no separate `lingui compile` step and no compiled artefacts to commit.
       lingui(),
@@ -76,7 +78,7 @@ export default defineConfig({
    },
    preview: {
       // The built app calls the API on its own origin (VITE_API_BASE_URL is empty), so
-      // whatever serves dist/ has to forward /api to Django the way the nginx proxy
+      // whatever serves build/client/ has to forward /api to Django the way the nginx proxy
       // does in compose. Used by the Python browser suite in CI, which drives the
       // build rather than the dev server.
       proxy: {

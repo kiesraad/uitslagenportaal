@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useParams } from "react-router";
+import { queryClient } from "@/queryClient.ts";
 import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop";
@@ -10,6 +11,7 @@ import { useFormatters } from "../../utils/format";
 import { formatStationLabel, getCsbCrumb } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
 import { getPartyVoteCount, hasParty } from "../../utils/voteCounts";
+import type { Route } from "./+types/PollingStationPartyResultsPage";
 import { pollingStationQueries } from "./PollingStationResultsPage.tsx";
 
 export async function loadPollingStationPartyResults(
@@ -29,6 +31,8 @@ export async function loadPollingStationPartyResults(
       throw new ApiError("Unknown party", 404);
    }
 }
+
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadPollingStationPartyResults(queryClient, args);
 
 export default function PollingStationPartyResultsPage() {
    const params = useParams();
