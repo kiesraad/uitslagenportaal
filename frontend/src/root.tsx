@@ -33,6 +33,7 @@ export const clientLoader = () => loadRoot(queryClient);
 clientLoader.hydrate = true as const;
 
 // Wraps the routes and the error boundaries alike, so every one of them has the providers.
+// React Router renders Layout separately around App, ErrorBoundary and HydrateFallback, so it remounts on a swap.
 export function Layout({ children }: { children: ReactNode }) {
    const { locale } = useRootI18n();
 
@@ -49,6 +50,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <Links />
          </head>
          <body className="flex min-h-dvh flex-col text-gray-900">
+            <RouteFocus />
             <QueryClientProvider client={queryClient}>
                <LocaleProvider>{children}</LocaleProvider>
             </QueryClientProvider>
@@ -64,14 +66,11 @@ export function Layout({ children }: { children: ReactNode }) {
 // page stayed mounted.
 export default function App() {
    return (
-      <>
-         <RouteFocus />
-         <Suspense fallback={<LoadingPage />}>
-            <BaseLayout>
-               <Outlet />
-            </BaseLayout>
-         </Suspense>
-      </>
+      <Suspense fallback={<LoadingPage />}>
+         <BaseLayout>
+            <Outlet />
+         </BaseLayout>
+      </Suspense>
    );
 }
 

@@ -53,7 +53,7 @@ export default function ErrorBoundaryPage() {
          <LayoutMain title={title} description={description}>
             <div className="page-top flex flex-1 flex-col gap-3">
                <h1 className="font-title text-3xl font-bold whitespace-pre-line sm:text-4xl">{title}</h1>
-               <p>{description}</p>
+               <p role="alert">{description}</p>
                <Button onClick={reloadPage} className="w-fit">
                   <FontAwesomeIcon icon={faArrowRotateRight} /> <Trans>Probeer opnieuw</Trans>
                </Button>
