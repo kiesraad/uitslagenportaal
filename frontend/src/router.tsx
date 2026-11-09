@@ -65,8 +65,8 @@ function municipalityRoutes(idSuffix: string): RouteObject[] {
          lazy: lazyPage(
             () => import("./pages/MunicipalityPage/MunicipalityPollingstationListPage"),
             (m) => ({
-               Component: m.MunicipalityPollingstationListPage,
-               loader: m.municipalityPollingstationListLoader(queryClient),
+               Component: m.default,
+               loader: (args) => m.loadMunicipalityPollingstationList(queryClient, args),
             }),
          ),
       },
@@ -76,24 +76,21 @@ function municipalityRoutes(idSuffix: string): RouteObject[] {
          lazy: lazyPage(
             () => import("./pages/MunicipalityPage/MunicipalityResultsPage"),
             (m) => ({
-               Component: m.MunicipalityResultsPage,
-               loader: m.municipalityResultsLoader(queryClient),
+               Component: m.default,
+               loader: (args) => m.loadMunicipalityResults(queryClient, args),
             }),
          ),
       },
       {
          path: "resultaten/:partySlug",
          id: `MunicipalityPartyResultsPage${idSuffix}`,
-         lazy: async () => {
-            const [page, results] = await Promise.all([
-               import("./pages/MunicipalityPage/MunicipalityPartyResultsPage"),
-               import("./pages/MunicipalityPage/MunicipalityResultsPage"),
-            ]);
-            return {
-               Component: page.MunicipalityPartyResultsPage,
-               loader: results.municipalityResultsLoader(queryClient),
-            };
-         },
+         lazy: lazyPage(
+            () => import("./pages/MunicipalityPage/MunicipalityPartyResultsPage"),
+            (m) => ({
+               Component: m.default,
+               loader: (args) => m.loadMunicipalityPartyResults(queryClient, args),
+            }),
+         ),
       },
       {
          path: ":pollingStationSlug",
@@ -102,23 +99,20 @@ function municipalityRoutes(idSuffix: string): RouteObject[] {
             () => import("./pages/PollingStationPage/PollingStationResultsPage.tsx"),
             (m) => ({
                Component: m.default,
-               loader: m.pollingStationLoader(queryClient),
+               loader: (args) => m.loadPollingStationResults(queryClient, args),
             }),
          ),
       },
       {
          path: ":pollingStationSlug/:partySlug",
          id: `PollingStationPartyResultsPage${idSuffix}`,
-         lazy: async () => {
-            const [page, results] = await Promise.all([
-               import("./pages/PollingStationPage/PollingStationPartyResultsPage.tsx"),
-               import("./pages/PollingStationPage/PollingStationResultsPage.tsx"),
-            ]);
-            return {
-               Component: page.default,
-               loader: results.pollingStationLoader(queryClient),
-            };
-         },
+         lazy: lazyPage(
+            () => import("./pages/PollingStationPage/PollingStationPartyResultsPage.tsx"),
+            (m) => ({
+               Component: m.default,
+               loader: (args) => m.loadPollingStationPartyResults(queryClient, args),
+            }),
+         ),
       },
    ];
 }
