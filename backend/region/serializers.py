@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 from django.core.files.storage import default_storage
@@ -6,12 +7,18 @@ from rest_framework import serializers
 
 from election.models import ElectionDocument, TimelineVariant
 from election.serializers import ElectionDocumentSerializer
+from mainsite.models import RegionCategory
 from mainsite.serializers import (
     RegionSummarySerializer,
     VoteCountSummarySerializer,
     VoterTurnoutCountSummarySerializer,
 )
 from region.models import Region, parse_station_number
+
+CORRECTION_COUNT_FILE_TYPES = {
+    RegionCategory.GEMEENTE: ElectionDocument.FileType.EML_510B,
+    RegionCategory.KIESKRING: ElectionDocument.FileType.EML_510C,
+}
 
 
 class SameLocationStationsField(serializers.Field):
@@ -55,6 +62,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     certified_document_url = serializers.SerializerMethodField()
     certified_document_preview_url = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
+    correction_date = serializers.SerializerMethodField()
     election_slug = serializers.CharField(source="election.slug", read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
     same_location_stations = SameLocationStationsField()
@@ -72,6 +80,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "certified_document_url",
             "certified_document_preview_url",
             "timeline_variant",
+            "correction_date",
             "region_category",
             "results_available_at",
             "election_slug",
@@ -113,6 +122,17 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         if not default_storage.exists(preview_key):
             return None
         return reverse("certified-document-preview", kwargs={"pk": document.pk})
+
+    def get_correction_date(self, region) -> datetime | None:
+        """When the region's latest corrected count EML came in; None while it has only the original."""
+        file_type = CORRECTION_COUNT_FILE_TYPES.get(region.region_category)
+        if file_type is None:
+            return None
+        # Identical files are skipped on import, so every count after the first is a corrigendum.
+        counts = ElectionDocument.all_objects.filter(region=region, file_type=file_type).order_by("-created_at", "-pk")
+        if counts.count() < 2:
+            return None
+        return counts.first().created_at
 
     def get_timeline_variant(self, region) -> str:
         counting_method = region.counting_method or (region.parent.counting_method if region.parent else None)

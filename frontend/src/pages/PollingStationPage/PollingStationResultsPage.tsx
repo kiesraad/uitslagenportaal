@@ -126,8 +126,9 @@ export default function PollingStationResultsPage() {
                   <SBTimeline
                      variant={pollingStation.timeline_variant}
                      dates={electionConfig.timeline_dates}
-                     documents={region.documents}
-                     region={region}
+                     documents={[...(region.documents ?? []), ...(pollingStation.documents ?? [])]}
+                     region={pollingStation}
+                     municipality={region}
                   />
                }
             />
