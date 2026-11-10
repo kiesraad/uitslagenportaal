@@ -104,7 +104,7 @@ describe("ResultsSourceBox", () => {
       fireEvent.click(screen.getByRole("button", { name: "Proces-verbaal" }));
 
       await waitFor(() => expect(PdfDocument).toHaveBeenCalled());
-      expect(PdfDocument.mock.lastCall?.[0].file).toBe(documentUrl);
+      expect(PdfDocument.mock.lastCall?.[0].file).toBe(`${documentUrl}?stream=1`);
    });
 
    it("Says the certified election document is not published when only the document exists", () => {

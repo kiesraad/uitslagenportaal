@@ -40,7 +40,8 @@ export default function PdfViewerPanel({ documentUrl, onClose }: Props) {
                </p>
             }
          >
-            <PdfDocument key={documentUrl} file={documentUrl} />
+            {/* Streamed by the backend, because the bucket the link redirects to does not allow this site to fetch it. */}
+            <PdfDocument key={documentUrl} file={`${documentUrl}?stream=1`} />
          </Suspense>
          <p>
             <a href={documentUrl} target="_blank" rel="noopener noreferrer">

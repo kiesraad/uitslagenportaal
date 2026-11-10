@@ -2,7 +2,7 @@ from pathlib import Path
 
 from django.core.files.storage import default_storage
 from django.db.models import Q
-from django.http import Http404, HttpResponseRedirect
+from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.http import content_disposition_header
 from rest_framework import viewsets
@@ -76,6 +76,14 @@ def certified_document(request, pk):
     document = _visible_certified_document(pk)
     if not default_storage.exists(document.storage_key):
         raise Http404("Document not found")
+
+    # The PDF viewer fetches the file from the page, so it has to come from this origin rather than the bucket.
+    if "stream" in request.GET:
+        return FileResponse(
+            default_storage.open(document.storage_key),
+            content_type="application/pdf",
+            filename=document.download_filename,
+        )
 
     # Shown in a new tab, so inline; the name only matters once the visitor saves it.
     return HttpResponseRedirect(
