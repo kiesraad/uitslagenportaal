@@ -111,6 +111,14 @@ msgstr "in progress"
 msgid "Bijlage 1 bij corrigendum proces-verbaal gemeentelijk stembureau"
 msgstr "Annex 1 to the correction to the certified election results of the municipal electoral committee"
 
+#: src/components/ElectionFileEntry.tsx
+msgid "Bijlage 1 bij proces-verbaal gemeentelijk stembureau (CSO)"
+msgstr "Annex 1 to the certified election results of the municipal electoral committee (centralised count)"
+
+#: src/components/ElectionFileEntry.tsx
+msgid "Bijlage 2 bij proces-verbaal gemeentelijk stembureau (CSO)"
+msgstr "Annex 2 to the certified election results of the municipal electoral committee (centralised count)"
+
 #: src/components/SearchBar.tsx
 msgid "Bijv. {regionSingular}"
 msgstr "E.g. {regionSingular}"
@@ -175,6 +183,10 @@ msgstr "Election results database"
 msgid "De {regionPlural} zijn nog niet beschikbaar"
 msgstr "The {regionPlural} are not yet available"
 
+#: src/components/ElectionFileEntry.tsx
+msgid "De bezwaren die bij de stembureaus zijn ingebracht, overgenomen uit hun processen-verbaal."
+msgstr "The objections raised at the polling stations, as recorded in their certified election results."
+
 #: src/utils/region.ts
 msgid "de gemeente"
 msgstr "the municipality"
@@ -186,6 +198,10 @@ msgstr "The municipality transcribes the count data of every polling station int
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
 msgid "De getallen hierboven laten zien hoe de resultaten van {regionWithArticle} worden meegeteld in de uitslag. Ze komen uit de uitslagensoftware. Ze zijn door de gemeente overgetypt uit onderstaande documenten. "
 msgstr "The figures above show how the results of {regionWithArticle} are included in the result. They come from the results software. They were transcribed by the municipality from the documents below. "
+
+#: src/components/ElectionFileEntry.tsx
+msgid "De kandidatenlijsten met alle partijen en kandidaten die aan de verkiezing deelnemen."
+msgstr "The candidate lists with all parties and candidates taking part in the election."
 
 #: src/utils/region.ts
 msgid "de kieskring"
@@ -272,6 +288,14 @@ msgstr "The counting results of every polling station in the Netherlands."
 msgid "De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het corrigendum."
 msgstr "The count results were investigated and recounted where necessary. The corrected results are in the corrigendum."
 
+#: src/components/ElectionFileEntry.tsx
+msgid "De uitkomsten per stembureau: de stemmen per lijst en kandidaat zoals het gemeentelijk stembureau die heeft vastgesteld."
+msgstr "The results per polling station: the votes per list and per candidate as determined by the municipal electoral committee."
+
+#: src/components/ElectionFileEntry.tsx
+msgid "Definitie van de verkiezing, met de kieskringen en gemeenten die eraan deelnemen."
+msgstr "Definition of the election, with the electoral districts and municipalities taking part."
+
 #: src/pages/ReportIssuePage.tsx
 msgid "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
 msgstr "Do you think a mistake was made when the votes were counted, recorded or transcribed? You can report this to the central electoral committee."
@@ -309,6 +333,10 @@ msgid "Eerste stap bovenaan"
 msgstr "First step first"
 
 #: src/components/ElectionFileEntry.tsx
+msgid "EML_NL kandidatenlijsten 230b"
+msgstr "EML_NL candidate lists 230b"
+
+#: src/components/ElectionFileEntry.tsx
 msgid "EML_NL resultaatbestand 520"
 msgstr "EML_NL result file 520"
 
@@ -323,6 +351,10 @@ msgstr "EML_NL count file 510c"
 #: src/components/ElectionFileEntry.tsx
 msgid "EML_NL tellingbestand 510d"
 msgstr "EML_NL count file 510d"
+
+#: src/components/ElectionFileEntry.tsx
+msgid "EML_NL verkiezingsdefinitie 110a"
+msgstr "EML_NL election definition 110a"
 
 #: src/pages/ErrorBoundaryPage.tsx
 msgid "Er is een fout opgetreden"
@@ -737,6 +769,10 @@ msgstr "Only when everything is correct are the results of all electoral distric
 msgid "Per gemeente"
 msgstr "By municipality"
 
+#: src/components/ElectionFileEntry.tsx
+msgid "Per onderzocht stembureau de aanleiding en de uitkomst van het onderzoek door het gemeentelijk stembureau."
+msgstr "For each investigated polling station, the reason for and the outcome of the investigation by the municipal electoral committee."
+
 #: src/pages/ErrorBoundaryPage.tsx
 msgid "Probeer opnieuw"
 msgstr "Try again"
@@ -1017,10 +1053,6 @@ msgstr "Polling day: {electionDay}"
 #: src/pages/ReportIssuePage.tsx
 msgid "Vermeld geen persoonsgegevens in uw melding; dat is niet nodig."
 msgstr "Do not include personal data in your report; that is not necessary."
-
-#: src/components/ElectionFileEntry.tsx
-msgid "Verslagen van de hertelde stembureaus."
-msgstr "Reports of the recounted polling stations."
 
 #: src/utils/format.ts
 msgid "Verwacht: {dateText}"
