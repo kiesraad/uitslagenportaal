@@ -21,6 +21,15 @@ vi.mock("react-pdf", () => ({
    Page: () => null,
 }));
 
+// jsdom has no ResizeObserver.
+vi.stubGlobal(
+   "ResizeObserver",
+   class {
+      observe() {}
+      disconnect() {}
+   },
+);
+
 const documentUrl = "/api/certified-documents/7/";
 
 function panel(url = documentUrl) {

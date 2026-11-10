@@ -22,7 +22,12 @@ export default function PdfDocument({ file }: Props) {
    const [pageNumber, setPageNumber] = useState(1);
 
    useEffect(() => {
-      setWidth(containerRef.current?.clientWidth);
+      const container = containerRef.current;
+      if (!container) return;
+      setWidth(container.clientWidth);
+      const observer = new ResizeObserver(() => setWidth(container.clientWidth));
+      observer.observe(container);
+      return () => observer.disconnect();
    }, []);
 
    function goToPage(page: number) {
