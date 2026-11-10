@@ -1,5 +1,7 @@
+import re
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Self
 from zoneinfo import ZoneInfo
 
@@ -11,12 +13,16 @@ from election.utils import visibility_cutoff
 from mainsite.models import BaseModel, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from mainsite.utils.utils import name_to_slug
-from region.models import Region
+from region.models import Region, hsb_kieskringen
 
 
 @dataclass
 class ElectionCategoryConfig:
     csb: RegionCategory
+    # All counts belong to the one contest, whatever contest identifier the 510 files name (EP: the kieskring number).
+    single_contest: bool = False
+    # Known by category, so also before any region is imported.
+    has_hsb: bool = False
 
 
 class ElectionCategory(Choices):
@@ -30,12 +36,15 @@ class ElectionCategory(Choices):
     def config(self):
         return self._config_
 
-    TK = "TK", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Tweede Kamerverkiezing"
-    EK = "EK", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Eerste Kamerverkiezing"
+    TK = "TK", ElectionCategoryConfig(csb=RegionCategory.STAAT, has_hsb=True), "Tweede Kamerverkiezing"
     PS = "PS", ElectionCategoryConfig(csb=RegionCategory.PROVINCIE), "Provinciale Statenverkiezing"
     WS = "WS", ElectionCategoryConfig(csb=RegionCategory.WATERSCHAP), "Waterschapsverkiezing"
     GR = "GR", ElectionCategoryConfig(csb=RegionCategory.GEMEENTE), "Gemeenteraadsverkiezing"
-    EP = "EP", ElectionCategoryConfig(csb=RegionCategory.STAAT), "Europees Parlementsverkiezing"
+    EP = (
+        "EP",
+        ElectionCategoryConfig(csb=RegionCategory.STAAT, single_contest=True, has_hsb=True),
+        "Europees Parlementsverkiezing",
+    )
 
 
 class ElectionConfigManager(models.Manager):
@@ -63,6 +72,7 @@ class ElectionConfig(BaseModel):
     voting_url = models.URLField(max_length=500, blank=True, default="")
     gh_counting_results_branch = models.CharField(max_length=255, null=True)
     gh_exchange_branch = models.CharField(max_length=255, null=True)
+    source_hash = models.CharField(max_length=64, null=True, blank=True)
 
     @property
     def csb_type(self):
@@ -70,19 +80,9 @@ class ElectionConfig(BaseModel):
 
     @property
     def has_hsb(self) -> bool:
-        """
-        Whether this election has kieskringen with their own HSB Totaaltelling (EML_510c).
-
-        Some election categories (e.g. waterschap) define a kieskring per CSB that is a 1:1
-        structural stand-in for it, never a real subdivision with its own results -- so a
-        KIESKRING region existing is not enough; only its own EML_510c data means there is
-        something to show.
-        """
-        return Region.objects.filter(
-            election__election_config=self,
-            region_category=RegionCategory.KIESKRING,
-            vote_counts__eml_type=EmlType.EML_510c,
-        ).exists()
+        if ElectionCategory(self.category).config.has_hsb:
+            return True
+        return hsb_kieskringen(Region.objects.filter(election__election_config=self)).exists()
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -109,43 +109,49 @@ class Election(BaseModel):
             self.slug = name_to_slug(self.name)[:49]
         super().save(*args, **kwargs)
 
+    def __str__(self) -> str:
+        return f"<Election {self.name} ({self.pk})>"
 
-class TimelineEntryStatus(models.TextChoices):
-    PENDING = "pending", "Pending"
-    IN_PROGRESS = "in-progress", "In progress"
-    DONE = "done", "Done"
+
+class TimelineEvent(models.TextChoices):
+    SB_VOTE_COUNT = "sb_vote_count", "SB Vote count"
+    CANDIDATE_VOTE_COUNT = "candidate_vote_count", "Candidate Vote count"
+    MUNICIPALITY_VOTE_COUNT = "municipality_vote_count", "Municipality Vote count"
+    ELECTORAL_DISTRICT_VOTE_COUNT = "electoral_district_vote_count", "Electoral district Vote count"
+    CSB_CHECK = "csb_check", "CSB Check"
+    CSB_RESULT_PUBLISH = "csb_result_publish", "CSB Result publish"
+
+    @classmethod
+    def required(cls) -> set[str]:
+        return {cls.SB_VOTE_COUNT, cls.MUNICIPALITY_VOTE_COUNT, cls.CSB_CHECK, cls.CSB_RESULT_PUBLISH}
+
+
+class TimelineDateQualifier(models.TextChoices):
+    ALL_DAY = "all_day", "All day"
+    FROM = "from", "From"
+    UNTIL = "until", "Until"
+    EXPECTED = "expected", "Expected"
+
+
+class TimelineDate(BaseModel):
+    election_config = models.ForeignKey(
+        "election.ElectionConfig",
+        on_delete=models.CASCADE,
+        related_name="timeline_dates",
+    )
+    event = models.CharField(max_length=128, choices=TimelineEvent.choices)
+    date = models.DateTimeField()
+    qualifier = models.CharField(
+        max_length=8,
+        choices=TimelineDateQualifier.choices,
+        default=TimelineDateQualifier.ALL_DAY,
+    )
 
 
 class TimelineVariant(models.TextChoices):
     CSO = "CSO", "Centrale Stemopname"
     DSO = "DSO", "Decentrale Stemopname"
     DEFAULT = "DEFAULT", "Default"
-
-
-class TimelineEntry(BaseModel):
-    election_config = models.ForeignKey(
-        "election.ElectionConfig",
-        on_delete=models.CASCADE,
-        related_name="timeline_entries",
-    )
-    variant = models.CharField(
-        max_length=8,
-        choices=TimelineVariant.choices,
-        default=TimelineVariant.DEFAULT,
-    )
-    status = models.CharField(max_length=16, choices=TimelineEntryStatus.choices)
-    title_nl = models.CharField(max_length=255)
-    title_en = models.CharField(max_length=255, blank=True)
-    date = models.DateTimeField()
-    body_nl = models.TextField()
-    body_en = models.TextField(blank=True)
-
-    class Meta:
-        # Entries are ordered chronologically by date.
-        ordering = ("date",)
-
-    def __str__(self):
-        return f"{self.election_config.identifier} [{self.variant}]: {self.title_nl}"
 
 
 class Contest(BaseModel):
@@ -221,6 +227,10 @@ class CurrentManager(models.Manager.from_queryset(CurrentQuerySet)):
         return super().get_queryset().filter(is_current=True)
 
 
+# Spelled as raw values because a model's Meta cannot reach its own class attributes.
+_CORRECTION_FILE_TYPES = ("PDF_NA14-1", "PDF_NA14-2", "PDF_NA14-2-B1", "PDF_P1F-1")
+
+
 class ElectionDocument(BaseModel):
     """
     Archivable ElectionDoc
@@ -228,13 +238,71 @@ class ElectionDocument(BaseModel):
 
     class FileType(models.TextChoices):
         """
-        Available file types, prefixed with the extensions (i.e. EML, PDF).
-        Make sure to also update FILE_TYPE_MAPPINGS in the frontend code on change.
+        Source files listed in FILE_TYPE_MAPPINGS, including the scanned proces-verbaal forms.
+
+        Keep in sync with api/types.ts
         """
 
+        EML_110A = "EML110a", "Verkiezingsdefinitie"
+        EML_230B = "EML230b", "Kandidatenlijst"
         EML_510B = "EML510b", "Telling GSB"
         EML_510C = "EML510c", "Totaaltelling HSB"
         EML_510D = "EML510d", "Totaaltelling CSB"
+        EML_520 = "EML520", "Resultaat"
+        CSV_OSV43 = "CSV_OSV4-3", "OSV4-3 telling CSV"
+        PDF_N10_1 = "PDF_N10-1", "Proces-verbaal stembureau"
+        PDF_N10_2 = "PDF_N10-2", "Proces-verbaal stembureau in een gemeente die CSB is"
+        PDF_NA14_1 = "PDF_NA14-1", "Corrigendum proces-verbaal stembureau"
+        PDF_NA31_1 = "PDF_NA31-1", "Proces-verbaal gemeentelijk stembureau (DSO)"
+        PDF_NA31_2 = "PDF_NA31-2", "Proces-verbaal gemeentelijk stembureau (CSO)"
+        PDF_NA31_2_B1 = "PDF_NA31-2-B1", "Bijlage 1 van Proces-verbaal gemeentelijk stembureau (CSO)"
+        PDF_NA31_2_B2 = "PDF_NA31-2-B2", "Bijlage 2 van Proces-verbaal gemeentelijk stembureau (CSO)"
+        PDF_NA14_2 = "PDF_NA14-2", "Corrigendum proces-verbaal gemeentelijk stembureau"
+        PDF_NA14_2_B1 = "PDF_NA14-2-B1", "Bijlage 1 van corrigendum proces-verbaal gemeentelijk stembureau"
+        PDF_O7 = "PDF_O7", "Proces-verbaal hoofdstembureau"
+        PDF_P1F_1 = "PDF_P1F-1", "Corrigendum proces-verbaal hoofdstembureau"
+        PDF_P22_1 = "PDF_P22-1", "Proces-verbaal centraal stembureau met meerdere kieskringen"
+        PDF_P22_2 = "PDF_P22-2", "Proces-verbaal centraal stembureau met één kieskring"
+        PDF_SB_ZIP = "PDF_SB-ZIP", "Proces-verbalen van stembureaus in zip bestand"
+
+        @classmethod
+        def from_form_code(cls, form_code: str) -> Self | None:
+            """Map a form code (N10-1) to its PDF_ file type."""
+            form_code = form_code.upper()
+            return next(
+                (
+                    file_type
+                    for file_type in cls
+                    if file_type.startswith("PDF_") and file_type.removeprefix("PDF_") == form_code
+                ),
+                None,
+            )
+
+    # Scanned forms. Kept out of the source-file list on a region.
+    CERTIFIED_FILE_TYPES = frozenset(
+        {
+            FileType.PDF_N10_1,
+            FileType.PDF_N10_2,
+            FileType.PDF_NA14_1,
+            FileType.PDF_NA31_1,
+            FileType.PDF_NA31_2,
+            FileType.PDF_NA31_2_B1,
+            FileType.PDF_NA31_2_B2,
+            FileType.PDF_NA14_2,
+            FileType.PDF_NA14_2_B1,
+            FileType.PDF_O7,
+            FileType.PDF_P1F_1,
+            FileType.PDF_P22_1,
+            FileType.PDF_P22_2,
+        }
+    )
+
+    # The results box shows a correction ahead of the proces-verbaal it corrects. A region can
+    # have several of them at once: each corrects the one before it, so none replaces the other.
+    CORRECTION_FILE_TYPES = frozenset(_CORRECTION_FILE_TYPES)
+
+    storage_key = models.CharField(max_length=512, unique=True)
+    size = models.PositiveIntegerField()
 
     region = models.ForeignKey(
         "region.Region",
@@ -243,9 +311,8 @@ class ElectionDocument(BaseModel):
         null=True,
         blank=True,
     )
-    storage_key = models.CharField(max_length=512, unique=True)
+
     content_type = models.CharField(max_length=128, default="application/xml")
-    size = models.PositiveIntegerField()
 
     file_type = models.CharField(
         max_length=32,
@@ -254,16 +321,46 @@ class ElectionDocument(BaseModel):
         help_text="Type of the election document",
     )
     is_current = models.BooleanField(default=True, db_index=True)
+    metadata = models.JSONField(default=dict)
 
     objects = CurrentManager()
     all_objects = models.Manager()
+
+    @property
+    def correction_number(self) -> int:
+        """Position of this correction among those on the same form, counted from one."""
+        if self.file_type not in self.CORRECTION_FILE_TYPES or not self.created_at:
+            return 1
+        earlier = ElectionDocument.all_objects.filter(region=self.region, file_type=self.file_type).filter(
+            Q(created_at__lt=self.created_at) | Q(created_at=self.created_at, pk__lt=self.pk)
+        )
+        return earlier.count() + 1
+
+    @property
+    def download_filename(self) -> str:
+        """Storage keys carry the raw EML region id (0638::SB001); browsers get a readable name."""
+        if self.region is None or self.file_type not in {*self.CERTIFIED_FILE_TYPES, self.FileType.PDF_SB_ZIP}:
+            return Path(self.storage_key).name
+        parts = [self.region.election.election_config.identifier]
+        # The zip is keyed by region pk, so it is named after the gemeente.
+        if self.file_type == self.FileType.PDF_SB_ZIP:
+            parts += [self.region.region_name, "processen-verbaal stembureaus"]
+            return re.sub(r"[^\w .-]", "-", " ".join(filter(None, parts))) + ".zip"
+        if self.region.region_category == RegionCategory.STEMBUREAU and self.region.parent:
+            parts += [self.region.parent.region_name, (self.region.region_number or "").split("::")[-1]]
+        parts += [self.region.region_name, str(self.file_type).removeprefix("PDF_")]
+        # Corrections on one form share every part above, so the later ones are numbered.
+        number = self.correction_number
+        if number > 1:
+            parts.append(str(number))
+        return re.sub(r"[^\w .-]", "-", " ".join(filter(None, parts))) + ".pdf"
 
     class Meta:
         base_manager_name = "all_objects"
         constraints = [
             models.UniqueConstraint(
                 fields=["region", "file_type"],
-                condition=Q(is_current=True),
+                condition=Q(is_current=True) & ~Q(file_type__in=_CORRECTION_FILE_TYPES),
                 name="unique_current_document_per_region_and_file_type",
             )
         ]

@@ -1,11 +1,18 @@
 import datetime
 
 import pytest
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.utils import timezone
 from rest_framework.test import APIRequestFactory
 
-from election.models import VoteCount, VoterTurnoutCount
-from election.tests.factories import ContestFactory, ElectionFactory
+from election.models import ElectionCategory, ElectionDocument, VoteCount, VoterTurnoutCount
+from election.tests.factories import (
+    CertifiedElectionDocumentFactory,
+    ContestFactory,
+    ElectionDocumentFactory,
+    ElectionFactory,
+)
 from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
@@ -16,24 +23,28 @@ from region.views import RegionDetailView, RegionListView
 factory = APIRequestFactory()
 
 
-@pytest.mark.django_db
-def test_region_list_requires_election_config_query_param():
-    request = factory.get("/api/regions/")
+def list_regions(election, params):
+    slug = election.election_config.slug
+    request = factory.get(f"/api/{slug}/regions/", params)
+    return RegionListView.as_view()(request, election_config=slug)
 
-    response = RegionListView.as_view()(request)
+
+def get_region(election, region_slug, params):
+    slug = election.election_config.slug
+    request = factory.get(f"/api/{slug}/regions/{region_slug}", params)
+    return RegionDetailView.as_view()(request, election_config=slug, region=region_slug)
+
+
+@pytest.mark.django_db
+def test_region_list_requires_a_filter():
+    response = list_regions(ElectionFactory(), {})
 
     assert response.status_code == 400
 
 
 @pytest.mark.django_db
 def test_region_list_rejects_unknown_region_category():
-    election = ElectionFactory()
-    request = factory.get(
-        "/api/regions/",
-        {"election_config": election.election_config.slug, "region_category": "NOT_A_CATEGORY"},
-    )
-
-    response = RegionListView.as_view()(request)
+    response = list_regions(ElectionFactory(), {"region_category": "NOT_A_CATEGORY"})
 
     assert response.status_code == 400
 
@@ -45,12 +56,7 @@ def test_region_list_filters_by_election_config_and_region_category():
     RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Alpha")
     RegionFactory(election=election, region_category=RegionCategory.WATERSCHAP)
 
-    request = factory.get(
-        "/api/regions/",
-        {"election_config": election.election_config.slug, "region_category": RegionCategory.GEMEENTE},
-    )
-
-    response = RegionListView.as_view()(request)
+    response = list_regions(election, {"region_category": RegionCategory.GEMEENTE})
 
     assert response.status_code == 200
     names = [region["region_name"] for region in response.data]
@@ -108,15 +114,7 @@ def test_region_list_filters_gemeentes_by_csb():
         region_name="Breda",
     )
 
-    request = factory.get(
-        "/api/regions/",
-        {
-            "election_config": election.election_config.slug,
-            "region_category": RegionCategory.GEMEENTE,
-            "csb": waterschap_a.slug,
-        },
-    )
-    response = RegionListView.as_view()(request)
+    response = list_regions(election, {"region_category": RegionCategory.GEMEENTE, "csb": waterschap_a.slug})
 
     assert response.status_code == 200
     names = [region["region_name"] for region in response.data]
@@ -124,23 +122,27 @@ def test_region_list_filters_gemeentes_by_csb():
 
 
 @pytest.mark.django_db
-def test_region_detail_requires_query_params():
-    request = factory.get("/api/region/")
+def test_region_list_of_kieskringen_has_only_those_with_their_own_hsb():
+    """Drenthe's sole kieskring is counted by its CSB; Zuid-Holland's kieskringen are listed before any results."""
+    election = ElectionFactory()
+    drenthe = RegionFactory(election=election, region_category=RegionCategory.PROVINCIE, region_name="Drenthe")
+    zuid_holland = RegionFactory(
+        election=election, region_category=RegionCategory.PROVINCIE, region_name="Zuid-Holland"
+    )
+    for csb, name in [(drenthe, "Assen"), (zuid_holland, "Leiden"), (zuid_holland, "Rotterdam")]:
+        RegionFactory(
+            election=election, parent=csb, csb=csb, region_category=RegionCategory.KIESKRING, region_name=name
+        )
 
-    response = RegionDetailView.as_view()(request)
+    response = list_regions(election, {"region_category": RegionCategory.KIESKRING})
 
-    assert response.status_code == 400
+    assert response.status_code == 200
+    assert [region["region_name"] for region in response.data] == ["Leiden", "Rotterdam"]
 
 
 @pytest.mark.django_db
 def test_region_detail_requires_reporting_level():
-    election = ElectionFactory()
-    request = factory.get(
-        "/api/region/",
-        {"election_config": election.election_config.slug, "region": "anywhere"},
-    )
-
-    response = RegionDetailView.as_view()(request)
+    response = get_region(ElectionFactory(), "anywhere", {})
 
     assert response.status_code == 400
     assert "level" in response.data
@@ -148,35 +150,217 @@ def test_region_detail_requires_reporting_level():
 
 @pytest.mark.django_db
 def test_region_detail_returns_404_for_nonexistent_region():
-    election = ElectionFactory()
-    request = factory.get(
-        "/api/region/",
-        {"election_config": election.election_config.slug, "region": "does-not-exist", "level": "gsb"},
-    )
-
-    response = RegionDetailView.as_view()(request)
+    response = get_region(ElectionFactory(), "does-not-exist", {"level": "gsb"})
 
     assert response.status_code == 404
     assert response.data["detail"] == "Region not found for this election."
 
 
-def region_detail(region, level):
-    request = factory.get(
-        "/api/region/",
-        {
-            "election_config": region.election.election_config.slug,
-            "region": region.slug,
-            "level": level,
-        },
+@pytest.mark.django_db
+def test_region_detail_has_no_certified_document_preview_without_a_document():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+
+    data = region_detail(region, "gsb")
+
+    assert data["certified_document_url"] is None
+    assert data["certified_document_preview_url"] is None
+
+
+@pytest.mark.django_db
+def test_region_detail_links_the_certified_document_when_one_is_imported():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    document = CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/pv.pdf")
+    ElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/telling.xml",
+        file_type=ElectionDocument.FileType.EML_510B,
     )
-    response = RegionDetailView.as_view()(request)
+    default_storage.save("TK2025/pv.pdf", ContentFile(b"%PDF"))
+    default_storage.save("TK2025/pv.png", ContentFile(b"\x89PNG"))
+
+    data = region_detail(region, "gsb")
+
+    by_type = {item["file_type"]: item for item in data["documents"]}
+    assert set(by_type) == {ElectionDocument.FileType.EML_510B, ElectionDocument.FileType.PDF_NA31_2}
+    assert by_type[ElectionDocument.FileType.PDF_NA31_2]["url"] == f"/api/documents/{document.pk}/download/"
+    assert data["certified_document_url"] == f"/api/certified-documents/{document.pk}/"
+    assert data["certified_document_preview_url"] == f"/api/certified-documents/{document.pk}/preview/"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("category", "level", "original_type", "correction_type"),
+    [
+        (
+            RegionCategory.STEMBUREAU,
+            "sb",
+            ElectionDocument.FileType.PDF_N10_1,
+            ElectionDocument.FileType.PDF_NA14_1,
+        ),
+        (
+            RegionCategory.GEMEENTE,
+            "gsb",
+            ElectionDocument.FileType.PDF_NA31_2,
+            ElectionDocument.FileType.PDF_NA14_2,
+        ),
+        (
+            RegionCategory.KIESKRING,
+            "hsb",
+            ElectionDocument.FileType.PDF_O7,
+            ElectionDocument.FileType.PDF_P1F_1,
+        ),
+    ],
+)
+def test_region_detail_lists_each_proces_verbaal_and_previews_the_correction(
+    category, level, original_type, correction_type
+):
+    region = RegionFactory(region_category=category)
+    # The original is newer than the correction.
+    correction = CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key=f"TK2025/{correction_type}.pdf",
+        file_type=correction_type,
+    )
+    original = CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key=f"TK2025/{original_type}.pdf",
+        file_type=original_type,
+    )
+    for file_type in (correction_type, original_type):
+        default_storage.save(f"TK2025/{file_type}.pdf", ContentFile(b"%PDF"))
+        default_storage.save(f"TK2025/{file_type}.png", ContentFile(b"\x89PNG"))
+
+    data = region_detail(region, level)
+
+    assert {item["file_type"] for item in data["documents"]} == {original_type, correction_type}
+    assert {item["url"] for item in data["documents"]} == {
+        f"/api/documents/{original.pk}/download/",
+        f"/api/documents/{correction.pk}/download/",
+    }
+    assert data["certified_document_url"] == f"/api/certified-documents/{correction.pk}/"
+    assert data["certified_document_preview_url"] == f"/api/certified-documents/{correction.pk}/preview/"
+
+
+@pytest.mark.django_db
+def test_region_detail_lists_every_correction_and_previews_the_last_one():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/pv.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA31_2,
+    )
+    first = CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/correction.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA14_2,
+    )
+    last = CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/correction-again.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA14_2,
+    )
+    for key in ("TK2025/pv", "TK2025/correction", "TK2025/correction-again"):
+        default_storage.save(f"{key}.pdf", ContentFile(b"%PDF"))
+        default_storage.save(f"{key}.png", ContentFile(b"\x89PNG"))
+
+    data = region_detail(region, "gsb")
+
+    corrections = [item for item in data["documents"] if item["file_type"] == ElectionDocument.FileType.PDF_NA14_2]
+    assert [item["url"] for item in corrections] == [
+        f"/api/documents/{first.pk}/download/",
+        f"/api/documents/{last.pk}/download/",
+    ]
+    assert [item["correction_number"] for item in corrections] == [1, 2]
+    assert data["certified_document_url"] == f"/api/certified-documents/{last.pk}/"
+    assert data["certified_document_preview_url"] == f"/api/certified-documents/{last.pk}/preview/"
+
+
+@pytest.mark.django_db
+def test_region_detail_correction_date_is_the_latest_corrected_510b():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    ElectionDocumentFactory(
+        region=region, storage_key="TK2025/telling.xml", file_type=ElectionDocument.FileType.EML_510B, is_current=False
+    )
+    CertifiedElectionDocumentFactory(
+        region=region, storage_key="TK2025/correction.pdf", file_type=ElectionDocument.FileType.PDF_NA14_2
+    )
+
+    assert region_detail(region, "gsb")["correction_date"] is None
+
+    corrected = ElectionDocumentFactory(
+        region=region, storage_key="TK2025/telling-2.xml", file_type=ElectionDocument.FileType.EML_510B
+    )
+
+    assert region_detail(region, "gsb")["correction_date"] == corrected.created_at
+
+
+@pytest.mark.django_db
+def test_region_detail_correction_date_of_a_kieskring_is_the_latest_corrected_510c():
+    region = RegionFactory(region_category=RegionCategory.KIESKRING)
+    ElectionDocumentFactory(
+        region=region, storage_key="TK2025/telling.xml", file_type=ElectionDocument.FileType.EML_510C, is_current=False
+    )
+    corrected = ElectionDocumentFactory(
+        region=region, storage_key="TK2025/telling-2.xml", file_type=ElectionDocument.FileType.EML_510C
+    )
+
+    assert region_detail(region, "hsb")["correction_date"] == corrected.created_at
+
+
+@pytest.mark.django_db
+def test_region_detail_previews_the_newer_proces_verbaal_when_there_is_no_correction():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/older.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA31_1,
+    )
+    newer = CertifiedElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/newer.pdf",
+        file_type=ElectionDocument.FileType.PDF_NA31_2,
+    )
+    for key in ("TK2025/older", "TK2025/newer"):
+        default_storage.save(f"{key}.pdf", ContentFile(b"%PDF"))
+        default_storage.save(f"{key}.png", ContentFile(b"\x89PNG"))
+
+    data = region_detail(region, "gsb")
+
+    assert data["certified_document_url"] == f"/api/certified-documents/{newer.pk}/"
+    assert data["certified_document_preview_url"] == f"/api/certified-documents/{newer.pk}/preview/"
+
+
+@pytest.mark.django_db
+def test_region_detail_has_no_preview_when_the_png_is_missing():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    document = CertifiedElectionDocumentFactory(region=region, storage_key="TK2025/missing.pdf")
+    default_storage.save("TK2025/missing.pdf", ContentFile(b"%PDF"))
+
+    data = region_detail(region, "gsb")
+
+    assert data["certified_document_url"] == f"/api/certified-documents/{document.pk}/"
+    assert data["certified_document_preview_url"] is None
+
+
+@pytest.mark.django_db
+def test_csb_region_detail_returns_404_for_unknown_election_config():
+    request = factory.get("/api/unknown/regions/anywhere", {"level": "csb"})
+
+    response = RegionDetailView.as_view()(request, election_config="unknown", region="anywhere")
+
+    assert response.status_code == 404
+
+
+def region_detail(region, level):
+    response = get_region(region.election, region.slug, {"level": level})
     assert response.status_code == 200
     return response.data
 
 
 @pytest.mark.django_db
 def test_gsb_returns_510b_and_csb_returns_510d_for_the_same_region():
-    contest = ContestFactory()
+    # A gemeente is only the CSB in a gemeenteraadsverkiezing.
+    contest = ContestFactory(election__election_config__category=ElectionCategory.GR.value)
     party = PartyFactory(election=contest.election)
     region = RegionFactory(election=contest.election, region_category=RegionCategory.GEMEENTE)
     VoteCount.objects.create(
@@ -205,6 +389,58 @@ def test_gsb_returns_510b_and_csb_returns_510d_for_the_same_region():
     assert len(csb["vote_counts"]) == 1
     assert csb["vote_counts"][0]["eml_type"] == EmlType.EML_510d
     assert csb["vote_counts"][0]["valid_votes"] == 200
+
+
+@pytest.mark.django_db
+def test_csb_includes_the_520_document_and_gsb_does_not():
+    region = RegionFactory(
+        election__election_config__category=ElectionCategory.GR.value,
+        region_category=RegionCategory.GEMEENTE,
+    )
+    ElectionDocumentFactory(region=region, file_type=ElectionDocument.FileType.EML_520)
+    ElectionDocumentFactory(region=region, file_type=ElectionDocument.FileType.EML_510D)
+    ElectionDocumentFactory(region=region, file_type=ElectionDocument.FileType.EML_510B)
+
+    assert {item["file_type"] for item in region_detail(region, "csb")["documents"]} == {
+        ElectionDocument.FileType.EML_520,
+        ElectionDocument.FileType.EML_510D,
+    }
+    assert {item["file_type"] for item in region_detail(region, "gsb")["documents"]} == {
+        ElectionDocument.FileType.EML_510B,
+    }
+
+
+@pytest.mark.django_db
+def test_gsb_and_csb_each_list_and_preview_their_own_proces_verbaal_for_the_same_region():
+    region = RegionFactory(
+        election__election_config__category=ElectionCategory.GR.value,
+        region_category=RegionCategory.GEMEENTE,
+    )
+    documents = {
+        file_type: CertifiedElectionDocumentFactory(
+            region=region, storage_key=f"GR2026/{file_type}.pdf", file_type=file_type
+        )
+        for file_type in (
+            ElectionDocument.FileType.PDF_NA31_1,
+            ElectionDocument.FileType.PDF_NA14_2,
+            ElectionDocument.FileType.PDF_P22_2,
+        )
+    }
+    for file_type in documents:
+        default_storage.save(f"GR2026/{file_type}.pdf", ContentFile(b"%PDF"))
+
+    gsb = region_detail(region, "gsb")
+    csb = region_detail(region, "csb")
+
+    assert {item["file_type"] for item in gsb["documents"]} == {
+        ElectionDocument.FileType.PDF_NA31_1,
+        ElectionDocument.FileType.PDF_NA14_2,
+    }
+    gsb_preview = documents[ElectionDocument.FileType.PDF_NA14_2]
+    assert gsb["certified_document_url"] == f"/api/certified-documents/{gsb_preview.pk}/"
+    assert {item["file_type"] for item in csb["documents"]} == {ElectionDocument.FileType.PDF_P22_2}
+    csb_preview = documents[ElectionDocument.FileType.PDF_P22_2]
+    assert csb["certified_document_url"] == f"/api/certified-documents/{csb_preview.pk}/"
 
 
 @pytest.mark.django_db
@@ -322,23 +558,10 @@ def test_region_detail_disambiguates_by_parent_region():
         slug="SB1-basisschool",
     )
 
-    ambiguous_request = factory.get(
-        "/api/region/",
-        {"election_config": election.election_config.slug, "region": "SB1-basisschool", "level": "gsb"},
-    )
-    ambiguous_response = RegionDetailView.as_view()(ambiguous_request)
+    ambiguous_response = get_region(election, "SB1-basisschool", {"level": "sb"})
     assert ambiguous_response.status_code == 400
 
-    request = factory.get(
-        "/api/region/",
-        {
-            "election_config": election.election_config.slug,
-            "region": "SB1-basisschool",
-            "parent_region": "bergen",
-            "level": "gsb",
-        },
-    )
-    response = RegionDetailView.as_view()(request)
+    response = get_region(election, "SB1-basisschool", {"parent_region": "bergen", "level": "sb"})
 
     assert response.status_code == 200
     assert response.data["region_name"] == "School Bergen"
@@ -385,23 +608,198 @@ def test_region_detail_disambiguates_waterschap_polling_station_by_csb_and_paren
         slug="SB1-soosgebouw-dn-dissel",
     )
 
-    request = factory.get(
-        "/api/region/",
-        {
-            "election_config": election.election_config.slug,
-            "region": stembureau.slug,
-            "parent_region": gemeente.slug,
-            "csb": waterschap.slug,
-            "level": "gsb",
-        },
+    response = get_region(
+        election, stembureau.slug, {"parent_region": gemeente.slug, "csb": waterschap.slug, "level": "sb"}
     )
-    response = RegionDetailView.as_view()(request)
 
     assert response.status_code == 200
     assert response.data["region_name"] == stembureau.region_name
     assert response.data["slug"] == stembureau.slug
-    assert response.data["csb_slug"] == waterschap.slug
-    assert response.data["csb_name"] == waterschap.region_name
+    assert response.data["csb"]["slug"] == waterschap.slug
+    assert response.data["csb"]["region_name"] == waterschap.region_name
+    assert response.data["station_number"] == 1
+
+
+@pytest.mark.django_db
+def test_region_list_includes_station_number_for_stembureaus():
+    election = ElectionFactory()
+    gemeente = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, slug="borsele")
+    RegionFactory(
+        election=election,
+        parent=gemeente,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name="De Regenboog",
+        region_number="0203::SB1",
+    )
+    RegionFactory(
+        election=election,
+        parent=gemeente,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name="De Regenboog",
+        region_number="SB2",
+    )
+
+    response = list_regions(election, {"parent_region": gemeente.slug, "region_category": RegionCategory.STEMBUREAU})
+
+    assert response.status_code == 200
+    assert {(region["region_name"], region["station_number"]) for region in response.data} == {
+        ("De Regenboog", 1),
+        ("De Regenboog", 2),
+    }
+
+
+def make_station(gemeente, number, name, postal_code):
+    return RegionFactory(
+        election=gemeente.election,
+        parent=gemeente,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name=name,
+        region_number=f"0352::SB{number}",
+        slug=f"SB{number}-{name.lower().replace(' ', '-')}",
+        postal_code=postal_code,
+    )
+
+
+@pytest.mark.django_db
+def test_region_list_includes_the_other_stations_at_the_same_location():
+    gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE, slug="wijk-bij-duurstede")
+    make_station(gemeente, 1, "Huis van de Gemeente", "3961 BA")
+    make_station(gemeente, 2, "Huis van de Gemeente", "3961 BA")
+    make_station(gemeente, 3, "Gymzaal", "3961 AB")
+    make_station(gemeente, 4, "Gymzaal", "3962 CD")
+
+    response = list_regions(
+        gemeente.election, {"parent_region": gemeente.slug, "region_category": RegionCategory.STEMBUREAU}
+    )
+
+    assert response.status_code == 200
+    assert {region["station_number"]: region["same_location_stations"] for region in response.data} == {
+        1: [{"station_number": 2, "slug": "SB2-huis-van-de-gemeente"}],
+        2: [{"station_number": 1, "slug": "SB1-huis-van-de-gemeente"}],
+        3: [],
+        4: [],
+    }
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("region_category", "eml_types", "has_results"),
+    [
+        (RegionCategory.WATERSCHAP, [EmlType.EML_510d], True),
+        (RegionCategory.WATERSCHAP, [EmlType.EML_510b], False),
+        (RegionCategory.KIESKRING, [EmlType.EML_510c], True),
+        (RegionCategory.KIESKRING, [EmlType.EML_510d], False),
+        (RegionCategory.GEMEENTE, [EmlType.EML_510b, EmlType.EML_510c, EmlType.EML_510d], True),
+        (RegionCategory.GEMEENTE, [EmlType.EML_510c, EmlType.EML_510d], False),
+        (RegionCategory.STEMBUREAU, [EmlType.EML_510b], True),
+        (RegionCategory.STEMBUREAU, [], False),
+    ],
+)
+def test_region_list_has_results_only_with_the_count_its_page_shows(region_category, eml_types, has_results):
+    """A region counts as having results once the telling its linked page reads is in, not any higher one."""
+    contest = ContestFactory()
+    party = PartyFactory(election=contest.election)
+    parent = RegionFactory(election=contest.election, region_category=RegionCategory.STAAT)
+    region = RegionFactory(election=contest.election, parent=parent, region_category=region_category)
+    for eml_type in eml_types:
+        VoteCount.objects.create(
+            contest=contest,
+            region=region,
+            party=party,
+            valid_votes=100,
+            result_level=VoteCount.RESULT_LEVEL_PARTY,
+            eml_type=eml_type,
+        )
+
+    response = list_regions(contest.election, {"parent_region": parent.slug})
+
+    assert response.status_code == 200
+    assert [row["has_results"] for row in response.data] == [has_results]
+
+
+@pytest.mark.django_db
+def test_region_list_of_kieskringen_has_results_from_their_hsb_count():
+    contest = ContestFactory()
+    party = PartyFactory(election=contest.election)
+    provincie = RegionFactory(election=contest.election, region_category=RegionCategory.PROVINCIE)
+    leiden, rotterdam = (
+        RegionFactory(
+            election=contest.election,
+            parent=provincie,
+            csb=provincie,
+            region_category=RegionCategory.KIESKRING,
+            region_name=name,
+        )
+        for name in ("Leiden", "Rotterdam")
+    )
+    for region, eml_type in [(leiden, EmlType.EML_510c), (rotterdam, EmlType.EML_510d)]:
+        VoteCount.objects.create(
+            contest=contest,
+            region=region,
+            party=party,
+            valid_votes=100,
+            result_level=VoteCount.RESULT_LEVEL_PARTY,
+            eml_type=eml_type,
+        )
+
+    response = list_regions(contest.election, {"region_category": RegionCategory.KIESKRING})
+
+    assert response.status_code == 200
+    assert [(row["region_name"], row["has_results"]) for row in response.data] == [
+        ("Leiden", True),
+        ("Rotterdam", False),
+    ]
+
+
+@pytest.mark.django_db
+def test_region_detail_without_postal_code_has_no_same_location_stations():
+    gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE, slug="wijk-bij-duurstede")
+    station = make_station(gemeente, 1, "Huis van de Gemeente", None)
+    make_station(gemeente, 2, "Huis van de Gemeente", None)
+
+    response = get_region(station.election, station.slug, {"level": "sb", "parent_region": gemeente.slug})
+
+    assert response.status_code == 200
+    assert response.data["same_location_stations"] == []
+
+
+@pytest.mark.django_db
+def test_region_detail_includes_the_other_stations_at_the_same_location():
+    gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE, slug="wijk-bij-duurstede")
+    station = make_station(gemeente, 1, "Huis van de Gemeente", "3961 BA")
+    make_station(gemeente, 2, "Huis van de Gemeente", "3961 BA")
+
+    response = get_region(station.election, station.slug, {"level": "sb", "parent_region": gemeente.slug})
+
+    assert response.status_code == 200
+    assert response.data["same_location_stations"] == [{"station_number": 2, "slug": "SB2-huis-van-de-gemeente"}]
+
+
+@pytest.mark.django_db
+def test_region_detail_includes_station_number_for_a_stembureau():
+    gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE, slug="borsele")
+    station = RegionFactory(
+        election=gemeente.election,
+        parent=gemeente,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name="De Regenboog",
+        region_number="0484::SB6",
+        slug="SB6-de-regenboog",
+    )
+
+    response = get_region(station.election, station.slug, {"level": "sb", "parent_region": gemeente.slug})
+
+    assert response.status_code == 200
+    assert response.data["station_number"] == 6
+
+
+@pytest.mark.django_db
+def test_region_detail_station_number_is_none_for_a_gemeente():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+
+    data = region_detail(region, "gsb")
+
+    assert data["station_number"] is None
 
 
 @pytest.mark.django_db
@@ -412,69 +810,7 @@ def test_region_list_is_empty_for_an_expired_election():
     election = ElectionFactory(election_config__identifier="GR2026", election_config__date=started)
     RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Amstelveen")
 
-    request = factory.get(
-        "/api/regions/",
-        {"election_config": election.election_config.slug, "region_category": RegionCategory.GEMEENTE},
-    )
-    response = RegionListView.as_view()(request)
+    response = list_regions(election, {"region_category": RegionCategory.GEMEENTE})
 
     assert response.status_code == 200
     assert list(response.data) == []
-
-
-@pytest.mark.django_db
-def test_region_list_has_own_results_excludes_kieskring_without_its_own_totaaltelling():
-    """A waterschap's kieskring is a structural stand-in for the CSB, with only 510d rows."""
-    election = ElectionFactory()
-    with_hsb = RegionFactory(election=election, region_category=RegionCategory.KIESKRING, region_name="Amsterdam")
-    without_hsb = RegionFactory(
-        election=election, region_category=RegionCategory.KIESKRING, region_name="Scheldestromen"
-    )
-    contest = ContestFactory(election=election)
-    party = PartyFactory(election=election)
-    VoteCount.objects.create(
-        contest=contest,
-        region=with_hsb,
-        party=party,
-        valid_votes=100,
-        result_level=VoteCount.RESULT_LEVEL_PARTY,
-        eml_type=EmlType.EML_510c,
-    )
-    VoteCount.objects.create(
-        contest=contest,
-        region=without_hsb,
-        party=party,
-        valid_votes=100,
-        result_level=VoteCount.RESULT_LEVEL_PARTY,
-        eml_type=EmlType.EML_510d,
-    )
-
-    request = factory.get(
-        "/api/regions/",
-        {
-            "election_config": election.election_config.slug,
-            "region_category": RegionCategory.KIESKRING,
-            "has_own_results": "true",
-        },
-    )
-    response = RegionListView.as_view()(request)
-
-    assert response.status_code == 200
-    assert [region["region_name"] for region in response.data] == ["Amsterdam"]
-
-
-@pytest.mark.django_db
-def test_region_list_has_own_results_requires_a_supported_region_category():
-    election = ElectionFactory()
-
-    request = factory.get(
-        "/api/regions/",
-        {
-            "election_config": election.election_config.slug,
-            "region_category": RegionCategory.STEMBUREAU,
-            "has_own_results": "true",
-        },
-    )
-    response = RegionListView.as_view()(request)
-
-    assert response.status_code == 400

@@ -1,8 +1,10 @@
+import importlib.util
 import os
 import ssl
 from pathlib import Path
 from urllib.parse import quote
 
+import sentry_sdk
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -16,6 +18,13 @@ ALLOWED_HOSTS = [
     host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]").split(",") if host.strip()
 ]
 
+# A metrics scrape and a kubelet HTTP probe both address the pod by its IP, which is
+# allocated at schedule time and so cannot be listed above. Without this they are
+# answered with 400 and the pod never passes its readiness check.
+POD_IP = os.environ.get("POD_IP")
+if POD_IP:
+    ALLOWED_HOSTS.append(POD_IP)
+
 
 INSTALLED_APPS = [
     "mainsite.apps.MainsiteConfig",
@@ -23,7 +32,7 @@ INSTALLED_APPS = [
     "region.apps.RegionConfig",
     "party.apps.PartyConfig",
     "eml_import.apps.EmlImportConfig",
-    "django.contrib.admin",
+    "pv_scraper.apps.PvScraperConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -32,9 +41,19 @@ INSTALLED_APPS = [
     "django_extensions",
     "rest_framework",
     "corsheaders",
+    "django_prometheus",
 ]
 
+# Dev-only: runserver reloads on file-change events instead of polling every module each second.
+if importlib.util.find_spec("django_watchfiles"):
+    INSTALLED_APPS.append("django_watchfiles")
+
+# The two prometheus middlewares bracket the rest of the stack, and the request timing
+# is the span between them: moving either one inwards drops whatever it now sits inside
+# out of the latency histogram without changing anything visible.
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
+    "mainsite.middleware.AccessLogMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -43,6 +62,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "mainsite.urls"
@@ -110,8 +130,8 @@ REDIS_SSL_OPTIONS = (
     {
         "ssl_cert_reqs": ssl.CERT_REQUIRED,
         "ssl_ca_certs": REDIS_CA_CERT_FILE,
-        # IP-based connection, so don't verify hostnames (as with the database's verify-ca).
-        "ssl_check_hostname": False,
+        # Full CA verification: the cert contains the private IP as SAN.
+        "ssl_check_hostname": True,
     }
     if REDIS_CA_CERT_FILE
     else {}
@@ -135,6 +155,10 @@ CELERY_WORKER_MAX_TASKS_PER_CHILD = int(os.environ.get("CELERY_WORKER_MAX_TASKS_
 # An import runs for minutes, so reserving more than one message per child only leaves work
 # queued behind a busy one.
 CELERY_WORKER_PREFETCH_MULTIPLIER = int(os.environ.get("CELERY_WORKER_PREFETCH_MULTIPLIER", "1"))
+
+# Enable sending events to be able to gather Prometheus metrics.
+CELERY_WORKER_SEND_TASK_EVENTS = True
+CELERY_TASK_SEND_SENT_EVENT = True
 
 # Cache config
 CACHES = {
@@ -198,29 +222,50 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_INGRESS_REPO = os.environ.get("GITHUB_INGRESS_REPO")  # "owner/repo"
 
 
+# Recipient of technical problem reports
+TECHNICAL_ISSUE_EMAIL = os.environ.get("TECHNICAL_ISSUE_EMAIL", "").strip()
+
+
 # Object storage
 # S3-compatible: RustFS locally (see docker-compose.yml), Scaleway in production.
+_OBJECT_STORAGE_OPTIONS = {
+    "bucket_name": os.environ.get("S3_BUCKET_NAME", "uitslagenportaal"),
+    "endpoint_url": os.environ.get("S3_ENDPOINT_URL", "http://localhost:9000"),
+    "access_key": os.environ.get("S3_ACCESS_KEY", "uitslagenportaal"),
+    "secret_key": os.environ.get("S3_SECRET_KEY", "password"),
+    "region_name": os.environ.get("S3_REGION", "nl-ams"),
+    "custom_domain": os.environ.get("S3_PUBLIC_DOMAIN", "localhost:9000/uitslagenportaal"),
+    "url_protocol": os.environ.get("S3_URL_PROTOCOL", "http:"),
+    # RustFS is reached by hostname, so virtual-host style addressing
+    # (bucket.object-storage:9000) would not resolve.
+    "addressing_style": os.environ.get("S3_ADDRESSING_STYLE", "path"),
+    "querystring_auth": True,
+    "file_overwrite": True,
+}
 STORAGES = {
     "default": {
         "BACKEND": "mainsite.utils.custom_s3_storage.SignedCustomDomainS3Storage",
-        "OPTIONS": {
-            "bucket_name": os.environ.get("S3_BUCKET_NAME", "uitslagenportaal"),
-            "endpoint_url": os.environ.get("S3_ENDPOINT_URL", "http://localhost:9000"),
-            "access_key": os.environ.get("S3_ACCESS_KEY", "uitslagenportaal"),
-            "secret_key": os.environ.get("S3_SECRET_KEY", "password"),
-            "region_name": os.environ.get("S3_REGION", "nl-ams"),
-            "custom_domain": os.environ.get("S3_PUBLIC_DOMAIN", "localhost:9000/uitslagenportaal"),
-            "url_protocol": os.environ.get("S3_URL_PROTOCOL", "http:"),
-            # RustFS is reached by hostname, so virtual-host style addressing
-            # (bucket.object-storage:9000) would not resolve.
-            "addressing_style": os.environ.get("S3_ADDRESSING_STYLE", "path"),
-            "querystring_auth": True,
-            "file_overwrite": True,
-        },
+        "OPTIONS": _OBJECT_STORAGE_OPTIONS,
     },
     # Assigning STORAGES replaces Django's default dict, so staticfiles has to
     # be restated here or collectstatic and the admin lose their backend.
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    # import_pvs reads this storage, PV_IMPORT_SOURCE picks which one it is.
+    "pv_import": (
+        {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+            "OPTIONS": {"location": str(BASE_DIR / os.environ.get("PV_IMPORT_FOLDER", ".data"))},
+        }
+        if os.environ.get("PV_IMPORT_SOURCE", "s3") == "folder"
+        else {
+            "BACKEND": "mainsite.utils.custom_s3_storage.SignedCustomDomainS3Storage",
+            "OPTIONS": {
+                **_OBJECT_STORAGE_OPTIONS,
+                "bucket_name": os.environ.get("PV_IMPORT_BUCKET", "pvs"),
+                "custom_domain": "",
+            },
+        }
+    ),
 }
 
 
@@ -228,6 +273,8 @@ STORAGES = {
 # https://docs.djangoproject.com/en/6.0/topics/logging/
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "DEBUG" if DEBUG else "INFO")
+# The prod image sets "json" so Loki can parse every field; "simple" and "color" (Compose) are for reading by eye.
+LOG_FORMAT = os.environ.get("LOG_FORMAT", "simple")
 
 LOGGING = {
     "version": 1,
@@ -237,12 +284,31 @@ LOGGING = {
             "format": "{asctime} {processName} - {levelname} - {name} - {message}",
             "style": "{",
         },
+        # Colours the whole line by level. Messages carry no ANSI codes of their own, so the other formats stay plain.
+        "color": {
+            "()": "colorlog.ColoredFormatter",
+            "format": "{log_color}{asctime} {processName} - {levelname} - {name} - {message}",
+            "style": "{",
+            "log_colors": {
+                "DEBUG": "light_black",
+                "INFO": "",  # Use the default terminal colour
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "bold_red",
+            },
+        },
+        # Fields passed as `extra` become keys of their own.
+        "json": {
+            "()": "pythonjsonlogger.json.JsonFormatter",
+            "format": "{asctime}{processName}{levelname}{name}{message}",
+            "style": "{",
+        },
     },
     "handlers": {
         "stdout": {
             "class": "logging.StreamHandler",
             "stream": "ext://sys.stdout",
-            "formatter": "simple",
+            "formatter": LOG_FORMAT,
         },
     },
     # Handler on the root logger, so every app logger is covered without
@@ -261,5 +327,27 @@ LOGGING = {
         "celery": {"level": "INFO"},
         "kombu": {"level": "INFO"},
         "redis.connection": {"level": "INFO"},
+        "pytesseract": {"level": "INFO"},
+        "pypdfium2": {"level": "INFO"},
     },
 }
+
+
+# PV scraper-specific settings
+# Number of tasks to dispatch every run of dispatch_scrape_tasks, defaults to 0 (disabled) for now
+PV_SCRAPER_DISPATCH_MAX_TASKS = int(os.environ.get("PV_SCRAPER_DISPATCH_MAX_TASKS", 0))
+
+# Bugsink
+BUGSINK_DSN = os.environ.get("BUGSINK_DSN")
+if BUGSINK_DSN:
+    sentry_sdk.init(
+        BUGSINK_DSN,
+        data_collection={"user_info": False},
+        max_request_body_size="always",
+        # Importer frames hold whole EML files; Bugsink refuses events over its size limit
+        max_value_length=1024,
+        # Don't send event types which are not supported by Bugsink:
+        traces_sample_rate=0,
+        send_client_reports=False,
+        auto_session_tracking=False,
+    )

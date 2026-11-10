@@ -10,9 +10,8 @@ from election.models import (
     ElectionCategory,
     ElectionConfig,
     ElectionDocument,
-    TimelineEntry,
-    TimelineEntryStatus,
-    TimelineVariant,
+    TimelineDate,
+    TimelineEvent,
 )
 
 CATEGORIES = ElectionCategory.values
@@ -37,18 +36,13 @@ class ElectionFactory(DjangoModelFactory):
     date = factory.Faker("date_this_decade")
 
 
-class TimelineEntryFactory(DjangoModelFactory):
+class TimelineDateFactory(DjangoModelFactory):
     class Meta:
-        model = TimelineEntry
+        model = TimelineDate
 
     election_config = factory.SubFactory(ElectionConfigFactory)
-    variant = TimelineVariant.DEFAULT
-    status = TimelineEntryStatus.PENDING
-    title_nl = factory.Faker("sentence", nb_words=4)
-    title_en = factory.Faker("sentence", nb_words=4)
+    event = TimelineEvent.SB_VOTE_COUNT
     date = factory.Faker("date_time_this_decade", tzinfo=datetime.timezone.utc)
-    body_nl = factory.Faker("paragraph")
-    body_en = factory.Faker("paragraph")
 
 
 class ContestFactory(DjangoModelFactory):
@@ -66,3 +60,9 @@ class ElectionDocumentFactory(DjangoModelFactory):
     storage_key = factory.Sequence(lambda n: f"document-{n}.xml")
     content_type = "application/xml"
     size = factory.Faker("random_int", min=1, max=10_000)
+
+
+class CertifiedElectionDocumentFactory(ElectionDocumentFactory):
+    storage_key = factory.Sequence(lambda n: f"TK2025/document-{n}.pdf")
+    content_type = "application/pdf"
+    file_type = ElectionDocument.FileType.PDF_NA31_2

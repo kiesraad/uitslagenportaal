@@ -1,31 +1,46 @@
-"""Provinciale Staten election (Drenthe PS fixture)."""
+"""Provinciale Staten election (Drenthe)."""
 
 import re
 
 import pytest
 from playwright.sync_api import Page, expect
 
+from playwright_tests.election_states import (
+    add_aa_en_hunze_telling,
+    add_drenthe_csb,
+    add_ps_candidate_lists,
+    ps_definition,
+)
+from playwright_tests.timeline import CHECK, GSB, SB, expect_timeline_steps
+
 pytestmark = pytest.mark.playwright
 
+_seeded = pytest.mark.usefixtures("seeded_database")
 
+# Drenthe is a single kieskring, which its CSB counts: there is no HSB step.
+PS_STEPS = ["Provincie Drenthe publiceert de uitslag", CHECK, GSB, SB]
+
+
+@_seeded
 def test_homepage_leads_through_the_provincie_list_to_the_drenthe_party_matrix(page: Page):
     page.goto("/")
 
     page.get_by_role("link", name="Provinciale Statenverkiezingen 2023").click()
     expect(page).to_have_url(re.compile(r"/gsb/?$"))
     expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
-    expect(page.get_by_role("link", name="Provincies")).to_be_visible()
+    expect(page.get_by_role("link", name="Provincie")).to_be_visible()
 
-    page.get_by_role("link", name="Provincies").click()
+    page.get_by_role("link", name="Provincie").click()
     expect(page).to_have_url(re.compile(r"/csb/?$"))
     expect(page.get_by_role("link", name="Drenthe")).to_be_visible()
 
     page.get_by_role("link", name="Drenthe").click()
     expect(page).to_have_url(re.compile(r"/csb/[^/]+/resultaten/?$"))
     expect(page.get_by_role("link", name="Hele provincie")).to_be_visible()
-    expect(page.get_by_role("heading", name="Telresultaten")).to_be_visible()
+    expect(page.get_by_role("heading", name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="VVD")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
+    expect_timeline_steps(page, PS_STEPS)
 
     page.get_by_role("link", name="VVD").click()
     expect(page).to_have_url(re.compile(r"/csb/[^/]+/resultaten/[^/]+/?$"))
@@ -36,6 +51,7 @@ def test_homepage_leads_through_the_provincie_list_to_the_drenthe_party_matrix(p
     expect(page.get_by_role("columnheader", name="Aa en Hunze")).to_be_visible()
 
 
+@_seeded
 def test_gemeente_list_leads_to_aa_en_hunze_and_its_party_results(page: Page):
     page.goto("/ps2023/gsb")
     expect(page.get_by_role("link", name="Aa en Hunze")).to_be_visible()
@@ -54,9 +70,10 @@ def test_gemeente_list_leads_to_aa_en_hunze_and_its_party_results(page: Page):
 
     page.get_by_role("link", name="Hele gemeente").click()
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/resultaten/?$"))
-    expect(page.get_by_role("heading", name="Telresultaten")).to_be_visible()
+    expect(page.get_by_role("heading", name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="VVD")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
+    expect_timeline_steps(page, PS_STEPS)
 
     page.get_by_role("link", name="VVD").click()
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/resultaten/[^/]+/?$"))
@@ -67,6 +84,7 @@ def test_gemeente_list_leads_to_aa_en_hunze_and_its_party_results(page: Page):
     expect(page.get_by_text(re.compile(r"Totaal stemmen lijst"))).to_be_visible()
 
 
+@_seeded
 def test_stembureau_list_leads_to_stembureau_results_and_party_results(page: Page):
     page.goto("/ps2023/gsb/1680-aa-en-hunze/csb/3-drenthe")
     expect(page.get_by_role("heading", level=1, name="Gemeente Aa en Hunze")).to_be_visible()
@@ -78,6 +96,7 @@ def test_stembureau_list_leads_to_stembureau_results_and_party_results(page: Pag
     expect(page.get_by_role("heading", level=2, name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="VVD")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
+    expect_timeline_steps(page, PS_STEPS)
 
     page.get_by_role("link", name="VVD").click()
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/[^/]+/[^/]+/?$"))
@@ -87,6 +106,7 @@ def test_stembureau_list_leads_to_stembureau_results_and_party_results(page: Pag
     expect(page.get_by_text(re.compile(r"Totaal stemmen lijst"))).to_be_visible()
 
 
+@_seeded
 def test_csb_per_gemeente_lists_the_drenthe_gemeenten(page: Page):
     page.goto("/ps2023/csb/3-drenthe")
     expect(page.get_by_role("heading", level=1, name="Provincie - Drenthe")).to_be_visible()
@@ -97,3 +117,117 @@ def test_csb_per_gemeente_lists_the_drenthe_gemeenten(page: Page):
     page.get_by_role("link", name="Aa en Hunze").click()
     expect(page).to_have_url(re.compile(r"/gsb/1680-aa-en-hunze/csb/3-drenthe/?$"))
     expect(page.get_by_role("heading", level=1, name="Gemeente Aa en Hunze")).to_be_visible()
+
+
+def expect_ps_tabs(page: Page) -> None:
+    expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
+    expect(page.get_by_role("link", name="Provincie")).to_be_visible()
+    # Drenthe is a single kieskring, which its CSB counts: there is no HSB.
+    expect(page.get_by_role("link", name="Kieskring")).to_have_count(0)
+
+
+def expect_unpublished_gemeente(page: Page, name: str) -> None:
+    expect(page.get_by_role("heading", level=1, name=f"Gemeente {name}")).to_be_visible()
+    expect(
+        page.get_by_role("heading", name=f"De telresultaten van gemeente {name} zijn nog niet gepubliceerd")
+    ).to_be_visible()
+    expect(page.get_by_role("link", name="Hele gemeente")).to_have_count(0)
+    expect(page.get_by_role("link", name="Resultaten per stembureau")).to_have_count(0)
+
+
+def expect_unpublished_csb(page: Page) -> None:
+    expect(
+        page.get_by_role("heading", name="De telresultaten van provincie Drenthe zijn nog niet gepubliceerd")
+    ).to_be_visible()
+    expect(page.get_by_role("link", name="VVD")).to_have_count(0)
+
+
+def expect_hsb_is_not_found(page: Page) -> None:
+    page.goto("/ps2023/hsb")
+    expect(page.get_by_role("heading", level=1, name="Pagina niet gevonden")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("empty_database")
+def test_after_definition_lists_show_unpublished_regions(page: Page):
+    ps_definition()
+
+    page.goto("/ps2023/gsb")
+    expect_ps_tabs(page)
+    expect(page.get_by_role("link", name="Aa en Hunze")).to_be_visible()
+    expect(page.get_by_role("link", name="Emmen")).to_be_visible()
+
+    page.get_by_role("link", name="Aa en Hunze").click()
+    expect_unpublished_gemeente(page, "Aa en Hunze")
+
+    page.goto("/ps2023/gsb")
+    page.get_by_role("link", name="Emmen").click()
+    expect_unpublished_gemeente(page, "Emmen")
+
+    page.goto("/ps2023/csb")
+    expect(page.get_by_role("link", name="Drenthe")).to_be_visible()
+    page.get_by_role("link", name="Drenthe").click()
+    expect_unpublished_csb(page)
+
+    expect_hsb_is_not_found(page)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("empty_database")
+def test_after_candidate_lists_results_are_still_unpublished(page: Page):
+    ps = ps_definition()
+    add_ps_candidate_lists(ps)
+
+    page.goto("/ps2023/gsb")
+    page.get_by_role("link", name="Aa en Hunze").click()
+    expect_unpublished_gemeente(page, "Aa en Hunze")
+    expect(page.get_by_role("link", name="VVD")).to_have_count(0)
+
+    page.goto("/ps2023/csb/3-drenthe/resultaten")
+    expect_unpublished_csb(page)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("empty_database")
+def test_after_aa_en_hunze_telling_emmen_and_higher_levels_are_still_unpublished(page: Page):
+    ps = ps_definition()
+    add_ps_candidate_lists(ps)
+    add_aa_en_hunze_telling(ps)
+
+    page.goto("/ps2023/gsb")
+    expect_ps_tabs(page)
+    page.get_by_role("link", name="Aa en Hunze").click()
+    expect(page.get_by_role("link", name="Hele gemeente")).to_be_visible()
+
+    page.goto("/ps2023/gsb")
+    page.get_by_role("link", name="Emmen").click()
+    expect_unpublished_gemeente(page, "Emmen")
+
+    page.goto("/ps2023/csb/3-drenthe/resultaten")
+    expect_unpublished_csb(page)
+
+    expect_hsb_is_not_found(page)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("empty_database")
+def test_after_drenthe_csb_emmen_stays_unpublished_on_gsb(page: Page):
+    ps = ps_definition()
+    add_ps_candidate_lists(ps)
+    add_aa_en_hunze_telling(ps)
+    add_drenthe_csb(ps)
+
+    page.goto("/ps2023/csb")
+    page.get_by_role("link", name="Drenthe").click()
+    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510d")).first).to_be_visible()
+    page.get_by_role("link", name="VVD").click()
+    expect(page.get_by_role("columnheader", name="Emmen")).to_be_visible()
+
+    page.goto("/ps2023/gsb")
+    page.get_by_role("link", name="Aa en Hunze").click()
+    page.get_by_role("link", name="Hele gemeente").click()
+    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510b")).first).to_be_visible()
+
+    page.goto("/ps2023/gsb")
+    page.get_by_role("link", name="Emmen").click()
+    expect_unpublished_gemeente(page, "Emmen")

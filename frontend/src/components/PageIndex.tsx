@@ -1,5 +1,6 @@
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
+import { Link } from "react-router";
 
 type Props = {
    links: {
@@ -17,9 +18,9 @@ export default function PageIndex({ links }: Props) {
          <ul>
             {links.map((link) => (
                <li key={link.url}>
-                  <a href={link.url} className="on-this-page-link">
+                  <Link to={{ hash: link.url }} className="on-this-page-link" replace>
                      {link.label}
-                  </a>
+                  </Link>
                </li>
             ))}
          </ul>

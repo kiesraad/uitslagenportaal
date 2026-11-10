@@ -1,0 +1,182 @@
+debug: false
+
+# Set by values-local.yaml only; templates/local-values-guard.yaml refuses it on Scaleway.
+localCluster: false
+
+app:
+  hostname: "uitslagen.kiesraad.nl"
+  site_name: "Uitslagenportaal"
+
+db:
+  # verify-full would fail: the RDB cert CN is the public endpoint, not the private one we're using.
+  sslmode: "verify-ca"
+  # Created outside the chart: see the Secrets section in ./docs/deployments.md.
+  credSecret: "db-creds"
+
+redis:
+  # Created outside the chart: see the Secrets section in ./docs/deployments.md.
+  credSecret: "redis-creds"
+  # The managed cache only accepts TLS, unlike the in-cluster stand-in.
+  tls: true
+  # Database multiplier. The application takes four consecutive databases starting at
+  # db * 4 (cache, broker, results), so the Celery broker is db * 4 + 1. celery-exporter
+  # has to watch that same database, and this is the one place the sum is written down.
+  db: 0
+
+objectStorage:
+  # Created outside the chart: see the Secrets section in ./docs/deployments.md.
+  credSecret: "s3-creds"
+
+gateway:
+  enabled: true
+  # Created by the Traefik release; see infra setup in ./docs/deployments.md.
+  className: "traefik"
+
+basicAuth:
+  enabled: true
+  # Created outside the chart: see the Secrets section in ./docs/deployments.md.
+  credSecret: "basic-auth-creds"
+  realm: "Uitslagenportaal"
+
+issuer:
+  enabled: true
+  # "acme" requires the hostname to be reachable from the internet;
+  # "selfsigned" issues offline, for local clusters.
+  type: "acme"
+  # ACME account address, used for expiry warnings. Must be set.
+  email: "kiesraad@kiesraad.nl"
+  server: "production" # "staging" or "production"
+
+# The image values below hold a moving tag, which is what a manual or local deploy
+# gets. CD overrides each with the digest it just built, so on the cluster the tag
+# says nothing about what is running — read the Deployment, not this file.
+backend:
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
+  # Pull always because we publish new images to the same tag
+  pullPolicy: "Always"
+  appSecret: "uitslagenportaal-secrets"
+  importerSecret: "importer-creds"
+  port: 8000
+  replicas: 2
+  # See the GRANIAN_* keys in the ConfigMap for why these are pinned. Scaling happens
+  # through replicas, so a pod runs a single worker.
+  workers: 1
+  blockingThreads: 16
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+frontend:
+  image: "ghcr.io/kiesraad/uitslagenportaal-frontend:dev"
+  # Pull always because we publish new images to the same tag
+  pullPolicy: "Always"
+  port: 80
+  replicas: 2
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 64Mi
+
+celery:
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
+  pullPolicy: "Always"
+  worker:
+    replicas: 1
+    # See the CELERY_WORKER_* keys in the ConfigMap for why these are pinned.
+    concurrency: 2
+    maxTasksPerChild: 5
+    prefetchMultiplier: 1
+    resources:
+      requests:
+        # Parsing EML is CPU-bound; starved of CPU an import holds its peak memory for
+        # longer. Requesting far less memory than the pod uses makes it evict first.
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        memory: 2Gi
+  beat:
+    # Beat only enqueues; it never runs a task itself.
+    resources:
+      requests:
+        cpu: 10m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+
+# The PV scraper's worker, see docs/pv-scraper.md. Off unless an environment enables it.
+scraper:
+  enabled: false
+  image: "ghcr.io/kiesraad/uitslagenportaal-playwright-worker:dev"
+  pullPolicy: "Always"
+  replicas: 1
+  # A scrape takes one to three minutes, so one at a time gets through every source well
+  # within the day; each concurrent scrape adds a browser of about 400Mi.
+  concurrency: 1
+  # Sources queued per dispatch, which beat runs every 10 minutes.
+  dispatchMaxTasks: 5
+  terminationGracePeriodSeconds: 300
+  resources:
+    # A scrape peaks at 600Mi to 1Gi depending on the site, the idle worker uses 130Mi; OCR stays under 500Mi.
+    requests:
+      cpu: 250m
+      memory: 768Mi
+    limits:
+      memory: 1536Mi
+
+services:
+  enabled: false
+
+# Scrape configuration and alert rules, plus the exporters for the managed services.
+# These are monitoring.coreos.com kinds, so they need the prometheus-operator CRDs that
+# kube-prometheus-stack installs as one-time infra; a cluster without them cannot render
+# this at all, which is why local deploys switch the whole block off.
+monitoring:
+  enabled: true
+  scrapeInterval: "30s"
+  # The exporters run here rather than in the monitoring namespace because this is where
+  # the database and cache credentials already are, and they differ per environment.
+  exporters:
+    postgres:
+      enabled: true
+      image: "quay.io/prometheuscommunity/postgres-exporter:v0.20.1"
+      # Connects as the application's own role, from the db credentials secret. A role
+      # holding pg_monitor would unlock the wal collector, pg_stat_statements and
+      # replication metrics, and can be swapped in here if those are ever wanted.
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 64Mi
+    redis:
+      enabled: true
+      image: "oliver006/redis_exporter:v1.91.1"
+      # The certificate is IP-based: its only SAN is the private endpoint dialled here,
+      # and its CN names a different address that modern TLS ignores. Go matches an IP
+      # literal against IP SANs when no server name is set, so verification needs no
+      # workaround at all, which is the same position the application's own client takes.
+      #
+      # tlsServerName is for the day this is reached by a name instead, and takes
+      # precedence over skipping.
+      tlsServerName: ""
+      skipTlsVerification: false
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 64Mi
+    celery:
+      enabled: true
+      image: "danihodovic/celery-exporter:0.12.2"
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          memory: 128Mi

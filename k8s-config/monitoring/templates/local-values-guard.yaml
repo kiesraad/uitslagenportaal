@@ -1,0 +1,11 @@
+{{- /*
+Refuses to apply values-local.yaml to a Scaleway cluster, where it would move Loki's logs
+off object storage. `helm template` and --dry-run cannot read the cluster and never fail here.
+*/}}
+{{- if .Values.localCluster }}
+{{- range (lookup "v1" "Node" "" "").items }}
+{{- if hasKey .metadata.labels "k8s.scaleway.com/managed" }}
+{{- fail "values-local.yaml is for a local cluster, and this one runs on Scaleway. Leave out -f monitoring/values-local.yaml and pass --reset-values." }}
+{{- end }}
+{{- end }}
+{{- end }}

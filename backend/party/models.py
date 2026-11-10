@@ -29,9 +29,13 @@ class Party(BaseModel):
     # and the region type to retrieve it as opposed to only using the slug
     slug = models.SlugField(unique=False, db_index=True)
 
+    @staticmethod
+    def slug_for(registered_name: str) -> str:
+        return name_to_slug(registered_name)[:49]
+
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = f"{name_to_slug(self.registered_name)}"[:49]
+            self.slug = self.slug_for(self.registered_name)
         super().save(*args, **kwargs)
 
 

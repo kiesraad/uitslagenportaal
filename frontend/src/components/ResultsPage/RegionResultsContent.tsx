@@ -1,53 +1,54 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import type {
-   ElectionDocument,
-   TimelineEntry,
-   TimelineVariant,
-   VoteCount,
-   VoteCounts,
-   VoterTurnoutCount,
-} from "../../api/types";
-import { getPartyLevelVoteCounts } from "../../utils/voteCounts";
+import { useLocation } from "react-router";
+import type { ElectionDocument, RegionCategory, VoteCount, VoteCounts, VoterTurnoutCount } from "@/api/types.ts";
+import { getPartyLevelVoteCounts } from "@/utils/voteCounts.ts";
+import { InfoBox } from "../InfoBox";
 import IssueNotice from "./IssueNotice";
 import ReportsWithResults from "./ReportsWithResults";
 import ResultsNotPublished from "./ResultsNotPublished";
 import ResultsPageIndex from "./ResultsPageIndex";
-import ResultsTimeline from "./ResultsTimeline";
 import VotesList, { VotesListItem } from "./VotesList";
 import VotesResume from "./VotesResume";
 
 type Props = {
    intro: ReactNode;
+   notice?: ReactNode;
    voteCounts: VoteCounts | undefined;
    turnoutVotes: VoterTurnoutCount[] | undefined;
    reports?: {
       description: string;
       documents: ElectionDocument[] | undefined;
    };
-   timelineVariant?: TimelineVariant;
-   timelineEntries: TimelineEntry[];
+   timeline?: ReactNode;
    issueReportDeadline: string;
-   notPublishedRegionLabel: string;
+   notPublishedRegionName: string;
+   notPublishedRegionCategory: RegionCategory;
+   partyHref?: (partySlug: string) => string;
 };
 
 export default function RegionResultsContent({
    intro,
+   notice,
    voteCounts,
    turnoutVotes,
    reports,
-   timelineVariant,
-   timelineEntries,
+   timeline,
    issueReportDeadline,
-   notPublishedRegionLabel,
+   notPublishedRegionName,
+   notPublishedRegionCategory,
+   partyHref,
 }: Props) {
    const { t } = useLingui();
+   const { pathname } = useLocation();
+   const partyLink = partyHref ?? ((partySlug: string) => `${pathname}/${partySlug}`);
    const hasResults = Array.isArray(voteCounts) && voteCounts.length > 0;
    const partyLevelVoteCounts = getPartyLevelVoteCounts(voteCounts);
 
    const resultsContent = (
       <>
          <ResultsPageIndex />
+         {notice && <InfoBox disableMargin>{notice}</InfoBox>}
          <section id="telresultaten">
             <h2 className="mb-2">
                <Trans>Telresultaten</Trans>
@@ -69,7 +70,7 @@ export default function RegionResultsContent({
                      number={voteCount.party.list_number}
                      title={voteCount.party.registered_name}
                      voteCount={voteCount.valid_votes}
-                     href={`${location.pathname}/${voteCount.party.slug}`}
+                     href={partyLink(voteCount.party.slug)}
                   />
                ))}
             </VotesList>
@@ -87,8 +88,12 @@ export default function RegionResultsContent({
 
    return (
       <>
-         {!hasResults ? <ResultsNotPublished regionLabel={notPublishedRegionLabel} /> : resultsContent}
-         <ResultsTimeline variant={timelineVariant} entries={timelineEntries} />
+         {!hasResults ? (
+            <ResultsNotPublished regionName={notPublishedRegionName} regionCategory={notPublishedRegionCategory} />
+         ) : (
+            resultsContent
+         )}
+         {timeline}
          <IssueNotice issueReportDeadline={issueReportDeadline} />
       </>
    );

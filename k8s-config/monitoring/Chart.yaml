@@ -1,0 +1,18 @@
+apiVersion: v2
+name: uitslagenportaal-monitoring
+description: Metrics, logs and alerting for the cluster, installed once per cluster
+type: application
+version: 0.1.0
+
+# Chart versions are pinned here and locked in Chart.lock. The repositories are the ones
+# the infra setup in docs/deployments.md adds, which `helm dependency build` requires.
+dependencies:
+  - name: kube-prometheus-stack
+    version: 91.4.1
+    repository: https://prometheus-community.github.io/helm-charts
+  - name: loki
+    version: 7.3.0
+    repository: https://grafana.github.io/helm-charts
+  - name: alloy
+    version: 1.12.1
+    repository: https://grafana.github.io/helm-charts

@@ -18,6 +18,8 @@ playwright-report/
 blob-report/
 playwright/.cache/
 playwright/.auth/
+# Playwright MCP server output (snapshots, screenshots, console logs)
+.playwright-mcp/
 
 
 ### Backend
@@ -112,5 +114,6 @@ claude.md
 *.bat
 
 # k8s
-k8s-config/charts/*.tgz
+k8s-config/*/charts/*.tgz
 k8s-config/*.pem
+k8s-config/monitoring/alertmanager.yaml

@@ -15,6 +15,7 @@ def in_memory_storage(settings):
     settings.STORAGES = {
         "default": {"BACKEND": "mainsite.tests.storage.InMemoryPresignStorage"},
         "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+        "pv_import": {"BACKEND": "mainsite.tests.storage.InMemoryPresignStorage"},
     }
 
 

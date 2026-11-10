@@ -1,6 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { HSBTimeline } from "@/components/Timeline/HSBTimeline.tsx";
 import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -8,10 +9,9 @@ import IssueNotice from "../../components/ResultsPage/IssueNotice.tsx";
 import PartyVoteMatrixTable from "../../components/ResultsPage/PartyVoteMatrixTable.tsx";
 import ResultsNotPublished from "../../components/ResultsPage/ResultsNotPublished.tsx";
 import ResultsPageIndex from "../../components/ResultsPage/ResultsPageIndex";
-import ResultsTimeline from "../../components/ResultsPage/ResultsTimeline.tsx";
 import { electionConfigQuery, hsbPartyVoteMatrixQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
-import { getRegionLabels } from "../../utils/region.ts";
+import { getCsbCrumb, getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 import { getPartyVoteCount } from "../../utils/voteCounts.ts";
 
@@ -21,8 +21,8 @@ export function hsbPartyResultsLoader(queryClient: QueryClient) {
       const regionQueryOptions = regionQuery(params, "hsb");
 
       const [electionConfig, region] = await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionQueryOptions),
       ]);
 
       if (!electionConfig.has_hsb) {
@@ -34,7 +34,7 @@ export function hsbPartyResultsLoader(queryClient: QueryClient) {
          params.regionSlug,
          params.partySlug,
       );
-      await queryClient.ensureQueryData(partyVoteMatrixQueryOptions);
+      await queryClient.query(partyVoteMatrixQueryOptions);
 
       return {
          electionConfigQuery: electionConfigQueryOptions,
@@ -68,7 +68,7 @@ export function HSBPartyResultsPage() {
       <>
          <ResultsPageIndex />
          <section id="telresultaten" className="party-vote-matrix-section">
-            <h2 className="text-lg mb-4.5 font-medium">
+            <h2 className="mb-4.5 text-lg font-medium">
                <Trans>Telresultaten lijst {listNumber}</Trans>
             </h2>
             <h3 className="party-level-title mb-2">{partyName}</h3>
@@ -80,13 +80,16 @@ export function HSBPartyResultsPage() {
                   proces-verbaal van het hoofdstembureau.
                </Trans>
             </p>
-            <PartyVoteMatrixTable matrix={partyVoteMatrix} />
+            <PartyVoteMatrixTable
+               matrix={partyVoteMatrix}
+               caption={<Trans>Stemmen per kandidaat per gemeente</Trans>}
+            />
          </section>
       </>
    );
 
    return (
-      <LayoutMain title={t`Resultaten`}>
+      <LayoutMain title={t`Telresultaten ${partyName} – ${regionType} ${regionName}`}>
          <PageTop
             title={`${t`Telresultaten ${regionType} ${regionName}`}\n ${partyName}`}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
@@ -96,14 +99,19 @@ export function HSBPartyResultsPage() {
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
+               getCsbCrumb(region, electionConfig),
                { href: appRoutes.hsbResults(electionConfig.slug, region.slug), label: region.region_name },
-               { href: appRoutes.hsbPartyResults(electionConfig.slug, region.slug, partySlug), label: partyName },
+               { label: partyName },
             ]}
          />
          <div className="page-main">
-            <div className="page-space-3 party-vote-matrix-page">
-               {!hasResults ? <ResultsNotPublished regionLabel={region.region_name} /> : resultsPageContent}
-               <ResultsTimeline variant={region.timeline_variant} entries={electionConfig.timeline_entries ?? []} />
+            <div className="party-vote-matrix-page flex flex-col gap-4 sm:gap-12">
+               {!hasResults ? (
+                  <ResultsNotPublished regionName={region.region_name} regionCategory={region.region_category} />
+               ) : (
+                  resultsPageContent
+               )}
+               <HSBTimeline dates={electionConfig.timeline_dates ?? []} documents={region.documents} region={region} />
                <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
             </div>
          </div>

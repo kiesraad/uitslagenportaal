@@ -7,12 +7,19 @@ from django.core.files.storage import default_storage
 from django.http import Http404
 from django.test import RequestFactory
 from django.utils import timezone
+from django.utils.http import content_disposition_header
 
-from election.models import ElectionCategory
-from election.tests.factories import ElectionConfigFactory, ElectionDocumentFactory
+from election.models import ElectionCategory, ElectionDocument
+from election.tests.factories import (
+    CertifiedElectionDocumentFactory,
+    ElectionConfigFactory,
+    ElectionDocumentFactory,
+    ElectionFactory,
+)
 from election.utils import VISIBILITY_MONTHS
-from election.views import download_document
+from election.views import certified_document, certified_document_preview, download_document
 from mainsite.models import RegionCategory
+from region.tests.factories import RegionFactory
 
 
 @pytest.fixture
@@ -82,10 +89,98 @@ def test_download_document_returns_file_for_valid_storage_key():
     assert response.status_code == 302
     assert response.url == f"{settings.MEDIA_URL}document.xml"
 
-    assert default_storage.url_parameters["document.xml"] == {"ResponseContentDisposition": "attachment"}
+    # Source files already have a readable storage key, so the name is taken from it as-is.
+    assert default_storage.url_parameters["document.xml"] == {
+        "ResponseContentDisposition": 'attachment; filename="document.xml"'
+    }
+
+
+@pytest.mark.django_db
+def test_download_document_names_the_polling_station_zip_after_the_gemeente():
+    default_storage.save("TK2025/polling-station-pvs/7.zip", ContentFile(b"PK"))
+    document = ElectionDocumentFactory(
+        storage_key="TK2025/polling-station-pvs/7.zip",
+        content_type="application/zip",
+        file_type=ElectionDocument.FileType.PDF_SB_ZIP,
+        size=2,
+        region=RegionFactory(
+            election=ElectionFactory(election_config__identifier="TK2025"),
+            region_category=RegionCategory.GEMEENTE,
+            region_name="Súdwest-Fryslân",
+        ),
+    )
+
+    download_document(RequestFactory().get("/"), document.pk)
+
+    assert default_storage.url_parameters["TK2025/polling-station-pvs/7.zip"] == {
+        "ResponseContentDisposition": content_disposition_header(
+            True, "TK2025 Súdwest-Fryslân processen-verbaal stembureaus.zip"
+        )
+    }
 
 
 @pytest.mark.django_db
 def test_download_document_returns_404_for_missing_document():
     with pytest.raises(Http404):
         download_document(RequestFactory().get("/"), 999999)
+
+
+@pytest.mark.django_db
+def test_certified_document_redirects_to_the_pdf():
+    default_storage.save("TK2025/TK2025_NA31-2_Barneveld.pdf", ContentFile(b"%PDF-1.4"))
+    document = CertifiedElectionDocumentFactory(
+        storage_key="TK2025/TK2025_NA31-2_Barneveld.pdf",
+        region=RegionFactory(
+            election=ElectionFactory(election_config__identifier="TK2025"),
+            region_name="Barneveld",
+        ),
+    )
+
+    response = certified_document(RequestFactory().get("/"), document.pk)
+
+    assert response.status_code == 302
+    assert response.url == f"{settings.MEDIA_URL}TK2025/TK2025_NA31-2_Barneveld.pdf"
+    assert default_storage.url_parameters["TK2025/TK2025_NA31-2_Barneveld.pdf"] == {
+        "ResponseContentType": "application/pdf",
+        "ResponseContentDisposition": 'inline; filename="TK2025 Barneveld NA31-2.pdf"',
+    }
+
+
+@pytest.mark.django_db
+def test_certified_document_rejects_a_source_file():
+    default_storage.save("TK2025/telling.xml", ContentFile(b"<eml/>"))
+    document = ElectionDocumentFactory(storage_key="TK2025/telling.xml", region=RegionFactory())
+
+    with pytest.raises(Http404):
+        certified_document(RequestFactory().get("/"), document.pk)
+
+
+@pytest.mark.django_db
+def test_certified_document_returns_404_when_the_pdf_is_missing():
+    document = CertifiedElectionDocumentFactory(storage_key="TK2025/missing.pdf", region=RegionFactory())
+
+    with pytest.raises(Http404):
+        certified_document(RequestFactory().get("/"), document.pk)
+
+
+@pytest.mark.django_db
+def test_certified_document_preview_redirects_to_the_png():
+    default_storage.save("TK2025/pv.png", ContentFile(b"\x89PNG"))
+    document = CertifiedElectionDocumentFactory(
+        storage_key="TK2025/pv.pdf",
+        region=RegionFactory(),
+    )
+
+    response = certified_document_preview(RequestFactory().get("/"), document.pk)
+
+    assert response.status_code == 302
+    assert response.url == f"{settings.MEDIA_URL}TK2025/pv.png"
+    assert default_storage.url_parameters["TK2025/pv.png"] == {"ResponseContentType": "image/png"}
+
+
+@pytest.mark.django_db
+def test_certified_document_preview_returns_404_when_the_png_is_missing():
+    document = CertifiedElectionDocumentFactory(storage_key="TK2025/missing.pdf", region=RegionFactory())
+
+    with pytest.raises(Http404):
+        certified_document_preview(RequestFactory().get("/"), document.pk)

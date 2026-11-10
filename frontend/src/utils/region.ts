@@ -1,17 +1,18 @@
 // Helper mapping from csb_type to the labels used for that kind of region.
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import type { RegionCategory } from "../api/types";
+import type { ElectionConfig, RegionCategory, RegionSummary } from "../api/types";
 import { appRoutes } from "./routes";
 
 /**
  * Labels for one kind of region.
  *
- * `whole` and `withArticle` are whole phrases rather than fragments to be
- * assembled at the call site: Dutch picks `Heel`/`Hele` and `de`/`het` by the
- * noun's gender, which does not survive being composed in application code, so
- * they live in the catalogue where a translator controls them. The mid-sentence
- * form of `singular` comes from `lowercaseFirst`.
+ * `whole`, `withArticle` and `name` are whole phrases rather than fragments
+ * to be assembled at the call site: Dutch picks `Heel`/`Hele` and `de`/`het` by
+ * the noun's gender, and English says "the municipality of Utrecht", neither of
+ * which survives being composed in application code, so they live in the
+ * catalogue where a translator controls them. The mid-sentence form of
+ * `singular` comes from `lowercaseFirst`.
  */
 export type RegionLabels = {
    /** Standalone, capitalised: "Gemeente". */
@@ -22,65 +23,92 @@ export type RegionLabels = {
    whole: MessageDescriptor;
    /** With a definite article: "de gemeente", "het waterschap". */
    withArticle: MessageDescriptor;
+   /** The name as used in texts, e.g. "gemeente Utrecht" or "Nederland". Resolve with `regionWithName`. */
+   name: MessageDescriptor;
+   /** The CSB name, when it is not the region's `withArticle`. */
+   csbName?: MessageDescriptor;
 };
 
-// Wrapped so a bundler may drop it when unused; module-scope `msg` calls are
-// otherwise side effects it has to keep.
-const regionTypeMapping: Record<string, RegionLabels> = (() => ({
+const regionTypeMapping: Record<string, RegionLabels> = {
    STAAT: {
       singular: msg`Staat`,
       plural: msg`Staten`,
       whole: msg`Hele staat`,
       withArticle: msg`de staat`,
+      name: msg({ message: "Nederland" }),
+      csbName: msg`De Kiesraad`,
    },
    WATERSCHAP: {
       singular: msg`Waterschap`,
       plural: msg`Waterschappen`,
       whole: msg`Heel waterschap`,
       withArticle: msg`het waterschap`,
+      name: msg({ message: "waterschap {name}" }),
    },
    KIESKRING: {
       singular: msg`Kieskring`,
       plural: msg`Kieskringen`,
       whole: msg`Hele kieskring`,
       withArticle: msg`de kieskring`,
+      name: msg({ message: "kieskring {name}" }),
    },
    GEMEENTE: {
       singular: msg`Gemeente`,
       plural: msg`Gemeenten`,
       whole: msg`Hele gemeente`,
       withArticle: msg`de gemeente`,
+      name: msg({ message: "gemeente {name}" }),
    },
    PROVINCIE: {
       singular: msg`Provincie`,
       plural: msg`Provincies`,
       whole: msg`Hele provincie`,
       withArticle: msg`de provincie`,
+      name: msg({ message: "provincie {name}" }),
    },
    STEMBUREAU: {
       singular: msg`Stembureau`,
       plural: msg`Stembureaus`,
       whole: msg`Heel stembureau`,
       withArticle: msg`het stembureau`,
+      name: msg({ message: "stembureau {name}" }),
    },
-}))();
+};
 
-const FALLBACK_LABELS: RegionLabels = (() => ({
+const FALLBACK_LABELS: RegionLabels = {
    singular: msg`Regio`,
    plural: msg`Regio's`,
    whole: msg`Hele regio`,
    withArticle: msg`de regio`,
-}))();
+   name: msg({ message: "regio {name}" }),
+};
 
 export function getRegionLabels(regionType?: RegionCategory): RegionLabels {
    if (!regionType) return FALLBACK_LABELS;
    return regionTypeMapping[regionType] ?? FALLBACK_LABELS;
 }
 
+/** The `name` phrase for a region, ready for `t()`: "gemeente Utrecht". */
+export function regionWithName(regionType: RegionCategory | undefined, name: string): MessageDescriptor {
+   return { ...getRegionLabels(regionType).name, values: { name } };
+}
+
+export function formatStationLabel(name: string, stationNumber?: number | null): string {
+   if (stationNumber == null) {
+      return name;
+   }
+   return `${String(stationNumber).padStart(3, "0")} - ${name}`;
+}
+
 export function getCsbCrumb(
-   region: { csb_name?: string | null; csb_slug?: string | null } | undefined,
-   electionConfigSlug: string,
+   region: { csb?: RegionSummary | null } | undefined,
+   electionConfig: Pick<ElectionConfig, "slug" | "single_csb">,
 ): { href: string; label: string } | null {
-   if (!region?.csb_name || !region.csb_slug) return null;
-   return { href: appRoutes.csbMunicipalityList(electionConfigSlug, region.csb_slug), label: region.csb_name };
+   const csb = region?.csb;
+   if (!csb) return null;
+   // A single CSB has no list to pick it from: link to its results, as the CSB tab does.
+   const href = electionConfig.single_csb
+      ? appRoutes.electionConfigCSBList(electionConfig.slug)
+      : appRoutes.csbMunicipalityList(electionConfig.slug, csb.slug);
+   return { href, label: csb.region_name };
 }

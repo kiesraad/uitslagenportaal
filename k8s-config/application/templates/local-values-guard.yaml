@@ -1,0 +1,12 @@
+{{- /*
+Refuses to apply values-local.yaml to a Scaleway cluster, where it would turn on debug and
+swap the managed database, cache and object storage for the in-cluster stand-ins.
+`helm template` and --dry-run cannot read the cluster and never fail here.
+*/}}
+{{- if .Values.localCluster }}
+{{- range (lookup "v1" "Node" "" "").items }}
+{{- if hasKey .metadata.labels "k8s.scaleway.com/managed" }}
+{{- fail "values-local.yaml is for a local cluster, and this one runs on Scaleway. Use the values file of the environment instead." }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ElectionConfig } from "@/api/types";
 import { Footer } from "@/components/Footer";
 import type { Locale } from "@/i18n/locales";
@@ -12,7 +12,9 @@ const electionConfig: ElectionConfig = {
    issue_report_opens_at: "2026-12-08T09:00:00",
    issue_report_deadline: "2026-12-14T10:00:00",
    csb_type: "WATERSCHAP",
+   single_csb: null,
    has_hsb: false,
+   timeline_dates: [],
    report_error_url: "https://example.test/melding",
    counting_info_url: "https://example.test/telproces",
    voting_url: "https://example.test/stemmen",
@@ -35,10 +37,6 @@ function renderFooter(locale: Locale = "nl") {
    return renderWithProviders(<Footer />, { locale });
 }
 
-beforeEach(() => {
-   localStorage.clear();
-});
-
 afterEach(() => {
    vi.unstubAllGlobals();
 });
@@ -52,13 +50,14 @@ describe("Footer", () => {
       expect(screen.getByText(`© ${currentYear} De Kiesraad`)).toBeInTheDocument();
    });
 
-   it("Always offers the shared report link, even without an election", () => {
+   it("Always offers the technical problem link, even without an election", () => {
       mockElectionConfigs([]);
       renderFooter();
 
-      expect(screen.getByRole("link", { name: /Melding maken/ })).toHaveAttribute(
+      expect(screen.getByRole("heading", { name: "Technisch probleem op de pagina?" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Technisch probleem melden" })).toHaveAttribute(
          "href",
-         "https://www.kiesraad.nl/service/contact",
+         expect.stringMatching(/\/api\/report-technical-issue\/$/),
       );
    });
 
@@ -97,7 +96,7 @@ describe("Footer", () => {
 
       expect(await screen.findByRole("link", { name: /About the counting process/ })).toBeInTheDocument();
       expect(screen.getByText("This website in other languages:")).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /Report an issue/ })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /Report a technical problem/ })).toBeInTheDocument();
    });
 
    it("Offers the other language and switches to it when clicked", async () => {
@@ -115,7 +114,7 @@ describe("Footer", () => {
       });
       // The switcher now offers the way back, and the choice is persisted.
       expect(screen.getByRole("button", { name: "Nederlands" })).toBeInTheDocument();
-      expect(localStorage.getItem("lang")).toBe("en");
+      expect(document.cookie).toContain("lang=en");
       expect(document.documentElement.lang).toBe("en");
    });
 });

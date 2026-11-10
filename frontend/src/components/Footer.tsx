@@ -4,13 +4,16 @@ import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRevalidator } from "react-router";
+import { API_ORIGIN } from "@/api/client.ts";
 import Button from "@/elements/Button.tsx";
+import { NewWindowHint } from "@/elements/ExternalLinkIcon.tsx";
+import KiesraadGridHexagon from "@/elements/KiesraadGridHexagon.tsx";
 import { type Locale, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
 import { electionConfigQuery, useElectionConfigs } from "../hooks/queries.ts";
 
-// Fixed URLs for non-changing elements
 const KIESRAAD_URL = "https://www.kiesraad.nl/";
-const REPORT_ERROR_URL = "https://www.kiesraad.nl/service/contact";
+// Served by the backend so the email address stays out of the bundle.
+const REPORT_TECHNICAL_ISSUE_URL = `${API_ORIGIN}/api/report-technical-issue/`;
 
 function LanguageSwitcher() {
    // Reading the locale through the hook (rather than the imported singleton)
@@ -68,13 +71,13 @@ export function Footer() {
          <div className="footer-navy">
             <div className="footer-top">
                <div className="footer-logo">
-                  <div className="footer-logo-left">
+                  <div className="footer-logo-left text-gray-500">
                      <div className="f-logo-grid-v-container">
                         <img src="/footer_logo.png" alt="Kiesraad" className="footer-logo-img" />
                         <div className="f-logo-grid-v">
                            <div className="f-logo-grid-item">
-                              <div className="f-logo-grid-item-bullet"></div>
-                              <div className="f-logo-grid-item-bullet"></div>
+                              <KiesraadGridHexagon className="f-logo-grid-item-bullet" />
+                              <KiesraadGridHexagon className="f-logo-grid-item-bullet" />
                            </div>
                            <div className="f-logo-grid-item"></div>
                         </div>
@@ -83,8 +86,8 @@ export function Footer() {
                         {Array.from({ length: 5 }).map((_, index) => (
                            // biome-ignore lint/suspicious/noArrayIndexKey: order is fixed
                            <div key={index} className="f-logo-grid-item">
-                              <div className="f-logo-grid-item-bullet"></div>
-                              <div className="f-logo-grid-item-bullet"></div>
+                              <KiesraadGridHexagon className="f-logo-grid-item-bullet" />
+                              <KiesraadGridHexagon className="f-logo-grid-item-bullet" />
                            </div>
                         ))}
                      </div>
@@ -92,31 +95,34 @@ export function Footer() {
                </div>
                <div className="footer-right">
                   <div className="footer-col">
-                     <h4>
-                        <Trans>Zie je een fout op de pagina?</Trans>
-                     </h4>
-                     <a href={REPORT_ERROR_URL} target="_blank" rel="noopener noreferrer">
+                     <h2 className="h4">
+                        <Trans>Technisch probleem op de pagina?</Trans>
+                     </h2>
+                     <a href={REPORT_TECHNICAL_ISSUE_URL} rel="nofollow">
                         <FontAwesomeIcon icon={faChevronRight} />
-                        <Trans>Melding maken</Trans>
+                        <Trans>Technisch probleem melden</Trans>
                      </a>
                   </div>
                   <div className="footer-col">
-                     {label && <h4>{label}</h4>}
+                     {label && <h2 className="h4">{label}</h2>}
                      {countingInfoUrl && (
                         <a href={countingInfoUrl} target="_blank" rel="noopener noreferrer">
                            <ExternalLinkIcon />
                            <Trans>Uitleg over telproces</Trans>
+                           <NewWindowHint />
                         </a>
                      )}
                      {votingUrl && (
                         <a href={votingUrl} target="_blank" rel="noopener noreferrer">
                            <ExternalLinkIcon />
                            <Trans>Stemmen</Trans>
+                           <NewWindowHint />
                         </a>
                      )}
                      <a href={KIESRAAD_URL} target="_blank" rel="noopener noreferrer">
                         <ExternalLinkIcon />
                         Kiesraad.nl
+                        <NewWindowHint />
                      </a>
                   </div>
                </div>

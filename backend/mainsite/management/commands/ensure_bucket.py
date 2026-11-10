@@ -8,16 +8,14 @@ from django.core.management.base import BaseCommand
 class Command(BaseCommand):
     help = "Create the object-storage bucket(s) if missing."
 
-    def add_arguments(self, parser):
-        parser.add_argument("buckets", nargs="*", help="Defaults to the configured default-storage bucket.")
-
     def handle(self, *args, **options):
-        # The configured backend already assembled endpoint, credentials and addressing
-        # style from settings.STORAGES, so none of it has to be repeated here.
-        storage = storages["default"]
-        client = storage.connection.meta.client
-        for bucket in options["buckets"] or [storage.bucket_name]:
-            self._ensure(client, bucket)
+        # Create the bucket for each configured S3 storage
+        for storage in [storages["default"], storages["pv_import"]]:
+            if not hasattr(storage, "bucket_name"):
+                continue
+
+            client = storage.connection.meta.client
+            self._ensure(client, storage.bucket_name)
 
     def _ensure(self, client, bucket: str) -> None:
         try:

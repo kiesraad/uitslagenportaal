@@ -65,6 +65,14 @@ PS_ELECTION_ID = "PS2023_Limburg"
 PS_CONFIG_IDENTIFIER = "PS2023"
 PS_ELECTION_NAME = "Provinciale Staten Limburg 2023"
 
+TK_ELECTION_ID = "TK2025"
+TK_CONFIG_IDENTIFIER = "TK2025"
+TK_ELECTION_NAME = "Tweede Kamer der Staten-Generaal 2025"
+
+EP_ELECTION_ID = "EP2024"
+EP_CONFIG_IDENTIFIER = "EP2024"
+EP_ELECTION_NAME = "Europees Parlement 2024"
+
 TotalVotes = Count.Election.Contests.Contest.TotalVotes
 
 
@@ -226,6 +234,34 @@ def make_ps_510d_eml(*, contests):
     )
 
 
+def make_tk_510d_eml(*, contests):
+    """A Totaaltelling published by the Kiesraad; TK has no election domain."""
+    return make_eml(
+        eml_id="510d",
+        authority_id="CSB",
+        authority_name="De Kiesraad",
+        contests=contests,
+        election_id=TK_ELECTION_ID,
+        election_name=TK_ELECTION_NAME,
+        category=ElectionCategoryType.TK,
+        subcategory=ElectionSubcategoryType.TK,
+    )
+
+
+def make_tk_510c_eml(*, contests):
+    """A Totaaltelling HSB in TK; without an election domain, the managing authority names the kieskring."""
+    return make_eml(
+        eml_id="510c",
+        authority_id="HSB10",
+        authority_name="Rotterdam",
+        contests=contests,
+        election_id=TK_ELECTION_ID,
+        election_name=TK_ELECTION_NAME,
+        category=ElectionCategoryType.TK,
+        subcategory=ElectionSubcategoryType.TK,
+    )
+
+
 def make_ps_510c_eml(*, contests, authority_name="Maastricht"):
     """A Totaaltelling HSB published by a kieskring's hoofdstembureau.
 
@@ -322,13 +358,13 @@ def ws_candidates(ws_contest, ws_parties):
 @pytest.fixture
 def ws_importer(ws_election):
     """A Telling importer, for exercising the base class helpers directly."""
-    return EML510bImporter(make_ws_510b_eml(contests=[]), fake_eml_file())
+    return EML510bImporter(fake_eml_file(), eml=make_ws_510b_eml(contests=[]))
 
 
 @pytest.fixture
 def ws_csb_importer(ws_election):
     """A Totaaltelling importer, for exercising the base class helpers directly."""
-    return EML510dImporter(make_ws_510d_eml(contests=[]), fake_eml_file())
+    return EML510dImporter(fake_eml_file(), eml=make_ws_510d_eml(contests=[]))
 
 
 @pytest.mark.parametrize(
@@ -358,6 +394,23 @@ def test_polling_station_name(name, expected):
     unit = make_reporting_unit("0654::SB1", name, [])
 
     assert EML510bImporter._polling_station_name(unit) == expected
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("Heinkenszand, De Stenge (postcode: 4451 CZ)", "4451 CZ"),
+        ("Heinkenszand, De Stenge (postcode: 4451CZ)", "4451 CZ"),
+        ("Heinkenszand, De Stenge (postcode: 4451 cz)", "4451 CZ"),
+        ("Kralendijk (postcode: onbekend)", "onbekend"),
+        ("Nutsgebouw Zwammerdam", None),
+        ("Nutsgebouw Zwammerdam (postcode: )", None),
+    ],
+)
+def test_polling_station_postal_code(name, expected):
+    unit = make_reporting_unit("0654::SB1", name, [])
+
+    assert EML510bImporter._polling_station_postal_code(unit) == expected
 
 
 def test_parse_party_candidate_votecounts_builds_party_and_candidate_rows(
@@ -512,7 +565,7 @@ def make_polling_station_document(*names_by_id):
 
 def test_ensure_polling_stations_creates_missing_stations(ws_regions):
     eml = make_polling_station_document(("0654::SB1", "Stembureau A"), ("0654::SB2", "Stembureau B"))
-    importer = EML510bImporter(eml, fake_eml_file())
+    importer = EML510bImporter(fake_eml_file(), eml=eml)
 
     stations = importer._ensure_polling_stations(ws_regions["gemeente"])
 
@@ -521,6 +574,16 @@ def test_ensure_polling_stations_creates_missing_stations(ws_regions):
     assert created.count() == 2
     # The polling stations hang off the gemeente, but their CSB is the election-tree root
     assert all(station.csb == ws_regions["waterschap"] for station in created)
+
+
+def test_ensure_polling_stations_stores_the_postal_code(ws_regions):
+    eml = make_polling_station_document(("0654::SB1", "Stembureau A (postcode: 4451 CZ)"), ("0654::SB2", "B"))
+    importer = EML510bImporter(fake_eml_file(), eml=eml)
+
+    stations = importer._ensure_polling_stations(ws_regions["gemeente"])
+
+    assert stations[("0654::SB1", "A")].postal_code == "4451 CZ"
+    assert stations[("0654::SB2", "B")].postal_code is None
 
 
 def test_ensure_polling_stations_reuses_existing_stations(ws_regions):
@@ -532,7 +595,7 @@ def test_ensure_polling_stations_reuses_existing_stations(ws_regions):
         region_name="A",
     )
     eml = make_polling_station_document(("0654::SB1", "Stembureau A"), ("0654::SB2", "Stembureau B"))
-    importer = EML510bImporter(eml, fake_eml_file())
+    importer = EML510bImporter(fake_eml_file(), eml=eml)
 
     stations = importer._ensure_polling_stations(ws_regions["gemeente"])
 
@@ -546,7 +609,7 @@ STORAGE_KEY_TIMESTAMP = r"\d{8}T\d{12}"
 def make_ws_importer(importer_cls, eml_file):
     """A real importer for the waterschap election, whichever 510 flavour is under test."""
     eml = make_ws_510b_eml(contests=[]) if importer_cls is EML510bImporter else make_ws_510d_eml(contests=[])
-    return importer_cls(eml, eml_file)
+    return importer_cls(eml_file, eml=eml)
 
 
 def assert_storage_key(storage_key: str, expected_stem: str) -> None:
@@ -668,7 +731,7 @@ def make_ws_telling(
 
 
 def test_510b_imports_votes_for_gsb_and_polling_stations(ws_regions, ws_contest, ws_parties, ws_candidates):
-    EML510bImporter(make_ws_telling(), fake_eml_file()).parse()
+    EML510bImporter(fake_eml_file(), eml=make_ws_telling()).parse()
 
     station = Region.objects.get(region_category=RegionCategory.STEMBUREAU)
     assert (station.parent, station.csb, station.region_name) == (
@@ -693,7 +756,7 @@ def test_510b_imports_votes_for_gsb_and_polling_stations(ws_regions, ws_contest,
 
 def test_510b_correction_replaces_municipality_tree(ws_regions, ws_contest, ws_parties, ws_candidates):
     """A second telling for the same gemeente tosses stembureaus and 510b counts, then reimports."""
-    EML510bImporter(make_ws_telling(), fake_eml_file()).parse()
+    EML510bImporter(fake_eml_file(), eml=make_ws_telling()).parse()
     original_station_id = Region.objects.get(region_category=RegionCategory.STEMBUREAU).pk
 
     totals = make_total_votes(
@@ -712,7 +775,7 @@ def test_510b_correction_replaces_municipality_tree(ws_regions, ws_contest, ws_p
     )
     correction = make_ws_510b_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])])
 
-    EML510bImporter(correction, fake_eml_file()).parse()
+    EML510bImporter(fake_eml_file(), eml=correction).parse()
 
     gemeente = ws_regions["gemeente"]
     assert Region.objects.filter(pk=gemeente.pk).exists()
@@ -737,7 +800,7 @@ def test_510b_correction_replaces_municipality_tree(ws_regions, ws_contest, ws_p
 def test_510b_marks_region_as_counted_and_stores_document(ws_regions, ws_contest, ws_parties, ws_candidates):
     eml = make_ws_telling(counting_method=CountingMethodMethodCode.DECENTRALE_STEMOPNEMING)
 
-    EML510bImporter(eml, NamedBytesIO(b"<eml/>", "telling.eml.xml")).parse()
+    EML510bImporter(NamedBytesIO(b"<eml/>", "telling.eml.xml"), eml=eml).parse()
 
     gemeente = ws_regions["gemeente"]
     gemeente.refresh_from_db()
@@ -756,7 +819,7 @@ def test_510b_rejects_region_outside_the_election(ws_regions, ws_contest, ws_par
         EMLImporterException,
         match=r"Municipality Onbekend 999 does not exist in the election definition of election .*",
     ):
-        EML510bImporter(eml, NamedBytesIO(b"<eml/>", "telling.eml.xml")).parse()
+        EML510bImporter(NamedBytesIO(b"<eml/>", "telling.eml.xml"), eml=eml).parse()
 
     assert not VoteCount.objects.exists()
     assert not VoterTurnoutCount.objects.exists()
@@ -782,7 +845,7 @@ def ws_totaaltelling(ws_regions, ws_contest, ws_parties, ws_candidates):
         ],
     )
     EML510dImporter(
-        make_ws_510d_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])]), fake_eml_file()
+        fake_eml_file(), eml=make_ws_510d_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])])
     ).parse()
 
 
@@ -801,7 +864,7 @@ def test_510d_keeps_the_counting_method_while_setting_the_publication_date(
     eml = make_ws_510d_eml(contests=[])
     eml.count.counting_method = EmlCountingMethod(method_code=CountingMethodMethodCode.CENTRALE_STEMOPNEMING)
 
-    EML510dImporter(eml, fake_eml_file()).parse()
+    EML510dImporter(fake_eml_file(), eml=eml).parse()
 
     waterschap = ws_regions["waterschap"]
     waterschap.refresh_from_db()
@@ -812,7 +875,7 @@ def test_510d_keeps_the_counting_method_while_setting_the_publication_date(
 def test_510d_leaves_results_available_at_unset_without_a_creation_date(
     ws_regions, ws_contest, ws_parties, ws_candidates
 ):
-    EML510dImporter(make_ws_510d_eml(contests=[], creation_date_time=None), fake_eml_file()).parse()
+    EML510dImporter(fake_eml_file(), eml=make_ws_510d_eml(contests=[], creation_date_time=None)).parse()
 
     waterschap = ws_regions["waterschap"]
     waterschap.refresh_from_db()
@@ -853,7 +916,7 @@ def test_510d_correction_deletes_csb_and_descendant_counts(ws_regions, ws_contes
         ],
     )
     first = make_ws_510d_eml(contests=[make_contest("geen", total_votes=totals, units=[unit])])
-    EML510dImporter(first, NamedBytesIO(b"<eml>first</eml>", "totaal.eml.xml")).parse()
+    EML510dImporter(NamedBytesIO(b"<eml>first</eml>", "totaal.eml.xml"), eml=first).parse()
 
     original_count_ids = set(VoteCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True))
     original_turnout_ids = set(VoterTurnoutCount.objects.filter(eml_type=EmlType.EML_510d).values_list("pk", flat=True))
@@ -874,7 +937,7 @@ def test_510d_correction_deletes_csb_and_descendant_counts(ws_regions, ws_contes
         ],
     )
     correction = make_ws_510d_eml(contests=[make_contest("geen", total_votes=corrected_totals, units=[corrected_unit])])
-    EML510dImporter(correction, NamedBytesIO(b"<eml>corrected</eml>", "totaal.eml.xml")).parse()
+    EML510dImporter(NamedBytesIO(b"<eml>corrected</eml>", "totaal.eml.xml"), eml=correction).parse()
 
     waterschap = ws_regions["waterschap"]
     gemeente = ws_regions["gemeente"]
@@ -987,7 +1050,7 @@ def ps_totaaltelling(ps_regions, ps_contests, ps_candidates):
         ]
     )
     EML510dImporter(
-        make_ps_510d_eml(contests=[make_contest("alle", total_votes=totals, units=units)]), fake_eml_file()
+        fake_eml_file(), eml=make_ps_510d_eml(contests=[make_contest("alle", total_votes=totals, units=units)])
     ).parse()
 
 
@@ -1032,7 +1095,7 @@ def test_510b_leaves_results_available_at_unset_without_a_creation_date(
     ws_regions, ws_contest, ws_parties, ws_candidates
 ):
     """<kr:CreationDateTime> is optional; without it there is no publication date to show."""
-    EML510bImporter(make_ws_telling(creation_date_time=None), fake_eml_file()).parse()
+    EML510bImporter(fake_eml_file(), eml=make_ws_telling(creation_date_time=None)).parse()
 
     gemeente = ws_regions["gemeente"]
     gemeente.refresh_from_db()
@@ -1088,7 +1151,7 @@ def ps_hsb_totaaltelling(ps_maastricht_gemeenten, ps_contests, ps_candidates):
         ]
     )
     contest = make_contest("I", total_votes=totals, units=units)
-    EML510cImporter(make_ps_510c_eml(contests=[contest]), fake_eml_file()).parse()
+    EML510cImporter(fake_eml_file(), eml=make_ps_510c_eml(contests=[contest])).parse()
 
 
 def test_510c_resolves_kieskring_region_from_election_domain(ps_hsb_totaaltelling, ps_regions):
@@ -1134,7 +1197,237 @@ def test_510c_does_not_write_results_for_the_other_kieskring(ps_hsb_totaaltellin
 
 
 def test_510c_stores_document_on_the_kieskring(ps_maastricht_gemeenten, ps_regions):
-    EML510cImporter(make_ps_510c_eml(contests=[]), NamedBytesIO(b"<eml/>", "x.xml")).parse()
+    EML510cImporter(NamedBytesIO(b"<eml/>", "x.xml"), eml=make_ps_510c_eml(contests=[])).parse()
 
     doc = ElectionDocument.objects.get()
     assert doc.region == ps_regions["Maastricht"]
+
+
+@pytest.fixture
+def tk_election(db):
+    config = ElectionConfigFactory(identifier=TK_CONFIG_IDENTIFIER, category=ElectionCategory.TK.value)
+    return ElectionFactory(
+        election_config=config,
+        name=TK_ELECTION_NAME,
+        subcategory="TK",
+        date=ELECTION_DATE,
+    )
+
+
+@pytest.fixture
+def tk_regions(tk_election):
+    """staat -> two kieskringen, so the Totaaltelling breaks down per kieskring."""
+    staat = RegionFactory(
+        election=tk_election,
+        region_category=RegionCategory.STAAT,
+        region_number=None,
+        region_name="Nederland",
+    )
+    kieskringen = {
+        name: RegionFactory(
+            election=tk_election,
+            parent=staat,
+            csb=staat,
+            region_category=RegionCategory.KIESKRING,
+            region_number=str(number),
+            region_name=name,
+        )
+        for number, name in enumerate(("Amsterdam", "Rotterdam"), start=9)
+    }
+    return {"staat": staat, **kieskringen}
+
+
+def test_510d_resolves_staat_csb_without_election_domain(tk_regions, tk_election):
+    """TK (and EP) CSB totaaltellingen have no kr:ElectionDomain; the CSB is Nederland."""
+    PartyFactory(election=tk_election, list_number=1, registered_name="CDA")
+    ContestFactory(election=tk_election, identifier="alle")
+    ContestFactory(election=tk_election, identifier="9", name="Amsterdam")
+    ContestFactory(election=tk_election, identifier="13", name="Rotterdam")
+
+    units = [
+        make_reporting_unit(
+            "HSB9",
+            "Kieskring Amsterdam",
+            [party_selection(ReportingUnitVotes.Selection, 1, "CDA", 100)],
+        ),
+        make_reporting_unit(
+            "HSB13",
+            "Kieskring Rotterdam",
+            [party_selection(ReportingUnitVotes.Selection, 1, "CDA", 150)],
+        ),
+    ]
+    totals = make_total_votes([party_selection(TotalVotes.Selection, 1, "CDA", 250)])
+    EML510dImporter(
+        fake_eml_file(), eml=make_tk_510d_eml(contests=[make_contest("alle", total_votes=totals, units=units)])
+    ).parse()
+
+    staat = tk_regions["staat"]
+    staat.refresh_from_db()
+    rows = VoteCount.objects.filter(result_level=VoteCount.RESULT_LEVEL_PARTY).order_by("valid_votes")
+
+    assert staat.results_available_at == timezone.make_aware(CREATION_DATE_TIME)
+    assert [(row.region, row.valid_votes) for row in rows] == [
+        (tk_regions["Amsterdam"], 100),
+        (tk_regions["Rotterdam"], 150),
+        (staat, 250),
+    ]
+
+
+def test_510c_resolves_kieskring_from_managing_authority_without_election_domain(tk_regions, tk_election):
+    rotterdam = tk_regions["Rotterdam"]
+    schiedam = RegionFactory(
+        election=tk_election,
+        parent=rotterdam,
+        csb=tk_regions["staat"],
+        region_category=RegionCategory.GEMEENTE,
+        region_number="606",
+        region_name="Schiedam",
+    )
+    PartyFactory(election=tk_election, list_number=1, registered_name="CDA")
+    ContestFactory(election=tk_election, identifier="10", name="Rotterdam")
+
+    units = [
+        make_reporting_unit("0606", "Gemeente Schiedam", [party_selection(ReportingUnitVotes.Selection, 1, "CDA", 150)])
+    ]
+    totals = make_total_votes([party_selection(TotalVotes.Selection, 1, "CDA", 150)])
+    EML510cImporter(
+        fake_eml_file(), eml=make_tk_510c_eml(contests=[make_contest("10", total_votes=totals, units=units)])
+    ).parse()
+
+    rows = VoteCount.objects.filter(result_level=VoteCount.RESULT_LEVEL_PARTY)
+    assert {(row.region, row.valid_votes, row.eml_type) for row in rows} == {
+        (schiedam, 150, EmlType.EML_510c),
+        (rotterdam, 150, EmlType.EML_510c),
+    }
+
+
+def make_ep_eml(*, eml_id, authority_id, authority_name, contests):
+    """An EP file; like TK, it has no election domain."""
+    return make_eml(
+        eml_id=eml_id,
+        authority_id=authority_id,
+        authority_name=authority_name,
+        contests=contests,
+        election_id=EP_ELECTION_ID,
+        election_name=EP_ELECTION_NAME,
+        category=ElectionCategoryType.EP,
+        subcategory=ElectionSubcategoryType.EP,
+    )
+
+
+@pytest.fixture
+def ep_election(db):
+    config = ElectionConfigFactory(identifier=EP_CONFIG_IDENTIFIER, category=ElectionCategory.EP.value)
+    return ElectionFactory(
+        election_config=config,
+        name=EP_ELECTION_NAME,
+        subcategory="EP",
+        date=ELECTION_DATE,
+    )
+
+
+@pytest.fixture
+def ep_regions(ep_election):
+    """staat -> kieskringen Assen and Amsterdam; Assen -> gemeente Emmen."""
+    staat = RegionFactory(
+        election=ep_election,
+        region_category=RegionCategory.STAAT,
+        region_number=None,
+        region_name="Nederland",
+    )
+    kieskringen = {
+        name: RegionFactory(
+            election=ep_election,
+            parent=staat,
+            csb=staat,
+            region_category=RegionCategory.KIESKRING,
+            region_number=str(number),
+            region_name=name,
+        )
+        for number, name in ((3, "Assen"), (9, "Amsterdam"))
+    }
+    emmen = RegionFactory(
+        election=ep_election,
+        parent=kieskringen["Assen"],
+        csb=staat,
+        region_category=RegionCategory.GEMEENTE,
+        region_number="114",
+        region_name="Emmen",
+    )
+    return {"staat": staat, **kieskringen, "Emmen": emmen}
+
+
+@pytest.fixture
+def ep_candidate(ep_election):
+    """EP has one national candidate list: the 110a and 230b only define contest "alle"."""
+    contest = ContestFactory(election=ep_election, identifier="alle")
+    party = PartyFactory(election=ep_election, list_number=1, registered_name="CDA")
+    return CandidateFactory(contest=contest, party=party, identifier=1, position=1)
+
+
+def test_ep_510c_uses_the_national_contest_for_the_kieskring_number(ep_regions, ep_candidate):
+    """An EP Totaaltelling HSB names the kieskring number as its contest, which has no Contest of its own."""
+    units = [
+        make_reporting_unit(
+            "HSB3::0114",
+            "Emmen",
+            [
+                party_selection(ReportingUnitVotes.Selection, 1, "CDA", 120),
+                candidate_selection(ReportingUnitVotes.Selection, 40, number=1),
+            ],
+        )
+    ]
+    totals = make_total_votes(
+        [
+            party_selection(TotalVotes.Selection, 1, "CDA", 120),
+            candidate_selection(TotalVotes.Selection, 40, number=1),
+        ]
+    )
+    eml = make_ep_eml(
+        eml_id="510c",
+        authority_id="HSB3",
+        authority_name="Assen",
+        contests=[make_contest("3", total_votes=totals, units=units)],
+    )
+    EML510cImporter(fake_eml_file(), eml=eml).parse()
+
+    rows = VoteCount.objects.all()
+    assert {(row.region, row.result_level, row.candidate, row.valid_votes) for row in rows} == {
+        (ep_regions["Emmen"], VoteCount.RESULT_LEVEL_PARTY, None, 120),
+        (ep_regions["Emmen"], VoteCount.RESULT_LEVEL_CANDIDATE, ep_candidate, 40),
+        (ep_regions["Assen"], VoteCount.RESULT_LEVEL_PARTY, None, 120),
+        (ep_regions["Assen"], VoteCount.RESULT_LEVEL_CANDIDATE, ep_candidate, 40),
+    }
+    assert {row.contest for row in rows} == {ep_candidate.contest}
+
+
+def test_ep_510d_uses_the_national_contest_for_each_kieskring(ep_regions, ep_candidate):
+    """Contest "alle" does not mean a contest per kieskring in EP, as it does in TK and PS."""
+    units = [
+        make_reporting_unit(
+            "HSB3",
+            "Kieskring Assen",
+            [party_selection(ReportingUnitVotes.Selection, 1, "CDA", 120)],
+        ),
+        make_reporting_unit(
+            "HSB9",
+            "Kieskring Amsterdam",
+            [party_selection(ReportingUnitVotes.Selection, 1, "CDA", 300)],
+        ),
+    ]
+    totals = make_total_votes([party_selection(TotalVotes.Selection, 1, "CDA", 420)])
+    eml = make_ep_eml(
+        eml_id="510d",
+        authority_id="CSB",
+        authority_name="De Kiesraad",
+        contests=[make_contest("alle", total_votes=totals, units=units)],
+    )
+    EML510dImporter(fake_eml_file(), eml=eml).parse()
+
+    rows = VoteCount.objects.all()
+    assert {(row.region, row.valid_votes) for row in rows} == {
+        (ep_regions["Assen"], 120),
+        (ep_regions["Amsterdam"], 300),
+        (ep_regions["staat"], 420),
+    }
+    assert {row.contest for row in rows} == {ep_candidate.contest}

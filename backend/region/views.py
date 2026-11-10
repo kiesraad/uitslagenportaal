@@ -1,34 +1,80 @@
-from django.db.models import Prefetch
+from django.contrib.postgres.expressions import ArraySubquery
+from django.db.models import BooleanField, Case, Exists, OuterRef, Prefetch, When
+from django.db.models.functions import JSONObject
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
-from election.models import ElectionDocument, VoteCount, VoterTurnoutCount
+from election.models import ElectionConfig, ElectionDocument, VoteCount, VoterTurnoutCount
 from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
-from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, EmlType, ReportingLevel
-from region.models import Region
+from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, ReportingLevel
+from region.models import Region, hsb_kieskringen
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
-_OWN_RESULTS_EML_TYPE = {
-    RegionCategory.GEMEENTE: EmlType.EML_510b,
-    RegionCategory.KIESKRING: EmlType.EML_510c,
-}
+FileType = ElectionDocument.FileType
 
 # FileType values are EML510b, not the EmlType strings 510b used on vote counts.
-_DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL = {
-    ReportingLevel.GSB: ElectionDocument.FileType.EML_510B,
-    ReportingLevel.HSB: ElectionDocument.FileType.EML_510C,
-    ReportingLevel.CSB: ElectionDocument.FileType.EML_510D,
+# A GR gemeente is both GSB and CSB, so each level names its own PVs rather than taking all of the region's.
+_DOCUMENT_FILE_TYPES_BY_REPORTING_LEVEL = {
+    ReportingLevel.SB: [
+        FileType.EML_510B,
+        FileType.PDF_N10_1,
+        FileType.PDF_N10_2,
+        FileType.PDF_NA14_1,
+        FileType.PDF_NA31_2_B1,
+    ],
+    ReportingLevel.GSB: [
+        FileType.EML_510B,
+        FileType.PDF_SB_ZIP,
+        FileType.PDF_NA31_1,
+        FileType.PDF_NA31_2,
+        FileType.PDF_NA31_2_B2,
+        FileType.PDF_NA14_2,
+        FileType.PDF_NA14_2_B1,
+    ],
+    ReportingLevel.HSB: [FileType.EML_510C, FileType.PDF_O7, FileType.PDF_P1F_1],
+    ReportingLevel.CSB: [FileType.EML_510D, FileType.EML_520, FileType.PDF_P22_1, FileType.PDF_P22_2],
 }
+
+
+def _with_same_location_stations(queryset):
+    """Annotate each stembureau with the other stembureaus at its location (a dubbel stembureau)."""
+    others = (
+        Region.objects.filter(
+            parent=OuterRef("parent"),
+            region_category=RegionCategory.STEMBUREAU,
+            region_name=OuterRef("region_name"),
+            postal_code=OuterRef("postal_code"),
+        )
+        .exclude(pk=OuterRef("pk"))
+        .values(json=JSONObject(region_number="region_number", slug="slug"))
+    )
+    return queryset.annotate(same_location_stations=ArraySubquery(others))
+
+
+def _has_results():
+    """Whether the page a list row links to has counts: a CSB's 510d, a kieskring's 510c, otherwise 510b."""
+
+    def counted(level):
+        return Exists(VoteCount.objects.filter(region=OuterRef("pk"), eml_type=EML_TYPE_BY_REPORTING_LEVEL[level]))
+
+    # 510c and 510d also hold counts for the child regions, so any count at all is not enough.
+    return Case(
+        When(
+            region_category__in=[RegionCategory.WATERSCHAP, RegionCategory.PROVINCIE],
+            then=counted(ReportingLevel.CSB),
+        ),
+        When(region_category=RegionCategory.KIESKRING, then=counted(ReportingLevel.HSB)),
+        default=counted(ReportingLevel.GSB),
+        output_field=BooleanField(),
+    )
 
 
 class RegionListView(ListAPIView):
     serializer_class = RegionListSerializer
 
     def get_queryset(self):
-        election_config_slug = self.request.query_params.get("election_config")
-        if not election_config_slug:
-            raise ValidationError({"election_config": "This query parameter is required."})
+        election_config_slug = self.kwargs.get("election_config")
 
         # optional
         region_category = self.request.query_params.get("region_category")
@@ -38,9 +84,6 @@ class RegionListView(ListAPIView):
 
         # optional — CSB ancestor slug (any depth)
         csb_slug = self.request.query_params.get("csb")
-
-        # optional — only regions that published their own results (see _OWN_RESULTS_EML_TYPE)
-        has_own_results = self.request.query_params.get("has_own_results") == "true"
 
         if region_category:
             if region_category not in RegionCategory.values:
@@ -54,6 +97,7 @@ class RegionListView(ListAPIView):
                 # Expired elections are hidden everywhere, not just on the home page.
                 election__election_config__date__gte=visibility_cutoff(),
             )
+            .annotate(has_results=_has_results())
             .select_related("csb")
             .order_by("region_name")
         )
@@ -61,36 +105,48 @@ class RegionListView(ListAPIView):
             result = result.filter(parent__slug=parent_region_slug)
         if csb_slug:
             result = result.filter(csb__slug=csb_slug)
-        if region_category:
+        if region_category == RegionCategory.KIESKRING:
+            result = hsb_kieskringen(result)
+        elif region_category:
             result = result.filter(region_category=region_category)
-        if has_own_results:
-            own_eml_type = _OWN_RESULTS_EML_TYPE.get(region_category)
-            if own_eml_type is None:
-                raise ValidationError({"has_own_results": f"Not supported for region_category {region_category}."})
-            result = result.filter(vote_counts__eml_type=own_eml_type).distinct()
-        return result
+        return _with_same_location_stations(result)
 
 
 class RegionDetailView(RetrieveAPIView):
     serializer_class = RegionDetailSerializer
 
     def get_object(self):
-        election_config_slug = self.request.query_params.get("election_config")
-        region_slug = self.request.query_params.get("region")
+        election_config_slug = self.kwargs.get("election_config")
+        region_slug = self.kwargs.get("region")
         level = self.request.query_params.get("level")
         # optional
         csb_slug = self.request.query_params.get("csb")
         parent_region_slug = self.request.query_params.get("parent_region")
 
-        if not election_config_slug:
-            raise ValidationError({"election_config": "This query parameter is required."})
-        if not region_slug:
-            raise ValidationError({"region": "This query parameter is required."})
         if level not in ReportingLevel.values:
-            raise ValidationError({"level": "This query parameter is required and must be gsb, hsb, or csb."})
+            raise ValidationError({"level": "This query parameter is required and must be sb, gsb, hsb, or csb."})
 
         eml_type = EML_TYPE_BY_REPORTING_LEVEL[level]
-        document_file_type = _DOCUMENT_FILE_TYPE_BY_REPORTING_LEVEL[level]
+        document_file_type = [
+            *_DOCUMENT_FILE_TYPES_BY_REPORTING_LEVEL[level],
+            ElectionDocument.FileType.CSV_OSV43,
+        ]
+
+        election_config = ElectionConfig.objects.filter(slug=election_config_slug).first()
+        if election_config is None:
+            raise NotFound({"detail": "Election config not found."})
+
+        region_category = None
+        match level:
+            case ReportingLevel.CSB.value:
+                region_category = election_config.csb_type
+            case ReportingLevel.HSB.value:
+                region_category = RegionCategory.KIESKRING
+            case ReportingLevel.GSB.value:
+                region_category = RegionCategory.GEMEENTE
+            case ReportingLevel.SB.value:
+                region_category = RegionCategory.STEMBUREAU
+
         queryset = (
             Region.objects.select_related(
                 "csb",
@@ -107,13 +163,18 @@ class RegionDetailView(RetrieveAPIView):
                 ),
                 # ElectionDocument uses CurrentManager; explicit Prefetch ensures prefetched
                 # rows match obj.documents.all(), not all_objects.
-                Prefetch("documents", queryset=ElectionDocument.objects.filter(file_type=document_file_type)),
-                "election__election_config__timeline_entries",
+                Prefetch(
+                    "documents",
+                    queryset=ElectionDocument.objects.filter(file_type__in=document_file_type).order_by(
+                        "file_type", "created_at", "pk"
+                    ),
+                ),
             )
             .filter(
                 election__election_config__slug=election_config_slug,
                 election__election_config__date__gte=visibility_cutoff(),
                 slug=region_slug,
+                region_category=region_category,
             )
         )
         if parent_region_slug:
@@ -122,7 +183,7 @@ class RegionDetailView(RetrieveAPIView):
             queryset = queryset.filter(csb__slug=csb_slug)
 
         try:
-            return queryset.get()
+            return _with_same_location_stations(queryset).get()
         except Region.DoesNotExist:
             raise NotFound({"detail": "Region not found for this election."})
         except Region.MultipleObjectsReturned:

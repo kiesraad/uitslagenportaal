@@ -21,6 +21,10 @@ describe("router", () => {
       // A static segment outranks the stembureau parameter it sits beside.
       ["/ab2023/gsb/utrecht/csb/csb-1/resultaten", "MunicipalityResultsPage"],
       ["/ab2023/gsb/utrecht/csb/csb-1/sb-3", "PollingStationResultsPage"],
+      // A GR gemeente has no CSB above it.
+      ["/gr2026/gsb/ede", "MunicipalityPollingstationListPageWithoutCsb"],
+      ["/gr2026/gsb/ede/resultaten", "MunicipalityResultsPageWithoutCsb"],
+      ["/gr2026/gsb/ede/sb-3/vvd", "PollingStationPartyResultsPageWithoutCsb"],
       ["/ab2023/onzin", "NotFoundPageNested"],
    ])("%s renders %s", (pathname, expected) => {
       expect(match(pathname).chain.at(-1)).toBe(expected);
@@ -48,6 +52,8 @@ describe("router", () => {
       ["/ab2023/gsb/utrecht/csb/csb-1/resultaten/vvd"],
       ["/ab2023/gsb/utrecht/csb/csb-1/sb-3"],
       ["/ab2023/gsb/utrecht/csb/csb-1/sb-3/vvd"],
+      ["/gr2026/gsb/ede"],
+      ["/gr2026/gsb/ede/sb-3/vvd"],
    ])("loads the data of %s exactly once", (pathname) => {
       expect(match(pathname).loaders).toBe(1);
    });

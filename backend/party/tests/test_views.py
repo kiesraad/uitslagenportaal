@@ -193,6 +193,58 @@ def test_party_result_matrix_returns_candidate_votes_per_gemeente():
     }
 
 
+@pytest.mark.django_db
+def test_party_result_matrix_shows_one_row_per_candidate_across_kieskringen():
+    """With several kieskringen the columns are the kieskringen, and a candidate on each kieskring's list is one row."""
+    election = ElectionFactory()
+    party = PartyFactory(election=election)
+    staat = RegionFactory(election=election, region_category=RegionCategory.STAAT, region_name="Nederland")
+    rotterdam = RegionFactory(
+        election=election, parent=staat, csb=staat, region_category=RegionCategory.KIESKRING, region_name="Rotterdam"
+    )
+    leiden = RegionFactory(
+        election=election, parent=staat, csb=staat, region_category=RegionCategory.KIESKRING, region_name="Leiden"
+    )
+    rotterdam_contest = ContestFactory(election=election, identifier="10", name="Rotterdam")
+    leiden_contest = ContestFactory(election=election, identifier="7", name="Leiden")
+    rotterdam_candidate = CandidateFactory(contest=rotterdam_contest, party=party, position=1, last_name="Kegel")
+    leiden_candidate = CandidateFactory(contest=leiden_contest, party=party, position=1, last_name="Kegel")
+
+    for region, candidate, valid_votes in [
+        (rotterdam, rotterdam_candidate, 2935),
+        (leiden, leiden_candidate, 8850),
+        # The 510d importer stores the CSB total on one of the candidate's records.
+        (staat, leiden_candidate, 11785),
+    ]:
+        VoteCount.objects.create(
+            contest=candidate.contest,
+            region=region,
+            party=party,
+            candidate=candidate,
+            valid_votes=valid_votes,
+            result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
+            eml_type=EmlType.EML_510d,
+        )
+    for region, valid_votes in [(rotterdam, 3000), (leiden, 9000), (staat, 12000)]:
+        VoteCount.objects.create(
+            contest=rotterdam_contest,
+            region=region,
+            party=party,
+            valid_votes=valid_votes,
+            result_level=VoteCount.RESULT_LEVEL_PARTY,
+            eml_type=EmlType.EML_510d,
+        )
+
+    response = CSBPartyResultMatrixView.as_view()(_matrix_request(election.slug, party.slug, staat.slug))
+
+    assert response.status_code == 200
+    assert [column["region_name"] for column in response.data["columns"]] == ["Leiden", "Rotterdam"]
+    assert [row["candidate"]["last_name"] for row in response.data["rows"]] == ["Kegel"]
+    assert response.data["rows"][0]["total"] == 11785
+    assert response.data["rows"][0]["votes"] == {leiden.slug: 8850, rotterdam.slug: 2935}
+    assert response.data["totals"] == {"total": 12000, "votes": {leiden.slug: 9000, rotterdam.slug: 3000}}
+
+
 def _hsb_matrix_request(election_slug, party_slug, hsb_slug):
     return factory.get(
         "/api/hsb-party-result-matrix/",
@@ -455,24 +507,25 @@ def test_hsb_party_result_matrix_supports_a_kieskring_with_a_single_gemeente():
 
 
 @pytest.mark.django_db
-def test_hsb_party_result_matrix_does_not_use_510d_without_its_own_hsb():
+def test_hsb_party_result_matrix_ignores_510d_counts():
+    """The CSB's 510d also counts per gemeente; the HSB matrix shows only the kieskring's own 510c."""
     election = ElectionFactory()
-    contest = ContestFactory(election=election)
     party = PartyFactory(election=election)
-    waterschap = RegionFactory(election=election, region_category=RegionCategory.WATERSCHAP)
+    provincie = RegionFactory(election=election, region_category=RegionCategory.PROVINCIE, region_name="Drenthe")
     kieskring = RegionFactory(
         election=election,
-        parent=waterschap,
-        csb=waterschap,
+        parent=provincie,
+        csb=provincie,
         region_category=RegionCategory.KIESKRING,
-        region_name=waterschap.region_name,
+        region_name="Assen",
     )
     gemeente = RegionFactory(
         election=election,
         parent=kieskring,
-        csb=waterschap,
+        csb=provincie,
         region_category=RegionCategory.GEMEENTE,
     )
+    contest = ContestFactory(election=election, name="Assen")
     candidate = CandidateFactory(contest=contest, party=party, position=1, last_name="Jansen")
 
     VoteCount.objects.create(

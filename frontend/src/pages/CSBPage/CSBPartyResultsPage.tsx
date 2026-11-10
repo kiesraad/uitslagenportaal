@@ -1,13 +1,13 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { CSBTimeline } from "@/components/Timeline/CSBTimeline.tsx";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import IssueNotice from "../../components/ResultsPage/IssueNotice.tsx";
 import PartyVoteMatrixTable from "../../components/ResultsPage/PartyVoteMatrixTable.tsx";
 import ResultsNotPublished from "../../components/ResultsPage/ResultsNotPublished.tsx";
 import ResultsPageIndex from "../../components/ResultsPage/ResultsPageIndex";
-import ResultsTimeline from "../../components/ResultsPage/ResultsTimeline.tsx";
 import { csbPartyVoteMatrixQuery, electionConfigQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
@@ -20,8 +20,8 @@ export function csbPartyResultsLoader(queryClient: QueryClient) {
       const regionQueryOptions = regionQuery(params, "csb");
 
       const [, region] = await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionQueryOptions),
       ]);
 
       // Only the region response names the election the matrix is asked for.
@@ -30,7 +30,7 @@ export function csbPartyResultsLoader(queryClient: QueryClient) {
          params.regionSlug,
          params.partySlug,
       );
-      await queryClient.ensureQueryData(partyVoteMatrixQueryOptions);
+      await queryClient.query(partyVoteMatrixQueryOptions);
 
       return {
          electionConfigQuery: electionConfigQueryOptions,
@@ -66,7 +66,7 @@ export function CSBPartyResultsPage() {
       <>
          <ResultsPageIndex />
          <section id="telresultaten" className="party-vote-matrix-section">
-            <h2 className="text-lg mb-4.5 font-medium">
+            <h2 className="mb-4.5">
                <Trans>Telresultaten lijst {listNumber}</Trans>
             </h2>
             <h3 className="party-level-title mb-2">{partyName}</h3>
@@ -78,13 +78,16 @@ export function CSBPartyResultsPage() {
                   proces-verbaal van het centraal stembureau.
                </Trans>
             </p>
-            <PartyVoteMatrixTable matrix={partyVoteMatrix} />
+            <PartyVoteMatrixTable
+               matrix={partyVoteMatrix}
+               caption={<Trans>Stemmen per kandidaat per kieskring</Trans>}
+            />
          </section>
       </>
    );
 
    return (
-      <LayoutMain title={t`Resultaten`}>
+      <LayoutMain title={t`Telresultaten ${partyName} – ${regionType} ${regionName}`}>
          <PageTop
             title={`${t`Telresultaten ${regionType} ${regionName}`}\n ${partyName}`}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
@@ -95,13 +98,17 @@ export function CSBPartyResultsPage() {
                   label: electionConfig.label,
                },
                { href: appRoutes.csbResults(electionConfig.slug, region.slug), label: region.region_name },
-               { href: appRoutes.csbPartyResults(electionConfig.slug, region.slug, partySlug), label: partyName },
+               { label: partyName },
             ]}
          />
          <div className="page-main">
-            <div className="page-space-3 party-vote-matrix-page">
-               {!hasResults ? <ResultsNotPublished regionLabel={region.region_name} /> : resultsPageContent}
-               <ResultsTimeline variant={region.timeline_variant} entries={electionConfig.timeline_entries ?? []} />
+            <div className="party-vote-matrix-page flex flex-col gap-4 sm:gap-12">
+               {!hasResults ? (
+                  <ResultsNotPublished regionName={region.region_name} regionCategory={region.region_category} />
+               ) : (
+                  resultsPageContent
+               )}
+               <CSBTimeline dates={electionConfig.timeline_dates ?? []} documents={region.documents} region={region} />
                <IssueNotice issueReportDeadline={electionConfig.issue_report_deadline} />
             </div>
          </div>

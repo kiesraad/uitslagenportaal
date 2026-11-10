@@ -26,15 +26,26 @@ work — not even when a change looks finished. Leave everything in the working 
 what changed; the developer reviews it and commits it themselves, because they carry
 responsibility for every line that lands. Ask first if you think a commit is needed.
 
+## Claude Code: auto mode
+
+If the auto mode classifier cannot be reached, don't skip the commands it blocks and carry on
+without them. Stop and ask the developer to switch to accept-edits mode (Shift+Tab), then
+continue there.
+
 ## Comments
 
-Keep comments short and to the point, and write them from the perspective of the
-application as a whole rather than the change that introduced them. Never restate what the
-code obviously does; a comment earns its place only by adding what cannot be derived from
-the code itself — an EML quirk, a domain rule, a non-obvious trade-off, a reason for doing
-it the awkward way. Do not narrate the session that produced it: no "changed to…", "used
-to be…", "as requested", or references to a review remark or an earlier implementation. If
-a comment would read as stale a month from now, leave it out.
+Comments are short and functional: aim for a single line, and keep docstrings to a summary
+line plus at most one short paragraph. State the conclusion, not the argument behind it. A
+comment earns its place only by adding what the code cannot say itself — an EML quirk, a
+domain rule, a non-obvious trade-off, a reason for doing it the awkward way.
+
+- Keep a note next to the code it explains, not in a related file that merely mentions it.
+- When changing code, reassess its existing comments as a whole and rewrite them to fit,
+  rather than appending to them. Comments that only ever grow stop being read.
+- Write from the perspective of the application as a whole. Do not narrate the session that
+  produced it: no "changed to…", "used to be…", "as requested", or references to a review
+  remark or an earlier implementation. If a comment would read as stale a month from now,
+  leave it out.
 
 ## Layout
 
@@ -50,7 +61,7 @@ docker-compose.yml  full stack: db, redis, backend, celery, frontend, proxy, obj
 | App          | Contents                                                                                                       |
 |--------------|----------------------------------------------------------------------------------------------------------------|
 | `mainsite`   | Django project: settings, root urls, `BaseModel`, `EmlType` enum, management commands                          |
-| `election`   | `ElectionConfig`, `Election`, `Contest`, `VoteCount`, `VoterTurnoutCount`, `TimelineEntry`, `ElectionDocument` |
+| `election`   | `ElectionConfig`, `Election`, `Contest`, `VoteCount`, `VoterTurnoutCount`, `TimelineDate`, `ElectionDocument`       |
 | `region`     | `Region` — self-referencing tree (CSB → HSB/kieskring → gemeente → stembureau)                                 |
 | `party`      | `Party`, `Candidate`                                                                                           |
 | `eml_import` | EML parsing/import, the GitHub ingress importer, `ImportedCommit`, and the Celery tasks         |
@@ -103,7 +114,13 @@ the election visibility/deletion rules.
 See the Internationalisation section in [development.md](docs/development.md) for the setup,
 marking text for translations and translation rules.
 
-Lingui publishes agent skills, context files and an MCP server for working with its API:
+There is no global i18n instance: one instance exists per locale, provided by `LocaleProvider`.
+Translate through `useLingui()` (`@lingui/react/macro`) or an `i18n` passed in as a parameter.
+From `@lingui/core/macro` import only `msg`; its `t`, `plural` and `select` used on their own, and
+`i18n` imported from `@lingui/core`, read the global instance and render in the wrong language.
+
+When working on translations, use the Lingui agent skills (`lingui:lingui-best-practices`,
+`lingui:find-unwrapped-strings`). Lingui also publishes context files and an MCP server:
 <https://lingui.dev/ai-tools>.
 
 Process in short:
@@ -116,6 +133,41 @@ npm run i18n:extract-clean    # or: docker compose run --rm frontend npm run i18
 Extraction adds new entries to both catalogues, drops ones no longer used, and reports how
 many English messages are still missing. Fill each empty `msgstr` in the `en` catalogue and
 re-run extraction until it reports `Missing 0`.
+
+## Accessibility
+
+The bar is WCAG 2.1 AA. Axe checks it in CI (`backend/playwright_tests/test_axe.py`, rules in
+`axe.py`); give a new kind of page a scan there. Axe cannot see behaviour, so also check a change
+with NVDA (Dutch voice, automatic language switching on): Tab, `H` for headings, `K` for links,
+`Ctrl+Alt+arrows` in tables.
+
+- **Structure.** Each page has one `h1` inside `LayoutMain`'s `<main>`; `RouteFocus` moves focus
+  there after navigation. Headings never skip a level: pick the right level and keep the look with
+  the `.h2`–`.h4` classes. The heading styles in `index.css` sit in Tailwind's base and components
+  layers, so a utility overrides them (`font-sans`).
+- **Titles.** Pass a unique `title` to `LayoutMain` (or `HtmlHead`) naming the region and party.
+- **Semantics before ARIA.** Lists are `ul`/`ol`; a data table gets a `<caption>` and
+  `th scope="col"`/`scope="row"`. A list that reads well as one line per row stays a list
+  (`VotesList`). Every `nav` gets a translated `aria-label`; the link to the current page gets
+  `aria-current="page"`.
+- **Hidden text.** Use `sr-only` for text only screen readers need. Grid items have no whitespace
+  between them, so screen readers glue their texts together; separate a number from a name with
+  `<span className="sr-only">&nbsp;</span>`.
+- **Decoration.** FontAwesome icons are hidden already; hide decorative characters (`›`, `>`) with
+  `aria-hidden="true"` and give decorative images `alt=""`. Don't repeat an image's alt text in
+  an `aria-label` on its link.
+- **Links and buttons.** A `target="_blank"` link says so: `ExternalLinkIcon` or `NewWindowHint`
+  (`elements/ExternalLinkIcon.tsx`). `Button` with `disabled` renders a disabled `<button>`, also
+  when it has an `href`; don't use `aria-disabled` on an anchor.
+- **Dynamic content.** Loading text is `role="status"`, errors are `role="alert"`. A status
+  region whose text updates is rendered from the start, or the update is not announced.
+  `SearchAutocomplete` is the reference: a searchbox with a suggestion listbox and a status
+  region announcing the result count.
+- **Focus and zoom.** Never remove an outline without a `:focus-visible` replacement. A
+  horizontally scrollable region is focusable and named (`PartyVoteMatrixTable`). Rows with text
+  use `min-h-*`, not a fixed height. Spinners get `motion-reduce:animate-none`.
+- **Tests.** Query by role and accessible name (`getByRole("link", { name: … })`), so a test
+  fails when the name a screen reader hears changes.
 
 ## Testing
 
@@ -158,7 +210,7 @@ Stub `fetch` with `vi.stubGlobal`; wrap components in `QueryClientProvider` and
 `.github/workflows/playwright.yml`: the browser tests, against a throwaway stack.
 `.github/workflows/helm-ci.yml`: `helm lint` plus `helm template` piped through
 `kubeconform`, for the application chart against `values.yaml` and for the
-`service-accounts` chart — the combination that actually gets deployed.
+`service-accounts` and `monitoring` charts — the combination that actually gets deployed.
 
 All four run on PRs — the backend, frontend and Helm suites filtered by path, Playwright on
 every PR — and the first two check that generated files are in step with the source, so

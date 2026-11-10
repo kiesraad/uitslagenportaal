@@ -116,8 +116,12 @@ jobs:
           timeout 60 bash -c 'until curl -sf -o /dev/null http://127.0.0.1:8000/api/election_configs/; do sleep 1; done'
           timeout 60 bash -c 'until curl -sf -o /dev/null http://localhost:8081/; do sleep 1; done'
 
-      # Run the tests
-      - run: uv run pytest playwright_tests -m playwright --tracing=retain-on-failure --screenshot=only-on-failure
+      - name: Playwright
+        run: uv run pytest playwright_tests -m playwright --tracing=retain-on-failure --screenshot=only-on-failure
+        working-directory: backend
+      - name: Axe
+        if: ${{ !cancelled() }}
+        run: uv run pytest playwright_tests -m axe --tracing=retain-on-failure --screenshot=only-on-failure
         working-directory: backend
 
       - name: Server logs

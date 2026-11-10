@@ -1,11 +1,36 @@
 import pytest
 from django.core.exceptions import ValidationError
 
-from election.tests.factories import ElectionFactory
+from election.models import ElectionCategory
+from election.tests.factories import ElectionConfigFactory, ElectionFactory
 from mainsite.models import RegionCategory
 from mainsite.utils.utils import name_to_slug
 from region.models import Region
 from region.tests.factories import RegionFactory
+
+
+def test_region_station_number_strips_parent_id_and_sb_prefix():
+    region = Region(region_category=RegionCategory.STEMBUREAU, region_number="0484::SB6")
+
+    assert region.station_number == 6
+
+
+def test_region_station_number_parses_a_bare_sb_number():
+    region = Region(region_category=RegionCategory.STEMBUREAU, region_number="SB1")
+
+    assert region.station_number == 1
+
+
+def test_region_station_number_is_none_outside_stembureau():
+    region = Region(region_category=RegionCategory.GEMEENTE, region_number="654")
+
+    assert region.station_number is None
+
+
+def test_region_station_number_is_none_when_unparseable():
+    region = Region(region_category=RegionCategory.STEMBUREAU, region_number="SB")
+
+    assert region.station_number is None
 
 
 @pytest.mark.django_db
@@ -13,6 +38,13 @@ def test_region_slug_is_generated_from_number_and_name():
     region = RegionFactory(region_number="7", region_name="Café Île")
 
     assert region.slug == "7-cafe-ile"
+
+
+@pytest.mark.django_db
+def test_region_slug_is_only_the_name_without_a_region_number():
+    region = RegionFactory(region_number=None, region_name="Nederland")
+
+    assert region.slug == "nederland"
 
 
 @pytest.mark.django_db
@@ -68,3 +100,60 @@ def test_region_save_does_not_enforce_clean_for_mismatched_parent_election():
     )
 
     assert child.parent_id == parent.id
+
+
+@pytest.fixture
+def tk_election():
+    return ElectionFactory(election_config=ElectionConfigFactory(category=ElectionCategory.TK.value))
+
+
+def _hierarchy(election, kieskringen=2):
+    """A STAAT CSB with `kieskringen` kieskringen, the first holding a gemeente with a stembureau."""
+    staat = RegionFactory(election=election, region_category=RegionCategory.STAAT)
+    districts = [
+        RegionFactory(election=election, region_category=RegionCategory.KIESKRING, parent=staat, csb=staat)
+        for _ in range(kieskringen)
+    ]
+    gemeente = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, parent=districts[0], csb=staat)
+    stembureau = RegionFactory(election=election, region_category=RegionCategory.STEMBUREAU, parent=gemeente, csb=staat)
+    return staat, districts, gemeente, stembureau
+
+
+@pytest.mark.django_db
+def test_region_is_csb_when_its_category_is_the_election_csb_type(tk_election):
+    staat, _, gemeente, _ = _hierarchy(tk_election)
+
+    assert staat.is_csb is True
+    assert gemeente.is_csb is False
+
+
+@pytest.mark.django_db
+def test_region_hsb_is_the_kieskring_above_a_gemeente_or_stembureau(tk_election):
+    staat, districts, gemeente, stembureau = _hierarchy(tk_election)
+
+    assert gemeente.hsb == districts[0]
+    assert stembureau.hsb == districts[0]
+    assert staat.hsb is None
+    assert districts[0].hsb is None
+
+
+@pytest.mark.django_db
+def test_region_has_hsb_with_multiple_kieskringen_under_the_csb(tk_election):
+    _, _, gemeente, stembureau = _hierarchy(tk_election, kieskringen=2)
+
+    assert gemeente.has_hsb is True
+    assert stembureau.has_hsb is True
+
+
+@pytest.mark.django_db
+def test_region_has_no_hsb_with_a_single_kieskring(tk_election):
+    _, _, gemeente, _ = _hierarchy(tk_election, kieskringen=1)
+
+    assert gemeente.has_hsb is False
+
+
+@pytest.mark.django_db
+def test_region_has_hsb_is_false_without_a_csb(tk_election):
+    staat, _, _, _ = _hierarchy(tk_election)
+
+    assert staat.has_hsb is False

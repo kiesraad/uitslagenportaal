@@ -1,12 +1,14 @@
 import { faHourglass } from "@fortawesome/free-regular-svg-icons";
-import { faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
+import { faCircleNotch, faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Link } from "react-router";
+import { ElectionTimelineSection } from "@/components/Timeline/ElectionTimelineSection.tsx";
+import Button from "@/elements/Button.tsx";
+import PageSection from "@/elements/PageSection.tsx";
 import type { ElectionConfig } from "../api/types.ts";
 import { HeroGrid } from "../components/HomePage/HeroGrid.tsx";
 import { LayoutMain } from "../components/LayoutMain.tsx";
-import Timeline, { type TimelineEntry } from "../components/Timeline.tsx";
 import { useElectionConfigs } from "../hooks/queries.ts";
 import { appRoutes } from "../utils/routes.ts";
 
@@ -16,28 +18,12 @@ export function HomePage() {
    const election_configs: ElectionConfig[] = data ?? [];
    const hasResult = election_configs.length > 0;
 
-   // If there is only one election and it has timeline entries, build the timeline
-   let timelineEntries: TimelineEntry[] = [];
-   if (election_configs.length === 1 && election_configs[0]?.timeline_entries?.length) {
-      timelineEntries = election_configs[0].timeline_entries
-         .slice()
-         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-         .map((entry) => ({
-            status: entry.status,
-            title: entry.title,
-            date: entry.date,
-            body: entry.body,
-         }));
-   }
-
    return (
       <LayoutMain title={t`Home`} description={t`De telresultaten van alle stembureaus in Nederland.`}>
-         <section className={"page-top home-page-hero flex-1"}>
-            <div className={"home-page-hero-left"}>
-               <h1 className="text-3xl sm:text-4xl font-title font-bold">
-                  <Trans>
-                     De telresultaten van alle <br /> stembureaus in Nederland.
-                  </Trans>
+         <PageSection className="relative grid flex-1 grid-cols-1 overflow-hidden bg-blue-100 lg:grid-cols-2 lg:gap-20">
+            <div className="flex flex-col justify-center gap-3.5 sm:gap-6.5">
+               <h1 className="font-title max-w-xl text-3xl font-bold sm:text-4xl">
+                  <Trans>De telresultaten van alle stembureaus in Nederland.</Trans>
                </h1>
                <p>
                   <Trans>
@@ -52,7 +38,8 @@ export function HomePage() {
                      <h2>
                         <Trans>Bekijk de telresultaten</Trans>
                      </h2>
-                     <p>
+                     <p role="status">
+                        <FontAwesomeIcon icon={faCircleNotch} className="animate-spin motion-reduce:animate-none" />
                         <Trans>Verkiezingen laden…</Trans>
                      </p>
                   </div>
@@ -61,12 +48,13 @@ export function HomePage() {
                      <h2>
                         <Trans>Bekijk de telresultaten</Trans>
                      </h2>
-                     <p>
+                     <p role="alert">
                         <Trans>Kan verkiezingen niet laden.</Trans>
                      </p>
-                     <button type="button" onClick={() => refetch()}>
+                     <Button onClick={() => refetch()}>
+                        <FontAwesomeIcon icon={faRotateRight} />
                         <Trans>Opnieuw proberen</Trans>
-                     </button>
+                     </Button>
                   </div>
                ) : hasResult ? (
                   <div className={"home-hero-card"}>
@@ -75,7 +63,9 @@ export function HomePage() {
                      </h2>
                      {election_configs.map((election_config) => (
                         <div key={election_config.slug} className={"home-hero-card-link"}>
-                           <span className="gemeente-chevron mb-1">›</span>
+                           <span className="gemeente-chevron mb-1" aria-hidden="true">
+                              ›
+                           </span>
                            <Link
                               to={appRoutes.electionConfigMunicipalityList(election_config.slug)}
                               className="font-semibold"
@@ -87,7 +77,7 @@ export function HomePage() {
                   </div>
                ) : (
                   <div className={"home-hero-card"}>
-                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                     <div className="flex items-center gap-2">
                         <FontAwesomeIcon icon={faHourglass} />
                         <h2>
                            <Trans>Telresultaten volgen binnenkort</Trans>
@@ -106,69 +96,9 @@ export function HomePage() {
             </div>
 
             <HeroGrid />
-         </section>
+         </PageSection>
 
-         {election_configs.length === 1 && (
-            <>
-               <section className="page-main page-main-w-half">
-                  <h2 className="home-process-title">
-                     <Trans>Hoe komt de uitslag tot stand?</Trans>
-                  </h2>
-                  <p className="home-process-intro">
-                     <Trans>
-                        Hieronder wordt stap voor stap uitgelegd hoe het resultaat van de verkiezing tot stand komt. Het
-                        begint bij het stembureau en eindigt bij de definitieve uitslag die de Kiesraad publiceert. Bij
-                        iedere stap is er controle, zodat de uitslag klopt.
-                     </Trans>
-                  </p>
-
-                  <Timeline entries={timelineEntries} />
-               </section>
-
-               <section className="home-bottom-info page-main-w-half">
-                  <div className="home-info-box">
-                     <div className="home-info-body">
-                        <h3>
-                           <Trans>Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?</Trans>
-                        </h3>
-                        {election_configs.map((election_config) => {
-                           const electionLabel = election_config.label;
-                           return (
-                              <div key={election_config.slug} className={"home-hero-card-link"}>
-                                 <span className="gemeente-chevron">›</span>
-                                 <Link to={appRoutes.electionConfigMunicipalityList(election_config.slug)}>
-                                    <Trans>Bekijk de tellingen per stembureau voor {electionLabel}</Trans>
-                                 </Link>
-                              </div>
-                           );
-                        })}
-                     </div>
-                  </div>
-
-                  <div className="home-external-links">
-                     <p>
-                        <Trans>
-                           Deze website is actief vanaf 1 dag vóór de verkiezingen tot drie maanden erna. Wilt u
-                           uitslagen van eerdere verkiezingen bekijken?
-                        </Trans>{" "}
-                        <br />
-                        <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                           <Trans>Ga dan naar</Trans>{" "}
-                           <a
-                              style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
-                              href="https://www.verkiezingsuitslagen.nl/"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                           >
-                              <Trans>Databank verkiezinguitslag</Trans>
-                              <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
-                           </a>
-                        </span>
-                     </p>
-                  </div>
-               </section>
-            </>
-         )}
+         {election_configs.length === 1 && <ElectionTimelineSection electionConfig={election_configs[0]} />}
       </LayoutMain>
    );
 }

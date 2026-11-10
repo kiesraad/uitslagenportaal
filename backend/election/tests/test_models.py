@@ -1,10 +1,8 @@
 import pytest
 
-from election.models import ElectionCategory, ElectionConfig, VoteCount
-from election.tests.factories import ContestFactory, ElectionConfigFactory, ElectionFactory, TimelineEntryFactory
+from election.models import ElectionCategory, ElectionConfig
+from election.tests.factories import ElectionConfigFactory, ElectionFactory
 from mainsite.models import RegionCategory
-from mainsite.utils.eml_type import EmlType
-from party.tests.factories import PartyFactory
 from region.tests.factories import RegionFactory
 
 
@@ -12,7 +10,6 @@ from region.tests.factories import RegionFactory
     ("category", "expected_csb"),
     [
         (ElectionCategory.TK, RegionCategory.STAAT),
-        (ElectionCategory.EK, RegionCategory.STAAT),
         (ElectionCategory.EP, RegionCategory.STAAT),
         (ElectionCategory.PS, RegionCategory.PROVINCIE),
         (ElectionCategory.WS, RegionCategory.WATERSCHAP),
@@ -43,56 +40,39 @@ def test_election_config_slug_is_not_overwritten_if_already_set():
     assert config.slug == "custom-slug"
 
 
-@pytest.mark.django_db
-def test_timeline_entries_are_ordered_chronologically():
-    config = ElectionConfigFactory()
-    later = TimelineEntryFactory(election_config=config, date="2023-03-20T00:00:00Z")
-    earlier = TimelineEntryFactory(election_config=config, date="2023-03-10T00:00:00Z")
-
-    assert list(config.timeline_entries.all()) == [earlier, later]
+def _csb_with_kieskringen(config, *names):
+    election = ElectionFactory(election_config=config)
+    csb = RegionFactory(election=election, region_category=RegionCategory.PROVINCIE)
+    for name in names:
+        RegionFactory(
+            election=election, parent=csb, csb=csb, region_category=RegionCategory.KIESKRING, region_name=name
+        )
 
 
 @pytest.mark.django_db
 def test_has_hsb_false_without_any_kieskring():
-    config = ElectionConfigFactory()
-
-    assert ElectionConfig.objects.get(pk=config.pk).has_hsb is False
+    assert ElectionConfigFactory(category=ElectionCategory.PS.value).has_hsb is False
 
 
 @pytest.mark.django_db
-def test_has_hsb_false_for_kieskring_without_its_own_totaaltelling():
-    """A waterschap's kieskring is a structural stand-in for the CSB, with only 510d rows."""
-    config = ElectionConfigFactory()
-    election = ElectionFactory(election_config=config)
-    kieskring = RegionFactory(election=election, region_category=RegionCategory.KIESKRING)
-    contest = ContestFactory(election=election)
-    party = PartyFactory(election=election)
-    VoteCount.objects.create(
-        contest=contest,
-        region=kieskring,
-        party=party,
-        valid_votes=100,
-        result_level=VoteCount.RESULT_LEVEL_PARTY,
-        eml_type=EmlType.EML_510d,
-    )
-
-    assert ElectionConfig.objects.get(pk=config.pk).has_hsb is False
+@pytest.mark.parametrize("category", [ElectionCategory.TK, ElectionCategory.EP])
+def test_has_hsb_true_for_tk_and_ep_before_any_region_is_imported(category):
+    assert ElectionConfigFactory(category=category.value).has_hsb is True
 
 
 @pytest.mark.django_db
-def test_has_hsb_true_for_kieskring_with_its_own_totaaltelling():
-    config = ElectionConfigFactory()
-    election = ElectionFactory(election_config=config)
-    kieskring = RegionFactory(election=election, region_category=RegionCategory.KIESKRING)
-    contest = ContestFactory(election=election)
-    party = PartyFactory(election=election)
-    VoteCount.objects.create(
-        contest=contest,
-        region=kieskring,
-        party=party,
-        valid_votes=100,
-        result_level=VoteCount.RESULT_LEVEL_PARTY,
-        eml_type=EmlType.EML_510c,
-    )
+def test_has_hsb_false_when_each_csb_has_a_single_kieskring():
+    """A CSB with one kieskring (a WS, or a PS province such as Drenthe) counts it itself; there is no HSB."""
+    config = ElectionConfigFactory(category=ElectionCategory.PS.value)
+    _csb_with_kieskringen(config, "Assen")
 
-    assert ElectionConfig.objects.get(pk=config.pk).has_hsb is True
+    assert config.has_hsb is False
+
+
+@pytest.mark.django_db
+def test_has_hsb_true_when_a_csb_has_several_kieskringen_without_results():
+    config = ElectionConfigFactory(category=ElectionCategory.PS.value)
+    _csb_with_kieskringen(config, "Assen")
+    _csb_with_kieskringen(config, "Leiden", "Rotterdam")
+
+    assert config.has_hsb is True

@@ -80,14 +80,14 @@ export default function VotesResume({ votes, type }: Props & { type: VotesResume
                <Trans>Toegelaten kiezers</Trans>
             </h3>
          )}
-         <div className={"admitted-voters-box"}>
+         <dl className={"admitted-voters-box"}>
             {boxVotes.map((vote) => (
                <div key={vote.key} className={`admitted-voters-item ${vote.bold ? "font-semibold" : ""}`}>
-                  <span>{t(vote.label)}</span>
-                  <span className="font-number">{formatNumber(vote.count)}</span>
+                  <dt>{t(vote.label)}</dt>
+                  <dd className="font-number">{formatNumber(vote.count)}</dd>
                </div>
             ))}
-         </div>
+         </dl>
       </section>
    );
 }

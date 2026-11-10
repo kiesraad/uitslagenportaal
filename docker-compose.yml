@@ -19,6 +19,7 @@ services:
       SECRET_KEY: super-secret
       CORS_ALLOWED_ORIGINS: http://localhost:8080
       DJANGO_SETTINGS_MODULE: "mainsite.settings"
+      LOG_FORMAT: color
       # The backend uploads over the compose network, but the URLs it hands to
       # the browser have to use the published port instead.
       S3_ENDPOINT_URL: http://object-storage:9000
@@ -28,9 +29,13 @@ services:
       S3_ACCESS_KEY: uitslagenportaal
       S3_SECRET_KEY: password
       S3_ADDRESSING_STYLE: path
+      # Host inotify instance limit is 128; skip inotify and poll instead.
+      WATCHFILES_FORCE_POLLING: "true"
     volumes:
       - ./backend:/app
       - ./backend/.data:/app/.data
+      # Hides the host's .venv so its churn cannot trigger the autoreloader; the image installs into system Python.
+      - /app/.venv
     depends_on:
       db:
         condition: service_healthy
@@ -56,12 +61,20 @@ services:
     command: >
       watchfiles --filter python --sigint-timeout 30
       "celery -A mainsite worker --beat --loglevel=INFO"
-      election eml_import mainsite party region
     environment:
       WATCHFILES_POLL_DELAY_MS: "1000"
     depends_on: !reset []
     ports: !reset []
     post_start: !reset []
+
+  celery-pv-scraper:
+    extends:
+      service: celery
+    profiles:
+      - with-scraper
+    command: >
+      watchfiles --filter python --sigint-timeout 30
+      "celery -A mainsite worker -Q scraper --loglevel=INFO"
 
   frontend:
     build:
@@ -116,7 +129,7 @@ services:
 
   # S3-compatible object storage for local dev.
   object-storage:
-    image: rustfs/rustfs:1.0.0-rc.1
+    image: rustfs/rustfs:1.0.3
     environment:
       RUSTFS_ACCESS_KEY: uitslagenportaal
       RUSTFS_SECRET_KEY: password

@@ -22,7 +22,6 @@ export function getRegions(
    parentRegionSlug?: string,
    regionCategory?: RegionCategory,
    csbSlug?: string,
-   hasOwnResults?: boolean,
 ) {
    if (!electionConfigSlug || (!parentRegionSlug && !regionCategory && !csbSlug)) {
       throw new Error(
@@ -30,21 +29,17 @@ export function getRegions(
       );
    }
 
-   const url = new URL("/api/regions/", window.location.origin);
-   url.searchParams.append("election_config", electionConfigSlug);
+   const searchParams = new URLSearchParams();
    if (parentRegionSlug) {
-      url.searchParams.append("parent_region", parentRegionSlug);
+      searchParams.append("parent_region", parentRegionSlug);
    }
    if (regionCategory) {
-      url.searchParams.append("region_category", regionCategory);
+      searchParams.append("region_category", regionCategory);
    }
    if (csbSlug) {
-      url.searchParams.append("csb", csbSlug);
+      searchParams.append("csb", csbSlug);
    }
-   if (hasOwnResults) {
-      url.searchParams.append("has_own_results", "true");
-   }
-   return apiGet<RegionResponse>(`${url.pathname}${url.search}`);
+   return apiGet<RegionResponse>(`/api/${electionConfigSlug}/regions/?${searchParams}`);
 }
 
 export function getRegion(
@@ -58,17 +53,14 @@ export function getRegion(
       throw new Error("getRegion: electionConfigSlug, regionSlug and level are required.");
    }
 
-   const url = new URL("/api/region/", window.location.origin);
-   url.searchParams.append("election_config", electionConfigSlug);
-   url.searchParams.append("region", regionSlug);
-   url.searchParams.append("level", level);
+   const searchParams = new URLSearchParams({ level });
    if (csbSlug) {
-      url.searchParams.append("csb", csbSlug);
+      searchParams.append("csb", csbSlug);
    }
    if (parentRegionSlug) {
-      url.searchParams.append("parent_region", parentRegionSlug);
+      searchParams.append("parent_region", parentRegionSlug);
    }
-   return apiGet<Region>(`${url.pathname}${url.search}`);
+   return apiGet<Region>(`/api/${electionConfigSlug}/regions/${regionSlug}?${searchParams}`);
 }
 
 export function getCSBPartyVoteMatrix(electionSlug?: string, partySlug?: string, csbSlug?: string) {
@@ -76,11 +68,8 @@ export function getCSBPartyVoteMatrix(electionSlug?: string, partySlug?: string,
       throw new Error("getCSBPartyVoteMatrix: electionSlug, partySlug and csbSlug are required.");
    }
 
-   const url = new URL("/api/party-result-matrix/", window.location.origin);
-   url.searchParams.append("election", electionSlug);
-   url.searchParams.append("party", partySlug);
-   url.searchParams.append("csb", csbSlug);
-   return apiGet<PartyVoteMatrix>(`${url.pathname}${url.search}`);
+   const searchParams = new URLSearchParams({ election: electionSlug, party: partySlug, csb: csbSlug });
+   return apiGet<PartyVoteMatrix>(`/api/party-result-matrix/?${searchParams}`);
 }
 
 export function getHSBPartyVoteMatrix(electionSlug?: string, partySlug?: string, hsbSlug?: string) {
@@ -88,9 +77,6 @@ export function getHSBPartyVoteMatrix(electionSlug?: string, partySlug?: string,
       throw new Error("getHSBPartyVoteMatrix: electionSlug, partySlug and hsbSlug are required.");
    }
 
-   const url = new URL("/api/hsb-party-result-matrix/", window.location.origin);
-   url.searchParams.append("election", electionSlug);
-   url.searchParams.append("party", partySlug);
-   url.searchParams.append("hsb", hsbSlug);
-   return apiGet<PartyVoteMatrix>(`${url.pathname}${url.search}`);
+   const searchParams = new URLSearchParams({ election: electionSlug, party: partySlug, hsb: hsbSlug });
+   return apiGet<PartyVoteMatrix>(`/api/hsb-party-result-matrix/?${searchParams}`);
 }

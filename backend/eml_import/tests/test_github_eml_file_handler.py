@@ -1,3 +1,4 @@
+import hashlib
 import io
 import logging
 import zipfile
@@ -8,10 +9,10 @@ from django.core.cache import cache
 from django.utils import timezone
 from pyeml_bindings import Eml230
 
-from election.models import Contest, Election
+from election.models import Contest, Election, ElectionConfig
 from election.tests.factories import ElectionConfigFactory
 from eml_import.exceptions import GithubImportException
-from eml_import.models import BranchType, ImportedCommit, ImportedEmlHash
+from eml_import.models import BranchType, ImportedCommit, ImportedFileHash
 from eml_import.tests.factories import ImportedCommitFactory
 from eml_import.tests.fakes import FakeCommit, FakeFile, FakeGithub, FakeRepo
 from eml_import.tests.test_eml_110_importer import CONFIG_IDENTIFIER
@@ -23,9 +24,16 @@ from eml_import.utils.named_bytes_io import NamedBytesIO
 from party.models import Candidate
 from region.models import Region
 
-XML_110A = b"<EML Id='110a'/>"
-XML_230B = b"<EML Id='230b'/>"
-XML_510B = b"<EML Id='510b'/>"
+EML = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<EML xmlns="urn:oasis:names:tc:evs:schema:eml" xmlns:kr="http://www.kiesraad.nl/extensions" Id="{doc_type}">
+    <kr:CreationDateTime>{creation_time}</kr:CreationDateTime>
+</EML>
+"""
+
+XML_110A = EML.format(doc_type="110a", creation_time=str(timezone.now())).encode()
+XML_230B = EML.format(doc_type="230b", creation_time=str(timezone.now())).encode()
+XML_510B = EML.format(doc_type="510b", creation_time=str(timezone.now())).encode()
 
 BRANCH_EXCHANGE = "exchange"
 BRANCH_COUNTING_RESULTS = "counting-results"
@@ -116,55 +124,70 @@ def build_handler():
     return build
 
 
-def test_iterate_all_xml_files_yields_xml_and_unpacks_zip(fake_repo, build_handler, election_config):
+def test_iterate_all_supported_files_yields_xml_and_csv_and_unpacks_zip(fake_repo, build_handler, election_config):
     repo = fake_repo(
         commits=[FakeCommit("head")],
         contents={
             "results/telling.xml": XML_510B,
-            "results/bundle.zip": zip_bytes({"inner/kandidaten.xml": XML_230B, "inner/readme.txt": b"nope"}),
+            "results/osv4-3_telling.csv": b"top-level csv",
+            "results/bundle.zip": zip_bytes(
+                {
+                    "inner/kandidaten.xml": XML_230B,
+                    "inner/osv4-3_telling.csv": b"zipped csv",
+                    "inner/readme.txt": b"nope",
+                }
+            ),
         },
     )
     files = [
         FakeFile("results/telling.xml"),
+        FakeFile("results/osv4-3_telling.csv"),
         FakeFile("results/bundle.zip"),
         FakeFile("results/notes.txt"),
     ]
 
-    extracted = list(build_handler(election_config, repo)._iterate_all_xml_files(files))
+    extracted = list(build_handler(election_config, repo)._iterate_all_supported_files(files))
 
     assert as_pairs(extracted) == [
         ("results/telling.xml", XML_510B),
+        ("results/osv4-3_telling.csv", b"top-level csv"),
         ("inner/kandidaten.xml", XML_230B),
+        ("inner/osv4-3_telling.csv", b"zipped csv"),
     ]
     # Files with an unsupported extension are never fetched
     assert repo.calls_named("get_git_blob") == [
         ("get_git_blob", "results/telling.xml"),
+        ("get_git_blob", "results/osv4-3_telling.csv"),
         ("get_git_blob", "results/bundle.zip"),
     ]
 
 
 @pytest.mark.parametrize("status", ["added", "modified", "renamed", "copied", "changed"])
-def test_iterate_all_xml_files_imports_every_status_that_leaves_a_file_behind(
+def test_iterate_all_supported_files_imports_every_status_that_leaves_a_file_behind(
     fake_repo, build_handler, election_config, status
 ):
     repo = fake_repo(commits=[FakeCommit("head")], contents={"telling.xml": XML_510B})
 
-    extracted = list(build_handler(election_config, repo)._iterate_all_xml_files([FakeFile("telling.xml", status)]))
+    extracted = list(
+        build_handler(election_config, repo)._iterate_all_supported_files([FakeFile("telling.xml", status)])
+    )
 
     assert as_pairs(extracted) == [("telling.xml", XML_510B)]
 
 
 @pytest.mark.parametrize("status", ["removed", "unchanged"])
-def test_iterate_all_xml_files_skips_removed_and_unchanged(fake_repo, build_handler, election_config, status):
+def test_iterate_all_supported_files_skips_removed_and_unchanged(fake_repo, build_handler, election_config, status):
     repo = fake_repo(commits=[FakeCommit("head")], contents={"telling.xml": XML_510B})
 
-    extracted = list(build_handler(election_config, repo)._iterate_all_xml_files([FakeFile("telling.xml", status)]))
+    extracted = list(
+        build_handler(election_config, repo)._iterate_all_supported_files([FakeFile("telling.xml", status)])
+    )
 
     assert extracted == []
     assert repo.calls_named("get_git_blob") == []
 
 
-def test_iterate_all_xml_files_logs_error_when_removed_zip_has_no_replacement_in_same_folder(
+def test_iterate_all_supported_files_logs_error_when_removed_zip_has_no_replacement_in_same_folder(
     fake_repo, build_handler, election_config, caplog
 ):
     repo = fake_repo(commits=[FakeCommit("head")], contents={})
@@ -174,14 +197,14 @@ def test_iterate_all_xml_files_logs_error_when_removed_zip_has_no_replacement_in
     )
 
     with caplog.at_level(logging.ERROR):
-        list(build_handler(election_config, repo)._iterate_all_xml_files([removed]))
+        list(build_handler(election_config, repo)._iterate_all_supported_files([removed]))
 
     assert len(errors_of(caplog)) == 1
     assert "deletion was not processed" in errors_of(caplog)[0]
     assert "old-upload.zip" in errors_of(caplog)[0]
 
 
-def test_iterate_all_xml_files_does_not_log_error_when_removed_zip_is_replaced_in_same_folder(
+def test_iterate_all_supported_files_does_not_log_error_when_removed_zip_is_replaced_in_same_folder(
     fake_repo, build_handler, election_config, caplog
 ):
     folder = "dob1/gemeente/gemeente_brummen_gsb"
@@ -195,13 +218,13 @@ def test_iterate_all_xml_files_does_not_log_error_when_removed_zip_is_replaced_i
     ]
 
     with caplog.at_level(logging.ERROR):
-        extracted = list(build_handler(election_config, repo)._iterate_all_xml_files(files))
+        extracted = list(build_handler(election_config, repo)._iterate_all_supported_files(files))
 
     assert errors_of(caplog) == []
     assert as_pairs(extracted) == [("telling.xml", XML_510B)]
 
 
-def test_iterate_all_xml_files_logs_error_when_removed_zip_is_only_replaced_in_another_folder(
+def test_iterate_all_supported_files_logs_error_when_removed_zip_is_only_replaced_in_another_folder(
     fake_repo, build_handler, election_config, caplog
 ):
     repo = fake_repo(
@@ -214,20 +237,20 @@ def test_iterate_all_xml_files_logs_error_when_removed_zip_is_only_replaced_in_a
     ]
 
     with caplog.at_level(logging.ERROR):
-        list(build_handler(election_config, repo)._iterate_all_xml_files(files))
+        list(build_handler(election_config, repo)._iterate_all_supported_files(files))
 
     assert len(errors_of(caplog)) == 1
     assert "gemeente_foo_gsb/old-upload.zip" in errors_of(caplog)[0]
 
 
-def test_iterate_all_xml_files_unpacks_nested_zip(fake_repo, build_handler, election_config):
+def test_iterate_all_supported_files_unpacks_nested_zip(fake_repo, build_handler, election_config):
     inner = zip_bytes({"telling.xml": XML_510B})
     repo = fake_repo(
         commits=[FakeCommit("head")],
         contents={"outer.zip": zip_bytes({"nested/inner.zip": inner})},
     )
 
-    extracted = list(build_handler(election_config, repo)._iterate_all_xml_files([FakeFile("outer.zip")]))
+    extracted = list(build_handler(election_config, repo)._iterate_all_supported_files([FakeFile("outer.zip")]))
 
     # Named after the entry inside the archive, not after the zip it arrived in
     assert as_pairs(extracted) == [("telling.xml", XML_510B)]
@@ -346,14 +369,12 @@ def test_idempotency_within_one_commit_when_failing_halfway(monkeypatch):
         return make_110a_eml()
 
     handler = GithubEmlFileHandler(config)
-    monkeypatch.setattr(handler._parser, "from_bytes", from_bytes)
+    monkeypatch.setattr(handler._xml_parser, "from_bytes", from_bytes)
 
     with pytest.raises(RuntimeError, match="hard failure mid-commit"):
         handler.import_file_objects(files)
 
-    assert ImportedEmlHash.objects.count() == 1
-    assert ImportedEmlHash.already_imported(file_110a)
-    assert not ImportedEmlHash.already_imported(file_230b)
+    assert ImportedFileHash.objects.get().sha256 == hashlib.sha256(file_110a.getvalue()).hexdigest()
     region_ids = list(Region.objects.values_list("pk", flat=True))
     assert region_ids
     assert not Candidate.objects.exists()
@@ -362,9 +383,41 @@ def test_idempotency_within_one_commit_when_failing_halfway(monkeypatch):
 
     # First file was skipped by hash: no correction archive of the regions it already wrote
     assert list(Region.objects.values_list("pk", flat=True)) == region_ids
-    assert ImportedEmlHash.objects.count() == 2
+    assert ImportedFileHash.objects.count() == 2
     assert Contest.objects.filter(election=Election.objects.get()).count() == 1
     assert Candidate.objects.count() == 2
+
+
+@pytest.mark.django_db
+def test_filter_corrections_keeps_only_newest():
+    config = ElectionConfigFactory(identifier=CONFIG_IDENTIFIER)
+    file_110a_1 = NamedBytesIO(
+        EML.format(doc_type="110a", creation_time="2026-02-06T17:16:41.447").encode(), "definitie-gemeente-a.eml.xml"
+    )
+    file_110a_2 = NamedBytesIO(
+        EML.format(doc_type="110a", creation_time="2026-02-12T14:14:41.123").encode(), "definitie-gemeente-a.eml.xml"
+    )
+    file_230b_1 = NamedBytesIO(
+        EML.format(doc_type="230b", creation_time="2026-02-06T17:16:41.447").encode(),
+        "kandidatenlijst-gemeente-a.eml.xml",
+    )
+    file_230b_2 = NamedBytesIO(
+        EML.format(doc_type="230b", creation_time="2026-02-12T14:14:41.123").encode(),
+        "kandidatenlijst-gemeente-a.eml.xml",
+    )
+    file_other_230b = NamedBytesIO(
+        EML.format(doc_type="230b", creation_time="2026-02-12T14:14:41.123").encode(),
+        "kandidatenlijst-gemeente-b.eml.xml",
+    )
+    # Non-XML files have no creation date to compare, so they are all kept
+    file_csv_1 = NamedBytesIO(b'"Verkiezing";"Nummer";"Gebied"', "osv4-3_telling.csv")
+    file_csv_2 = NamedBytesIO(b'"Verkiezing";"Nummer";"Gebied"', "osv4-3_telling.csv")
+    files = [file_110a_1, file_110a_2, file_csv_1, file_230b_1, file_230b_2, file_other_230b, file_csv_2]
+
+    handler = GithubEmlFileHandler(config)
+    filtered = handler._filter_corrections(iter(files))
+
+    assert filtered == [file_110a_2, file_230b_2, file_other_230b, file_csv_1, file_csv_2]
 
 
 def test_run_imports_from_the_first_commit_and_records_progress(fake_repo, imported_batches, stored_election_config):
@@ -545,7 +598,7 @@ def test_run_skips_the_import_while_another_worker_holds_the_lock(
     handler = GithubEmlFileHandler(stored_election_config)
 
     # Stand in for a second worker that is already importing this election
-    with cache.lock(handler.cache_lock_key, timeout=LOCK_TIMEOUT):
+    with cache.lock(handler.cache_lock_key(stored_election_config.identifier), timeout=LOCK_TIMEOUT):
         file_count, commits_remaining = handler.run()
 
     # It gives up rather than waiting, so the beat schedule cannot pile workers up on one election
@@ -563,15 +616,29 @@ def test_run_skips_the_import_while_another_worker_holds_the_lock(
 
 def test_run_locks_per_election_and_not_globally(fake_repo, imported_batches, stored_election_config, caplog):
     fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
-    other_election = GithubEmlFileHandler(ElectionConfigFactory.build(identifier="OTHER2026"))
 
     # An import running for a different election must not hold this one up
-    with cache.lock(other_election.cache_lock_key, timeout=LOCK_TIMEOUT):
+    with cache.lock(GithubEmlFileHandler.cache_lock_key("OTHER2026"), timeout=LOCK_TIMEOUT):
         file_count, commits_remaining = GithubEmlFileHandler(stored_election_config).run()
 
     assert file_count == 1
     assert as_pairs(imported_batches[0]) == [("telling.xml", XML_510B)]
     assert warnings_of(caplog) == []
+
+
+def test_run_reads_the_config_again_once_it_holds_the_lock(fake_repo, imported_batches, stored_election_config):
+    fake_repo(commits=[FakeCommit("first", [FakeFile("telling.xml")])], contents={"telling.xml": XML_510B})
+    handler = GithubEmlFileHandler(stored_election_config)
+
+    # A branch change saved after the task loaded its config
+    ElectionConfig.with_expired.filter(pk=stored_election_config.pk).update(
+        gh_exchange_branch=None, gh_counting_results_branch=None
+    )
+
+    file_count, commits_remaining = handler.run()
+
+    assert (file_count, commits_remaining) == (0, False)
+    assert imported_batches == []
 
 
 def test_run_releases_the_lock_when_it_finishes(fake_repo, imported_batches, stored_election_config):
@@ -580,7 +647,7 @@ def test_run_releases_the_lock_when_it_finishes(fake_repo, imported_batches, sto
 
     handler.run()
 
-    assert cache.lock(handler.cache_lock_key, blocking=False).acquire() is True
+    assert cache.lock(handler.cache_lock_key(stored_election_config.identifier), blocking=False).acquire() is True
 
 
 def test_run_holds_a_lock_that_expires_on_its_own(fake_repo, monkeypatch, stored_election_config):
@@ -590,7 +657,7 @@ def test_run_holds_a_lock_that_expires_on_its_own(fake_repo, monkeypatch, stored
     remaining = []
 
     def observe_ttl(self, files):
-        remaining.append(cache.ttl(handler.cache_lock_key))
+        remaining.append(cache.ttl(handler.cache_lock_key(stored_election_config.identifier)))
 
     monkeypatch.setattr(GithubEmlFileHandler, "import_file_objects", observe_ttl)
 
@@ -605,7 +672,7 @@ def test_run_keeps_its_result_when_the_lock_expires_mid_import(fake_repo, monkey
 
     def expire_lock(self, files):
         # As if LOCK_TIMEOUT elapsed while this import was still running
-        cache.delete(handler.cache_lock_key)
+        cache.delete(handler.cache_lock_key(stored_election_config.identifier))
 
     monkeypatch.setattr(GithubEmlFileHandler, "import_file_objects", expire_lock)
 

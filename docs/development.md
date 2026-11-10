@@ -16,6 +16,14 @@ The portal is then available at http://localhost:8080.
 
 Install plugins for `ruff` and `biome` in your IDE to use the required formatting/linting.
 
+Tailwind classes outside a `className` attribute go in `twMerge(…)` or a `` tw`…` `` template
+(`frontend/src/utils/tw.ts`). Biome sorts those already; for IDE autocompletion, tell the Tailwind CSS
+plugin about both functions:
+
+- JetBrains: *Settings › Languages & Frameworks › Style Sheets › Tailwind CSS*, add
+  `"classFunctions": ["twMerge", "tw"]` to the configuration JSON.
+- VS Code (Tailwind CSS IntelliSense): add `"tailwindCSS.classFunctions": ["twMerge", "tw"]` to your settings.
+
 De backend (`backend/`) is gemaakt met Django 6 + DRF in Python 3.13, managed met uv; the frontend
 (`frontend/`) is React 19 + TypeScript + Vite + Tailwind 4. See [AGENTS.md](AGENTS.md) for the
 repository layout and conventions, and [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
@@ -50,6 +58,20 @@ but generates public URLs pointing at `localhost:9000`, since that is the host t
 browser can reach. Both are configured through `S3_*` environment variables in
 `docker-compose.yml`.
 
+#### Using the RustFS console
+
+To browse the bucket by hand, open http://localhost:9001 and log in with the
+`uitslagenportaal` / `password` credentials above. This is RustFS's own web UI, so it
+speaks RustFS's XML natively.
+
+A generic S3 GUI client (e.g. Cyberduck) can be pointed at http://localhost:9000
+instead, but RustFS omits the `<Owner>` element that older S3 libraries expect on
+listing responses. Cyberduck's built-in "Amazon S3" profile uses such a library and
+fails with `Failed to parse XML document ... ListBucketHandler`, so the RustFS console
+is the more reliable option for local dev.
+
+When uploading files such as election_config.json files, it is advised to use an S3 GUI client. Credentials are maintained by the development team.
+
 ### First-time database setup
 
 After the stack is running:
@@ -77,6 +99,72 @@ uv run manage.py build_ingress_repo --source .data/AB23 --dest ../../uitslagenpo
 ```
 Then push the branches to the remote, and configure the repo in the `.env` file to start importing its data using
 the Celery task `import_next_eml_commits`. 
+
+### Importing election configs from object storage
+
+In production, election configs are not seeded: they are placed by hand as JSON files in the
+bucket under `election_configs/`, e.g. `election_configs/AB2023.json`. A Celery beat task
+(`election.tasks.import_election_configs`) polls that folder every 5 minutes and imports any file
+that is new or has changed since it was last imported.
+
+To trigger it by hand instead of waiting for the schedule:
+
+```bash
+docker compose run --rm backend-scripts python manage.py import_election_configs
+```
+
+To write a new election config, start from the template command, which prints the expected shape
+(type/description/example per field) to stdout:
+
+```bash
+docker compose run --rm backend-scripts python manage.py generate_election_config_template
+```
+
+Pass `--output` to write it to a local file instead of printing it, e.g.
+`--output my_election.json`. This command is only meant to be run locally, to give an
+administrator or developer a starting point to fill in by hand; it writes to the local
+filesystem.
+
+After filling in the template with real values, validate it before uploading it to the bucket:
+
+```bash
+docker compose run --rm backend-scripts python manage.py validate_election_config my_election.json
+```
+
+This checks required fields, the `category` enum, ISO 8601 datetimes and the timeline dates,
+and reports every problem it finds rather than stopping at the first one.
+
+### Importing proces-verbalen
+
+`import_pvs` reads proces-verbaal PDFs from the `pv_import` storage. A Celery beat task
+(`eml_import.tasks.import_pvs`) runs that same import every 5 minutes. After a PDF is
+copied into default storage, or skipped as a duplicate, it is deleted from `pv_import`.
+A PDF that is unreadable or has missing or invalid metadata moves to `pv_import_failed/` at
+once. Any other failure, such as a region whose EML is not imported yet, is retried after
+5 minutes, 20 minutes, 1 hour, 12 hours and 24 hours before the file moves there too; a
+file uploaded again under the same name starts that schedule afresh. After each sweep it queues one
+zip rebuild per gemeente that received a polling-station form in that sweep; the zip is
+stored in object storage and the download endpoint redirects to it.
+
+| `PV_IMPORT_SOURCE` | `pv_import` is |
+| --- | --- |
+| `s3` (default) | The `PV_IMPORT_BUCKET` bucket (default `pvs`), on the same connection as `default` |
+| `folder` | A `FileSystemStorage` on `PV_IMPORT_FOLDER` under `backend/` (default `.data`) |
+
+To read the local folder instead of the bucket, put this in `backend/.env`, or in the
+`backend` service environment in `docker-compose.yml`:
+
+```
+PV_IMPORT_SOURCE=folder
+```
+
+Identity is read from PDF Info keys. `PvElection`, `PvModel` and `PvRegionName` are required.
+`PvStembureau` is required for N10-1, N10-2 and NA14-1 (`PvRegionName` is then the gemeente). `PvCsb` is required
+only for those forms in a waterschapsverkiezing. Subfolders are included.
+
+```bash
+docker compose run --rm backend-scripts python manage.py import_pvs
+```
 
 ### One-off commands
 
@@ -198,8 +286,12 @@ Run these from `backend/` with `uv run manage.py <command>`, or against the runn
 | `wipe_db` | Wipes all election data, keeps the super user |
 | `seed` | Seeds the `ElectionConfig` |
 | `import_election` | Imports all EML files in the `.data` folder |
+| `import_pvs` | Imports proces-verbaal PDFs from the `pv_import` storage |
 | `reset_and_import` | Wipe, seed & import in one |
 | `import_next_github_commits [election identifier]` | Runs the GitHub importer for the next batch of commits |
+| `import_election_configs` | Imports new/changed election_config JSON files from object storage (`election_configs/*.json`) |
+| `generate_election_config_template [--output PATH]` | Prints a descriptive election_config.json template; writes to a file instead of stdout if `--output` is given |
+| `validate_election_config <path>` | Validates a filled-in election_config JSON file against the shape the importer expects |
 | `ensure_bucket` | (Re)creates the object storage bucket |
 | `delete_expired_elections [--confirm]` | Removes elections past their retention window |
 
@@ -220,6 +312,9 @@ Docker. Outside Docker, set these in `backend/.env`:
 | `S3_SECRET_KEY` | `password` | Secret key |
 | `S3_REGION` | `nl-ams` | Region (Scaleway Amsterdam; ignored by RustFS) |
 | `S3_ADDRESSING_STYLE` | `path` | `path` for RustFS, `auto` for real S3 providers |
+| `PV_IMPORT_SOURCE` | `s3` | Where `import_pvs` reads PDFs: `s3` or `folder` |
+| `PV_IMPORT_BUCKET` | `pvs` | Bucket read when `PV_IMPORT_SOURCE` is `s3` |
+| `PV_IMPORT_FOLDER` | `.data` | Folder under `backend/` read when `PV_IMPORT_SOURCE` is `folder` |
 
 The bucket is never public: the URLs handed to the browser are presigned and
 expire after an hour, the `django-storages` default. For Scaleway, configure:
@@ -230,6 +325,12 @@ S3_PUBLIC_DOMAIN=<bucket>.s3.nl-ams.scw.cloud
 S3_URL_PROTOCOL=https:
 S3_ADDRESSING_STYLE=auto
 ```
+
+Scaleway's S3 API is standards-compliant, so any generic S3 GUI client works (unlike RustFS, see above) — for example [Cyberduck](https://cyberduck.io/)
+(macOS/Windows, free) or [S3 Browser](https://s3browser.com/) (Windows). Connect using
+the "Amazon S3" protocol with server `s3.nl-ams.scw.cloud`, virtual-hosted-style
+addressing, and the access/secret key from the Kubernetes secret or the
+Scaleway console.
 
 ## Internationalisation
 
@@ -249,12 +350,25 @@ Each locale becomes its own lazily loaded chunk; a visitor downloads only their 
 
 Marking text for translation:
 
-| Case                                                         | Use                                                                             |
-|--------------------------------------------------------------|---------------------------------------------------------------------------------|
-| Text in JSX                                                  | `<Trans>` from `@lingui/react/macro`                                            |
-| A count-dependent message                                    | `<Plural>` / `plural` — never a ternary between two strings                     |
-| A string inside a component (`aria-label`, `title`, a prop)  | `` t`…` `` from `useLingui()`                                                   |
-| A constant outside a component (lookup maps, config objects) | `msg` from `@lingui/core/macro`, resolved at the call site with `t(descriptor)` |
+| Case                                                         | Use                                                                                                     |
+|--------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| Text in JSX                                                  | `<Trans>` / `<Plural>` from `@lingui/react/macro`                                                       |
+| A string inside a component (`aria-label`, `title`, a prop)  | `` t`…` `` from `useLingui()` (`@lingui/react/macro`)                                                    |
+| A constant outside a component (lookup maps, config objects) | `msg` from `@lingui/core/macro`, resolved in the component with `t(descriptor)` from `useLingui()`      |
+| A plain function outside React (`utils/`)                    | take an `i18n: I18n` parameter and return `i18n._(msg…)`; the component passes `i18n` from `useLingui()` |
+| A count-dependent message                                    | `<Plural>`, or `plural` nested in `msg`: `msg({ message: plural(n, {…}) })` — never a ternary            |
+
+There is **no global i18n instance**. Each locale has its own instance (`getI18n(locale)` in
+`frontend/src/i18n`), and `LocaleProvider` provides the one the root loader loaded. Anything that
+reaches for the global instance renders in the wrong language or, on a server, in another visitor's.
+So:
+
+- From `@lingui/core/macro`, import only `msg`. Its `t`, `plural` and `select` called on their own
+  translate through the global instance.
+- Never import `i18n` from `@lingui/core`; get it from `useLingui()`, or pass it in, as
+  `utils/format.ts` and `utils/date.ts` do.
+- In tests, `activateLocale(locale)` from `tests/testUtils.tsx` loads a catalogue and returns that
+  locale's instance; `renderWithProviders` takes a `locale` option.
 
 Translation rules:
 
@@ -267,10 +381,12 @@ Numbers and dates go through `useFormatters()` in `frontend/src/utils/format.ts`
 active locale. Dates keep the `Europe/Amsterdam` zone whatever the interface language, because
 election times are always Dutch local time.
 
-The language switcher lives in the footer; the choice is stored in `localStorage` and is
-deliberately not part of the URL. Activating a catalogue is the root route's loader
-(`localeLoader`), and the switcher only saves the choice and revalidates: that way a language
-change is router work like any other, and the navigation progress bar covers the download.
+The language switcher lives in the footer; the choice is stored in the `lang` cookie
+(`LOCALE_COOKIE`), so a server render can read it too (`localeFromCookieHeader`), and is
+deliberately not part of the URL. Loading a catalogue is the root route's loader (`localeLoader`),
+which returns the locale `LocaleProvider` renders in; the switcher only saves the choice and
+revalidates. That way a language change is router work like any other, and the navigation progress
+bar covers the download.
 
 > **When changing the build config:** the Lingui macros need a Babel pass, added in
 > `vite.config.ts` via `@rolldown/plugin-babel`. `@vitejs/plugin-react` v6 removed the `babel`
@@ -299,6 +415,13 @@ uv run pytest playwright_tests -m playwright
 The `-m playwright` marker is required: a bare `uv run pytest` deliberately deselects
 the browser tests, so `backend-ci` never tries to run them without a stack or a
 browser.
+
+Axe scans are a third suite (`-m axe`). CI runs them as their own step after
+Playwright, against the same stack:
+
+```bash
+uv run pytest playwright_tests -m axe
+```
 
 Run a single module, or filter by test name:
 

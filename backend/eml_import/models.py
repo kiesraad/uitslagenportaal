@@ -1,9 +1,12 @@
 import hashlib
+from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 
 from django.db import models
 
+from election.models import Election
+from eml_import.exceptions import FileAlreadyImported
 from mainsite.models import BaseModel
 
 
@@ -23,20 +26,28 @@ class ImportedCommit(BaseModel):
     commit_sha = models.CharField(max_length=40)
 
 
-class ImportedEmlHash(BaseModel):
-    """Exact-byte duplicate of an EML already imported successfully; skip it."""
+class ImportedFileHash(BaseModel):
+    """Sha256 of a file already imported for an election. The same bytes are skipped next time."""
 
+    election = models.ForeignKey(
+        "election.Election",
+        on_delete=models.CASCADE,
+        related_name="+",
+    )
     sha256 = models.CharField(max_length=64, unique=True)
 
     @staticmethod
-    def _sha256(eml_file: Path | BytesIO) -> str:
-        data = eml_file.read_bytes() if isinstance(eml_file, Path) else eml_file.getvalue()
+    def _sha256(imported_file: Path | BytesIO) -> str:
+        data = imported_file.read_bytes() if isinstance(imported_file, Path) else imported_file.getvalue()
         return hashlib.sha256(data).hexdigest()
 
     @classmethod
-    def already_imported(cls, eml_file: Path | BytesIO) -> bool:
-        return cls.objects.filter(sha256=cls._sha256(eml_file)).exists()
+    @contextmanager
+    def if_not_imported(cls, imported_file: Path | BytesIO, election: Election):
+        """Run the block unless these bytes were imported before; record them once it succeeds."""
+        sha256 = cls._sha256(imported_file)
+        if cls.objects.filter(sha256=sha256).exists():
+            raise FileAlreadyImported()
 
-    @classmethod
-    def record(cls, eml_file: Path | BytesIO) -> None:
-        cls.objects.get_or_create(sha256=cls._sha256(eml_file))
+        yield
+        cls.objects.get_or_create(sha256=sha256, defaults={"election": election})

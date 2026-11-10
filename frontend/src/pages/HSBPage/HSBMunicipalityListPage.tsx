@@ -8,7 +8,7 @@ import PageTop from "../../components/PageTop.tsx";
 import SharedTabs from "../../components/SharedTabs.tsx";
 import { electionConfigQuery, regionQuery, regionsQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
-import { getRegionLabels } from "../../utils/region.ts";
+import { getCsbCrumb, getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 
 export function hsbMunicipalityListLoader(queryClient: QueryClient) {
@@ -18,9 +18,9 @@ export function hsbMunicipalityListLoader(queryClient: QueryClient) {
       const regionsQueryOptions = regionsQuery(params, "GEMEENTE");
 
       const [electionConfig] = await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
-         queryClient.ensureQueryData(regionsQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionQueryOptions),
+         queryClient.query(regionsQueryOptions),
       ]);
 
       if (!electionConfig.has_hsb) {
@@ -70,7 +70,8 @@ export function HSBMunicipalityListPage() {
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               { href: hsbResultsRoute, label: region.region_name },
+               getCsbCrumb(region, electionConfig),
+               { label: region.region_name },
             ]}
             tabs={
                <SharedTabs

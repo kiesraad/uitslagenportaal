@@ -1,8 +1,9 @@
+from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from election.models import ElectionConfig
-from eml_import.models import ImportedEmlHash
+from eml_import.models import ImportedFileHash
 
 
 class Command(BaseCommand):
@@ -11,10 +12,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         with transaction.atomic():
             _, summary = ElectionConfig.with_expired.all().delete()
-            _, hash_summary = ImportedEmlHash.objects.all().delete()
+            _, hash_summary = ImportedFileHash.objects.all().delete()
             summary = {**summary, **hash_summary}
 
         self.stdout.write(self.style.SUCCESS("Election data wiped."))
         for label, count in sorted(summary.items()):
             if count:
                 self.stdout.write(f"  {label}: {count}")
+
+        bucket = getattr(default_storage, "bucket", None)
+        if bucket:
+            bucket.objects.all().delete()
+            self.stdout.write(self.style.SUCCESS("Object storage bucket emptied."))

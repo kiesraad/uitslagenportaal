@@ -18,15 +18,23 @@ class EmlType(TextChoices):
     EML_520 = "520", "Resultaat"
 
 
+class CsvType(TextChoices):
+    # Labels should not be changed as they're used to determine the EML file names.
+    # Changing them will result in different file names when importing the same data.
+    CSV_OSV43 = "osv4-3", "Telling OSV4-3"
+
+
 class ReportingLevel(TextChoices):
     GSB = "gsb"
     HSB = "hsb"
     CSB = "csb"
+    SB = "sb"
 
 
 # The reporting body, not the region's geography, decides which telling to show.
 # A GR gemeente is GSB on /gsb/ and CSB on /csb/; same row, different file.
 EML_TYPE_BY_REPORTING_LEVEL = {
+    ReportingLevel.SB: EmlType.EML_510b,
     ReportingLevel.GSB: EmlType.EML_510b,
     ReportingLevel.HSB: EmlType.EML_510c,
     ReportingLevel.CSB: EmlType.EML_510d,

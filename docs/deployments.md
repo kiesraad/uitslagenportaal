@@ -2,14 +2,19 @@
 
 This file gives an overview on how to deploy the application to a Kubernetes (k8s) cluster, either locally or a managed one.
 
-The directory ./k8s-config/ contains all the configuration necessary: the application Helm chart, the
-`service-accounts` chart, and values files for the one-time infra setup.
+The directory ./k8s-config/ contains all the configuration necessary: the `application` Helm chart, the
+`service-accounts` chart, the `monitoring` chart, and values files for the one-time infra setup.
 
 Commands in this file have to be run from ./k8s-config/.
 
+> [!WARNING]
+> Always check on which kubectl context you're running commands!
+> Use `kubectl config get-contexts` and check which one is marked as current.
+> Switch using `kubectl config use-context [context-name]`
+
 ### Helm chart
 
-The Helm chart is divided into several yaml files, see ./k8s-config/templates.
+The application chart is divided into several yaml files, see ./k8s-config/application/templates.
 
 - `00-config.yaml`: The `ConfigMap` with generic configuration values.
 - `01-gateway.yaml`: The Gateway config incl. which ports to use and the cert-manager `Issuer` configuration.
@@ -17,7 +22,12 @@ The Helm chart is divided into several yaml files, see ./k8s-config/templates.
 - `03-frontend.yaml`: Frontend deployment and service.
 - `04-backend.yaml`: Backend deployment and service, incl. an init job which runs the migrations.
 - `05-celery.yaml`: Celery and Celery beat deployments.
-- `06-services.yaml`: Several `StatefulSet`s for PostgreSQL/Redis/Object storage services (local deployments only).
+- `06-monitoring.yaml`: The `ServiceMonitor`s for the backend and the exporters, and the `PrometheusRule` with the
+  application's alerts (only with `monitoring.enabled`).
+- `07-exporters.yaml`: Prometheus exporters for PostgreSQL, Redis and Celery (only with `monitoring.enabled`).
+- `08-scraper.yaml`: The Celery worker for the PV scraper's `scraper` queue, in the Playwright worker image (only with
+  `scraper.enabled`).
+- `99-services.yaml`: Several `StatefulSet`s for PostgreSQL/Redis/Object storage services (local deployments only).
 
 There is one main `values.yaml` file, and a file per environment. Each environment file overrides certain values for the
 environment's deployments. Helm reads `values.yaml` itself as the chart's defaults, so only the environment file is
@@ -37,22 +47,115 @@ That's why the values-files are not part of the chart.
    kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
    ```
 
-2. Add the traefik/cert-manager repos
+2. Add the chart repos:
    ```bash
-    helm repo add traefik  https://traefik.github.io/charts
-    helm repo add jetstack https://charts.jetstack.io
-    helm repo update
-    ```
+   helm repo add traefik  https://traefik.github.io/charts
+   helm repo add jetstack https://charts.jetstack.io
+   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+   helm repo add grafana https://grafana.github.io/helm-charts
+   helm repo update
+   ```
 
-3. Install Traefik as an ingress controller and Gateway API implementation:
+3. Install the monitoring stack. Traefik and cert-manager depend on the `monitoring.coreos.com` CRDs.
+   Create the namespace, the Loki secret and the Bugsink secret first (see the Secrets section below), then:
+   ```bash
+   helm dependency build monitoring
+   kubectl create namespace monitoring
+   helm upgrade --install monitoring monitoring -n monitoring --wait --timeout 15m
+   ```
+   On the cluster of the non-production environments, add `-f monitoring/values-staging.yaml`: it lets
+   `KubeMemoryOvercommit` tolerate requests that won't fit while a node is down.
+   For local deploys, skip the Loki secret, create the minimal Bugsink secret instead of the full one, and add
+   `-f monitoring/values-local.yaml`. The chart refuses that file
+   on a Scaleway cluster, where it would move Loki's logs off object storage.
+
+4. Install Traefik as an ingress controller and Gateway API implementation:
    ```bash
    helm upgrade --install traefik traefik/traefik --version 41.4.0 -n traefik --create-namespace -f infra/traefik-values.yaml --wait --timeout 10m
    ```
 
-4. Install cert-manager to issue the TLS certificates:
+5. Install cert-manager to issue the TLS certificates:
    ```bash
    helm upgrade --install cert-manager jetstack/cert-manager --version v1.21.1 -n cert-manager --create-namespace -f infra/cert-manager-values.yaml --wait --timeout 10m
    ```
+
+### Monitoring
+
+Installed in step 3 above: metrics, logs and alert rules for the whole cluster.
+
+> [!NOTE]
+> Alertmanager mails alerts of severity `warning` and `critical`, once the `alertmanager-config` secret
+> exists (see the Secrets section below). Without it alerts are grouped and visible in its UI and
+> **sent to nobody**. The chart's `Watchdog` alert is switched off until there is a dead man's switch
+> to send it to.
+
+#### Reaching the monitoring UIs
+
+Port-forwarding only: nothing in the `monitoring` namespace has a hostname, a certificate or a route through the
+Gateway. One forward covers all of it.
+
+```bash
+kubectl -n monitoring port-forward svc/monitoring-proxy 9090:80
+```
+
+<http://localhost:9090> lists the services and links to each: `/grafana`, `/prometheus`,
+`/alertmanager` and `/bugsink`. Port 9090 rather than 8080 because `docker compose` publishes the application stack on 8080, and
+wanting monitoring while that is running is exactly when the two would collide.
+
+Grafana's login is `admin`, with a password the chart generates on first install:
+
+```bash
+kubectl -n monitoring get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d
+```
+
+Bugsink's login is the `CREATE_SUPERUSER` pair from the `bugsink-creds` secret:
+
+```bash
+kubectl -n monitoring get secret bugsink-creds -o jsonpath='{.data.CREATE_SUPERUSER}' | base64 -d
+```
+
+#### Error tracking
+
+Bugsink builds each project's DSN from its `BASE_URL`, the port-forwarded address, which pods cannot reach. Give an
+application in the cluster the DSN with the Service in place of `localhost:9090/bugsink`:
+
+```
+http://<key>@bugsink.monitoring.svc.cluster.local:8000/<project-id>
+```
+
+Bugsink authenticates events on the key and project ID; the Service's name is in the `ALLOWED_HOSTS` the chart sets.
+
+To receive error emails at your own address, invite yourself to the Single Team in the Bugsink UI. 
+
+#### Logs
+
+The backend and Celery pods log one JSON object per line (`LOG_FORMAT=json`, set in `backend/prod.dockerfile`), and
+so does the frontend's nginx access log (`frontend/.docker/prod.nginx.conf`), with the same keys. Alloy turns each into
+a line holding just the message (and traceback), with the other fields (`level`, `logger`, `process`, and for requests
+`method`, `path`, `status`, `duration_ms`) as structured metadata. Successful probes are not logged: requests to
+`/healthz/` and `/metrics` on the backend, and the kubelet's on the frontend.
+
+Filter on those fields directly, without `| json`:
+
+```logql
+{app="uitslagenportaal-backend"} | status >= 500
+```
+
+For columns, switch Explore's result from Logs to Table and pick the fields to show, or open the **Requests**
+dashboard: backend and frontend requests by status, duration percentiles, one request table for both and the errors,
+filterable by namespace, container, status and path. The **Celery** dashboard shows task runs by outcome, their runtime,
+what beat sent (a gap means beat is down), a table of task runs and the worker and beat logs. Celery's task lines add
+`task`, `task_id` and `runtime` (seconds) to the fields above.
+
+The **Postgres** dashboard reads the postgres-exporter: connections, transactions, rows, locks, temporary files and a
+table of sizes, dead rows and autovacuum runs. Connections count the whole managed instance, which the environments
+share; everything else is the selected database. The exporter's `database` and `wal` collectors are off, because the
+application's role cannot read them on the managed instance, so database sizes come from the per-table metrics.
+
+Dashboards live in `monitoring/dashboards/` and are loaded by Grafana's sidecar; changes made in the Grafana UI are lost
+on the next upgrade, so export them back to that directory.
+
+For plain-text lines while reading `kubectl logs` by hand, set `LOG_FORMAT=simple` on the deployment.
 
 ### Secrets
 
@@ -93,14 +196,18 @@ kubectl -n uitslagenportaal-[env] create secret generic redis-creds \
 
 ```bash
 kubectl -n uitslagenportaal-[env] create secret generic s3-creds \
-  --from-literal=S3_BUCKET_NAME='uitslagenportaal'  \
+  --from-literal=S3_BUCKET_NAME='uitslagenportaal-[env]'  \
   --from-literal=S3_ACCESS_KEY=''  \
   --from-literal=S3_SECRET_KEY=''  \
   --from-literal=S3_ADDRESSING_STYLE='virtual'  \
   --from-literal=S3_ENDPOINT_URL='https://s3.nl-ams.scw.cloud'  \
-  --from-literal=S3_PUBLIC_DOMAIN='uitslagenportaal.s3.nl-ams.scw.cloud'  \
-  --from-literal=S3_URL_PROTOCOL='https:'
+  --from-literal=S3_PUBLIC_DOMAIN='uitslagenportaal-[env].s3.nl-ams.scw.cloud'  \
+  --from-literal=S3_URL_PROTOCOL='https:'  \
+  --from-literal=PV_IMPORT_BUCKET='uitslagenportaal-pvs-[env]'
 ```
+
+`PV_IMPORT_BUCKET` is the bucket the PV import reads and the PV scraper writes to. S3_ACCESS_KEY/S3_SECRET_KEY should 
+have access to this bucket as well, make sure the configured policy allows this. 
 
 **Application secrets**
 
@@ -109,7 +216,9 @@ kubectl -n uitslagenportaal-[env] create secret generic s3-creds \
 
 ```bash
 kubectl -n uitslagenportaal-[env] create secret generic uitslagenportaal-secrets \
-  --from-literal=SECRET_KEY="$(openssl rand -base64 48)"
+  --from-literal=SECRET_KEY="$(openssl rand -base64 48)" \
+  --from-literal=BUGSINK_DSN="" \
+  --from-literal=TECHNICAL_ISSUE_EMAIL=""
 ```
 
 **Importer secrets**
@@ -118,6 +227,72 @@ kubectl -n uitslagenportaal-[env] create secret generic uitslagenportaal-secrets
 kubectl -n uitslagenportaal-[env] create secret generic importer-creds \
   --from-literal=GITHUB_TOKEN="" \
   --from-literal=GITHUB_INGRESS_REPO=""
+```
+
+**Monitoring**
+
+In the `monitoring` namespace rather than an environment's, because the stack is installed once for the cluster. Create
+the namespace first: `kubectl create namespace monitoring`. Grafana's admin secret is generated by the chart; Loki's
+object storage credentials, Alertmanager's configuration and Bugsink's credentials are created by hand. A local deploy
+needs only a minimal Bugsink secret.
+
+```bash
+kubectl -n monitoring create secret generic loki-s3-creds \
+  --from-literal=LOKI_S3_BUCKET='' \
+  --from-literal=AWS_ACCESS_KEY_ID='' \
+  --from-literal=AWS_SECRET_ACCESS_KEY=''
+```
+
+Loki needs a bucket of its own, separate from the application's: its retention differs and log chunks should not share a
+bucket with election documents. Create it before installing the chart; Loki does not create it.
+
+> [!NOTE]
+> Use `--from-literal` for the Loki secret, never `--from-file`. A file written by an editor carries a
+> trailing newline, and a credential with a newline in it fails in ways that do not look like a
+> credential problem.
+
+Alertmanager's whole configuration is a secret, because it holds the SMTP host, account and recipients. Copy the
+template, fill it in and create the secret from it; `monitoring/alertmanager.yaml` is ignored by git.
+
+```bash
+cp monitoring/alertmanager.example.yaml monitoring/alertmanager.yaml
+kubectl -n monitoring create secret generic alertmanager-config --save-config \
+  --from-file=alertmanager.yaml=monitoring/alertmanager.yaml
+```
+
+To change it later, edit the file and replace the secret; Alertmanager reloads it without a restart:
+
+```bash
+kubectl -n monitoring create secret generic alertmanager-config \
+  --from-file=alertmanager.yaml=monitoring/alertmanager.yaml \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+Bugsink needs the database URL, a secret key, email credentials and the login. Give it a database and user of its own on
+the managed Postgres instance, not the application's:
+
+```bash
+kubectl -n monitoring create secret generic bugsink-creds \
+  --from-literal=DATABASE_URL="postgresql://user:password@host:port/database_name" \
+  --from-literal=SECRET_KEY="$(openssl rand -base64 48)" \
+  --from-literal=EMAIL_HOST="smtp.tem.scaleway.com" \
+  --from-literal=EMAIL_PORT="2587" \
+  --from-literal=EMAIL_USE_TLS="True" \
+  --from-literal=EMAIL_HOST_USER="" \
+  --from-literal=EMAIL_HOST_PASSWORD="" \
+  --from-literal=DEFAULT_FROM_EMAIL="" \
+  --from-literal=CREATE_SUPERUSER="email:password"
+```
+
+Make sure to not update the SECRET_KEY after deploying the stack.
+
+On a local cluster, the secret key and the login are enough. Without `DATABASE_URL`, Bugsink keeps its data in SQLite
+inside the container, which is lost on every restart, like the local logs:
+
+```bash
+kubectl -n monitoring create secret generic bugsink-creds \
+  --from-literal=SECRET_KEY="$(openssl rand -base64 48)" \
+  --from-literal=CREATE_SUPERUSER="admin@localhost:admin"
 ```
 
 **Basic authentication**
@@ -139,7 +314,21 @@ Certificate issuance is unaffected: cert-manager attaches its own HTTP-01 route 
 Gateway, and that route carries no auth filter.
 
 
+### PV scraper
+
+With `scraper.enabled`, the chart runs the scraper worker and beat queues up to
+`scraper.dispatchMaxTasks` due sources every 10 minutes; without it, beat queues none. See
+[pv-scraper.md](pv-scraper.md) for what it does. Before enabling it in an environment:
+
+1. Create the PV bucket named in `PV_IMPORT_BUCKET` in the `s3-creds` secret (see Secrets above).
+2. Upload the list of authorities to `pv_scraper/authorities.json` in the application's bucket, then seed the sources:
+   ```bash
+   kubectl -n uitslagenportaal-[env] exec deploy/uitslagenportaal-backend -- python manage.py import_scrape_sources
+   ```
+
 ### Automatic deploy
+
+See [the release procedure](release-procedure.md) for how to create releases.
 
 #### Service account
 
@@ -166,7 +355,7 @@ namespace. Install it as an administrator, once per environment.
 
 #### The deployment pipeline
 
-A push to `dev` deploys itself. Once the backend, frontend, Playwright and Helm suites have
+A push to `dev` or `main` trigger the CD pipeline. Once the backend, frontend, Playwright and Helm suites have
 all passed and both images are published, the `deploy` job in `branch-ci-cd.yml` upgrades the
 release.
 
@@ -205,7 +394,7 @@ On a managed Kubernetes cluster at a hosting provider.
 2. Make sure the secrets are set, see the Secrets section above.
 3. Install the helm chart:
    ```bash
-   helm upgrade --install uitslagenportaal . -n uitslagenportaal-[env] -f values-[env].yaml
+   helm upgrade --install uitslagenportaal application -n uitslagenportaal-[env] -f application/values-[env].yaml
    ```
 
 Note this reverts the cluster to whatever `:dev` points at, because it passes none of the
@@ -221,12 +410,14 @@ kubectl -n uitslagenportaal-[env] get deploy uitslagenportaal-backend \
 
 E.g. on a Kubernetes cluster from Docker Desktop or kind
 
-1. Run the commands for the one-time infra setup, see above, if not done before.
+1. Run the commands for the one-time infra setup, see above, if not done before. Install the monitoring chart with
+   `-f monitoring/values-local.yaml`: it keeps Loki's logs on its own volume instead of in object storage, and turns
+   off mount propagation for node-exporter, which Docker Desktop refuses.
 2. Add a hosts value in `C:\Windows\System32\drivers\etc\hosts` or `/etc/hosts`:
    `127.0.0.1  uitslagenportaal.localdev`
-3. Set the importer secrets (services secrets are created by `06-services.yaml`).
+3. Set the importer secrets (services secrets are created by `99-services.yaml`).
 4. Install the helm chart:
    ```bash
-   helm upgrade --install uitslagenportaal . -n uitslagenportaal-local \
-     --create-namespace -f values-local.yaml
+   helm upgrade --install uitslagenportaal application -n uitslagenportaal-local --create-namespace -f application/values-local.yaml
    ```
+   Like the monitoring chart, the application chart refuses `values-local.yaml` on a Scaleway cluster.

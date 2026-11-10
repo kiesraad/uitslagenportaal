@@ -1,15 +1,17 @@
-import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import { faHourglass } from "@fortawesome/free-regular-svg-icons";
+import { faChevronRight, faInfo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Plural, useLingui } from "@lingui/react/macro";
-import { type PropsWithChildren, useMemo } from "react";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { type PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
+import { Button, Popover } from "react-aria-components";
 import { Link, useNavigate } from "react-router";
 import { twMerge } from "tailwind-merge";
 import type { ElectionConfig, Region, RegionCategory } from "../../api/types";
 import { useFormatters } from "../../utils/format";
-import { getRegionLabels } from "../../utils/region";
+import { formatStationLabel, getRegionLabels } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
 import { lowercaseFirst } from "../../utils/text";
-import type { SearchListOption } from "../SearchBar";
+import type { SearchListOption } from "../SearchAutocomplete";
 import SearchBar from "../SearchBar";
 import { RegionListNotAvailable } from "./RegionListNotAvailable";
 
@@ -25,6 +27,8 @@ type Props = {
    parentCsbSlug?: string;
    regionTitle?: string;
    emptyPlaceholder?: boolean;
+   // A GR gemeente is listed both as GSB and as CSB; only the list knows which.
+   isCsbList?: boolean;
 };
 
 export function RegionList({
@@ -35,6 +39,7 @@ export function RegionList({
    parentCsbSlug,
    regionTitle,
    emptyPlaceholder = false,
+   isCsbList = false,
 }: Props) {
    const navigate = useNavigate();
    const { t } = useLingui();
@@ -55,12 +60,12 @@ export function RegionList({
       PROVINCIE: appRoutes.csbResults,
       KIESKRING: appRoutes.hsbResults,
    };
+   const detailRoute = isCsbList ? appRoutes.csbResults : REGION_DETAIL_ROUTE_BUILDERS[regionCategory];
 
    function getRegionRoute(option: SearchListOption) {
       if (regionCategory === "STEMBUREAU" && parentRegionSlug) {
          return appRoutes.pollingStationResults(electionConfig.slug, parentRegionSlug, option.id, parentCsbSlug);
       }
-      const detailRoute = REGION_DETAIL_ROUTE_BUILDERS[regionCategory];
       if (detailRoute) {
          return detailRoute(electionConfig.slug, option.id);
       }
@@ -70,7 +75,7 @@ export function RegionList({
    let navigateToRegion: (option: SearchListOption) => void;
    if (regionCategory === "STEMBUREAU") {
       navigateToRegion = navigateToPollingStation;
-   } else if (regionCategory in REGION_DETAIL_ROUTE_BUILDERS) {
+   } else if (detailRoute) {
       navigateToRegion = (option) => navigate(getRegionRoute(option));
    } else {
       navigateToRegion = navigateToGemeente;
@@ -87,14 +92,21 @@ export function RegionList({
       }, {});
 
       return visibleRegions.map((region) => {
-         const isAmbiguous = nameCounts[region.region_name] > 1 && Boolean(region.csb_name);
-         const label = isAmbiguous ? `${region.region_name} - ${region.csb_name}` : region.region_name;
+         const isAmbiguous = nameCounts[region.region_name] > 1 && Boolean(region.csb);
+         const name = isAmbiguous ? `${region.region_name} - ${region.csb?.region_name}` : region.region_name;
+         const stationNumber = isPollingStationList ? (region.station_number ?? undefined) : undefined;
+         const postalCode = isPollingStationList ? region.postal_code : undefined;
          return {
             id: region.slug,
-            label,
+            label: formatStationLabel(name, stationNumber),
+            searchText: postalCode ? `${postalCode} ${postalCode.replace(" ", "")}` : undefined,
             sortName: region.region_name,
-            stationNumber: isPollingStationList ? (region.station_number ?? undefined) : undefined,
-            csbSlug: region.csb_slug ?? undefined,
+            stationNumber,
+            sameLocationStationNumbers: isPollingStationList
+               ? (region.same_location_stations ?? []).flatMap((station) => station.station_number ?? [])
+               : undefined,
+            csbSlug: region.csb?.slug,
+            inactive: region.has_results === false,
          };
       });
    }, [regions, isPollingStationList]);
@@ -137,7 +149,7 @@ export function RegionList({
 
          <SearchBar regionCategory={regionCategory} options={regionOptions} onSelect={navigateToRegion} />
 
-         {!isPollingStationList && <h2 className="mb-4">{t`Vind een ${regionInline} van A tot Z`}</h2>}
+         {!isPollingStationList && <h2 className="mb-4 max-sm:max-w-70">{t`Vind een ${regionInline} van A tot Z`}</h2>}
 
          {isPollingStationList ? (
             <SearchList>
@@ -152,7 +164,7 @@ export function RegionList({
          ) : (
             regionsByLetter.map(([letter, municipalities]) => (
                <div key={letter} className="mb-6">
-                  <div className="font-bold my-2 text-xl">{letter}</div>
+                  <h3 className="py-2 font-sans max-sm:sticky max-sm:top-0 max-sm:bg-white/75">{letter}</h3>
                   <SearchList>
                      {municipalities.map((municipality) => (
                         <ListOptionLink
@@ -170,22 +182,147 @@ export function RegionList({
 }
 
 function SearchList({ children }: PropsWithChildren) {
-   return <div className="mb-5 max-w-2xl grid grid-cols-[max-content_auto_max-content]">{children}</div>;
+   return <ul className="mb-5 grid max-w-2xl grid-cols-[max-content_auto_max-content]">{children}</ul>;
 }
 
 function ListOptionLink({ listOption, to }: { listOption: SearchListOption; to: string }) {
+   const { t } = useLingui();
+   const { locale } = useFormatters();
+   const name = listOption.stationNumber != null ? (listOption.sortName ?? listOption.label) : listOption.label;
+   const sameLocationNumbers = listOption.sameLocationStationNumbers ?? [];
+   const isDoubleStation = sameLocationNumbers.length > 0;
+   const otherNumbers = new Intl.ListFormat(locale).format(sameLocationNumbers.map(String));
    return (
-      <Link
-         to={to}
-         className="items-center hover:no-underline! odd:bg-blue-50 hover:bg-blue-100 h-18 px-6 grid col-span-3 grid-cols-subgrid"
-      >
-         <span className={twMerge(listOption.stationNumber && "font-light text-gray-700 pr-2")}>
-            {listOption.stationNumber}
-         </span>
-         <span className="underline">{listOption.label}</span>
-         <span>
-            <FontAwesomeIcon icon={faChevronRight} />
-         </span>
-      </Link>
+      <li className="relative col-span-3 grid grid-cols-subgrid odd:bg-blue-50 hover:bg-blue-100">
+         <Link
+            to={to}
+            className={twMerge(
+               "col-span-3 grid min-h-18 grid-cols-subgrid items-center px-6 hover:no-underline",
+               listOption.inactive && "text-gray-500",
+            )}
+         >
+            <span
+               className={twMerge(
+                  listOption.stationNumber && "pr-2 font-light text-gray-700",
+                  listOption.inactive && "text-gray-500",
+               )}
+            >
+               {listOption.stationNumber}
+               {/* Grid items have no whitespace between them, so screen readers would glue the number to the name. */}
+               {listOption.stationNumber !== undefined && <span className="sr-only">&nbsp;</span>}
+            </span>
+            <span className={twMerge("py-3", isDoubleStation && "pr-12")}>
+               <span className="underline">{name}</span>
+               {isDoubleStation && (
+                  <span className="sr-only">
+                     , <Trans>Dubbel stembureau</Trans>, <Trans>Ook stembureau {otherNumbers} op deze locatie</Trans>
+                  </span>
+               )}
+               {listOption.inactive && (
+                  <span className="sr-only">
+                     , <Trans>Nog geen telresultaten</Trans>
+                  </span>
+               )}
+               {/* After the sr-only texts, so it does not split the accessible name; they take no space on screen. */}
+               {listOption.inactive && (
+                  <>
+                     {" "}
+                     <FontAwesomeIcon icon={faHourglass} className="align-middle!" />
+                  </>
+               )}
+            </span>
+            <span>
+               <FontAwesomeIcon icon={faChevronRight} />
+            </span>
+         </Link>
+         {/* A sibling of the link, not a child: a button may not sit inside a link. */}
+         {isDoubleStation && (
+            <DoubleStationInfo label={t`Uitleg dubbel stembureau ${name}`} otherNumbers={otherNumbers} />
+         )}
+      </li>
+   );
+}
+
+/** Info button that opens on hover, click, tap or Enter; closes on Escape, a click outside or the pointer leaving. */
+function DoubleStationInfo({ label, otherNumbers }: { label: string; otherNumbers: string }) {
+   const triggerRef = useRef<HTMLButtonElement>(null);
+   const popoverRef = useRef<HTMLDivElement>(null);
+   const isPointerOver = useRef(false);
+   const closeTimer = useRef<number | undefined>(undefined);
+   const [isOpen, setOpen] = useState(false);
+
+   function open() {
+      window.clearTimeout(closeTimer.current);
+      setOpen(true);
+   }
+
+   // The delay lets the pointer cross the gap onto the popover without it closing (WCAG 1.4.13).
+   function closeSoon() {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = window.setTimeout(() => setOpen(false), 300);
+   }
+
+   function pointerEnter() {
+      isPointerOver.current = true;
+      open();
+   }
+
+   function pointerLeave() {
+      isPointerOver.current = false;
+      closeSoon();
+   }
+
+   useEffect(() => {
+      if (!isOpen) return;
+      const onKeyDown = (event: KeyboardEvent) => {
+         if (event.key === "Escape") setOpen(false);
+      };
+      const onPointerDown = (event: PointerEvent) => {
+         const target = event.target as Node;
+         if (!triggerRef.current?.contains(target) && !popoverRef.current?.contains(target)) setOpen(false);
+      };
+      document.addEventListener("keydown", onKeyDown);
+      document.addEventListener("pointerdown", onPointerDown);
+      return () => {
+         document.removeEventListener("keydown", onKeyDown);
+         document.removeEventListener("pointerdown", onPointerDown);
+      };
+   }, [isOpen]);
+
+   useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+
+   return (
+      <>
+         <Button
+            ref={triggerRef}
+            aria-label={label}
+            aria-expanded={isOpen}
+            onPress={open}
+            onHoverStart={pointerEnter}
+            onHoverEnd={pointerLeave}
+            onBlur={() => !isPointerOver.current && setOpen(false)}
+            className="bg-blue focus-visible:outline-blue absolute top-1/2 right-14 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xs text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+         >
+            <FontAwesomeIcon icon={faInfo} className="text-xs" />
+         </Button>
+         {/* Non-modal, so opening on hover neither moves focus nor hides the rest of the page. */}
+         <Popover
+            triggerRef={triggerRef}
+            isOpen={isOpen}
+            onOpenChange={setOpen}
+            isNonModal
+            placement="top end"
+            className="max-w-xs rounded-xs border border-blue-200 bg-white text-sm text-gray-700 shadow-md"
+         >
+            <div ref={popoverRef} onPointerEnter={pointerEnter} onPointerLeave={pointerLeave} className="px-3 py-2">
+               <p>
+                  <Trans>Dubbel stembureau</Trans>
+               </p>
+               <p>
+                  <Trans>Ook stembureau {otherNumbers} op deze locatie</Trans>
+               </p>
+            </div>
+         </Popover>
+      </>
    );
 }

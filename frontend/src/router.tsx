@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { createBrowserRouter, type LazyRouteFunction, Outlet, type RouteObject, ScrollRestoration } from "react-router";
 import { BaseLayout } from "@/components/BaseLayout.tsx";
+import { LocaleProvider } from "@/components/LocaleProvider.tsx";
+import { RouteFocus } from "@/components/RouteFocus.tsx";
 import ErrorBoundaryPage from "@/pages/ErrorBoundaryPage.tsx";
 import LoadingPage from "@/pages/LoadingPage.tsx";
 import { localeLoader } from "./i18n";
@@ -11,14 +13,31 @@ import { queryClient } from "./queryClient.ts";
 // evicted by the garbage collector while the page stayed mounted.
 function RootLayout() {
    return (
-      <>
+      <LocaleProvider>
          <ScrollRestoration />
+         <RouteFocus />
          <Suspense fallback={<LoadingPage />}>
             <BaseLayout>
                <Outlet />
             </BaseLayout>
          </Suspense>
-      </>
+      </LocaleProvider>
+   );
+}
+
+function RootErrorBoundary() {
+   return (
+      <LocaleProvider>
+         <ErrorBoundaryPage />
+      </LocaleProvider>
+   );
+}
+
+function RootHydrateFallback() {
+   return (
+      <LocaleProvider>
+         <LoadingPage />
+      </LocaleProvider>
    );
 }
 
@@ -29,16 +48,84 @@ function lazyPage<TModule>(
    return async () => select(await importer());
 }
 
+// Route ids must be unique, so each mount of these pages gets its own suffix.
+function municipalityRoutes(idSuffix: string): RouteObject[] {
+   return [
+      {
+         index: true,
+         id: `MunicipalityPollingstationListPage${idSuffix}`,
+         lazy: lazyPage(
+            () => import("./pages/MunicipalityPage/MunicipalityPollingstationListPage"),
+            (m) => ({
+               Component: m.MunicipalityPollingstationListPage,
+               loader: m.municipalityPollingstationListLoader(queryClient),
+            }),
+         ),
+      },
+      {
+         path: "resultaten",
+         id: `MunicipalityResultsPage${idSuffix}`,
+         lazy: lazyPage(
+            () => import("./pages/MunicipalityPage/MunicipalityResultsPage"),
+            (m) => ({
+               Component: m.MunicipalityResultsPage,
+               loader: m.municipalityResultsLoader(queryClient),
+            }),
+         ),
+      },
+      {
+         path: "resultaten/:partySlug",
+         id: `MunicipalityPartyResultsPage${idSuffix}`,
+         lazy: async () => {
+            const [page, results] = await Promise.all([
+               import("./pages/MunicipalityPage/MunicipalityPartyResultsPage"),
+               import("./pages/MunicipalityPage/MunicipalityResultsPage"),
+            ]);
+            return {
+               Component: page.MunicipalityPartyResultsPage,
+               loader: results.municipalityResultsLoader(queryClient),
+            };
+         },
+      },
+      {
+         path: ":pollingStationSlug",
+         id: `PollingStationResultsPage${idSuffix}`,
+         lazy: lazyPage(
+            () => import("./pages/PollingStationPage/PollingStationResultsPage.tsx"),
+            (m) => ({
+               Component: m.default,
+               loader: m.pollingStationLoader(queryClient),
+            }),
+         ),
+      },
+      {
+         path: ":pollingStationSlug/:partySlug",
+         id: `PollingStationPartyResultsPage${idSuffix}`,
+         lazy: async () => {
+            const [page, results] = await Promise.all([
+               import("./pages/PollingStationPage/PollingStationPartyResultsPage.tsx"),
+               import("./pages/PollingStationPage/PollingStationResultsPage.tsx"),
+            ]);
+            return {
+               Component: page.default,
+               loader: results.pollingStationLoader(queryClient),
+            };
+         },
+      },
+   ];
+}
+
 // Routes are only nested where the parent path ends in a route parameter: that is where
 // a loader for that parameter belongs. Static segments (csb, gsb, resultaten) stay
 // inline in the child path rather than adding an empty level.
 export const routes: RouteObject[] = [
    {
+      id: "root",
       path: "/",
       loader: localeLoader,
       Component: RootLayout,
-      ErrorBoundary: ErrorBoundaryPage,
-      HydrateFallback: LoadingPage,
+      ErrorBoundary: RootErrorBoundary,
+      HydrateFallback: RootHydrateFallback,
       children: [
          {
             index: true,
@@ -63,10 +150,21 @@ export const routes: RouteObject[] = [
                   path: "fout-melden",
                   id: "ReportIssuePage",
                   lazy: lazyPage(
-                     () => import("./pages/ReportIssuePage"),
+                     () => Promise.all([import("./pages/ReportIssuePage"), import("./pages/ReportIssuePage.loader")]),
+                     ([page, loader]) => ({
+                        Component: page.ReportIssuePage,
+                        loader: loader.reportIssueLoader(queryClient),
+                     }),
+                  ),
+               },
+               {
+                  path: "van-stem-tot-uitslag",
+                  id: "ElectionConfigTimelinePage",
+                  lazy: lazyPage(
+                     () => import("./pages/ElectionConfigPage/ElectionConfigTimelinePage"),
                      (m) => ({
-                        Component: m.ReportIssuePage,
-                        loader: m.reportIssueLoader(queryClient),
+                        Component: m.ElectionConfigTimelinePage,
+                        loader: m.electionConfigTimelineLoader(queryClient),
                      }),
                   ),
                },
@@ -181,69 +279,12 @@ export const routes: RouteObject[] = [
                },
                {
                   path: "gsb/:regionSlug/csb/:csbSlug",
-                  children: [
-                     {
-                        index: true,
-                        id: "MunicipalityPollingstationListPage",
-                        lazy: lazyPage(
-                           () => import("./pages/MunicipalityPage/MunicipalityPollingstationListPage"),
-                           (m) => ({
-                              Component: m.MunicipalityPollingstationListPage,
-                              loader: m.municipalityPollingstationListLoader(queryClient),
-                           }),
-                        ),
-                     },
-                     {
-                        path: "resultaten",
-                        id: "MunicipalityResultsPage",
-                        lazy: lazyPage(
-                           () => import("./pages/MunicipalityPage/MunicipalityResultsPage"),
-                           (m) => ({
-                              Component: m.MunicipalityResultsPage,
-                              loader: m.municipalityResultsLoader(queryClient),
-                           }),
-                        ),
-                     },
-                     {
-                        path: "resultaten/:partySlug",
-                        id: "MunicipalityPartyResultsPage",
-                        lazy: async () => {
-                           const [page, results] = await Promise.all([
-                              import("./pages/MunicipalityPage/MunicipalityPartyResultsPage"),
-                              import("./pages/MunicipalityPage/MunicipalityResultsPage"),
-                           ]);
-                           return {
-                              Component: page.MunicipalityPartyResultsPage,
-                              loader: results.municipalityResultsLoader(queryClient),
-                           };
-                        },
-                     },
-                     {
-                        path: ":pollingStationSlug",
-                        id: "PollingStationResultsPage",
-                        lazy: lazyPage(
-                           () => import("./pages/PollingStationPage/PollingStationResultsPage.tsx"),
-                           (m) => ({
-                              Component: m.default,
-                              loader: m.pollingStationLoader(queryClient),
-                           }),
-                        ),
-                     },
-                     {
-                        path: ":pollingStationSlug/:partySlug",
-                        id: "PollingStationPartyResultsPage",
-                        lazy: async () => {
-                           const [page, results] = await Promise.all([
-                              import("./pages/PollingStationPage/PollingStationPartyResultsPage.tsx"),
-                              import("./pages/PollingStationPage/PollingStationResultsPage.tsx"),
-                           ]);
-                           return {
-                              Component: page.default,
-                              loader: results.pollingStationLoader(queryClient),
-                           };
-                        },
-                     },
-                  ],
+                  children: municipalityRoutes(""),
+               },
+               {
+                  // A GR gemeente is its own CSB, so there is no CSB above it to name.
+                  path: "gsb/:regionSlug",
+                  children: municipalityRoutes("WithoutCsb"),
                },
                {
                   path: "*",

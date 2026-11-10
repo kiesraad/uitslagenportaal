@@ -1,10 +1,8 @@
 import re
 from abc import ABC
 from datetime import datetime
-from io import BytesIO
 from pathlib import Path
 
-from django.core.files.storage import default_storage
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -23,6 +21,8 @@ from election.models import (
     VoterTurnoutCount,
 )
 from eml_import.exceptions import EMLImporterException
+from eml_import.utils.base_importer import EMLStorageMixin
+from eml_import.utils.csv_osv43_importer import HSB_NUMBER_RE
 from eml_import.utils.eml_base_importer import EMLBaseImporter
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
@@ -30,12 +30,16 @@ from mainsite.utils.eml_type import EmlType
 from party.models import Candidate, Party
 from region.models import Region, build_region_slug
 
+# A stembureau identifier reads e.g. "Stembureau Gemeentehuis Gieten (postcode: 9461 BH)".
+POSTAL_CODE_RE = re.compile(r"\(postcode:\s*([^)]*)\)")
+DUTCH_POSTAL_CODE_RE = re.compile(r"^(\d{4})\s*([A-Za-z]{2})$")
 
-class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
+
+class EML510BaseImporter(EMLStorageMixin, EMLBaseImporter[Eml510], ABC):
     file_type: ElectionDocument.FileType
 
-    def __init__(self, eml: Eml510, eml_file: Path | NamedBytesIO | None):
-        super().__init__(eml, eml_file)
+    def __init__(self, file_path: Path | NamedBytesIO, eml: Eml510):
+        super().__init__(file_path, eml=eml)
         self.election_documents = {doc.storage_key: doc for doc in ElectionDocument.objects.all()}
 
     def _results_available_at(self) -> datetime | None:
@@ -163,6 +167,14 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
             )
         )
 
+    def _get_contest(self, contest_identifier: str, reporting_unit_name: str | None = None) -> Contest:
+        if ElectionCategory(self.election.election_config.category).config.single_contest:
+            return Contest.objects.get(election=self.election)
+        if reporting_unit_name is not None and contest_identifier == "alle":
+            # 'alle' links the candidates to a contest per reporting unit, so get the contest by name.
+            return Contest.objects.get(election=self.election, name=reporting_unit_name)
+        return Contest.objects.get(identifier=contest_identifier, election=self.election)
+
     def _is_correction(self, region: Region) -> bool:
         """
         True when this EML's logical file key is already imported.
@@ -174,50 +186,13 @@ class EML510BaseImporter(EMLBaseImporter[Eml510], ABC):
             or VoterTurnoutCount.objects.filter(region=region, eml_type=self.eml_type).exists()
         )
         if is_correction:
-            self.logger.info(
-                "\033[32mCorrection detected for region %s (%s) eml_type=%s\033[0m",
+            self.logger.warning(
+                "Correction detected for region %s (%s) eml_type: %s",
                 region.region_number,
                 region.region_name,
                 self.eml_type,
             )
         return is_correction
-
-    def _store_eml(self, region: Region) -> None:
-        parent_number, parent_name = (
-            (region.parent.region_number, region.parent.region_name) if region.parent else (None, None)
-        )
-        filename = "_".join(
-            filter(
-                lambda x: x,
-                [
-                    self.election_config.identifier,
-                    self.eml_type.label,
-                    parent_number,
-                    parent_name,
-                    region.region_number,
-                    region.region_name,
-                    timezone.now().strftime("%Y%m%dT%H%M%S%f"),
-                ],
-            )
-        )
-        filename = re.sub(r"[^A-Za-z0-9_-]", "", filename.replace(" ", "_"))
-        file_path = f"{self.election_config.identifier}/{filename}.eml.xml"
-
-        if isinstance(self.eml_file, Path):
-            file_content = BytesIO(self.eml_file.read_bytes())
-        else:
-            file_content = self.eml_file
-        file_content.seek(0)
-        size = len(file_content.getvalue())
-        stored_file_path = default_storage.save(file_path, file_content)
-
-        ElectionDocument.objects.create(
-            storage_key=stored_file_path,
-            region=region,
-            content_type="application/xml",
-            file_type=self.file_type,
-            size=size,
-        )
 
 
 class EML510bImporter(EML510BaseImporter):
@@ -255,6 +230,15 @@ class EML510bImporter(EML510BaseImporter):
             name = name[len("Stembureau ") :]
         return name
 
+    @staticmethod
+    def _polling_station_postal_code(unit: ReportingUnitVotes) -> str | None:
+        match = POSTAL_CODE_RE.search(unit.reporting_unit_identifier.value)
+        postal_code = match.group(1).strip() if match else ""
+        # Gemeenten write "1000AB" or "1000 ab" as well; store "1000 AB" so equal postcodes compare equal.
+        if dutch := DUTCH_POSTAL_CODE_RE.match(postal_code):
+            return f"{dutch.group(1)} {dutch.group(2).upper()}"
+        return postal_code or None
+
     def _ensure_polling_stations(self, region: Region) -> dict[tuple[str, str], Region]:
         """
         Create all polling stations of this file up front, keyed by (number, name).
@@ -273,12 +257,13 @@ class EML510bImporter(EML510BaseImporter):
             for station in Region.objects.filter(**stations_filter)
         }
 
-        wanted: set[tuple[str, str]] = set()
+        postal_code_by_key: dict[tuple[str, str], str | None] = {}
         for contest_data in self.eml.count.election.contests.contest:
             for unit in contest_data.reporting_unit_votes:
-                wanted.add((str(unit.reporting_unit_identifier.id), self._polling_station_name(unit)))
+                key = (str(unit.reporting_unit_identifier.id), self._polling_station_name(unit))
+                postal_code_by_key[key] = self._polling_station_postal_code(unit)
 
-        missing = wanted - existing.keys()
+        missing = postal_code_by_key.keys() - existing.keys()
         if not missing:
             return existing
 
@@ -289,6 +274,7 @@ class EML510bImporter(EML510BaseImporter):
                     election=self.election,
                     region_number=region_number,
                     region_name=region_name,
+                    postal_code=postal_code_by_key[(region_number, region_name)],
                     parent=region,
                     csb=csb,
                     region_category=RegionCategory.STEMBUREAU,
@@ -338,7 +324,7 @@ class EML510bImporter(EML510BaseImporter):
                 region.counting_method = counting_method
             region.save()
 
-            if self.eml_file is not None:
+            if self.file_path is not None:
                 self._store_eml(region)
 
             # Preload party names dict
@@ -348,10 +334,7 @@ class EML510bImporter(EML510BaseImporter):
             vote_counts: list[VoteCount] = []
             turnout_counts: list[VoterTurnoutCount] = []
             for contest_data in self.eml.count.election.contests.contest:
-                contest = Contest.objects.get(
-                    identifier=contest_data.contest_identifier.id,
-                    election=self.election,
-                )
+                contest = self._get_contest(contest_data.contest_identifier.id)
                 candidate_by_key = {
                     (candidate.party_id, candidate.identifier): candidate
                     for candidate in Candidate.objects.filter(contest=contest)
@@ -401,24 +384,30 @@ class EML510cImporter(EML510BaseImporter):
         VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
         ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
 
-    def _parse_data(self) -> None:
+    def _get_kieskring(self) -> Region:
+        regions_qs = Region.objects.filter(election=self.election, region_category=RegionCategory.KIESKRING)
         election_domain = self._get_election_identifier_data().election_domain
         if not isinstance(election_domain, list):
             election_domain = [election_domain]
+
+        if not election_domain:
+            # TK and EP files have no ElectionDomain; the managing authority is the HSB, e.g. "HSB13" Rotterdam.
+            authority = self.eml.managing_authority.authority_identifier
+            match = HSB_NUMBER_RE.fullmatch(authority.id or "")
+            if match is None:
+                raise EMLImporterException(f"Managing authority {authority.id} is not an HSB")
+            return regions_qs.get(region_number=match[1], region_name=(authority.value or "").strip())
+
         assert len(election_domain) == 1, "More than one election domain, cannot parse"
         region_number = int(election_domain[0].id) if election_domain[0].id else None
         region_name = election_domain[0].value
-
-        regions_qs = Region.objects.filter(election=self.election, region_category=RegionCategory.KIESKRING)
         if not region_number:
-            # Allow for the case when the election domain has no region number attached,
-            # this is the case in PS and region number is in that case not needed for retrieval
-            region = regions_qs.get(region_name=region_name)
-        else:
-            region = regions_qs.get(
-                region_number=region_number,
-                region_name=region_name,
-            )
+            # In PS the election domain has no region number, and the name alone identifies the kieskring.
+            return regions_qs.get(region_name=region_name)
+        return regions_qs.get(region_number=region_number, region_name=region_name)
+
+    def _parse_data(self) -> None:
+        region = self._get_kieskring()
 
         is_correction = self._is_correction(region)
 
@@ -465,14 +454,7 @@ class EML510cImporter(EML510BaseImporter):
                         f"Cannot find child_region_name {child_region_name} in child_region_by_name"
                     )
 
-                contest_filter = {"election": self.election}
-                # Get the contest from the DB by name, if the contest in the EML file is set to 'alle'. This means
-                # that the candidates are linked to a contest per reporting unit, so we get the contest by name.
-                if contest_data.contest_identifier.id == "alle":
-                    contest_filter["name"] = child_region_name
-                else:
-                    contest_filter["identifier"] = contest_data.contest_identifier.id
-                contest = Contest.objects.get(**contest_filter)
+                contest = self._get_contest(contest_data.contest_identifier.id, child_region_name)
                 candidate_by_key = {
                     (candidate.party_id, candidate.identifier): candidate
                     for candidate in Candidate.objects.filter(contest=contest)
@@ -490,10 +472,7 @@ class EML510cImporter(EML510BaseImporter):
                 self._collect_turnout_counts(contest, child_region, unit, turnout_counts)
 
             # HSB totals
-            contest = Contest.objects.get(
-                identifier=contest_data.contest_identifier.id,
-                election=self.election,
-            )
+            contest = self._get_contest(contest_data.contest_identifier.id)
             # Get candidates by (party, identifier) and by (None, DB id) key.
             # We need to get candidates by DB id when processing contest-spanning totals. The DB ids are determined by
             # the short code mapping, which is tracked when processing the reporting unit's votes.
@@ -538,26 +517,10 @@ class EML510dImporter(EML510BaseImporter):
         ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
 
     def _parse_data(self) -> None:
-        election_domain = self._get_election_identifier_data().election_domain
-        if not isinstance(election_domain, list):
-            election_domain = [election_domain]
-        assert len(election_domain) == 1, "More than one election domain, cannot parse"
-        region_number = int(election_domain[0].id) if election_domain[0].id else None
-        region_name = election_domain[0].value
-
-        # We're processing CSB results, but the region_category for CSBs differs per election category,
-        # so get it from the category config.
+        # Each election has exactly one CSB, whose region_category differs per election category. This also covers
+        # TK and EP, whose files have no ElectionDomain.
         election_category = ElectionCategory(self.election.election_config.category)
-        regions_qs = Region.objects.filter(election=self.election, region_category=election_category.config.csb)
-        if not region_number:
-            # Allow for the case when the election domain has no region number attached,
-            # this is the case in PS and region number is in that case not needed for retrieval
-            region = regions_qs.get(region_name=region_name)
-        else:
-            region = regions_qs.get(
-                region_number=region_number,
-                region_name=region_name,
-            )
+        region = Region.objects.get(election=self.election, region_category=election_category.config.csb)
 
         is_correction = self._is_correction(region)
 
@@ -605,14 +568,7 @@ class EML510dImporter(EML510BaseImporter):
                         f"Cannot find child_region_name {child_region_name} in child_region_by_name"
                     )
 
-                contest_filter = {"election": self.election}
-                # Get the contest from the DB by name, if the contest in the EML file is set to 'alle'. This means that
-                # the candidates are linked to a contest per reporting unit, so we get the contest by name.
-                if contest_data.contest_identifier.id == "alle":
-                    contest_filter["name"] = child_region_name
-                else:
-                    contest_filter["identifier"] = contest_data.contest_identifier.id
-                contest = Contest.objects.get(**contest_filter)
+                contest = self._get_contest(contest_data.contest_identifier.id, child_region_name)
                 candidate_by_key = {
                     (candidate.party_id, candidate.identifier): candidate
                     for candidate in Candidate.objects.filter(contest=contest)
@@ -630,10 +586,7 @@ class EML510dImporter(EML510BaseImporter):
                 self._collect_turnout_counts(contest, child_region, unit, turnout_counts)
 
             # CSB totals
-            contest = Contest.objects.get(
-                identifier=contest_data.contest_identifier.id,
-                election=self.election,
-            )
+            contest = self._get_contest(contest_data.contest_identifier.id)
             # Get candidates by (party, identifier) and by (None, DB id) key.
             # We need to get candidates by DB id when processing contest-spanning totals. The DB ids are determined by
             # the short code mapping, which is tracked when processing the reporting unit's votes.

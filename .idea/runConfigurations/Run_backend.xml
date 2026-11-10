@@ -22,7 +22,7 @@
         </list>
       </option>
     </PathMappingSettings>
-    <option name="RUN_TOOL" value="" />
+    <option name="RUN_TOOL" value="true" />
     <option name="SCRIPT_NAME" value="manage.py" />
     <option name="PARAMETERS" value="runserver 0.0.0.0:8000" />
     <option name="SHOW_COMMAND_LINE" value="false" />

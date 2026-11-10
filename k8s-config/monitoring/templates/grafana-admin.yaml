@@ -1,0 +1,19 @@
+{{- /*
+Grafana's admin login. The password is generated on first install and read back on every
+upgrade after it, so it survives until the release is uninstalled. `helm template` and
+--dry-run cannot read the cluster and render a fresh one each time.
+*/}}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace "grafana-admin" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-admin
+  namespace: {{ .Release.Namespace }}
+type: Opaque
+data:
+  admin-user: {{ "admin" | b64enc }}
+  {{- if $existing }}
+  admin-password: {{ index $existing.data "admin-password" }}
+  {{- else }}
+  admin-password: {{ randAlphaNum 32 | b64enc }}
+  {{- end }}

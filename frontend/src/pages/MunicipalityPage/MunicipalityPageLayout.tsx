@@ -23,7 +23,7 @@ export default function MunicipalityPageLayout({
    const { t } = useLingui();
    const { formatDate } = useFormatters();
 
-   const csbSlug = region.csb_slug ?? undefined;
+   const csbSlug = region.csb?.slug;
    const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(
       electionConfig.slug,
       region.slug,
@@ -46,8 +46,8 @@ export default function MunicipalityPageLayout({
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               getCsbCrumb(region, electionConfig.slug),
-               { href: municipalityPollingstationListRoute, label: municipalityTitle },
+               getCsbCrumb(region, electionConfig),
+               { label: municipalityTitle },
             ]}
             tabs={
                hasResults && (

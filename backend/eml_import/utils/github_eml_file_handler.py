@@ -3,7 +3,10 @@ import io
 import itertools
 import logging
 import zipfile
+from itertools import groupby
+from os import path
 from typing import Iterator
+from xml.etree import ElementTree
 
 from django.conf import settings
 from django.core.cache import cache
@@ -29,6 +32,9 @@ BRANCH_FIELDS: dict[BranchType, str] = {
     BranchType.COUNTING_RESULTS: "gh_counting_results_branch",
 }
 
+KR_NS = "http://www.kiesraad.nl/extensions"
+_CREATION_DATE_TAG = f"{{{KR_NS}}}CreationDateTime"
+
 
 class GithubEmlFileHandler(BaseFileHandler):
     def __init__(self, election_config: ElectionConfig) -> None:
@@ -38,9 +44,10 @@ class GithubEmlFileHandler(BaseFileHandler):
         self.repo: Repository | None = None
         self.logger = logging.getLogger(f"{self.__class__.__name__}[{self.election_config.identifier}]")
 
-    @property
-    def cache_lock_key(self):
-        return f"github-eml-importer:{self.election_config.identifier.lower()}"
+    @staticmethod
+    def cache_lock_key(identifier: str) -> str:
+        """The cache key of the lock held while an election's commits are imported."""
+        return f"github-eml-importer:{identifier.lower()}"
 
     def run(self) -> tuple[int, bool]:
         self.logger.info(
@@ -55,7 +62,7 @@ class GithubEmlFileHandler(BaseFileHandler):
         self.repo = self.gh.get_repo(settings.GITHUB_INGRESS_REPO)
 
         # One import per election at a time, so two workers cannot import the same commits twice
-        lock = cache.lock(self.cache_lock_key, timeout=LOCK_TIMEOUT, blocking=False)
+        lock = cache.lock(self.cache_lock_key(self.election_config.identifier), timeout=LOCK_TIMEOUT, blocking=False)
         if not lock.acquire():
             self.logger.warning(
                 "Could not acquire lock, GithubEmlFileHandler is already running for %s",
@@ -65,6 +72,8 @@ class GithubEmlFileHandler(BaseFileHandler):
             return 0, False
 
         try:
+            # The config may have been rewritten while the lock was held elsewhere, e.g. by a branch change
+            self.election_config.refresh_from_db()
             return self._run_import()
         finally:
             try:
@@ -102,7 +111,7 @@ class GithubEmlFileHandler(BaseFileHandler):
             if next_commit_sha is None:
                 continue
 
-            xml_files = list(self._iterate_all_xml_files(files))
+            xml_files = self._filter_corrections(self._iterate_all_supported_files(files))
             self.import_file_objects(xml_files)
             ImportedCommit.objects.create(
                 election_config=self.election_config,
@@ -125,16 +134,13 @@ class GithubEmlFileHandler(BaseFileHandler):
         for parser_type, (binding, importer_cls) in self._DOCUMENT_TYPES.items():
             for file in xml_files[parser_type]:
                 self.logger.info(f"Importing {parser_type} file {file.filename}")
-                eml = self._parser.from_bytes(file.getvalue(), binding)
+                eml = self._xml_parser.from_bytes(file.getvalue(), binding) if binding else None
                 try:
                     with transaction.atomic():
-                        importer_cls(eml, file).parse()
-                except EMLImporterException as e:
+                        importer_cls(file, eml=eml).parse()
+                except EMLImporterException:
                     # Let other exceptions (like DB connection issues) bubble up so they are not silenced
-                    self.logger.error(
-                        f"\033[31mFailed importing {parser_type} file {file.filename} "
-                        f"with exception: {type(e).__name__} {e}\033[0m"
-                    )
+                    self.logger.exception("Failed importing %s file %s", parser_type, file.filename)
 
     def _iterate_branches(self) -> Iterator[tuple[BranchType, str]]:
         """
@@ -169,10 +175,10 @@ class GithubEmlFileHandler(BaseFileHandler):
 
         return commit.sha, files, len(commits) > 1
 
-    @staticmethod
-    def _is_eml_ingress_file(filename: str) -> bool:
-        extension = filename.rsplit(".", 1)[-1].lower()
-        return extension in ("xml", "zip")
+    @classmethod
+    def _is_eml_ingress_file(cls, filename: str) -> bool:
+        extension = path.splitext(filename)[1].lower()
+        return extension == ".zip" or extension in cls._VALID_EXTENSIONS
 
     def _log_eml_removals_without_additions(self, files: list[File]) -> None:
         """
@@ -196,9 +202,9 @@ class GithubEmlFileHandler(BaseFileHandler):
                         file.filename,
                     )
 
-    def _iterate_all_xml_files(self, files: list[File]) -> Iterator[NamedBytesIO]:
+    def _iterate_all_supported_files(self, files: list[File]) -> Iterator[NamedBytesIO]:
         """
-        Iterate all XML files, including the ones from zip files.
+        Iterate all XML and CSV files, including the ones from zip files.
         :param files:
         :return:
         """
@@ -215,22 +221,64 @@ class GithubEmlFileHandler(BaseFileHandler):
 
             self.logger.info("Downloading %s (sha: %s)", file.filename, file.sha)
             content = base64.b64decode(self.repo.get_git_blob(file.sha).content)
+            file_ext = path.splitext(file.filename)[1]
 
             # Unzip any zip file and iterate its content
-            if file.filename.endswith(".zip"):
+            if file_ext == ".zip":
                 for extracted_file in self._iterate_zip(content):
                     yield extracted_file
 
             # Yield any xml file directly
-            if file.filename.endswith(".xml"):
+            if file_ext in self._VALID_EXTENSIONS:
                 yield NamedBytesIO(content, file.filename)
 
     def _iterate_zip(self, content: bytes) -> Iterator[NamedBytesIO]:
         with zipfile.ZipFile(io.BytesIO(content)) as zf:
             for name in zf.namelist():
-                if name.endswith(".zip"):
+                file_ext = path.splitext(name)[1]
+                if file_ext == ".zip":
                     for file in self._iterate_zip(zf.read(name)):
                         yield file
 
-                if name.endswith(".xml"):
+                if file_ext in self._VALID_EXTENSIONS:
                     yield NamedBytesIO(zf.read(name), name)
+
+    def _filter_corrections(self, files: Iterator[NamedBytesIO]):
+        """
+        Filter out corrections within the single commit files were downloaded for, and only keep the newest version.
+
+        It can happen that two versions of a file are uploaded in the same commit, for both the
+        election definition and candidate lists. We cannot ensure the import order in the list of files,
+        so have to filter these files and only keep the newest version. Only EML files carry a creation
+        date, so files of other types are all returned.
+        """
+
+        def get_newest(identical_files: list[NamedBytesIO]):
+            """Return the newest file based on the creation date in the EML"""
+            if len(identical_files) == 1:
+                return identical_files[0]
+
+            newest = sorted(
+                [(self._eml_creation_date(f), f) for f in identical_files], key=lambda r: r[0], reverse=True
+            )[0]
+
+            return newest[1]
+
+        xml_files, other_files = [], []
+        for file in files:
+            (xml_files if file.name.endswith(".eml.xml") else other_files).append(file)
+
+        sorted_files = sorted(xml_files, key=lambda f: f.name)
+        return [get_newest(list(g)) for _, g in groupby(sorted_files, key=lambda f: f.name)] + other_files
+
+    @staticmethod
+    def _eml_creation_date(file: NamedBytesIO):
+        """Get the creation date from the EML"""
+        for event, element in ElementTree.iterparse(file, events=("start", "end")):
+            if event != "end":
+                continue
+
+            if element.tag == _CREATION_DATE_TAG:
+                return element.text
+
+        return None

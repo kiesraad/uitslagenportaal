@@ -5,8 +5,9 @@ export type ElectionConfig = {
    issue_report_opens_at: string;
    issue_report_deadline: string;
    csb_type: RegionCategory;
+   single_csb: { region_name: string; slug: string } | null;
    has_hsb: boolean;
-   timeline_entries?: TimelineEntry[];
+   timeline_dates: TimelineDate[];
    report_error_url: string;
    counting_info_url: string;
    voting_url: string;
@@ -14,21 +15,46 @@ export type ElectionConfig = {
 
 export type ElectionConfigsResponse = ElectionConfig[];
 
-export type TimelineEntryStatus = "pending" | "in-progress" | "done";
-
 export type TimelineVariant = "CSO" | "DSO" | "DEFAULT";
 
-export type LocalizedText = {
-   nl: string;
-   en: string;
+export type TimelineDateEvent =
+   | "sb_vote_count"
+   | "candidate_vote_count"
+   | "municipality_vote_count"
+   | "electoral_district_vote_count"
+   | "csb_check"
+   | "csb_result_publish";
+
+export type TimelineDateQualifier = "all_day" | "from" | "until" | "expected";
+
+export type TimelineDate = {
+   event: TimelineDateEvent;
+   date: string;
+   qualifier: TimelineDateQualifier;
 };
 
-export type TimelineEntry = {
-   status: TimelineEntryStatus;
-   title: LocalizedText;
-   date: string;
-   body: LocalizedText;
-};
+export type ElectionDocumentFileType =
+   | "EML110a"
+   | "EML230b"
+   | "EML510b"
+   | "EML510c"
+   | "EML510d"
+   | "EML520"
+   | "CSV_OSV4-3"
+   | "PDF_N10-1"
+   | "PDF_N10-2"
+   | "PDF_NA14-1"
+   | "PDF_NA31-1"
+   | "PDF_NA31-2"
+   | "PDF_NA31-2-B1"
+   | "PDF_NA31-2-B2"
+   | "PDF_NA14-2"
+   | "PDF_NA14-2-B1"
+   | "PDF_O7"
+   | "PDF_P1F-1"
+   | "PDF_P22-1"
+   | "PDF_P22-2"
+   | "PDF_SB-ZIP";
 
 export type ElectionDocument = {
    name: string;
@@ -36,10 +62,12 @@ export type ElectionDocument = {
    type: string;
    size: string;
    description: string;
-   file_type: string;
+   file_type: ElectionDocumentFileType;
+   correction_number: number;
+   metadata: Record<string, string | number>;
 };
 
-export type ReportingLevel = "gsb" | "hsb" | "csb";
+export type ReportingLevel = "gsb" | "hsb" | "csb" | "sb";
 
 export type RegionCategory = "STAAT" | "WATERSCHAP" | "KIESKRING" | "GEMEENTE" | "PROVINCIE" | "STEMBUREAU";
 
@@ -51,20 +79,43 @@ export type VoterTurnoutCount = {
    votes: number;
 };
 
+export interface RegionSummary {
+   id: number;
+   election_id: number;
+   parent_id: number;
+   region_number: string;
+   region_category: string;
+   region_name: string;
+   slug: string;
+}
+
 export type Region = {
    region_name: string;
    slug: string;
    vote_counts: VoteCounts;
    voter_turnout_counts?: VoterTurnoutCount[];
-   timeline_entries?: TimelineEntry[];
    timeline_variant?: TimelineVariant;
+   correction_date?: string | null;
    documents?: ElectionDocument[];
+   certified_document_url?: string | null;
+   certified_document_preview_url?: string | null;
    region_category: RegionCategory;
    results_available_at: string | null;
-   csb_name?: string | null;
-   csb_slug?: string | null;
    election_slug?: string;
    station_number?: number | null;
+   postal_code?: string | null;
+   has_hsb: boolean;
+   hsb: RegionSummary | null;
+   is_csb: boolean;
+   csb: RegionSummary | null;
+   // The other stembureaus with the same name and postcode: a dubbel stembureau.
+   same_location_stations?: SameLocationStation[];
+   has_results?: boolean;
+};
+
+export type SameLocationStation = {
+   station_number: number | null;
+   slug: string;
 };
 
 export type RegionResponse = Region[];

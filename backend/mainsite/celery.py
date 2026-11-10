@@ -1,4 +1,3 @@
-import copy
 import logging.config
 import os
 
@@ -30,6 +29,4 @@ def configure_logging(**_):
     """
     from django.conf import settings
 
-    config = copy.deepcopy(settings.LOGGING)
-    config["handlers"]["stdout"]["formatter"] = "simple"
-    logging.config.dictConfig(config)
+    logging.config.dictConfig(settings.LOGGING)

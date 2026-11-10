@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { describe, expect, it } from "vitest";
 import type { ElectionConfig, Region } from "@/api/types";
@@ -12,7 +12,9 @@ const electionConfig: ElectionConfig = {
    issue_report_opens_at: "2026-12-08T09:00:00",
    issue_report_deadline: "2026-12-14T10:00:00",
    csb_type: "WATERSCHAP",
+   single_csb: null,
    has_hsb: false,
+   timeline_dates: [],
    report_error_url: "https://example.test/melding",
    counting_info_url: "https://example.test/telproces",
    voting_url: "https://example.test/stemmen",
@@ -24,6 +26,10 @@ const zoetermeer: Region = {
    vote_counts: [],
    region_category: "GEMEENTE",
    results_available_at: null,
+   has_hsb: false,
+   hsb: null,
+   is_csb: false,
+   csb: null,
 };
 
 function renderRegionList(props: Partial<ComponentProps<typeof RegionList>> = {}, locale: "nl" | "en" = "nl") {
@@ -64,5 +70,189 @@ describe("RegionList", () => {
       expect(screen.getByRole("heading", { name: "Vind een gemeente van A tot Z" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /Zoetermeer/ })).toBeInTheDocument();
       expect(screen.queryByRole("heading", { name: "De gemeenten zijn nog niet beschikbaar" })).not.toBeInTheDocument();
+   });
+
+   it("links a gemeente to its GSB page by default", () => {
+      renderRegionList({ regions: [zoetermeer] });
+
+      expect(screen.getByRole("link", { name: "Zoetermeer" })).toHaveAttribute("href", "/ws2023/gsb/zoetermeer");
+   });
+
+   it("links a gemeente listed as CSB to its CSB results", () => {
+      renderRegionList({ regions: [zoetermeer], isCsbList: true });
+
+      expect(screen.getByRole("link", { name: "Zoetermeer" })).toHaveAttribute(
+         "href",
+         "/ws2023/csb/zoetermeer/resultaten",
+      );
+   });
+
+   it("says so in text when a region has no counting results yet", () => {
+      const zwolle: Region = { ...zoetermeer, region_name: "Zwolle", slug: "zwolle", has_results: false };
+      renderRegionList({ regions: [{ ...zoetermeer, has_results: true }, zwolle] });
+
+      const inactive = screen.getByRole("link", { name: "Zwolle, Nog geen telresultaten" });
+      const active = screen.getByRole("link", { name: "Zoetermeer" });
+      // The hourglass is the visible cue besides the grey; it is decorative, so it has no role to query by.
+      expect(inactive.querySelector('[data-icon="hourglass"]')).toBeInTheDocument();
+      expect(active.querySelector('[data-icon="hourglass"]')).not.toBeInTheDocument();
+   });
+
+   it("prefixes stembureau search suggestions with a zero-padded station number", () => {
+      const stations: Region[] = [
+         {
+            region_name: "De Regenboog",
+            slug: "sb1-de-regenboog",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 1,
+         },
+         {
+            region_name: "De Regenboog",
+            slug: "sb2-de-regenboog",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 2,
+         },
+      ];
+      renderRegionList({ regionCategory: "STEMBUREAU", regions: stations, parentRegionSlug: "borsele" });
+
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: "regenboog" } });
+
+      expect(screen.getByRole("option", { name: "001 - De Regenboog" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "002 - De Regenboog" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "1De Regenboog" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "2De Regenboog" })).toBeInTheDocument();
+   });
+
+   it("marks a dubbel stembureau with the other station number at its location", () => {
+      const stations: Region[] = [
+         {
+            region_name: "Huis van de Gemeente",
+            slug: "sb1-huis-van-de-gemeente",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 1,
+            same_location_stations: [{ station_number: 2, slug: "sb2-huis-van-de-gemeente" }],
+         },
+         {
+            region_name: "E & E Gasthuis",
+            slug: "sb3-e-e-gasthuis",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 3,
+            same_location_stations: [],
+         },
+      ];
+      renderRegionList({ regionCategory: "STEMBUREAU", regions: stations, parentRegionSlug: "wijk-bij-duurstede" });
+
+      expect(
+         screen.getByRole("link", {
+            name: "1Huis van de Gemeente, Dubbel stembureau, Ook stembureau 2 op deze locatie",
+         }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "3E & E Gasthuis" })).toBeInTheDocument();
+
+      const infoButton = screen.getByRole("button", { name: "Uitleg dubbel stembureau Huis van de Gemeente" });
+      fireEvent.click(infoButton);
+
+      expect(infoButton).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByText("Ook stembureau 2 op deze locatie")).toBeInTheDocument();
+
+      fireEvent.keyDown(document, { key: "Escape" });
+
+      expect(infoButton).toHaveAttribute("aria-expanded", "false");
+   });
+
+   it("finds a stembureau by its padded station number", () => {
+      const stations: Region[] = [
+         {
+            region_name: "De Regenboog",
+            slug: "sb1-de-regenboog",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 1,
+         },
+         {
+            region_name: "Basisschool de Piratenboot",
+            slug: "sb3-piratenboot",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 3,
+         },
+      ];
+      renderRegionList({ regionCategory: "STEMBUREAU", regions: stations, parentRegionSlug: "borsele" });
+
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: "001" } });
+
+      expect(screen.getByRole("option", { name: "001 - De Regenboog" })).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: "003 - Basisschool de Piratenboot" })).not.toBeInTheDocument();
+   });
+
+   it.each(["1431 BZ", "1431bz"])("finds a stembureau by its postcode typed as %s", (query) => {
+      const stations: Region[] = [
+         {
+            region_name: "Zorgcentrum Aelsmeer",
+            slug: "sb1-zorgcentrum-aelsmeer",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 1,
+            postal_code: "1431 BZ",
+         },
+         {
+            region_name: "Raadhuis Aalsmeer",
+            slug: "sb15-raadhuis-aalsmeer",
+            vote_counts: [],
+            region_category: "STEMBUREAU",
+            results_available_at: null,
+            has_hsb: false,
+            hsb: null,
+            is_csb: false,
+            csb: null,
+            station_number: 15,
+            postal_code: "1431 EH",
+         },
+      ];
+      renderRegionList({ regionCategory: "STEMBUREAU", regions: stations, parentRegionSlug: "aalsmeer" });
+
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: query } });
+
+      expect(screen.getByRole("option", { name: "001 - Zorgcentrum Aelsmeer" })).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: "015 - Raadhuis Aalsmeer" })).not.toBeInTheDocument();
    });
 });

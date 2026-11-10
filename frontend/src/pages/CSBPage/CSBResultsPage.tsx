@@ -1,9 +1,9 @@
-import { Trans, useLingui } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
-import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent.tsx";
 import SharedTabs from "../../components/SharedTabs.tsx";
 import { electionConfigQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
@@ -15,10 +15,7 @@ export function csbResultsLoader(queryClient: QueryClient) {
       const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
       const regionQueryOptions = regionQuery(params, "csb");
 
-      await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
-      ]);
+      await Promise.all([queryClient.query(electionConfigQueryOptions), queryClient.query(regionQueryOptions)]);
 
       return {
          electionConfigQuery: electionConfigQueryOptions,
@@ -45,12 +42,9 @@ export function CSBResultsPage() {
    const regionName = region.region_name;
    // No publication date until the region's results have been imported; the line is then omitted.
    const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
-   // "de gemeente" / "het waterschap": article and noun as one translated
-   // phrase, because which article a noun takes is language-specific.
-   const regionWithArticle = t(regionLabels.withArticle);
 
    return (
-      <LayoutMain title={t`Resultaten`}>
+      <LayoutMain title={t`Telresultaten ${regionType} ${regionName}`}>
          <PageTop
             title={t`${regionType} - ${regionName}`}
             subtitle={publishedAt ? t`Geplaatst op: ${publishedAt}` : undefined}
@@ -60,7 +54,7 @@ export function CSBResultsPage() {
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               { href: csbResultsRoute, label: region.region_name },
+               { label: region.region_name },
             ]}
             tabs={
                <SharedTabs
@@ -79,29 +73,7 @@ export function CSBResultsPage() {
                />
             }
          />
-         <div className="page-main page-main-two-columns">
-            <div className="page-space-3">
-               <RegionResultsContent
-                  intro={
-                     <Trans>
-                        Het hoofdstembureau heeft de telresultaten van alle gemeentes in {regionName} gecontroleerd,
-                        overgenomen en bij elkaar opgeteld. Hieronder ziet u de telresultaten zoals ze zijn opgenomen in
-                        het proces-verbaal van het hoofdstembureau.
-                     </Trans>
-                  }
-                  voteCounts={region.vote_counts}
-                  turnoutVotes={region.voter_turnout_counts}
-                  reports={{
-                     description: t`Onderstaande documenten bevatten de laatste telresultaten van ${regionWithArticle}, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand.`,
-                     documents: region.documents,
-                  }}
-                  timelineVariant={region.timeline_variant}
-                  timelineEntries={electionConfig.timeline_entries ?? []}
-                  issueReportDeadline={electionConfig.issue_report_deadline}
-                  notPublishedRegionLabel={region.region_name}
-               />
-            </div>
-         </div>
+         <CSBResultsComponent electionConfig={electionConfig} region={region} />
       </LayoutMain>
    );
 }

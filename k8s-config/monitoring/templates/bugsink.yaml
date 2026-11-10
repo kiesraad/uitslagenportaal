@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bugsink
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bugsink
+  template:
+    metadata:
+      labels:
+        app: bugsink
+    spec:
+      containers:
+        - name: bugsink
+          # Pinned: Bugsink migrates its database on start, and migrations do not roll back.
+          image: bugsink/bugsink:2.6.2
+          env:
+            - name: SITE_TITLE
+              value: {{ .Values.bugsink.siteTitle | quote }}
+            - name: BASE_URL
+              value: {{ .Values.bugsink.baseUrl | quote }}
+            # The UI through the port-forward and pods sending events to the Service, whatever host BASE_URL names.
+            - name: ALLOWED_HOSTS
+              value: "localhost,127.0.0.1,bugsink.{{ .Release.Namespace }}.svc.cluster.local"
+            # On by default in the image, but pods send events without X-Real-IP, which would blank their address.
+            - name: USE_X_REAL_IP
+              value: "False"
+            - name: BEHIND_PLAIN_HTTP_PROXY
+              value: "True"
+            - name: EMAIL_BACKEND
+              value: {{ .Values.bugsink.emailBackend | quote }}
+            - name: SINGLE_TEAM
+              value: "True"
+            - name: USER_REGISTRATION
+              value: "CB_MEMBERS"
+            - name: TIME_ZONE
+              value: "Europe/Amsterdam"
+          envFrom:
+            - secretRef:
+                name: {{ .Values.bugsink.credsSecret }}
+          ports:
+            - name: http
+              containerPort: 8000
+          # The port opens only after the migrations, which take a while on a first install.
+          startupProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+              # Bugsink's /health/ host-check exemption misses under a path prefix, so the pod IP would be refused.
+              httpHeaders:
+                - name: Host
+                  value: localhost
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost
+            periodSeconds: 10
+          # TCP, not httpGet: a restart cannot fix a lost database.
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.bugsink.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bugsink
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: bugsink
+spec:
+  selector:
+    app: bugsink
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

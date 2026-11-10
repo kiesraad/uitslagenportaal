@@ -1,0 +1,64 @@
+{{- if .Values.scraper.enabled }}
+# Consumes only the scraper queue: the scrapes, in Chromium, and the OCR classification of what they find.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-celery-scraper
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.scraper.replicas }}
+  # A rolling update would need room for a second worker's memory request.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-celery-scraper
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-celery-scraper
+      annotations:
+        revision: "{{ .Release.Revision }}"
+    spec:
+      # A scrape cut short is retried once its source is due again; letting every scrape
+      # finish could hold up a deploy for the 30-minute task time limit.
+      terminationGracePeriodSeconds: {{ .Values.scraper.terminationGracePeriodSeconds }}
+      initContainers:
+        {{- include "uitslagenportaal.waitForMigrations" . | nindent 8 }}
+      containers:
+        - name: celery-scraper
+          image: {{ .Values.scraper.image }}
+          imagePullPolicy: {{ .Values.scraper.pullPolicy }}
+          # The flag overrides CELERY_WORKER_CONCURRENCY, which sizes the general worker.
+          command:
+            - celery
+            - -A
+            - mainsite
+            - worker
+            - -Q
+            - scraper
+            - -n
+            - scraper@%h
+            - --concurrency={{ .Values.scraper.concurrency }}
+            - --loglevel=INFO
+          envFrom:
+            {{- include "uitslagenportaal.backendEnvFrom" . | nindent 12 }}
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - celery -A mainsite inspect ping --destination "scraper@$(hostname)" --timeout 5
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.scraper.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          {{- include "uitslagenportaal.caVolumeMounts" . | nindent 10 }}
+      {{- include "uitslagenportaal.caVolumes" . | nindent 6 }}
+{{- end }}

@@ -5,6 +5,7 @@ import type { MunicipalityLoaderData } from "@/pages/MunicipalityPage/Municipali
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCandidatesResultsContent.tsx";
+import ResultsPageColumns from "../../components/ResultsPage/ResultsPageColumns.tsx";
 import { useFormatters } from "../../utils/format.ts";
 import { getCsbCrumb } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
@@ -21,14 +22,8 @@ export function MunicipalityPartyResultsPage() {
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
    const { data: region } = useSuspenseQuery(regionQuery);
 
-   const csbSlug = region.csb_slug ?? undefined;
+   const csbSlug = region.csb?.slug;
    const municipalityResultsRoute = appRoutes.municipalityResults(electionConfig.slug, region.slug, csbSlug);
-   const municipalityPartyResultsRoute = appRoutes.municipalityPartyResults(
-      electionConfig.slug,
-      region.slug,
-      partySlug,
-      csbSlug,
-   );
 
    // Only an unknown party slug is a 404; empty results mean "not published yet"
    const hasAnyResults = (region.vote_counts?.length ?? 0) > 0;
@@ -41,7 +36,7 @@ export function MunicipalityPartyResultsPage() {
    // No publication date until the region's results have been imported; the line is then omitted.
    const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
    const pageTitle = `${t`Telresultaten gemeente`}\n${regionName}`;
-   const documentTitle = t`Telresultaten gemeente – ${regionName}`;
+   const documentTitle = t`Telresultaten ${partyName} – gemeente ${regionName}`;
 
    return (
       <LayoutMain title={documentTitle} description={documentTitle}>
@@ -51,20 +46,21 @@ export function MunicipalityPartyResultsPage() {
             breadcrumb={[
                { href: appRoutes.home(), label: t`Home` },
                { href: appRoutes.electionConfigMunicipalityList(electionConfig.slug), label: electionConfig.label },
-               getCsbCrumb(region, electionConfig.slug),
+               getCsbCrumb(region, electionConfig),
                { href: municipalityResultsRoute, label: t`Gemeente ${regionName}` },
-               { href: municipalityPartyResultsRoute, label: partyName },
+               { label: partyName },
             ]}
          />
-         <div className="page-main page-main-two-columns">
-            <div className="page-space-3">
-               <PartyCandidatesResultsContent
-                  voteCounts={region.vote_counts}
-                  partySlug={partySlug}
-                  issueReportDeadline={electionConfig.issue_report_deadline}
-               />
-            </div>
-         </div>
+         <ResultsPageColumns
+            previewUrl={region.certified_document_preview_url}
+            documentUrl={region.certified_document_url}
+         >
+            <PartyCandidatesResultsContent
+               voteCounts={region.vote_counts}
+               partySlug={partySlug}
+               issueReportDeadline={electionConfig.issue_report_deadline}
+            />
+         </ResultsPageColumns>
       </LayoutMain>
    );
 }

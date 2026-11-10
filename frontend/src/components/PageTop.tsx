@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router";
+import { BreadcrumbItem, Breadcrumbs } from "@/components/Breadcrumbs.tsx";
 
 type Props = {
    title: string;
    subtitle?: string;
    breadcrumb?: ({
-      href: string;
+      href?: string;
       label: string;
    } | null)[];
    tabs?: ReactNode;
@@ -17,19 +17,20 @@ export default function PageTop({ title, subtitle, breadcrumb, tabs }: Props) {
 
    return (
       <div className="page-top">
-         {breadcrumbItems ? (
-            <nav className="breadcrumb" aria-label="Breadcrumb">
-               {breadcrumbItems.map((item, index) => (
-                  <span key={`${item.href}-${item.label}`} className="breadcrumb-item">
-                     <Link to={item.href}>{item.label}</Link>
-                     {index < breadcrumbItems.length - 1 && <span className="breadcrumb-sep">{">"}</span>}
-                  </span>
+         {breadcrumbItems && (
+            <Breadcrumbs>
+               {breadcrumbItems.map((item) => (
+                  <BreadcrumbItem key={`${item.href}-${item.label}`} to={item.href}>
+                     {item.label}
+                  </BreadcrumbItem>
                ))}
-            </nav>
-         ) : null}
+            </Breadcrumbs>
+         )}
 
          <div className="pb-12">
-            <h1 className="mb-3 text-3xl sm:text-4xl font-title font-bold whitespace-pre-line">{title}</h1>
+            <h1 className="font-title mb-3 text-3xl font-bold hyphens-auto sm:text-4xl sm:whitespace-pre-line">
+               {title}
+            </h1>
             {subtitle && <p>{subtitle}</p>}
          </div>
 

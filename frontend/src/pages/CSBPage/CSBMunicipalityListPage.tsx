@@ -21,9 +21,9 @@ export function csbMunicipalityListLoader(queryClient: QueryClient) {
       );
 
       await Promise.all([
-         queryClient.ensureQueryData(electionConfigQueryOptions),
-         queryClient.ensureQueryData(regionQueryOptions),
-         queryClient.ensureQueryData(regionsQueryOptions),
+         queryClient.query(electionConfigQueryOptions),
+         queryClient.query(regionQueryOptions),
+         queryClient.query(regionsQueryOptions),
       ]);
 
       return {
@@ -69,7 +69,7 @@ export function CSBMunicipalityListPage() {
                   href: appRoutes.electionConfigMunicipalityList(electionConfig.slug),
                   label: electionConfig.label,
                },
-               { href: csbResultsRoute, label: region.region_name },
+               { label: region.region_name },
             ]}
             tabs={
                <SharedTabs

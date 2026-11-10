@@ -103,50 +103,26 @@
    gap: 0.75rem;
 }
 
-.results-reports-icon {
-   min-width: 30px;
-   width: 30px;
-   height: 30px;
-   color: var(--c-blue);
-}
-
-.results-reports-item {
-   display: flex;
-   gap: 0.6rem;
-}
-
-.results-reports-item:not(:last-child) {
-   margin-bottom: 0.5rem;
-}
-
-.results-reports-content {
-   display: flex;
-   flex-direction: column;
-}
-
-.results-reports-content-title {
-   color: var(--c-blue);
-   text-decoration: none;
-}
-
-.results-reports-content-title:hover {
-   text-decoration: underline;
-}
-
-.results-reports-description-text {
-   color: inherit;
-}
-
 .results-image-container {
    position: relative;
+   display: block;
    max-width: 15rem;
-   aspect-ratio: 1 / 0.65;
+   aspect-ratio: 210 / 297;
    overflow: hidden;
+   background: white;
    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 }
 
+a.results-image-container,
+a.results-image-container:hover {
+   text-decoration: none;
+}
+
 .results-image {
-   max-width: 15rem;
+   width: 100%;
+   height: 100%;
+   object-fit: contain;
+   display: block;
 }
 
 .results-image-resize {
@@ -163,8 +139,16 @@
    color: white;
 }
 
-.counting-results-infobox {
-   margin-top: 8.5rem;
+/* Short grid item: sticks while scrolling, then docks to the bottom of the
+   results column so it lines up with the issue notice. */
+.counting-results-column {
+   position: sticky;
+   top: 1.5rem;
+   align-self: start;
+}
+
+.page-main-two-columns:has(.result-unpublished) .counting-results-column {
+   margin-top: 0;
 }
 
 .party-level-title {
@@ -302,42 +286,4 @@
 
 .report-error-checklist-item-text {
    flex: 1;
-}
-
-.report-error-button {
-   display: inline-flex;
-   align-items: center;
-   gap: 0.6rem;
-   width: fit-content;
-   background: var(--c-navy);
-   color: var(--c-white);
-   padding: 0.8rem 1.2rem;
-   font-weight: 700;
-   text-decoration: none;
-}
-
-.report-error-button:hover {
-   color: var(--c-white);
-   text-decoration: none;
-   background: #173966;
-}
-
-.report-error-button-disabled,
-.report-error-button-disabled:hover {
-   background: var(--color-gray-400);
-   color: var(--c-white);
-   pointer-events: none;
-   cursor: not-allowed;
-   text-decoration: none;
-}
-
-.report-error-button svg {
-   width: 1rem;
-   height: 1rem;
-}
-
-@media (max-width: 1024px) {
-   .counting-results-infobox {
-      margin-top: 0;
-   }
 }

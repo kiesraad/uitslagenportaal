@@ -1,33 +1,59 @@
-"""Waterschap election (Scheldestromen WS fixture)."""
+"""Waterschap election (Scheldestromen)."""
 
 import re
 
 import pytest
 from playwright.sync_api import Page, expect
 
+from election.models import ElectionCategory
+from mainsite.models import CountingMethod
+from playwright_tests.election_states import (
+    GR_LABEL,
+    PS_LABEL,
+    TK_LABEL,
+    WS_LABEL,
+    add_borsele_telling,
+    add_candidate_lists,
+    add_csb_resultaat,
+    add_csb_totaaltelling,
+    add_home_timeline,
+    expired_config,
+    visible_config,
+    ws_definition,
+)
+from playwright_tests.timeline import CHECK, GSB, SB, expect_timeline_steps, timeline
+
 pytestmark = pytest.mark.playwright
 
+_seeded = pytest.mark.usefixtures("seeded_database")
 
+# Scheldestromen is a single kieskring, which its CSB counts: there is no HSB step.
+WS_PUBLISH = "Waterschap Scheldestromen publiceert de uitslag"
+WS_STEPS = [WS_PUBLISH, CHECK, GSB, SB]
+
+
+@_seeded
 def test_homepage_leads_through_the_waterschappen_list_to_the_party_matrix(page: Page):
     page.goto("/")
 
     page.get_by_role("link", name="Waterschapsverkiezingen 2023").click()
     expect(page).to_have_url(re.compile(r"/gsb/?$"))
     expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
-    expect(page.get_by_role("link", name="Waterschappen")).to_be_visible()
+    expect(page.get_by_role("link", name="Waterschap")).to_be_visible()
     expect(page.get_by_role("link", name="Borsele")).to_be_visible()
     expect(page.get_by_role("link", name="Goes")).to_be_visible()
 
-    page.get_by_role("link", name="Waterschappen").click()
+    page.get_by_role("link", name="Waterschap").click()
     expect(page).to_have_url(re.compile(r"/csb/?$"))
     expect(page.get_by_role("link", name="Scheldestromen")).to_be_visible()
 
     page.get_by_role("link", name="Scheldestromen").click()
     expect(page).to_have_url(re.compile(r"/csb/[^/]+/resultaten/?$"))
     expect(page.get_by_role("link", name="Heel waterschap")).to_be_visible()
-    expect(page.get_by_role("heading", name="Telresultaten")).to_be_visible()
+    expect(page.get_by_role("heading", name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="Partij voor Zeeland")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
+    expect_timeline_steps(page, WS_STEPS)
 
     page.get_by_role("link", name="Partij voor Zeeland").click()
     expect(page).to_have_url(re.compile(r"/csb/[^/]+/resultaten/[^/]+/?$"))
@@ -38,6 +64,7 @@ def test_homepage_leads_through_the_waterschappen_list_to_the_party_matrix(page:
     expect(page.get_by_role("columnheader", name="Borsele")).to_be_visible()
 
 
+@_seeded
 def test_gemeente_list_leads_to_borsele_and_its_party_results(page: Page):
     page.goto("/ab2023/gsb")
     expect(page.get_by_role("link", name="Borsele")).to_be_visible()
@@ -55,9 +82,10 @@ def test_gemeente_list_leads_to_borsele_and_its_party_results(page: Page):
 
     page.get_by_role("link", name="Hele gemeente").click()
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/resultaten/?$"))
-    expect(page.get_by_role("heading", name="Telresultaten")).to_be_visible()
+    expect(page.get_by_role("heading", name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="Partij voor Zeeland")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
+    expect_timeline_steps(page, WS_STEPS)
 
     page.get_by_role("link", name="Partij voor Zeeland").click()
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/resultaten/[^/]+/?$"))
@@ -68,6 +96,7 @@ def test_gemeente_list_leads_to_borsele_and_its_party_results(page: Page):
     expect(page.get_by_text(re.compile(r"Totaal stemmen lijst"))).to_be_visible()
 
 
+@_seeded
 def test_csb_per_gemeente_shows_that_goes_has_no_results(page: Page):
     page.goto("/ab2023/csb/17-scheldestromen")
     expect(page.get_by_role("heading", level=1, name="Waterschap - Scheldestromen")).to_be_visible()
@@ -78,11 +107,14 @@ def test_csb_per_gemeente_shows_that_goes_has_no_results(page: Page):
     page.get_by_role("link", name="Goes").click()
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/resultaten/?$"))
     expect(page.get_by_role("heading", level=1, name="Gemeente Goes")).to_be_visible()
-    expect(page.get_by_role("heading", name="De telresultaten van Goes zijn nog niet gepubliceerd")).to_be_visible()
+    expect(
+        page.get_by_role("heading", name="De telresultaten van gemeente Goes zijn nog niet gepubliceerd")
+    ).to_be_visible()
     expect(page.get_by_role("link", name="Hele gemeente")).to_have_count(0)
     expect(page.get_by_role("link", name="Partij voor Zeeland")).to_have_count(0)
 
 
+@_seeded
 def test_stembureau_list_leads_to_stembureau_results_and_party_results(page: Page):
     page.goto("/ab2023/gsb/654-borsele/csb/17-scheldestromen")
     expect(page.get_by_role("heading", level=1, name="Gemeente Borsele")).to_be_visible()
@@ -94,6 +126,7 @@ def test_stembureau_list_leads_to_stembureau_results_and_party_results(page: Pag
     expect(page.get_by_role("heading", level=2, name="Telresultaten", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="Partij voor Zeeland")).to_be_visible()
     expect(page.get_by_role("link", name="CDA")).to_be_visible()
+    expect_timeline_steps(page, WS_STEPS)
 
     page.get_by_role("link", name="Partij voor Zeeland").click()
     expect(page).to_have_url(re.compile(r"/gsb/[^/]+/csb/[^/]+/[^/]+/[^/]+/?$"))
@@ -101,3 +134,202 @@ def test_stembureau_list_leads_to_stembureau_results_and_party_results(page: Pag
     expect(page.get_by_role("heading", level=3, name="Partij voor Zeeland")).to_be_visible()
     expect(page.get_by_text(re.compile(r"Minderhoud"))).to_be_visible()
     expect(page.get_by_text(re.compile(r"Totaal stemmen lijst"))).to_be_visible()
+
+
+def expect_ws_tabs_without_hsb(page: Page) -> None:
+    expect(page.get_by_role("link", name="Gemeente")).to_be_visible()
+    expect(page.get_by_role("link", name="Waterschap")).to_be_visible()
+    expect(page.get_by_role("link", name="Kieskring")).to_have_count(0)
+
+
+def expect_unpublished_gemeente(page: Page, name: str) -> None:
+    expect(page.get_by_role("heading", level=1, name=f"Gemeente {name}")).to_be_visible()
+    expect(
+        page.get_by_role("heading", name=f"De telresultaten van gemeente {name} zijn nog niet gepubliceerd")
+    ).to_be_visible()
+    expect(page.get_by_role("link", name="Hele gemeente")).to_have_count(0)
+    expect(page.get_by_role("link", name="Resultaten per stembureau")).to_have_count(0)
+
+
+def expect_unpublished_csb(page: Page) -> None:
+    expect(
+        page.get_by_role("heading", name="De telresultaten van waterschap Scheldestromen zijn nog niet gepubliceerd")
+    ).to_be_visible()
+    expect(page.get_by_role("link", name="Partij voor Zeeland")).to_have_count(0)
+
+
+def expect_empty_region_lists(page: Page) -> None:
+    page.goto("/ab2023/gsb")
+    expect_ws_tabs_without_hsb(page)
+    expect(page.get_by_role("heading", name="De gemeenten zijn nog niet beschikbaar")).to_be_visible()
+
+    page.get_by_role("link", name="Waterschap").click()
+    expect(page.get_by_role("heading", name="De waterschappen zijn nog niet beschikbaar")).to_be_visible()
+
+
+def home_election_link(page: Page, label: str):
+    # The single-election home page also links “Bekijk de tellingen … voor {label}”.
+    return page.get_by_role("link", name=label, exact=True)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("empty_database")
+def test_home_with_no_election_shows_coming_soon(page: Page):
+    page.goto("/")
+    expect(page.get_by_role("heading", name="Telresultaten volgen binnenkort")).to_be_visible()
+    expect(home_election_link(page, WS_LABEL)).to_have_count(0)
+    expect(page.get_by_role("heading", name="Hoe komt de uitslag tot stand?")).to_have_count(0)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("empty_database")
+def test_one_election_config_has_empty_region_lists_and_a_timeline(page: Page):
+    config = visible_config(identifier="AB2023", label=WS_LABEL, category=ElectionCategory.WS.value)
+    add_home_timeline(config)
+
+    page.goto("/")
+    expect(home_election_link(page, WS_LABEL)).to_be_visible()
+    expect(page.get_by_role("heading", name="Hoe komt de uitslag tot stand?")).to_be_visible()
+    # Without a region the timeline is generic, and includes the kieskring step.
+    expect_timeline_steps(
+        page, ["Het Centraal Stembureau publiceert de uitslag", CHECK, "Optelling per kieskring", GSB, SB]
+    )
+
+    home_election_link(page, WS_LABEL).click()
+    expect_empty_region_lists(page)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("empty_database")
+def test_two_election_configs_hide_the_timeline_and_expired_elections(page: Page):
+    visible_config(identifier="AB2023", label=WS_LABEL, category=ElectionCategory.WS.value)
+    visible_config(identifier="PS2023", label=PS_LABEL, category=ElectionCategory.PS.value)
+    expired_config(identifier="GR2026", label=GR_LABEL, category=ElectionCategory.GR.value)
+    expired_config(identifier="TK2025", label=TK_LABEL, category=ElectionCategory.TK.value)
+
+    page.goto("/")
+    expect(home_election_link(page, WS_LABEL)).to_be_visible()
+    expect(home_election_link(page, PS_LABEL)).to_be_visible()
+    expect(home_election_link(page, GR_LABEL)).to_have_count(0)
+    expect(home_election_link(page, TK_LABEL)).to_have_count(0)
+    expect(page.get_by_role("heading", name="Hoe komt de uitslag tot stand?")).to_have_count(0)
+
+    home_election_link(page, PS_LABEL).click()
+    expect(page.get_by_role("heading", name="De gemeenten zijn nog niet beschikbaar")).to_be_visible()
+
+    page.goto("/gr2026/gsb")
+    expect(page.get_by_role("heading", level=1, name="Pagina niet gevonden")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("empty_database")
+def test_after_definition_lists_show_unpublished_regions(page: Page):
+    ws_definition()
+
+    page.goto("/ab2023/gsb")
+    expect_ws_tabs_without_hsb(page)
+    expect(page.get_by_role("link", name="Borsele")).to_be_visible()
+    expect(page.get_by_role("link", name="Goes")).to_be_visible()
+
+    page.get_by_role("link", name="Borsele").click()
+    expect_unpublished_gemeente(page, "Borsele")
+
+    page.goto("/ab2023/gsb")
+    page.get_by_role("link", name="Goes").click()
+    expect_unpublished_gemeente(page, "Goes")
+
+    page.goto("/ab2023/csb")
+    expect(page.get_by_role("link", name="Scheldestromen")).to_be_visible()
+    page.get_by_role("link", name="Scheldestromen").click()
+    expect_unpublished_csb(page)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("empty_database")
+def test_after_candidate_lists_results_are_still_unpublished(page: Page):
+    ws = ws_definition()
+    add_candidate_lists(ws)
+
+    page.goto("/ab2023/gsb")
+    page.get_by_role("link", name="Borsele").click()
+    expect_unpublished_gemeente(page, "Borsele")
+    expect(page.get_by_role("link", name="Partij voor Zeeland")).to_have_count(0)
+
+    page.goto("/ab2023/csb/17-scheldestromen/resultaten")
+    expect_unpublished_csb(page)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("empty_database")
+def test_after_borsele_telling_goes_and_csb_are_still_unpublished(page: Page):
+    ws = ws_definition()
+    add_candidate_lists(ws)
+    add_borsele_telling(ws)
+    ws.borsele.counting_method = CountingMethod.CSO
+    ws.borsele.save(update_fields=["counting_method", "updated_at"])
+    cso_description = "Het stembureau doet een sneltelling per partij."
+    quick_count = "Sneltelling in de stembureaus"
+
+    page.goto("/ab2023/gsb")
+    page.get_by_role("link", name="Borsele").click()
+    expect(page.get_by_role("link", name="Hele gemeente")).to_be_visible()
+
+    # Borsele counts centrally: a quick count, and on a stembureau page the candidate count after it.
+    page.get_by_role("link", name=re.compile(r"Heinkenszand")).click()
+    expect(timeline(page).get_by_text(cso_description)).to_be_visible()
+    expect_timeline_steps(page, [WS_PUBLISH, CHECK, GSB, "Telling per lijst en kandidaat", quick_count])
+    page.goto("/ab2023/gsb/654-borsele/csb/17-scheldestromen/resultaten")
+    expect(timeline(page).get_by_text(cso_description)).to_be_visible()
+    expect_timeline_steps(page, [WS_PUBLISH, CHECK, GSB, quick_count])
+
+    page.goto("/ab2023/gsb")
+    page.get_by_role("link", name="Goes").click()
+    expect_unpublished_gemeente(page, "Goes")
+
+    page.goto("/ab2023/csb/17-scheldestromen/resultaten")
+    expect_unpublished_csb(page)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("empty_database")
+def test_after_csb_totaaltelling_goes_stays_unpublished(page: Page):
+    ws = ws_definition()
+    add_candidate_lists(ws)
+    add_borsele_telling(ws)
+    add_csb_totaaltelling(ws)
+
+    page.goto("/ab2023/csb")
+    page.get_by_role("link", name="Scheldestromen").click()
+    page.get_by_role("link", name="Partij voor Zeeland").click()
+    expect(page.get_by_role("columnheader", name="Goes")).to_be_visible()
+
+    page.goto("/ab2023/gsb")
+    page.get_by_role("link", name="Borsele").click()
+    page.get_by_role("link", name="Hele gemeente").click()
+    expect(page.get_by_role("link", name=re.compile(r"EML_NL tellingbestand 510b")).first).to_be_visible()
+
+    page.goto("/ab2023/gsb")
+    page.get_by_role("link", name="Goes").click()
+    expect_unpublished_gemeente(page, "Goes")
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("empty_database")
+def test_after_csb_resultaat_the_csb_lists_the_520_in_its_sources_and_at_the_check(page: Page):
+    ws = ws_definition()
+    add_candidate_lists(ws)
+    add_borsele_telling(ws)
+    add_csb_totaaltelling(ws)
+    add_csb_resultaat(ws)
+    resultaat = re.compile(r"EML_NL resultaatbestand 520")
+
+    page.goto("/ab2023/csb/17-scheldestromen/resultaten")
+    sources = page.get_by_role("heading", name="Brondocumenten").locator("..")
+    expect(sources.get_by_role("link", name=resultaat)).to_have_count(1)
+    check = (
+        timeline(page)
+        .get_by_role("listitem")
+        .filter(has=page.get_by_role("heading", level=3, name=re.compile(f"^{CHECK}")))
+    )
+    expect(check.get_by_role("link", name=resultaat)).to_have_count(1)
+    expect(timeline(page).get_by_role("link", name=resultaat)).to_have_count(1)
