@@ -2,7 +2,7 @@ import { faArrowRight, faMaximize } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Link, useParams } from "react-router";
 import { NewWindowHint } from "@/elements/ExternalLinkIcon.tsx";
@@ -25,6 +25,17 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
    const deadline = formatDate(electionConfig.issue_report_deadline, { delimiter: "at", withYear: false });
    const [isViewerOpen, setViewerOpen] = useState(false);
    const thumbnailRef = useRef<HTMLButtonElement>(null);
+
+   // One column has no room for the viewer; there the thumbnail opens the PDF in a new tab. Matches `lg:`.
+   useEffect(() => {
+      if (!isViewerOpen) return;
+      const wide = window.matchMedia("(min-width: 64rem)");
+      const closeWhenNarrow = () => {
+         if (!wide.matches) setViewerOpen(false);
+      };
+      wide.addEventListener("change", closeWhenNarrow);
+      return () => wide.removeEventListener("change", closeWhenNarrow);
+   }, [isViewerOpen]);
 
    function closeViewer() {
       flushSync(() => setViewerOpen(false));

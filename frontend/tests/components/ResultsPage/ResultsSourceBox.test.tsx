@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ElectionConfig } from "@/api/types";
 import ResultsSourceBox from "@/components/ResultsPage/ResultsSourceBox";
@@ -9,6 +9,22 @@ import { renderWithProviders } from "../../testUtils";
 // PDF.js needs a canvas and a worker, which jsdom does not have.
 const PdfDocument = vi.hoisted(() => vi.fn((_props: { file: string }) => null));
 vi.mock("@/components/ResultsPage/PdfDocument", () => ({ default: PdfDocument }));
+
+// jsdom has no matchMedia. `screenWidth.narrow()` makes the window drop below the two-column breakpoint.
+const screenWidth = vi.hoisted(() => ({ matches: true, onChange: () => {}, narrow: () => {} }));
+vi.stubGlobal("matchMedia", () => ({
+   get matches() {
+      return screenWidth.matches;
+   },
+   addEventListener: (_type: string, listener: () => void) => {
+      screenWidth.onChange = listener;
+   },
+   removeEventListener: () => {},
+}));
+screenWidth.narrow = () => {
+   screenWidth.matches = false;
+   screenWidth.onChange();
+};
 
 const electionConfig: ElectionConfig = {
    slug: "ws2023",
@@ -43,6 +59,7 @@ function renderBox(locale: "nl" | "en" = "nl", previewUrl?: string | null, docum
 describe("ResultsSourceBox", () => {
    beforeEach(() => {
       PdfDocument.mockClear();
+      screenWidth.matches = true;
    });
 
    it("Only says the certified election document is not published yet when the region has none", () => {
@@ -88,6 +105,17 @@ describe("ResultsSourceBox", () => {
       fireEvent.click(screen.getByRole("button", { name: "Sluiten" }));
 
       expect(screen.getByRole("button", { name: "Proces-verbaal" })).toHaveFocus();
+      expect(screen.getByRole("heading", { name: "Waar komen deze telresultaten vandaan?" })).toBeInTheDocument();
+   });
+
+   it("Closes the viewer when the window narrows to one column", () => {
+      renderBox("nl", "/api/certified-documents/7/preview/", "/api/certified-documents/7/");
+      fireEvent.click(screen.getByRole("button", { name: "Proces-verbaal" }));
+      expect(screen.getByRole("button", { name: "Sluiten" })).toBeInTheDocument();
+
+      act(() => screenWidth.narrow());
+
+      expect(screen.queryByRole("button", { name: "Sluiten" })).not.toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "Waar komen deze telresultaten vandaan?" })).toBeInTheDocument();
    });
 

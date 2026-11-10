@@ -166,6 +166,16 @@ def test_certified_document_streams_the_pdf_when_asked():
 
 
 @pytest.mark.django_db
+def test_certified_document_redirects_when_stream_is_not_1():
+    default_storage.save("TK2025/pv.pdf", ContentFile(b"%PDF-1.4"))
+    document = CertifiedElectionDocumentFactory(storage_key="TK2025/pv.pdf", region=RegionFactory())
+
+    response = certified_document(RequestFactory().get("/", {"stream": "0"}), document.pk)
+
+    assert response.status_code == 302
+
+
+@pytest.mark.django_db
 def test_certified_document_rejects_a_source_file():
     default_storage.save("TK2025/telling.xml", ContentFile(b"<eml/>"))
     document = ElectionDocumentFactory(storage_key="TK2025/telling.xml", region=RegionFactory())

@@ -29,8 +29,10 @@ export default function PdfDocument({ file }: Props) {
    useEffect(() => {
       const container = containerRef.current;
       if (!container) return;
-      setWidth(container.clientWidth);
-      const observer = new ResizeObserver(() => setWidth(container.clientWidth));
+      // In 20px steps, so dragging the window redraws the page now and then instead of on every pixel.
+      const measure = () => setWidth(Math.floor(container.clientWidth / 20) * 20);
+      measure();
+      const observer = new ResizeObserver(measure);
       observer.observe(container);
       return () => observer.disconnect();
    }, []);
