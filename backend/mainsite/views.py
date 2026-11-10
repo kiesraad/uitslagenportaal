@@ -1,5 +1,10 @@
+from django.conf import settings
 from django.db import Error, connection
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse
+
+
+class HttpResponseMailtoRedirect(HttpResponseRedirect):
+    allowed_schemes = ["mailto"]
 
 
 def healthz(request):
@@ -18,3 +23,8 @@ def healthz(request):
         return JsonResponse({"status": "unhealthy"}, status=503)
 
     return JsonResponse({"status": "ok"})
+
+
+def report_technical_issue(request):
+    """Redirect to the technical issue mailbox, keeping its address out of the page source."""
+    return HttpResponseMailtoRedirect(f"mailto:{settings.TECHNICAL_ISSUE_EMAIL}")
