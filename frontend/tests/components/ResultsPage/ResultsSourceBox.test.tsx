@@ -96,7 +96,7 @@ describe("ResultsSourceBox", () => {
       renderBox("nl", "/api/certified-documents/7/preview/", documentUrl);
 
       // One column links to the PDF instead of opening the viewer.
-      const narrowLink = screen.getByRole("link", { name: "Proces-verbaal" });
+      const narrowLink = screen.getByRole("link", { name: /^Proces-verbaal ?\(opent in nieuw venster\)$/ });
       expect(narrowLink).toHaveAttribute("href", documentUrl);
       expect(narrowLink).toHaveAttribute("target", "_blank");
       expect(PdfDocument).not.toHaveBeenCalled();

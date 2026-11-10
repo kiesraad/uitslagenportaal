@@ -5,6 +5,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Link, useParams } from "react-router";
+import { NewWindowHint } from "@/elements/ExternalLinkIcon.tsx";
 import { electionConfigQuery } from "@/hooks/queries.ts";
 import { useFormatters } from "@/utils/format.ts";
 import { appRoutes } from "@/utils/routes.ts";
@@ -80,6 +81,7 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
             <div className="mb-2 lg:hidden">
                <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="results-image-container">
                   {thumbnail}
+                  <NewWindowHint />
                </a>
             </div>
             <div className="mb-2 max-lg:hidden">
