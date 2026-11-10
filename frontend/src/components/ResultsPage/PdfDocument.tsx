@@ -17,6 +17,8 @@ type Props = {
 export default function PdfDocument({ file }: Props) {
    const { t } = useLingui();
    const containerRef = useRef<HTMLElement>(null);
+   const previousRef = useRef<HTMLButtonElement>(null);
+   const nextRef = useRef<HTMLButtonElement>(null);
    const [width, setWidth] = useState<number>();
    const [numPages, setNumPages] = useState<number>();
    const [pageNumber, setPageNumber] = useState(1);
@@ -32,6 +34,9 @@ export default function PdfDocument({ file }: Props) {
 
    function goToPage(page: number) {
       setPageNumber(page);
+      // The button that was pressed becomes disabled at either end, so focus moves to the other one.
+      if (page === 1) nextRef.current?.focus();
+      if (page === numPages) previousRef.current?.focus();
       if (containerRef.current) {
          containerRef.current.scrollTop = 0;
       }
@@ -43,7 +48,12 @@ export default function PdfDocument({ file }: Props) {
    return (
       <>
          <div className="flex items-center justify-between gap-4">
-            <Button aria-label={t`Vorige pagina`} disabled={pageNumber === 1} onClick={() => goToPage(pageNumber - 1)}>
+            <Button
+               ref={previousRef}
+               aria-label={t`Vorige pagina`}
+               disabled={pageNumber === 1}
+               onClick={() => goToPage(pageNumber - 1)}
+            >
                <FontAwesomeIcon icon={faChevronLeft} />
             </Button>
             {/* Rendered always, so screen readers pick up changes to its text. */}
@@ -55,6 +65,7 @@ export default function PdfDocument({ file }: Props) {
                )}
             </p>
             <Button
+               ref={nextRef}
                aria-label={t`Volgende pagina`}
                disabled={pageNumber === (numPages ?? 1)}
                onClick={() => goToPage(pageNumber + 1)}

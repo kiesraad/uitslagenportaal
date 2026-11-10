@@ -73,6 +73,20 @@ describe("PdfViewerPanel", () => {
       expect(screen.getByText("Pagina 2 van 3")).toBeInTheDocument();
    });
 
+   it("Moves focus to the other page button when one becomes disabled", async () => {
+      await renderLoadedPanel();
+      const previous = screen.getByRole("button", { name: "Vorige pagina" });
+      const next = screen.getByRole("button", { name: "Volgende pagina" });
+
+      fireEvent.click(next);
+      fireEvent.click(next);
+      expect(previous).toHaveFocus();
+
+      fireEvent.click(previous);
+      fireEvent.click(previous);
+      expect(next).toHaveFocus();
+   });
+
    it("Shows each new page from the top", async () => {
       await renderLoadedPanel();
       const page = screen.getByRole("region", { name: "Proces-verbaal" });
