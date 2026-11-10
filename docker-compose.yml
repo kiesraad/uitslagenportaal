@@ -60,7 +60,7 @@ services:
     # task finish.
     command: >
       watchfiles --filter python --sigint-timeout 30
-      "celery -A mainsite worker --beat --loglevel=INFO"
+      "celery -A mainsite worker --beat -Q celery,ocr --loglevel=INFO"
     environment:
       WATCHFILES_POLL_DELAY_MS: "1000"
     depends_on: !reset []

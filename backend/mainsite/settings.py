@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "party.apps.PartyConfig",
     "eml_import.apps.EmlImportConfig",
     "pv_scraper.apps.PvScraperConfig",
+    "pv_ocr.apps.PvOcrConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",

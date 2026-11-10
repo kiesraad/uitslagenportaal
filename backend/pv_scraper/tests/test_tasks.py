@@ -11,34 +11,32 @@ from django.utils import timezone
 
 from eml_import.utils.named_bytes_io import NamedBytesIO
 from eml_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
+from pv_ocr.tasks import OCR_QUEUE
+from pv_ocr.utils.pv_classifier import ClassificationResult, PvClassificationException, PvClassifier, ResultMatch
 from pv_scraper import tasks
 from pv_scraper.models import ScrapeStatus
-from pv_scraper.tasks import classify_scraped_file, dispatch_scrape_tasks, run_scrape_for_source
+from pv_scraper.tasks import SCRAPER_QUEUE, classify_scraped_file, dispatch_scrape_tasks, run_scrape_for_source
 from pv_scraper.tests.factories import ScrapedFileFactory, ScrapeSourceFactory
-from pv_scraper.utils.pv_classifier import (
-    STORAGE_ENTRY,
-    ClassificationResult,
-    PvClassificationException,
-    PvClassifier,
-    ResultMatch,
-)
+from pv_scraper.utils.pv_storage import STORAGE_ENTRY
 from pv_scraper.utils.site_scraper import FileResult, SiteScraper
 
 
 @pytest.mark.django_db
-@patch.object(tasks.run_scrape_for_source, "apply_async")
-def test_dispatch_sends_scrapes_to_the_scraper_queue_at_low_priority(apply_async, settings):
+@patch.object(tasks.app, "send_task")
+def test_dispatch_sends_scrapes_to_the_scraper_queue(send_task, settings):
     settings.PV_SCRAPER_DISPATCH_MAX_TASKS = 1
     source = ScrapeSourceFactory()
 
     dispatch_scrape_tasks()
 
-    assert apply_async.call_args_list == [call((source.id,), queue="scraper", priority=9)]
+    # send_task is where Celery has merged the task's own options with the call's, so this checks the routing.
+    sent = [(c.args[0], c.args[1], c.kwargs["queue"]) for c in send_task.call_args_list]
+    assert sent == [("pv_scraper.tasks.run_scrape_for_source", (source.id,), SCRAPER_QUEUE)]
 
 
 @pytest.mark.django_db
-@patch.object(tasks.run_scrape_for_source, "apply_async")
-def test_dispatch_queues_the_source_that_finished_longest_ago_first(apply_async, settings):
+@patch.object(tasks.run_scrape_for_source, "delay")
+def test_dispatch_queues_the_source_that_finished_longest_ago_first(delay, settings):
     settings.PV_SCRAPER_DISPATCH_MAX_TASKS = 1
     long_ago = timezone.now() - timedelta(days=30)
     ScrapeSourceFactory(last_run_started_at=long_ago, last_run_finished_at=long_ago + timedelta(days=2))
@@ -46,12 +44,12 @@ def test_dispatch_queues_the_source_that_finished_longest_ago_first(apply_async,
 
     dispatch_scrape_tasks()
 
-    assert apply_async.call_args_list == [call((oldest.id,), queue="scraper", priority=9)]
+    assert delay.call_args_list == [call(oldest.id)]
 
 
 @pytest.mark.django_db
-@patch.object(tasks.run_scrape_for_source, "apply_async")
-def test_dispatch_queues_a_never_scraped_source_first(apply_async, settings):
+@patch.object(tasks.run_scrape_for_source, "delay")
+def test_dispatch_queues_a_never_scraped_source_first(delay, settings):
     settings.PV_SCRAPER_DISPATCH_MAX_TASKS = 1
     long_ago = timezone.now() - timedelta(days=30)
     ScrapeSourceFactory(last_run_started_at=long_ago, last_run_finished_at=long_ago)
@@ -59,12 +57,12 @@ def test_dispatch_queues_a_never_scraped_source_first(apply_async, settings):
 
     dispatch_scrape_tasks()
 
-    assert apply_async.call_args_list == [call((never_scraped.id,), queue="scraper", priority=9)]
+    assert delay.call_args_list == [call(never_scraped.id)]
 
 
 @pytest.mark.django_db
-@patch.object(tasks.run_scrape_for_source, "apply_async")
-def test_dispatch_marks_sources_as_queued_once(apply_async, settings):
+@patch.object(tasks.run_scrape_for_source, "delay")
+def test_dispatch_marks_sources_as_queued_once(delay, settings):
     settings.PV_SCRAPER_DISPATCH_MAX_TASKS = 5
     source = ScrapeSourceFactory()
 
@@ -73,18 +71,18 @@ def test_dispatch_marks_sources_as_queued_once(apply_async, settings):
 
     source.refresh_from_db()
     assert (source.last_run_status, source.last_run_started_at is not None) == (ScrapeStatus.QUEUED, True)
-    assert apply_async.call_count == 1
+    assert delay.call_count == 1
 
     source.scrape_requested_at = timezone.now()
     source.save()
     dispatch_scrape_tasks()
 
-    assert apply_async.call_count == 2
+    assert delay.call_count == 2
 
 
 @pytest.mark.django_db
-@patch.object(tasks.run_scrape_for_source, "apply_async")
-def test_dispatch_skips_disabled_sources(apply_async, settings):
+@patch.object(tasks.run_scrape_for_source, "delay")
+def test_dispatch_skips_disabled_sources(delay, settings):
     settings.PV_SCRAPER_DISPATCH_MAX_TASKS = 5
     source = ScrapeSourceFactory(disabled=True)
 
@@ -92,7 +90,7 @@ def test_dispatch_skips_disabled_sources(apply_async, settings):
 
     source.refresh_from_db()
     assert source.scrape_requested_at is None
-    apply_async.assert_not_called()
+    delay.assert_not_called()
 
 
 @pytest.mark.django_db
@@ -111,8 +109,8 @@ def test_scrape_that_fails_to_start_ends_in_error(_):
 @pytest.mark.django_db
 @patch("pv_scraper.utils.site_crawler.SiteCrawler.__exit__")
 @patch("pv_scraper.utils.site_crawler.SiteCrawler.__enter__", return_value=MagicMock())
-@patch.object(tasks.classify_scraped_file, "apply_async")
-def test_scrape_stores_each_file_and_queues_its_classification(apply_async, *_):
+@patch.object(tasks.app, "send_task")
+def test_scrape_stores_each_file_and_sends_its_classification_to_the_ocr_queue(send_task, *_):
     source = ScrapeSourceFactory(code="gm0228")
     # Two files published under one name are both kept.
     files = [
@@ -124,9 +122,13 @@ def test_scrape_stores_each_file_and_queues_its_classification(apply_async, *_):
     with patch.object(SiteScraper, "crawl", return_value=iter(files)):
         run_scrape_for_source(source.id)
 
-    assert apply_async.call_args_list == [
-        call((source.pk, key, file.content.name), queue="scraper", priority=0) for key, file in zip(keys, files)
+    # send_task is where Celery has merged the task's own options with the call's, so this checks the routing.
+    sent = [(c.args[0], c.args[1], c.kwargs["queue"]) for c in send_task.call_args_list]
+    assert sent == [
+        ("pv_scraper.tasks.classify_scraped_file", (source.pk, key, file.content.name), OCR_QUEUE)
+        for key, file in zip(keys, files)
     ]
+    assert OCR_QUEUE == "ocr"
     assert [storages[STORAGE_ENTRY].open(key).read() for key in keys] == [b"%PDF first", b"%PDF next", b"%PDF"]
     source.refresh_from_db()
     assert source.last_run_status != ScrapeStatus.ERROR
@@ -165,7 +167,7 @@ def test_classify_scraped_file_stores_only_a_certain_pv(stored_file, matched_on,
     source, key = stored_file
     with (
         patch.object(PvClassifier, "classify", return_value=ClassificationResult("N 10-2", matched_on)),
-        patch.object(PvClassifier, "save_to_storage", autospec=True) as save_to_storage,
+        patch.object(tasks, "save_to_storage", autospec=True) as save_to_storage,
     ):
         classify_scraped_file(source.pk, key, "pv.pdf")
 
@@ -184,7 +186,7 @@ def test_classify_scraped_file_rejects_a_pv_it_cannot_store(stored_file, caplog)
     with (
         caplog.at_level(logging.INFO, logger="pv_scraper.tasks"),
         patch.object(PvClassifier, "classify", return_value=ClassificationResult("N 10-2", ResultMatch.CODE_TITLE)),
-        patch.object(PvClassifier, "save_to_storage", side_effect=PvClassificationException("region not known")),
+        patch.object(tasks, "save_to_storage", side_effect=PvClassificationException("region not known")),
     ):
         classify_scraped_file(source.pk, key, "pv.pdf")
 
