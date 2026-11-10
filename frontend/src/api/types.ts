@@ -65,6 +65,7 @@ export type ElectionDocument = {
    file_type: ElectionDocumentFileType;
    correction_number: number;
    metadata: Record<string, string | number>;
+   eml_created_at: string | null;
 };
 
 export type ReportingLevel = "gsb" | "hsb" | "csb" | "sb";

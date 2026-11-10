@@ -36,6 +36,7 @@ function document(overrides: Partial<ElectionDocument>): ElectionDocument {
       file_type: "EML510b",
       correction_number: 1,
       metadata: {},
+      eml_created_at: null,
       ...overrides,
    };
 }

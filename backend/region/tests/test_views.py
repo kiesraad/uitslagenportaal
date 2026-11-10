@@ -411,6 +411,16 @@ def test_csb_includes_the_520_document_and_gsb_does_not():
 
 
 @pytest.mark.django_db
+def test_region_detail_documents_include_the_eml_creation_date():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    eml_created_at = timezone.make_aware(datetime.datetime(2026, 3, 19, 14, 30))
+    ElectionDocumentFactory(region=region, file_type=ElectionDocument.FileType.EML_510B, eml_created_at=eml_created_at)
+
+    [document] = region_detail(region, "gsb")["documents"]
+    assert datetime.datetime.fromisoformat(document["eml_created_at"]) == eml_created_at
+
+
+@pytest.mark.django_db
 def test_gsb_and_csb_each_list_and_preview_their_own_proces_verbaal_for_the_same_region():
     region = RegionFactory(
         election__election_config__category=ElectionCategory.GR.value,
