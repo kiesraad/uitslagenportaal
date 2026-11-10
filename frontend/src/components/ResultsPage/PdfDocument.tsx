@@ -10,6 +10,9 @@ import "react-pdf/dist/Page/TextLayer.css";
 // Must be set in the module that renders react-pdf, or its default can overwrite it.
 pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
 
+// Copied there by vite.config.ts. A constant, because react-pdf reloads the PDF when its options change.
+const options = { wasmUrl: `${import.meta.env.BASE_URL}pdfjs-wasm/` };
+
 type Props = {
    file: string;
 };
@@ -84,6 +87,7 @@ export default function PdfDocument({ file }: Props) {
             {width !== undefined && (
                <Document
                   file={file}
+                  options={options}
                   suspense={false}
                   loading={loading}
                   error={error}
