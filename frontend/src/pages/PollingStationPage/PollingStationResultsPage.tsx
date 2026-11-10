@@ -1,6 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { Link, type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { Link, type LoaderFunctionArgs, type Params, useParams } from "react-router";
 import { SBTimeline } from "@/components/Timeline/SBTimeline.tsx";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop";
@@ -11,13 +11,13 @@ import { useFormatters } from "../../utils/format";
 import { formatStationLabel, getCsbCrumb } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
 
-/** The stembureau and the gemeente it belongs to, for both stembureau pages. */
-export function pollingStationLoader(queryClient: QueryClient) {
-   return async ({ params }: LoaderFunctionArgs) => {
-      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params, "gsb");
+/** The election, the gemeente and the stembureau, for both stembureau pages. */
+export function pollingStationQueries(params: Params) {
+   return {
+      electionConfig: electionConfigQuery(params.electionConfigSlug),
+      region: regionQuery(params, "gsb"),
       // The stembureau is the region being fetched here; the gemeente in the URL is its parent.
-      const pollingStationQueryOptions = regionQuery(
+      pollingStation: regionQuery(
          {
             electionConfigSlug: params.electionConfigSlug,
             regionSlug: params.pollingStationSlug,
@@ -25,32 +25,26 @@ export function pollingStationLoader(queryClient: QueryClient) {
             parentRegionSlug: params.regionSlug,
          },
          "sb",
-      );
-
-      await Promise.all([
-         queryClient.query(electionConfigQueryOptions),
-         queryClient.query(regionQueryOptions),
-         queryClient.query(pollingStationQueryOptions),
-      ]);
-
-      return {
-         electionConfigQuery: electionConfigQueryOptions,
-         regionQuery: regionQueryOptions,
-         pollingStationQuery: pollingStationQueryOptions,
-      };
+      ),
    };
 }
 
-export type PollingStationLoaderData = Awaited<ReturnType<ReturnType<typeof pollingStationLoader>>>;
+export async function loadPollingStationResults(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
+   const queries = pollingStationQueries(params);
+   await Promise.all([
+      client.query(queries.electionConfig),
+      client.query(queries.region),
+      client.query(queries.pollingStation),
+   ]);
+}
 
 export default function PollingStationResultsPage() {
-   const { electionConfigQuery, regionQuery, pollingStationQuery } = useLoaderData<PollingStationLoaderData>();
+   const queries = pollingStationQueries(useParams());
    const { t } = useLingui();
    const { formatDate, locale } = useFormatters();
-   // The loader has already resolved every query, so the data is never pending here.
-   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
-   const { data: region } = useSuspenseQuery(regionQuery);
-   const { data: pollingStation } = useSuspenseQuery(pollingStationQuery);
+   const { data: electionConfig } = useSuspenseQuery(queries.electionConfig);
+   const { data: region } = useSuspenseQuery(queries.region);
+   const { data: pollingStation } = useSuspenseQuery(queries.pollingStation);
 
    const csbSlug = region.csb?.slug;
    const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(

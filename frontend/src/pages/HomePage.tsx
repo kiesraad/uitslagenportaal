@@ -1,21 +1,22 @@
 import { faHourglass } from "@fortawesome/free-regular-svg-icons";
-import { faCircleNotch, faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { ElectionTimelineSection } from "@/components/Timeline/ElectionTimelineSection.tsx";
-import Button from "@/elements/Button.tsx";
 import PageSection from "@/elements/PageSection.tsx";
-import type { ElectionConfig } from "../api/types.ts";
 import { HeroGrid } from "../components/HomePage/HeroGrid.tsx";
 import { LayoutMain } from "../components/LayoutMain.tsx";
-import { useElectionConfigs } from "../hooks/queries.ts";
+import { electionConfigsQuery } from "../hooks/queries.ts";
 import { appRoutes } from "../utils/routes.ts";
 
-export function HomePage() {
+export async function loadHome(client: QueryClient) {
+   await client.query(electionConfigsQuery());
+}
+
+export default function HomePage() {
    const { t } = useLingui();
-   const { data, isLoading, isError, refetch } = useElectionConfigs();
-   const election_configs: ElectionConfig[] = data ?? [];
+   const { data: election_configs } = useSuspenseQuery(electionConfigsQuery());
    const hasResult = election_configs.length > 0;
 
    return (
@@ -33,30 +34,7 @@ export function HomePage() {
                   </Trans>
                </p>
 
-               {isLoading ? (
-                  <div className={"home-hero-card"}>
-                     <h2>
-                        <Trans>Bekijk de telresultaten</Trans>
-                     </h2>
-                     <p role="status">
-                        <FontAwesomeIcon icon={faCircleNotch} className="animate-spin motion-reduce:animate-none" />
-                        <Trans>Verkiezingen laden…</Trans>
-                     </p>
-                  </div>
-               ) : isError ? (
-                  <div className={"home-hero-card"}>
-                     <h2>
-                        <Trans>Bekijk de telresultaten</Trans>
-                     </h2>
-                     <p role="alert">
-                        <Trans>Kan verkiezingen niet laden.</Trans>
-                     </p>
-                     <Button onClick={() => refetch()}>
-                        <FontAwesomeIcon icon={faRotateRight} />
-                        <Trans>Opnieuw proberen</Trans>
-                     </Button>
-                  </div>
-               ) : hasResult ? (
+               {hasResult ? (
                   <div className={"home-hero-card"}>
                      <h2>
                         <Trans>Bekijk de telresultaten</Trans>

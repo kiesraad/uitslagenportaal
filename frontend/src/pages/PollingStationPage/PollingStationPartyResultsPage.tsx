@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { useLoaderData, useParams } from "react-router";
+import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { type LoaderFunctionArgs, useParams } from "react-router";
+import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop";
 import PartyCandidatesResultsContent from "../../components/ResultsPage/PartyCandidatesResultsContent";
@@ -9,19 +10,36 @@ import { useFormatters } from "../../utils/format";
 import { formatStationLabel, getCsbCrumb } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
 import { getPartyVoteCount, hasParty } from "../../utils/voteCounts";
-import { NotFoundPage } from "../NotFoundPage";
-import type { PollingStationLoaderData } from "./PollingStationResultsPage.tsx";
+import { pollingStationQueries } from "./PollingStationResultsPage.tsx";
+
+export async function loadPollingStationPartyResults(
+   client: QueryClient,
+   { params }: Pick<LoaderFunctionArgs, "params">,
+) {
+   const queries = pollingStationQueries(params);
+   const [, , pollingStation] = await Promise.all([
+      client.query(queries.electionConfig),
+      client.query(queries.region),
+      client.query(queries.pollingStation),
+   ]);
+
+   // Only an unknown party slug is a 404; empty results mean "not published yet".
+   const voteCounts = pollingStation.vote_counts;
+   if ((voteCounts?.length ?? 0) > 0 && !hasParty(voteCounts, params.partySlug ?? "")) {
+      throw new ApiError("Unknown party", 404);
+   }
+}
 
 export default function PollingStationPartyResultsPage() {
-   const { electionConfigQuery, regionQuery, pollingStationQuery } = useLoaderData<PollingStationLoaderData>();
+   const params = useParams();
+   const queries = pollingStationQueries(params);
    // The party is not part of the stembureau request, so its slug is read from the route.
-   const { partySlug = "" } = useParams<{ partySlug: string }>();
+   const partySlug = params.partySlug ?? "";
    const { t } = useLingui();
    const { formatDate } = useFormatters();
-   // The loader has already resolved every query, so the data is never pending here.
-   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
-   const { data: region } = useSuspenseQuery(regionQuery);
-   const { data: pollingStation } = useSuspenseQuery(pollingStationQuery);
+   const { data: electionConfig } = useSuspenseQuery(queries.electionConfig);
+   const { data: region } = useSuspenseQuery(queries.region);
+   const { data: pollingStation } = useSuspenseQuery(queries.pollingStation);
 
    const csbSlug = region.csb?.slug;
    const municipalityPollingstationListRoute = appRoutes.municipalityPollingstationList(
@@ -43,12 +61,6 @@ export default function PollingStationPartyResultsPage() {
    const publishedAt = region.results_available_at ? formatDate(region.results_available_at) : null;
    const pageTitle = `${t`Telresultaten stembureau`}\n${stationName}`;
    const documentTitle = t`Telresultaten ${partyName} – stembureau ${stationName}`;
-
-   // Only an unknown party slug is a 404; empty results mean "not published yet"
-   const hasAnyResults = (pollingStation.vote_counts?.length ?? 0) > 0;
-   if (hasAnyResults && !hasParty(pollingStation.vote_counts, partySlug)) {
-      return <NotFoundPage />;
-   }
 
    return (
       <LayoutMain title={documentTitle} description={documentTitle}>

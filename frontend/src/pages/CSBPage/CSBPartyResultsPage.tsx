@@ -1,6 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { type LoaderFunctionArgs, useParams } from "react-router";
 import { CSBTimeline } from "@/components/Timeline/CSBTimeline.tsx";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -14,42 +14,25 @@ import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 import { getPartyVoteCount } from "../../utils/voteCounts.ts";
 
-export function csbPartyResultsLoader(queryClient: QueryClient) {
-   return async ({ params }: LoaderFunctionArgs) => {
-      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params, "csb");
+export async function loadCSBPartyResults(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
+   const [, region] = await Promise.all([
+      client.query(electionConfigQuery(params.electionConfigSlug)),
+      client.query(regionQuery(params, "csb")),
+   ]);
 
-      const [, region] = await Promise.all([
-         queryClient.query(electionConfigQueryOptions),
-         queryClient.query(regionQueryOptions),
-      ]);
-
-      // Only the region response names the election the matrix is asked for.
-      const partyVoteMatrixQueryOptions = csbPartyVoteMatrixQuery(
-         region.election_slug,
-         params.regionSlug,
-         params.partySlug,
-      );
-      await queryClient.query(partyVoteMatrixQueryOptions);
-
-      return {
-         electionConfigQuery: electionConfigQueryOptions,
-         regionQuery: regionQueryOptions,
-         partyVoteMatrixQuery: partyVoteMatrixQueryOptions,
-      };
-   };
+   // Only the region response names the election the matrix is asked for.
+   await client.query(csbPartyVoteMatrixQuery(region.election_slug, params.regionSlug, params.partySlug));
 }
 
-type LoaderData = Awaited<ReturnType<ReturnType<typeof csbPartyResultsLoader>>>;
-
-export function CSBPartyResultsPage() {
-   const { electionConfigQuery, regionQuery, partyVoteMatrixQuery } = useLoaderData<LoaderData>();
+export default function CSBPartyResultsPage() {
+   const params = useParams();
    const { t } = useLingui();
    const { formatDate } = useFormatters();
-   // The loader has already resolved every query, so the data is never pending here.
-   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
-   const { data: region } = useSuspenseQuery(regionQuery);
-   const { data: partyVoteMatrix } = useSuspenseQuery(partyVoteMatrixQuery);
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(params.electionConfigSlug));
+   const { data: region } = useSuspenseQuery(regionQuery(params, "csb"));
+   const { data: partyVoteMatrix } = useSuspenseQuery(
+      csbPartyVoteMatrixQuery(region.election_slug, params.regionSlug, params.partySlug),
+   );
 
    const regionLabels = getRegionLabels(electionConfig.csb_type);
    const partySlug = partyVoteMatrix.party.slug;

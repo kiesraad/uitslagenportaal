@@ -1,26 +1,30 @@
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { useLoaderData } from "react-router";
+import { type LoaderFunctionArgs, useParams } from "react-router";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/Breadcrumbs.tsx";
 import Button from "@/elements/Button.tsx";
 import { ExternalLinkIcon } from "@/elements/ExternalLinkIcon.tsx";
 import PageSection from "@/elements/PageSection.tsx";
 import { InfoBox } from "../components/InfoBox.tsx";
 import { LayoutMain } from "../components/LayoutMain.tsx";
+import { electionConfigQuery } from "../hooks/queries.ts";
 import { formatIssueReportDeadlineHeading, getRemainingReportTime } from "../utils/date.ts";
 import { useFormatters } from "../utils/format.ts";
 import { appRoutes } from "../utils/routes.ts";
-import type { ReportIssueLoaderData } from "./ReportIssuePage.loader.ts";
+
+export async function loadReportIssue(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
+   await client.query(electionConfigQuery(params.electionConfigSlug));
+}
 
 const DEADLINE_TICK_MS = 60_000;
 
-export function ReportIssuePage() {
-   const { electionConfigQuery } = useLoaderData<ReportIssueLoaderData>();
-   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+export default function ReportIssuePage() {
+   const params = useParams();
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(params.electionConfigSlug));
    const electionConfigSlug = electionConfig.slug;
    const deadline = electionConfig.issue_report_deadline;
    // Set after mount: the clock at render time would differ between server and browser.

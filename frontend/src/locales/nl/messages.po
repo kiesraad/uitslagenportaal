@@ -529,10 +529,6 @@ msgstr "In de uitslag staat hoeveel stemmen elke kandidaat heeft gekregen, hoeve
 msgid "In samenwerking met de Kiesraad"
 msgstr "In samenwerking met de Kiesraad"
 
-#: src/pages/HomePage.tsx
-msgid "Kan verkiezingen niet laden."
-msgstr "Kan verkiezingen niet laden."
-
 #: src/components/ResultsPage/PartyCandidatesResultsContent.tsx
 #: src/components/ResultsPage/PartyVoteMatrixTable.tsx
 msgid "Kandidaat"
@@ -680,10 +676,6 @@ msgstr "Op dezelfde locatie zit ook {otherStationLinks}."
 #: src/pages/HomePage.tsx
 msgid "Op dit moment zijn er nog geen telresultaten van een verkiezing beschikbaar. Wanneer de dag van stemming nadert, zal een verkiezing met bijbehorende regio's worden aangemaakt. Vanaf de dag van stemming zullen via deze pagina de tellingen worden weergegeven. Na 3 maanden worden de resultaten weer verwijderd."
 msgstr "Op dit moment zijn er nog geen telresultaten van een verkiezing beschikbaar. Wanneer de dag van stemming nadert, zal een verkiezing met bijbehorende regio's worden aangemaakt. Vanaf de dag van stemming zullen via deze pagina de tellingen worden weergegeven. Na 3 maanden worden de resultaten weer verwijderd."
-
-#: src/pages/HomePage.tsx
-msgid "Opnieuw proberen"
-msgstr "Opnieuw proberen"
 
 #. placeholder {0}: hsb.region_name
 #: src/components/Timeline/TimelineEntry.tsx
@@ -994,10 +986,6 @@ msgstr "Van stem tot uitslag"
 #: src/pages/ElectionConfigPage/ElectionConfigTimelinePage.tsx
 msgid "Van stem tot uitslag {electionLabel}"
 msgstr "Van stem tot uitslag {electionLabel}"
-
-#: src/pages/HomePage.tsx
-msgid "Verkiezingen laden…"
-msgstr "Verkiezingen laden…"
 
 #: src/components/Footer.tsx
 msgid "Verkiezingen waar de samenleving op kan vertrouwen"

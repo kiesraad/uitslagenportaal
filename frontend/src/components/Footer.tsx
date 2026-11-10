@@ -9,7 +9,7 @@ import Button from "@/elements/Button.tsx";
 import { NewWindowHint } from "@/elements/ExternalLinkIcon.tsx";
 import KiesraadGridHexagon from "@/elements/KiesraadGridHexagon.tsx";
 import { type Locale, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
-import { electionConfigQuery, useElectionConfigs } from "../hooks/queries.ts";
+import { electionConfigQuery, electionConfigsQuery } from "../hooks/queries.ts";
 
 const KIESRAAD_URL = "https://www.kiesraad.nl/";
 // Served by the backend so the email address stays out of the bundle.
@@ -59,7 +59,8 @@ export function Footer() {
       enabled: Boolean(electionConfigSlug),
       throwOnError: false,
    });
-   const { data: electionConfigs } = useElectionConfigs();
+   // Prefetched by the root loader, which ignores a failure: the footer then just has no label.
+   const { data: electionConfigs } = useQuery(electionConfigsQuery());
    const electionConfig = routeElectionConfig ?? (electionConfigs?.length === 1 ? electionConfigs[0] : undefined);
 
    const label = electionConfig?.label;

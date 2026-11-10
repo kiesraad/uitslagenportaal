@@ -1,4 +1,4 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { queryOptions } from "@tanstack/react-query";
 import type { Params } from "react-router";
 import {
    getCSBPartyVoteMatrix,
@@ -10,8 +10,15 @@ import {
 } from "../api/endpoints";
 import type { RegionCategory, ReportingLevel } from "../api/types";
 
-// The query factories carry no `enabled`: a suspense query cannot be disabled, and the route
-// loaders that build them always have their parameters.
+// The query factories carry no `enabled`: a suspense query cannot be disabled, and the routes
+// whose loaders and pages build them always have their parameters.
+export function electionConfigsQuery() {
+   return queryOptions({
+      queryKey: ["election_configs"],
+      queryFn: getElectionConfigs,
+   });
+}
+
 export function electionConfigQuery(slug?: string) {
    return queryOptions({
       queryKey: ["elections", slug],
@@ -47,12 +54,5 @@ export function hsbPartyVoteMatrixQuery(electionSlug?: string, hsbSlug?: string,
    return queryOptions({
       queryKey: ["hsb-party-vote-matrix", electionSlug, hsbSlug, partySlug],
       queryFn: () => getHSBPartyVoteMatrix(electionSlug, partySlug, hsbSlug),
-   });
-}
-
-export function useElectionConfigs() {
-   return useQuery({
-      queryKey: ["election_configs"],
-      queryFn: getElectionConfigs,
    });
 }
