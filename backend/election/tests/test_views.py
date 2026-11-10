@@ -162,6 +162,7 @@ def test_certified_document_streams_the_pdf_when_asked():
     assert response.status_code == 200
     assert response["Content-Type"] == "application/pdf"
     assert response["Content-Disposition"] == 'inline; filename="TK2025 Barneveld NA31-2.pdf"'
+    assert response["Cache-Control"] == "public, max-age=86400"
     assert b"".join(response.streaming_content) == b"%PDF-1.4"
 
 

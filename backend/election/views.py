@@ -4,6 +4,7 @@ from django.core.files.storage import default_storage
 from django.db.models import Q
 from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.utils.cache import patch_cache_control
 from django.utils.http import content_disposition_header
 from rest_framework import viewsets
 
@@ -79,11 +80,14 @@ def certified_document(request, pk):
 
     # The PDF viewer fetches the file from the page, so it has to come from this origin rather than the bucket.
     if request.GET.get("stream") == "1":
-        return FileResponse(
+        response = FileResponse(
             default_storage.open(document.storage_key),
             content_type="application/pdf",
             filename=document.download_filename,
         )
+        # A new PV gets a new id, so this file never changes; the day keeps removed elections from lingering.
+        patch_cache_control(response, public=True, max_age=24 * 60 * 60)
+        return response
 
     # Shown in a new tab, so inline; the name only matters once the visitor saves it.
     return HttpResponseRedirect(
