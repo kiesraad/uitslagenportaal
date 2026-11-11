@@ -1,6 +1,7 @@
 from django.urls import reverse
 from rest_framework import serializers
 
+from election.eml_dates import election_config_eml_dates
 from election.models import (
     Contest,
     ElectionConfig,
@@ -56,6 +57,7 @@ class TimelineDateSerializer(serializers.ModelSerializer):
 class ElectionConfigSerializer(serializers.ModelSerializer):
     timeline_dates = TimelineDateSerializer(many=True, read_only=True)
     single_csb = serializers.SerializerMethodField()
+    eml_dates = serializers.SerializerMethodField()
 
     class Meta:
         model = ElectionConfig
@@ -66,6 +68,7 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
             "issue_report_opens_at",
             "issue_report_deadline",
             "timeline_dates",
+            "eml_dates",
             "csb_type",
             "single_csb",
             "has_hsb",
@@ -73,6 +76,9 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
             "counting_info_url",
             "voting_url",
         )
+
+    def get_eml_dates(self, obj) -> dict:
+        return election_config_eml_dates(obj)
 
     def get_single_csb(self, obj):
         """The CSB region for categories whose CSB is the staat (TK, EP), so the frontend can skip the CSB list.

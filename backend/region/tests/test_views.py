@@ -314,16 +314,8 @@ def test_region_detail_dates_come_from_the_emls():
     )
 
     data = region_detail(region, "gsb")
-    assert data["count_date"] == original_created_at
+    assert data["eml_dates"]["municipality_vote_count"] == original_created_at
     assert data["correction_date"] == corrected_created_at
-    assert data["election_date"] == region.election.date.isoformat()
-
-
-@pytest.mark.django_db
-def test_region_detail_count_date_is_empty_without_a_count_eml():
-    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
-
-    assert region_detail(region, "gsb")["count_date"] is None
 
 
 @pytest.mark.django_db

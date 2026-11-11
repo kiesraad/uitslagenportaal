@@ -31,12 +31,12 @@ describe("SBTimeline", () => {
 });
 
 describe("SBTimeline candidate count", () => {
-   it("shows the date of the gemeente's first 510b", () => {
+   it("shows the date of the gemeente's 510b", () => {
       renderWithProviders(
          <SBTimeline
             variant="CSO"
             dates={[]}
-            municipality={{ region_category: "GEMEENTE", count_date: "2026-03-19T14:30:00+01:00" } as Region}
+            region={{ eml_dates: { municipality_vote_count: "2026-03-19T14:30:00+01:00" } } as Region}
          />,
       );
 

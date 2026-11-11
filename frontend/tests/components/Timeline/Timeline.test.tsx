@@ -129,8 +129,8 @@ describe("TimelineEntry", () => {
    });
 
    it("shows the creation date of its EML instead of the planned date", () => {
-      renderEntry(<TimelineEntry date={published} title="Uitslag publiceren" document_types={["EML510d"]} />, {
-         documents: [document({ file_type: "EML510d", eml_created_at: "2026-03-16T15:00:00+01:00" })],
+      renderEntry(<TimelineEntry event="csb_result_publish" date={published} title="Uitslag publiceren" />, {
+         emlDates: { csb_result_publish: "2026-03-16T15:00:00+01:00" },
       });
 
       expect(screen.getByRole("heading", { name: "Uitslag publiceren, afgerond" })).toBeInTheDocument();
@@ -138,8 +138,8 @@ describe("TimelineEntry", () => {
    });
 
    it("is done on the day its EML is created", () => {
-      renderEntry(<TimelineEntry date={published} title="Uitslag publiceren" document_types={["EML510d"]} />, {
-         documents: [document({ file_type: "EML510d", eml_created_at: "2026-03-18T09:00:00+01:00" })],
+      renderEntry(<TimelineEntry event="csb_result_publish" date={published} title="Uitslag publiceren" />, {
+         emlDates: { csb_result_publish: "2026-03-18T09:00:00+01:00" },
       });
 
       expect(screen.getByRole("heading", { name: "Uitslag publiceren, afgerond" })).toBeInTheDocument();

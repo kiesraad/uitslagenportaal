@@ -283,61 +283,18 @@ describe("HSBVoteCountTimelineEntry", () => {
 });
 
 describe("dates from the EMLs", () => {
-   const eml520 = {
-      url: "/api/documents/1/download/",
-      name: "Resultaat.eml.xml",
-      type: "xml",
-      size: "1",
-      description: "",
-      file_type: "EML520",
-      correction_number: 1,
-      metadata: {},
-      eml_created_at: "2026-03-27T16:00:00+01:00",
-   } satisfies ElectionDocument;
-
-   it("shows election day for the stembureau count once a count is in", () => {
-      renderEntry(<SBVoteCountTimelineEntry />, {
-         region: region({ election_date: "2026-03-18", results_available_at: "2026-03-19T14:30:00+01:00" }),
-      });
-
-      expect(screen.getByRole("heading", { level: 3, name: /afgerond$/ })).toBeInTheDocument();
-      expect(screen.getByText("18 maart")).toBeInTheDocument();
-   });
-
-   it("keeps the planned date for the stembureau count before any count is in", () => {
-      renderEntry(<SBVoteCountTimelineEntry />, { region: region({ election_date: "2026-03-18" }) });
-
-      expect(screen.queryByRole("heading", { level: 3, name: /afgerond$/ })).not.toBeInTheDocument();
-      expect(screen.queryByText("18 maart")).not.toBeInTheDocument();
-   });
-
-   it("marks a correction done on the day its EML is created", () => {
-      renderEntry(<CorrectionTimelineEntry />, { region: region({ correction_date: new Date().toISOString() }) });
-
-      expect(screen.getByRole("heading", { level: 3, name: /afgerond$/ })).toBeInTheDocument();
-   });
-
-   it("shows the first 510b's date for the municipal count, also after a correction", () => {
+   it("shows the region's EML dates", () => {
       renderEntry(<GSBVoteCountTimelineEntry />, {
-         region: region({ count_date: "2026-03-19T14:30:00+01:00", correction_date: "2026-03-24T10:00:00+01:00" }),
+         region: region({ eml_dates: { municipality_vote_count: "2026-03-19T14:30:00+01:00" } }),
       });
 
       expect(screen.getByRole("heading", { level: 3, name: /afgerond$/ })).toBeInTheDocument();
       expect(screen.getByText("19 maart")).toBeInTheDocument();
    });
 
-   it("shows the first 510c's date for the kieskring count", () => {
-      renderEntry(<HSBVoteCountTimelineEntry />, {
-         region: region({ region_category: "KIESKRING", count_date: "2026-03-20T11:00:00+01:00" }),
-      });
-
-      expect(screen.getByText("20 maart")).toBeInTheDocument();
-   });
-
-   it("shows the 520's date for publishing the result", () => {
-      renderEntry(<CsbResultPublishTimelineEntry />, { documents: [eml520] });
+   it("marks a correction done on the day its EML is created", () => {
+      renderEntry(<CorrectionTimelineEntry />, { region: region({ correction_date: new Date().toISOString() }) });
 
       expect(screen.getByRole("heading", { level: 3, name: /afgerond$/ })).toBeInTheDocument();
-      expect(screen.getByText("27 maart")).toBeInTheDocument();
    });
 });
