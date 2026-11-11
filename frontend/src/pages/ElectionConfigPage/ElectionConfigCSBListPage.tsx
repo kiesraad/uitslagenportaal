@@ -9,7 +9,9 @@ import PageTop from "@/components/PageTop.tsx";
 import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
 import ResultsNotPublished from "@/components/ResultsPage/ResultsNotPublished.tsx";
 import { electionConfigQuery, regionQuery, regionsQuery } from "@/hooks/queries.ts";
+import { queryClient } from "@/queryClient.ts";
 import { useFormatters } from "@/utils/format.ts";
+import type { Route } from "./+types/ElectionConfigCSBListPage";
 
 /** The query for what the page lists: the one CSB's results, the CSBs, or nothing. */
 function contentQueries(params: Params, electionConfig: ElectionConfig) {
@@ -63,6 +65,8 @@ function CsbRegionList({ electionConfig, regionsQuery }: CsbRegionListProps) {
       />
    );
 }
+
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadElectionConfigCSBList(queryClient, args);
 
 export default function ElectionConfigCSBListPage() {
    const params = useParams();

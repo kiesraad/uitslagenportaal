@@ -276,6 +276,13 @@ npm install
 npm run dev
 ```
 
+The frontend uses React Router in framework mode with `ssr: false` (`react-router.config.ts`).
+`src/routes.ts` lists the routes, `src/root.tsx` renders the document, the providers and the root
+loader, and each page module exports its `clientLoader`. `npm run build` writes static files to
+`build/client/`, served by nginx in production and by `npm run preview` locally. Its `index.html` is
+the loading page prerendered at build time, in Dutch: `entry.client.tsx` hydrates it in that language
+and the root `clientLoader` then switches to the visitor's.
+
 ## Management commands
 
 Run these from `backend/` with `uv run manage.py <command>`, or against the running stack with
@@ -383,16 +390,16 @@ election times are always Dutch local time.
 
 The language switcher lives in the footer; the choice is stored in the `lang` cookie
 (`LOCALE_COOKIE`), so a server render can read it too (`localeFromCookieHeader`), and is
-deliberately not part of the URL. Loading a catalogue is the root route's loader (`localeLoader`),
-which returns the locale `LocaleProvider` renders in; the switcher only saves the choice and
-revalidates. That way a language change is router work like any other, and the navigation progress
-bar covers the download.
+deliberately not part of the URL. Loading a catalogue is the root route's `clientLoader` in
+`root.tsx` (through `localeLoader`), which returns the locale `LocaleProvider` renders in; the
+switcher only saves the choice and revalidates. That way a language change is router work like any
+other, and the navigation progress bar covers the download.
 
 > **When changing the build config:** the Lingui macros need a Babel pass, added in
 > `vite.config.ts` via `@rolldown/plugin-babel`. `@vitejs/plugin-react` v6 removed the `babel`
 > option that most Lingui guides use — wiring it that way fails silently: the build succeeds and
 > the app ships untranslated. After touching the plugin setup, verify against a production build
-> (`npm run build && npm run preview`), not the dev server.
+> (`npm run build && npm run preview`, which serves `build/client/`), not the dev server.
 
 ## Playwright tests
 

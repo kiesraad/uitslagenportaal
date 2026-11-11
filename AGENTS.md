@@ -91,6 +91,10 @@ for autoreload. Put new tasks in `<app>/tasks.py` — the app autodiscovers them
 (TanStack Query) · `pages/` (routed screens) · `components/` (shared + per-page folders) ·
 `utils/`. Import with the `@/` alias for `src/`. Styling is Tailwind utility classes.
 
+React Router runs in framework mode with `ssr: false`: `routes.ts` lists the routes, `root.tsx`
+holds the document, the providers and the root loader, and each page module exports a
+`clientLoader`. The build is static files in `frontend/build/client/`.
+
 ## Tooling
 
 Everything runs in Docker Compose; `backend-scripts` is the one-off command service.
@@ -210,7 +214,7 @@ Stub `fetch` with `vi.stubGlobal`; wrap components in `QueryClientProvider` and
 `.github/workflows/backend-ci.yml`: ruff check + format check, `pytest` against Postgres 16, and
 `makemigrations --check --dry-run`.
 `.github/workflows/frontend-ci.yml`: `biome ci`, vitest, `npm run i18n:check` and
-`npm run build` (`tsc -b` + vite).
+`npm run build` (`react-router typegen`, `tsc -b` and `react-router build`).
 `.github/workflows/playwright.yml`: the browser tests, against a throwaway stack.
 `.github/workflows/helm-ci.yml`: `helm lint` plus `helm template` piped through
 `kubeconform`, for the application chart against `values.yaml` and for the

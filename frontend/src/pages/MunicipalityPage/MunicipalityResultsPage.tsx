@@ -4,8 +4,10 @@ import { type LoaderFunctionArgs, useParams } from "react-router";
 import HtmlHead from "@/components/HtmlHead.tsx";
 import { GSBTimeline } from "@/components/Timeline/GSBTimeline.tsx";
 import { electionConfigQuery, regionQuery } from "@/hooks/queries.ts";
+import { queryClient } from "@/queryClient.ts";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent.tsx";
 import ResultsPageColumns from "../../components/ResultsPage/ResultsPageColumns.tsx";
+import type { Route } from "./+types/MunicipalityResultsPage";
 import MunicipalityPageLayout from "./MunicipalityPageLayout.tsx";
 
 export async function loadMunicipalityResults(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
@@ -14,6 +16,8 @@ export async function loadMunicipalityResults(client: QueryClient, { params }: P
       client.query(regionQuery(params, "gsb")),
    ]);
 }
+
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadMunicipalityResults(queryClient, args);
 
 export default function MunicipalityResultsPage() {
    const params = useParams();

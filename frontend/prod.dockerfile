@@ -22,7 +22,7 @@ COPY .docker/prod.nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy the build from the first stage to the Nginx container
 RUN rm -rf /usr/share/nginx/html/*
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/build/client /usr/share/nginx/html
 
 # Expose port 80 for Nginx
 EXPOSE 80
