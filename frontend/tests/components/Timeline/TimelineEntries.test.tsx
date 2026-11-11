@@ -295,11 +295,26 @@ describe("dates from the EMLs", () => {
       eml_created_at: "2026-03-27T16:00:00+01:00",
    } satisfies ElectionDocument;
 
-   it("shows election day for the stembureau count", () => {
-      renderEntry(<SBVoteCountTimelineEntry />, { region: region({ election_date: "2026-03-18" }) });
+   it("shows election day for the stembureau count once a count is in", () => {
+      renderEntry(<SBVoteCountTimelineEntry />, {
+         region: region({ election_date: "2026-03-18", results_available_at: "2026-03-19T14:30:00+01:00" }),
+      });
 
       expect(screen.getByRole("heading", { level: 3, name: /afgerond$/ })).toBeInTheDocument();
       expect(screen.getByText("18 maart")).toBeInTheDocument();
+   });
+
+   it("keeps the planned date for the stembureau count before any count is in", () => {
+      renderEntry(<SBVoteCountTimelineEntry />, { region: region({ election_date: "2026-03-18" }) });
+
+      expect(screen.queryByRole("heading", { level: 3, name: /afgerond$/ })).not.toBeInTheDocument();
+      expect(screen.queryByText("18 maart")).not.toBeInTheDocument();
+   });
+
+   it("marks a correction done on the day its EML is created", () => {
+      renderEntry(<CorrectionTimelineEntry />, { region: region({ correction_date: new Date().toISOString() }) });
+
+      expect(screen.getByRole("heading", { level: 3, name: /afgerond$/ })).toBeInTheDocument();
    });
 
    it("shows the first 510b's date for the municipal count, also after a correction", () => {

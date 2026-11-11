@@ -162,13 +162,14 @@ const SB_VOTE_COUNT_BODIES: Record<TimelineVariant, MessageDescriptor> = {
 
 export function SBVoteCountTimelineEntry() {
    const { t } = useLingui();
-   const { variant = "DEFAULT", region } = useTimelineContext();
+   const { variant = "DEFAULT", region, municipality } = useTimelineContext();
+   // Stembureaus count on the evening of election day, so that day is known once any count is in.
+   const hasCount = Boolean(region?.results_available_at || municipality?.results_available_at);
 
    return (
       <TimelineEntry
          event="sb_vote_count"
-         // Stembureaus count on the evening of election day.
-         doneAt={region?.election_date}
+         doneAt={hasCount ? region?.election_date : undefined}
          title={t(SB_VOTE_COUNT_TITLES[variant])}
          document_types={["PDF_N10-1", "PDF_N10-2"]}
       >
@@ -231,6 +232,7 @@ export function CorrectionTimelineEntry() {
    return (
       <TimelineEntry
          date={{ date: municipality.correction_date, qualifier: "all_day" }}
+         doneAt={municipality.correction_date}
          title={t`Onderzoek, hertelling en gecorrigeerde resultaten`}
          document_types={documentTypes}
       >
@@ -255,6 +257,7 @@ export function MunicipalityRecountTimelineEntry() {
    return (
       <TimelineEntry
          date={{ date: municipality.correction_date, qualifier: "all_day" }}
+         doneAt={municipality.correction_date}
          title={t`Nieuwe gemeentelijke optelling`}
       >
          <p>
