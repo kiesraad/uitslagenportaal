@@ -7,13 +7,25 @@ import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { useCallback, useMemo } from "react";
 import { twMerge } from "tailwind-merge";
-import type { ElectionDocument } from "@/api/types.ts";
+import type { ElectionDocument, ElectionDocumentFileType } from "@/api/types.ts";
 import { useFormatters } from "@/utils/format.ts";
 
 const FILE_TYPE_MAPPINGS: Record<
-   string,
+   ElectionDocumentFileType,
    { name: MessageDescriptor; fileType: string; description: MessageDescriptor; icon: IconDefinition }
 > = {
+   EML110a: {
+      name: msg`EML_NL verkiezingsdefinitie 110a`,
+      fileType: "xml",
+      icon: faFolder,
+      description: msg`Definitie van de verkiezing, met de kieskringen en gemeenten die eraan deelnemen.`,
+   },
+   EML230b: {
+      name: msg`EML_NL kandidatenlijsten 230b`,
+      fileType: "xml",
+      icon: faFolder,
+      description: msg`De kandidatenlijsten met alle partijen en kandidaten die aan de verkiezing deelnemen.`,
+   },
    EML510b: {
       name: msg`EML_NL tellingbestand 510b`,
       fileType: "xml",
@@ -74,6 +86,18 @@ const FILE_TYPE_MAPPINGS: Record<
       icon: faFilePdf,
       description: msg`Het ondertekende proces-verbaal van het gemeentelijk stembureau bij centrale stemopneming.`,
    },
+   "PDF_NA31-2-B1": {
+      name: msg`Bijlage 1 bij proces-verbaal gemeentelijk stembureau (CSO)`,
+      fileType: "pdf",
+      icon: faFilePdf,
+      description: msg`De uitkomsten per stembureau: de stemmen per lijst en kandidaat zoals het gemeentelijk stembureau die heeft vastgesteld.`,
+   },
+   "PDF_NA31-2-B2": {
+      name: msg`Bijlage 2 bij proces-verbaal gemeentelijk stembureau (CSO)`,
+      fileType: "pdf",
+      icon: faFilePdf,
+      description: msg`De bezwaren die bij de stembureaus zijn ingebracht, overgenomen uit hun processen-verbaal.`,
+   },
    "PDF_NA14-2": {
       name: msg`Corrigendum proces-verbaal gemeentelijk stembureau`,
       fileType: "pdf",
@@ -84,7 +108,7 @@ const FILE_TYPE_MAPPINGS: Record<
       name: msg`Bijlage 1 bij corrigendum proces-verbaal gemeentelijk stembureau`,
       fileType: "pdf",
       icon: faFilePdf,
-      description: msg`Verslagen van de hertelde stembureaus.`,
+      description: msg`Per onderzocht stembureau de aanleiding en de uitkomst van het onderzoek door het gemeentelijk stembureau.`,
    },
    PDF_O7: {
       name: msg`Proces-verbaal hoofdstembureau`,
