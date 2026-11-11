@@ -79,7 +79,7 @@ def certified_document(request, pk):
         raise Http404("Document not found")
 
     # The PDF viewer fetches the file from the page, so it has to come from this origin rather than the bucket.
-    if request.GET.get("stream") == "1":
+    if "stream" in request.GET:
         response = FileResponse(
             default_storage.open(document.storage_key),
             content_type="application/pdf",

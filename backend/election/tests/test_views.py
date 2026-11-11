@@ -157,23 +157,13 @@ def test_certified_document_streams_the_pdf_when_asked():
         ),
     )
 
-    response = certified_document(RequestFactory().get("/", {"stream": "1"}), document.pk)
+    response = certified_document(RequestFactory().get("/?stream"), document.pk)
 
     assert response.status_code == 200
     assert response["Content-Type"] == "application/pdf"
     assert response["Content-Disposition"] == 'inline; filename="TK2025 Barneveld NA31-2.pdf"'
     assert response["Cache-Control"] == "public, max-age=86400"
     assert b"".join(response.streaming_content) == b"%PDF-1.4"
-
-
-@pytest.mark.django_db
-def test_certified_document_redirects_when_stream_is_not_1():
-    default_storage.save("TK2025/pv.pdf", ContentFile(b"%PDF-1.4"))
-    document = CertifiedElectionDocumentFactory(storage_key="TK2025/pv.pdf", region=RegionFactory())
-
-    response = certified_document(RequestFactory().get("/", {"stream": "0"}), document.pk)
-
-    assert response.status_code == 302
 
 
 @pytest.mark.django_db
