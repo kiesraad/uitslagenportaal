@@ -14,5 +14,5 @@ ocr:
   image: "ghcr.io/kiesraad/uitslagenportaal-backend:main"
 
 scraper:
-  enabled: false
+  enabled: true
   image: "ghcr.io/kiesraad/uitslagenportaal-playwright-worker:main"
