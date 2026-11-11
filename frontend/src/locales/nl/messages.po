@@ -111,6 +111,14 @@ msgstr "bezig"
 msgid "Bijlage 1 bij corrigendum proces-verbaal gemeentelijk stembureau"
 msgstr "Bijlage 1 bij corrigendum proces-verbaal gemeentelijk stembureau"
 
+#: src/components/ElectionFileEntry.tsx
+msgid "Bijlage 1 bij proces-verbaal gemeentelijk stembureau (CSO)"
+msgstr "Bijlage 1 bij proces-verbaal gemeentelijk stembureau (CSO)"
+
+#: src/components/ElectionFileEntry.tsx
+msgid "Bijlage 2 bij proces-verbaal gemeentelijk stembureau (CSO)"
+msgstr "Bijlage 2 bij proces-verbaal gemeentelijk stembureau (CSO)"
+
 #: src/components/SearchBar.tsx
 msgid "Bijv. {regionSingular}"
 msgstr "Bijv. {regionSingular}"
@@ -175,6 +183,10 @@ msgstr "Databank verkiezinguitslag"
 msgid "De {regionPlural} zijn nog niet beschikbaar"
 msgstr "De {regionPlural} zijn nog niet beschikbaar"
 
+#: src/components/ElectionFileEntry.tsx
+msgid "De bezwaren die bij de stembureaus zijn ingebracht, overgenomen uit hun processen-verbaal."
+msgstr "De bezwaren die bij de stembureaus zijn ingebracht, overgenomen uit hun processen-verbaal."
+
 #: src/utils/region.ts
 msgid "de gemeente"
 msgstr "de gemeente"
@@ -182,6 +194,14 @@ msgstr "de gemeente"
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
 msgid "De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
 msgstr "De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
+
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "De getallen hierboven laten zien hoe de resultaten van {regionWithArticle} worden meegeteld in de uitslag. Ze komen uit de uitslagensoftware. Ze zijn door de gemeente overgetypt uit onderstaande documenten. "
+msgstr "De getallen hierboven laten zien hoe de resultaten van {regionWithArticle} worden meegeteld in de uitslag. Ze komen uit de uitslagensoftware. Ze zijn door de gemeente overgetypt uit onderstaande documenten. "
+
+#: src/components/ElectionFileEntry.tsx
+msgid "De kandidatenlijsten met alle partijen en kandidaten die aan de verkiezing deelnemen."
+msgstr "De kandidatenlijsten met alle partijen en kandidaten die aan de verkiezing deelnemen."
 
 #: src/utils/region.ts
 msgid "de kieskring"
@@ -268,6 +288,14 @@ msgstr "De telresultaten van alle stembureaus in Nederland."
 msgid "De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het corrigendum."
 msgstr "De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het corrigendum."
 
+#: src/components/ElectionFileEntry.tsx
+msgid "De uitkomsten per stembureau: de stemmen per lijst en kandidaat zoals het gemeentelijk stembureau die heeft vastgesteld."
+msgstr "De uitkomsten per stembureau: de stemmen per lijst en kandidaat zoals het gemeentelijk stembureau die heeft vastgesteld."
+
+#: src/components/ElectionFileEntry.tsx
+msgid "Definitie van de verkiezing, met de kieskringen en gemeenten die eraan deelnemen."
+msgstr "Definitie van de verkiezing, met de kieskringen en gemeenten die eraan deelnemen."
+
 #: src/pages/ReportIssuePage.tsx
 msgid "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
 msgstr "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
@@ -305,6 +333,10 @@ msgid "Eerste stap bovenaan"
 msgstr "Eerste stap bovenaan"
 
 #: src/components/ElectionFileEntry.tsx
+msgid "EML_NL kandidatenlijsten 230b"
+msgstr "EML_NL kandidatenlijsten 230b"
+
+#: src/components/ElectionFileEntry.tsx
 msgid "EML_NL resultaatbestand 520"
 msgstr "EML_NL resultaatbestand 520"
 
@@ -319,6 +351,10 @@ msgstr "EML_NL tellingbestand 510c"
 #: src/components/ElectionFileEntry.tsx
 msgid "EML_NL tellingbestand 510d"
 msgstr "EML_NL tellingbestand 510d"
+
+#: src/components/ElectionFileEntry.tsx
+msgid "EML_NL verkiezingsdefinitie 110a"
+msgstr "EML_NL verkiezingsdefinitie 110a"
 
 #: src/pages/ErrorBoundaryPage.tsx
 msgid "Er is een fout opgetreden"
@@ -725,6 +761,10 @@ msgstr "Pas als alles klopt worden de resultaten van alle kieskringen bij elkaar
 msgid "Per gemeente"
 msgstr "Per gemeente"
 
+#: src/components/ElectionFileEntry.tsx
+msgid "Per onderzocht stembureau de aanleiding en de uitkomst van het onderzoek door het gemeentelijk stembureau."
+msgstr "Per onderzocht stembureau de aanleiding en de uitkomst van het onderzoek door het gemeentelijk stembureau."
+
 #: src/pages/ErrorBoundaryPage.tsx
 msgid "Probeer opnieuw"
 msgstr "Probeer opnieuw"
@@ -1001,10 +1041,6 @@ msgstr "Verkiezingsdag: {electionDay}"
 #: src/pages/ReportIssuePage.tsx
 msgid "Vermeld geen persoonsgegevens in uw melding; dat is niet nodig."
 msgstr "Vermeld geen persoonsgegevens in uw melding; dat is niet nodig."
-
-#: src/components/ElectionFileEntry.tsx
-msgid "Verslagen van de hertelde stembureaus."
-msgstr "Verslagen van de hertelde stembureaus."
 
 #: src/utils/format.ts
 msgid "Verwacht: {dateText}"
