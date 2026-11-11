@@ -2,11 +2,15 @@ import { faArrowRight, faMaximize } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { Link, useParams } from "react-router";
+import { NewWindowHint } from "@/elements/ExternalLinkIcon.tsx";
 import { electionConfigQuery } from "@/hooks/queries.ts";
 import { useFormatters } from "@/utils/format.ts";
 import { appRoutes } from "@/utils/routes.ts";
 import { InfoBox } from "../InfoBox";
+import PdfViewerPanel from "./PdfViewerPanel";
 
 type Props = {
    previewUrl?: string | null;
@@ -19,6 +23,24 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(electionConfigSlug));
    const { formatDate } = useFormatters();
    const deadline = formatDate(electionConfig.issue_report_deadline, { delimiter: "at", withYear: false });
+   const [isViewerOpen, setViewerOpen] = useState(false);
+   const thumbnailRef = useRef<HTMLButtonElement>(null);
+
+   // One column has no room for the viewer; there the thumbnail opens the PDF in a new tab. Matches `lg:`.
+   useEffect(() => {
+      if (!isViewerOpen) return;
+      const wide = window.matchMedia("(min-width: 64rem)");
+      const closeWhenNarrow = () => {
+         if (!wide.matches) setViewerOpen(false);
+      };
+      wide.addEventListener("change", closeWhenNarrow);
+      return () => wide.removeEventListener("change", closeWhenNarrow);
+   }, [isViewerOpen]);
+
+   function closeViewer() {
+      flushSync(() => setViewerOpen(false));
+      thumbnailRef.current?.focus();
+   }
 
    const heading = (
       <h2 className="h4">
@@ -43,6 +65,19 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
       );
    }
 
+   if (isViewerOpen) {
+      return <PdfViewerPanel documentUrl={documentUrl} onClose={closeViewer} />;
+   }
+
+   const thumbnail = (
+      <>
+         <div className="results-image-resize" aria-hidden="true">
+            <FontAwesomeIcon icon={faMaximize} />
+         </div>
+         <img src={previewUrl} alt={t`Proces-verbaal`} className="results-image" />
+      </>
+   );
+
    return (
       <div className="counting-results-infobox">
          <InfoBox disableMargin>
@@ -53,12 +88,23 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
                   proces-verbaal dat gemaakt is na het tellen van de stemmen.
                </Trans>
             </span>
-            <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="results-image-container mb-2">
-               <div className="results-image-resize" aria-hidden="true">
-                  <FontAwesomeIcon icon={faMaximize} />
-               </div>
-               <img src={previewUrl} alt={t`Proces-verbaal`} className="results-image" />
-            </a>
+            {/* Two columns open the viewer beside the counts; one column opens the PDF in a new tab. */}
+            <div className="mb-2 lg:hidden">
+               <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="results-image-container">
+                  {thumbnail}
+                  <NewWindowHint />
+               </a>
+            </div>
+            <div className="mb-2 max-lg:hidden">
+               <button
+                  type="button"
+                  ref={thumbnailRef}
+                  onClick={() => setViewerOpen(true)}
+                  className="results-image-container w-full cursor-pointer"
+               >
+                  {thumbnail}
+               </button>
+            </div>
             <p className="mb-3">
                <a href={documentUrl} target="_blank" rel="noopener noreferrer">
                   <Trans>Bekijk het proces-verbaal</Trans>
