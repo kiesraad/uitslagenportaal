@@ -104,6 +104,7 @@ cover/
 # IDE/generic
 .claude
 claude.md
+CLAUDE.md
 .mcp.json
 
 !.vscode/extensions.json

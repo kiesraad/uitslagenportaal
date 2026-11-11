@@ -95,6 +95,7 @@ msgstr "Bekijk de telresultaten per gemeente van de {electionLabel}."
 msgid "Bekijk de telresultaten per kieskring van de {electionLabel}."
 msgstr "Bekijk de telresultaten per kieskring van de {electionLabel}."
 
+#: src/components/ResultsPage/PdfViewerPanel.tsx
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Bekijk het proces-verbaal"
 msgstr "Bekijk het proces-verbaal"
@@ -495,6 +496,10 @@ msgstr "Het ondertekende proces-verbaal van het stembureau in een gemeente die C
 msgid "Het ondertekende proces-verbaal van het stembureau."
 msgstr "Het ondertekende proces-verbaal van het stembureau."
 
+#: src/components/ResultsPage/PdfDocument.tsx
+msgid "Het proces-verbaal kon niet worden geladen."
+msgstr "Het proces-verbaal kon niet worden geladen."
+
 #: src/utils/region.ts
 msgid "het stembureau"
 msgstr "het stembureau"
@@ -742,6 +747,10 @@ msgstr "Output van de optelsoftware, bevat de resultaten van alle onderliggende 
 msgid "Output van de optelsoftware, bevat de resultaten van alle stembureaus en de optelling van de hele gemeente."
 msgstr "Output van de optelsoftware, bevat de resultaten van alle stembureaus en de optelling van de hele gemeente."
 
+#: src/components/ResultsPage/PdfDocument.tsx
+msgid "Pagina {pageNumber} van {numPages}"
+msgstr "Pagina {pageNumber} van {numPages}"
+
 #: src/pages/NotFoundPage.tsx
 msgid "Pagina niet gevonden"
 msgstr "Pagina niet gevonden"
@@ -765,6 +774,8 @@ msgstr "Per onderzocht stembureau de aanleiding en de uitkomst van het onderzoek
 msgid "Probeer opnieuw"
 msgstr "Probeer opnieuw"
 
+#: src/components/ResultsPage/PdfDocument.tsx
+#: src/components/ResultsPage/PdfViewerPanel.tsx
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Proces-verbaal"
 msgstr "Proces-verbaal"
@@ -788,6 +799,11 @@ msgstr "Proces-verbaal gemeentelijk stembureau (DSO)"
 #: src/components/ElectionFileEntry.tsx
 msgid "Proces-verbaal hoofdstembureau"
 msgstr "Proces-verbaal hoofdstembureau"
+
+#: src/components/ResultsPage/PdfDocument.tsx
+#: src/components/ResultsPage/PdfViewerPanel.tsx
+msgid "Proces-verbaal laden…"
+msgstr "Proces-verbaal laden…"
 
 #: src/components/ElectionFileEntry.tsx
 msgid "Proces-verbaal stembureau"
@@ -840,6 +856,10 @@ msgstr "Resultaten {municipalityTitle} per stembureau"
 #: src/pages/MunicipalityPage/MunicipalityPageLayout.tsx
 msgid "Resultaten per stembureau"
 msgstr "Resultaten per stembureau"
+
+#: src/components/ResultsPage/PdfViewerPanel.tsx
+msgid "Sluiten"
+msgstr "Sluiten"
 
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "Sneltelling in de stembureaus"
@@ -1050,6 +1070,10 @@ msgstr "Verwacht: {dateText}"
 msgid "Vind een {regionInline} van A tot Z"
 msgstr "Vind een {regionInline} van A tot Z"
 
+#: src/components/ResultsPage/PdfDocument.tsx
+msgid "Volgende pagina"
+msgstr "Volgende pagina"
+
 #: src/components/Timeline/Timeline.tsx
 msgid "Volgorde omdraaien, nu:"
 msgstr "Volgorde omdraaien, nu:"
@@ -1057,6 +1081,10 @@ msgstr "Volgorde omdraaien, nu:"
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Volmachtbewijzen"
 msgstr "Volmachtbewijzen"
+
+#: src/components/ResultsPage/PdfDocument.tsx
+msgid "Vorige pagina"
+msgstr "Vorige pagina"
 
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Waar komen deze telresultaten vandaan?"
