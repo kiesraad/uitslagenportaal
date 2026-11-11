@@ -84,7 +84,15 @@ export default function TimelineEntry({
    const { formatTimelineDate } = useFormatters();
    const { t } = useLingui();
    const { dates, documents } = useTimelineContext();
-   const resolved = event ? date || getTimelineDate(dates, event) : date;
+
+   const selectedDocs = useMemo(() => {
+      return documents?.filter((doc) => document_types.includes(doc.file_type)) ?? [];
+   }, [document_types, documents]);
+
+   // Once its EML is in, the entry shows the day that file was created.
+   const emlCreatedAt = selectedDocs.find((doc) => doc.eml_created_at)?.eml_created_at;
+   const planned = event ? date || getTimelineDate(dates, event) : date;
+   const resolved: Omit<TimelineDate, "event"> = emlCreatedAt ? { date: emlCreatedAt, qualifier: "all_day" } : planned;
 
    const status = useMemo((): TimelineEntryStatus => {
       const entryDate = new Date(resolved.date);
@@ -99,10 +107,6 @@ export default function TimelineEntry({
       }
       return entryDay < today ? "done" : "pending";
    }, [resolved.date]);
-
-   const selectedDocs = useMemo(() => {
-      return documents?.filter((doc) => document_types.includes(doc.file_type)) ?? [];
-   }, [document_types, documents]);
 
    const classes = STATUS_CLASSES[status];
 

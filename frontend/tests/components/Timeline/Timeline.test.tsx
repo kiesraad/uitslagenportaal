@@ -127,6 +127,15 @@ describe("TimelineEntry", () => {
       );
       expect(screen.queryByRole("link", { name: /510c/ })).not.toBeInTheDocument();
    });
+
+   it("shows the creation date of its EML instead of the planned date", () => {
+      renderEntry(<TimelineEntry date={published} title="Uitslag publiceren" document_types={["EML510d"]} />, {
+         documents: [document({ file_type: "EML510d", eml_created_at: "2026-03-16T15:00:00+01:00" })],
+      });
+
+      expect(screen.getByRole("heading", { name: "Uitslag publiceren, afgerond" })).toBeInTheDocument();
+      expect(screen.getByText("16 maart")).toBeInTheDocument();
+   });
 });
 
 describe("getTimelineDate", () => {
