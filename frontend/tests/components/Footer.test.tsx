@@ -50,13 +50,14 @@ describe("Footer", () => {
       expect(screen.getByText(`© ${currentYear} De Kiesraad`)).toBeInTheDocument();
    });
 
-   it("Always offers the shared report link, even without an election", () => {
+   it("Always offers the technical problem link, even without an election", () => {
       mockElectionConfigs([]);
       renderFooter();
 
-      expect(screen.getByRole("link", { name: /Melding maken/ })).toHaveAttribute(
+      expect(screen.getByRole("heading", { name: "Technisch probleem op de pagina?" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Technisch probleem melden" })).toHaveAttribute(
          "href",
-         "https://www.kiesraad.nl/service/contact",
+         expect.stringMatching(/\/api\/report-technical-issue\/$/),
       );
    });
 
@@ -95,7 +96,7 @@ describe("Footer", () => {
 
       expect(await screen.findByRole("link", { name: /About the counting process/ })).toBeInTheDocument();
       expect(screen.getByText("This website in other languages:")).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /Report an issue/ })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /Report a technical problem/ })).toBeInTheDocument();
    });
 
    it("Offers the other language and switches to it when clicked", async () => {

@@ -65,11 +65,11 @@ export type TimelineEntryProps = {
    document_types?: ElectionDocumentFileType[];
 } & (
    | {
-        date?: TimelineDate;
+        date?: Omit<TimelineDate, "event">;
         event: TimelineDateEvent;
      }
    | {
-        date: TimelineDate;
+        date: Omit<TimelineDate, "event">;
         event?: undefined;
      }
 );
@@ -131,7 +131,7 @@ export default function TimelineEntry({
             <div className="text-muted mb-1.5">{formatTimelineDate(resolved)}</div>
             <div className="flex flex-col gap-4 leading-6">{children}</div>
             {selectedDocs.map((doc) => (
-               <ElectionFileEntry key={doc.file_type} file={doc} className="bg-info-bg mt-2 p-3" />
+               <ElectionFileEntry key={doc.url} file={doc} className="bg-info-bg mt-2 p-3" />
             ))}
          </div>
       </li>
@@ -183,6 +183,64 @@ export function GSBVoteCountTimelineEntry() {
                De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware
                en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen
                worden meegenomen in de landelijke uitslag.
+            </Trans>
+         </p>
+      </TimelineEntry>
+   );
+}
+
+const CORRECTION_DOCUMENT_TYPES: Partial<Record<RegionCategory, ElectionDocumentFileType[]>> = {
+   STEMBUREAU: ["PDF_NA14-1"],
+   GEMEENTE: ["PDF_NA14-2", "PDF_NA14-2-B1"],
+   KIESKRING: ["PDF_P1F-1"],
+};
+
+export function CorrectionTimelineEntry() {
+   const { t } = useLingui();
+   const { region, municipality = region } = useTimelineContext();
+
+   if (!region || !municipality?.correction_date) {
+      return null;
+   }
+
+   const documentTypes = CORRECTION_DOCUMENT_TYPES[region.region_category];
+   if (!documentTypes) {
+      throw new Error(`No correction step for region category ${region.region_category}`);
+   }
+
+   return (
+      <TimelineEntry
+         date={{ date: municipality.correction_date, qualifier: "all_day" }}
+         title={t`Onderzoek, hertelling en gecorrigeerde resultaten`}
+         document_types={documentTypes}
+      >
+         <p>
+            <Trans>
+               De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het
+               corrigendum.
+            </Trans>
+         </p>
+      </TimelineEntry>
+   );
+}
+
+export function MunicipalityRecountTimelineEntry() {
+   const { t } = useLingui();
+   const { region, municipality = region } = useTimelineContext();
+
+   if (!municipality?.correction_date) {
+      return null;
+   }
+
+   return (
+      <TimelineEntry
+         date={{ date: municipality.correction_date, qualifier: "all_day" }}
+         title={t`Nieuwe gemeentelijke optelling`}
+      >
+         <p>
+            <Trans>
+               De resultaten van hertelde stembureaus zijn van papier overgetypt in de uitslagensoftware en verwerkt in
+               de optelling van de gemeente.
             </Trans>
          </p>
       </TimelineEntry>

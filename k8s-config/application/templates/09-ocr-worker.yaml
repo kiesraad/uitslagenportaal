@@ -1,34 +1,31 @@
-{{- if .Values.scraper.enabled }}
-# Consumes only the scraper queue: the scrapes, in Chromium, and the OCR classification of what they find.
+# Consumes only the ocr queue.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-celery-scraper
+  name: {{ .Release.Name }}-celery-ocr
   namespace: {{ .Release.Namespace }}
 spec:
-  replicas: {{ .Values.scraper.replicas }}
+  replicas: {{ .Values.ocr.replicas }}
   # A rolling update would need room for a second worker's memory request.
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: {{ .Release.Name }}-celery-scraper
+      app: {{ .Release.Name }}-celery-ocr
   template:
     metadata:
       labels:
-        app: {{ .Release.Name }}-celery-scraper
+        app: {{ .Release.Name }}-celery-ocr
       annotations:
         revision: "{{ .Release.Revision }}"
     spec:
-      # A scrape cut short is retried once its source is due again; letting every scrape
-      # finish could hold up a deploy for the 30-minute task time limit.
-      terminationGracePeriodSeconds: {{ .Values.scraper.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.ocr.terminationGracePeriodSeconds }}
       initContainers:
         {{- include "uitslagenportaal.waitForMigrations" . | nindent 8 }}
       containers:
-        - name: celery-scraper
-          image: {{ .Values.scraper.image }}
-          imagePullPolicy: {{ .Values.scraper.pullPolicy }}
+        - name: celery-ocr
+          image: {{ .Values.ocr.image }}
+          imagePullPolicy: {{ .Values.ocr.pullPolicy }}
           # The flag overrides CELERY_WORKER_CONCURRENCY, which sizes the general worker.
           command:
             - celery
@@ -36,11 +33,15 @@ spec:
             - mainsite
             - worker
             - -Q
-            - scraper
+            - ocr
             - -n
-            - scraper@%h
-            - --concurrency={{ .Values.scraper.concurrency }}
+            - ocr@%h
+            - --concurrency={{ .Values.ocr.concurrency }}
             - --loglevel=INFO
+          env:
+            # Without it Tesseract starts a thread per node core, which is far slower than one thread on a busy node.
+            - name: OMP_THREAD_LIMIT
+              value: "1"
           envFrom:
             {{- include "uitslagenportaal.backendEnvFrom" . | nindent 12 }}
           livenessProbe:
@@ -48,17 +49,16 @@ spec:
               command:
                 - sh
                 - -c
-                - celery -A mainsite inspect ping --destination "scraper@$(hostname)" --timeout 5
+                - celery -A mainsite inspect ping --destination "ocr@$(hostname)" --timeout 5
             initialDelaySeconds: 10
             periodSeconds: 60
             timeoutSeconds: 5
             failureThreshold: 3
           resources:
-            {{- toYaml .Values.scraper.resources | nindent 12 }}
+            {{- toYaml .Values.ocr.resources | nindent 12 }}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ALL]
           {{- include "uitslagenportaal.caVolumeMounts" . | nindent 10 }}
       {{- include "uitslagenportaal.caVolumes" . | nindent 6 }}
-{{- end }}

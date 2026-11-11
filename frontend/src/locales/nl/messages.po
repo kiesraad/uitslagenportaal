@@ -108,6 +108,18 @@ msgstr "Benieuwd naar de resultaten in het stembureau waar u gestemd heeft?"
 msgid "bezig"
 msgstr "bezig"
 
+#: src/components/ElectionFileEntry.tsx
+msgid "Bijlage 1 bij corrigendum proces-verbaal gemeentelijk stembureau"
+msgstr "Bijlage 1 bij corrigendum proces-verbaal gemeentelijk stembureau"
+
+#: src/components/ElectionFileEntry.tsx
+msgid "Bijlage 1 bij proces-verbaal gemeentelijk stembureau (CSO)"
+msgstr "Bijlage 1 bij proces-verbaal gemeentelijk stembureau (CSO)"
+
+#: src/components/ElectionFileEntry.tsx
+msgid "Bijlage 2 bij proces-verbaal gemeentelijk stembureau (CSO)"
+msgstr "Bijlage 2 bij proces-verbaal gemeentelijk stembureau (CSO)"
+
 #: src/components/SearchBar.tsx
 msgid "Bijv. {regionSingular}"
 msgstr "Bijv. {regionSingular}"
@@ -172,6 +184,10 @@ msgstr "Databank verkiezinguitslag"
 msgid "De {regionPlural} zijn nog niet beschikbaar"
 msgstr "De {regionPlural} zijn nog niet beschikbaar"
 
+#: src/components/ElectionFileEntry.tsx
+msgid "De bezwaren die bij de stembureaus zijn ingebracht, overgenomen uit hun processen-verbaal."
+msgstr "De bezwaren die bij de stembureaus zijn ingebracht, overgenomen uit hun processen-verbaal."
+
 #: src/utils/region.ts
 msgid "de gemeente"
 msgstr "de gemeente"
@@ -179,6 +195,14 @@ msgstr "de gemeente"
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
 msgid "De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
 msgstr "De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware."
+
+#: src/pages/PollingStationPage/PollingStationResultsPage.tsx
+msgid "De getallen hierboven laten zien hoe de resultaten van {regionWithArticle} worden meegeteld in de uitslag. Ze komen uit de uitslagensoftware. Ze zijn door de gemeente overgetypt uit onderstaande documenten. "
+msgstr "De getallen hierboven laten zien hoe de resultaten van {regionWithArticle} worden meegeteld in de uitslag. Ze komen uit de uitslagensoftware. Ze zijn door de gemeente overgetypt uit onderstaande documenten. "
+
+#: src/components/ElectionFileEntry.tsx
+msgid "De kandidatenlijsten met alle partijen en kandidaten die aan de verkiezing deelnemen."
+msgstr "De kandidatenlijsten met alle partijen en kandidaten die aan de verkiezing deelnemen."
 
 #: src/utils/region.ts
 msgid "de kieskring"
@@ -233,6 +257,10 @@ msgstr "De resultaten van alle gemeenten in Kieskring {0} worden op het hoofdste
 msgid "De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen worden meegenomen in de landelijke uitslag."
 msgstr "De resultaten van alle stembureaus worden gecontroleerd en van papier overgetypt in de uitslagensoftware en opgeteld. Het gemeentelijk stembureau maakt een verslag en deelt de telresultaten zodat ze kunnen worden meegenomen in de landelijke uitslag."
 
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "De resultaten van hertelde stembureaus zijn van papier overgetypt in de uitslagensoftware en verwerkt in de optelling van de gemeente."
+msgstr "De resultaten van hertelde stembureaus zijn van papier overgetypt in de uitslagensoftware en verwerkt in de optelling van de gemeente."
+
 #: src/utils/region.ts
 msgid "de staat"
 msgstr "de staat"
@@ -256,6 +284,18 @@ msgstr "De telresultaten van {regionLabel} zijn nog niet gepubliceerd"
 #: src/pages/HomePage.tsx
 msgid "De telresultaten van alle stembureaus in Nederland."
 msgstr "De telresultaten van alle stembureaus in Nederland."
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het corrigendum."
+msgstr "De telresultaten zijn onderzocht en waar nodig opnieuw geteld. De gecorrigeerde resultaten staan in het corrigendum."
+
+#: src/components/ElectionFileEntry.tsx
+msgid "De uitkomsten per stembureau: de stemmen per lijst en kandidaat zoals het gemeentelijk stembureau die heeft vastgesteld."
+msgstr "De uitkomsten per stembureau: de stemmen per lijst en kandidaat zoals het gemeentelijk stembureau die heeft vastgesteld."
+
+#: src/components/ElectionFileEntry.tsx
+msgid "Definitie van de verkiezing, met de kieskringen en gemeenten die eraan deelnemen."
+msgstr "Definitie van de verkiezing, met de kieskringen en gemeenten die eraan deelnemen."
 
 #: src/pages/ReportIssuePage.tsx
 msgid "Denkt u dat er een fout is gemaakt bij het tellen, opschrijven of het overtypen van de stemmen? Dan kunt u daar een melding van maken bij het centraal stembureau."
@@ -294,6 +334,10 @@ msgid "Eerste stap bovenaan"
 msgstr "Eerste stap bovenaan"
 
 #: src/components/ElectionFileEntry.tsx
+msgid "EML_NL kandidatenlijsten 230b"
+msgstr "EML_NL kandidatenlijsten 230b"
+
+#: src/components/ElectionFileEntry.tsx
 msgid "EML_NL resultaatbestand 520"
 msgstr "EML_NL resultaatbestand 520"
 
@@ -308,6 +352,10 @@ msgstr "EML_NL tellingbestand 510c"
 #: src/components/ElectionFileEntry.tsx
 msgid "EML_NL tellingbestand 510d"
 msgstr "EML_NL tellingbestand 510d"
+
+#: src/components/ElectionFileEntry.tsx
+msgid "EML_NL verkiezingsdefinitie 110a"
+msgstr "EML_NL verkiezingsdefinitie 110a"
 
 #: src/pages/ErrorBoundaryPage.tsx
 msgid "Er is een fout opgetreden"
@@ -522,10 +570,6 @@ msgstr "In de uitslag staat hoeveel stemmen elke kandidaat heeft gekregen, hoeve
 msgid "In samenwerking met de Kiesraad"
 msgstr "In samenwerking met de Kiesraad"
 
-#: src/pages/HomePage.tsx
-msgid "Kan verkiezingen niet laden."
-msgstr "Kan verkiezingen niet laden."
-
 #: src/components/ResultsPage/PartyCandidatesResultsContent.tsx
 #: src/components/ResultsPage/PartyVoteMatrixTable.tsx
 msgid "Kandidaat"
@@ -587,10 +631,6 @@ msgstr "Meld een fout"
 msgid "Meld een fout of iets dat niet klopt"
 msgstr "Meld een fout of iets dat niet klopt"
 
-#: src/components/Footer.tsx
-msgid "Melding maken"
-msgstr "Melding maken"
-
 #. Between a date and a time: 8 december na 21:00
 #: src/utils/format.ts
 msgid "na"
@@ -611,6 +651,10 @@ msgstr "Nadat we je melding hebben ontvangen, zoeken we uit wat er aan de hand i
 #: src/utils/region.ts
 msgid "Nederland"
 msgstr "Nederland"
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "Nieuwe gemeentelijke optelling"
+msgstr "Nieuwe gemeentelijke optelling"
 
 #: src/components/ListPage/RegionList.tsx
 msgid "Nog geen telresultaten"
@@ -637,6 +681,10 @@ msgstr "Onderstaande documenten bevatten de laatste telresultaten van {regionWit
 #: src/pages/MunicipalityPage/MunicipalityResultsPage.tsx
 msgid "Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
 msgstr "Onderstaande documenten bevatten de laatste telresultaten van de gemeente, zoals ze worden meegeteld in de uitslag. De getallen in het overzicht hierboven komen uit het EML_NL tellingbestand."
+
+#: src/components/Timeline/TimelineEntry.tsx
+msgid "Onderzoek, hertelling en gecorrigeerde resultaten"
+msgstr "Onderzoek, hertelling en gecorrigeerde resultaten"
 
 #: src/components/ResultsPage/VotesResume.tsx
 msgid "Ongeldige stemmen"
@@ -669,10 +717,6 @@ msgstr "Op dezelfde locatie zit ook {otherStationLinks}."
 #: src/pages/HomePage.tsx
 msgid "Op dit moment zijn er nog geen telresultaten van een verkiezing beschikbaar. Wanneer de dag van stemming nadert, zal een verkiezing met bijbehorende regio's worden aangemaakt. Vanaf de dag van stemming zullen via deze pagina de tellingen worden weergegeven. Na 3 maanden worden de resultaten weer verwijderd."
 msgstr "Op dit moment zijn er nog geen telresultaten van een verkiezing beschikbaar. Wanneer de dag van stemming nadert, zal een verkiezing met bijbehorende regio's worden aangemaakt. Vanaf de dag van stemming zullen via deze pagina de tellingen worden weergegeven. Na 3 maanden worden de resultaten weer verwijderd."
-
-#: src/pages/HomePage.tsx
-msgid "Opnieuw proberen"
-msgstr "Opnieuw proberen"
 
 #. placeholder {0}: hsb.region_name
 #: src/components/Timeline/TimelineEntry.tsx
@@ -725,6 +769,10 @@ msgstr "Pas als alles klopt worden de resultaten van alle kieskringen bij elkaar
 #: src/pages/HSBPage/HSBResultsPage.tsx
 msgid "Per gemeente"
 msgstr "Per gemeente"
+
+#: src/components/ElectionFileEntry.tsx
+msgid "Per onderzocht stembureau de aanleiding en de uitkomst van het onderzoek door het gemeentelijk stembureau."
+msgstr "Per onderzocht stembureau de aanleiding en de uitkomst van het onderzoek door het gemeentelijk stembureau."
 
 #: src/pages/ErrorBoundaryPage.tsx
 msgid "Probeer opnieuw"
@@ -870,6 +918,14 @@ msgstr "Stempassen"
 msgid "Subnavigatie"
 msgstr "Subnavigatie"
 
+#: src/components/Footer.tsx
+msgid "Technisch probleem melden"
+msgstr "Technisch probleem melden"
+
+#: src/components/Footer.tsx
+msgid "Technisch probleem op de pagina?"
+msgstr "Technisch probleem op de pagina?"
+
 #: src/components/Timeline/TimelineEntry.tsx
 msgid "Telling in de stembureaus"
 msgstr "Telling in de stembureaus"
@@ -991,10 +1047,6 @@ msgstr "Van stem tot uitslag"
 msgid "Van stem tot uitslag {electionLabel}"
 msgstr "Van stem tot uitslag {electionLabel}"
 
-#: src/pages/HomePage.tsx
-msgid "Verkiezingen laden…"
-msgstr "Verkiezingen laden…"
-
 #: src/components/Footer.tsx
 msgid "Verkiezingen waar de samenleving op kan vertrouwen"
 msgstr "Verkiezingen waar de samenleving op kan vertrouwen"
@@ -1057,10 +1109,6 @@ msgstr "waterschap {name}"
 #: src/utils/region.ts
 msgid "Waterschappen"
 msgstr "Waterschappen"
-
-#: src/components/Footer.tsx
-msgid "Zie je een fout op de pagina?"
-msgstr "Zie je een fout op de pagina?"
 
 #: src/components/SearchBar.tsx
 msgid "Zoek {regionInline}"

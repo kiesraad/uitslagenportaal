@@ -1427,6 +1427,9 @@ dev = [
     { name = "ruff" },
     { name = "watchfiles" },
 ]
+scraper = [
+    { name = "playwright" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -1469,6 +1472,7 @@ dev = [
     { name = "ruff", specifier = ">=0.16.3" },
     { name = "watchfiles", specifier = ">=1.2.0" },
 ]
+scraper = [{ name = "playwright", specifier = ">=1.62.0" }]
 
 [[package]]
 name = "urllib3"

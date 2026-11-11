@@ -138,18 +138,19 @@ def test_a_rescanned_proces_verbaal_supersedes_the_one_it_replaces():
 
 
 @pytest.mark.django_db
-def test_every_correction_on_one_form_stays_current():
+@pytest.mark.parametrize("model", ["NA14-2", "NA14-2-B1"])
+def test_every_correction_on_one_form_stays_current(model):
     region = barneveld()
-    write_pdf("TK2025_Nederland_NA14-2_Barneveld.pdf", pv_pdf(b"first correction", PvModel="NA14-2"))
+    write_pdf(f"TK2025_Nederland_{model}_Barneveld.pdf", pv_pdf(b"first correction", PvModel=model))
     PDFFileHandler(storages["pv_import"]).run()
 
-    write_pdf("TK2025_Nederland_NA14-2_Barneveld.pdf", pv_pdf(b"second correction", PvModel="NA14-2"))
+    write_pdf(f"TK2025_Nederland_{model}_Barneveld.pdf", pv_pdf(b"second correction", PvModel=model))
     assert PDFFileHandler(storages["pv_import"]).run() == 1
 
     corrections = ElectionDocument.objects.filter(region=region).order_by("created_at", "pk")
     assert [default_storage.open(document.storage_key).read() for document in corrections] == [
-        pv_pdf(b"first correction", PvModel="NA14-2"),
-        pv_pdf(b"second correction", PvModel="NA14-2"),
+        pv_pdf(b"first correction", PvModel=model),
+        pv_pdf(b"second correction", PvModel=model),
     ]
     # Shared region and file type, so the download names have to part on their timestamp
     assert len({document.download_filename for document in corrections}) == 2

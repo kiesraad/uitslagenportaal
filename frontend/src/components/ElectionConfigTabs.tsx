@@ -1,7 +1,8 @@
 import { useLingui } from "@lingui/react/macro";
+import { useQuery } from "@tanstack/react-query";
 import type { ElectionConfig } from "@/api/types";
 import SharedTabs from "@/components/SharedTabs.tsx";
-import { useElectionConfigs } from "@/hooks/queries.ts";
+import { electionConfigsQuery } from "@/hooks/queries.ts";
 import { getRegionLabels } from "@/utils/region.ts";
 import { appRoutes } from "@/utils/routes.ts";
 import { uppercaseFirst } from "@/utils/text.ts";
@@ -17,7 +18,7 @@ export default function ElectionConfigTabs({ electionConfig }: Props) {
          ? (electionConfig.single_csb?.region_name ?? uppercaseFirst(t(getRegionLabels("STAAT").name)))
          : t(getRegionLabels(electionConfig.csb_type).singular);
    // With a single election the homepage shows the timeline instead.
-   const { data: electionConfigs } = useElectionConfigs();
+   const { data: electionConfigs } = useQuery(electionConfigsQuery());
    const showTimeline = (electionConfigs?.length ?? 0) > 1;
 
    return (

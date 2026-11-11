@@ -44,6 +44,10 @@ dev = [
     "watchfiles>=1.2.0",
   "django-watchfiles>=1.4.0",
 ]
+# Only the scraper worker image installs this, to keep Playwright out of the runtime image.
+scraper = [
+    "playwright>=1.62.0",
+]
 
 [tool.setuptools]
 py-modules = []

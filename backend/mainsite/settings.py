@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "party.apps.PartyConfig",
     "eml_import.apps.EmlImportConfig",
     "pv_scraper.apps.PvScraperConfig",
+    "pv_ocr.apps.PvOcrConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -220,6 +221,10 @@ CORS_ALLOWED_ORIGINS = [
 # GitHub EML ingress
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_INGRESS_REPO = os.environ.get("GITHUB_INGRESS_REPO")  # "owner/repo"
+
+
+# Recipient of technical problem reports
+TECHNICAL_ISSUE_EMAIL = os.environ.get("TECHNICAL_ISSUE_EMAIL", "").strip()
 
 
 # Object storage

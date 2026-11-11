@@ -11,6 +11,10 @@ API; the React frontend renders them.
 Docs and comments are a mix of Dutch and English. Domain terms stay Dutch
 (`kieskring`, `stembureau`, `gemeente`, CSB/HSB/GSB); code identifiers are English.
 
+The Kiesraad models (processen-verbaal such as N 10-1, Na 31-2, O 7, and their bijlagen) are listed at
+<https://www.rijksoverheid.nl/themas/overheid-en-democratie/verkiezingen/verkiezingentoolkit/modellen>.
+Each model links to its Kiesraad publication page, which describes the model and what each bijlage contains.
+
 Write English in British English with Oxford spelling, in prose, comments, docstrings
 and identifiers alike.
 

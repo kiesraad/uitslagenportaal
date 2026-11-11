@@ -41,8 +41,6 @@ describe("formatTimelineDate", () => {
       ["until", "8 december tot 21:00"],
       ["expected", "Verwacht: 8 december om 21:00"],
    ] as const)("formats the %s qualifier", (qualifier, expected) => {
-      expect(formatTimelineDate(getI18n("nl"), "nl", { event: "sb_vote_count", date: ISO_DATE, qualifier })).toBe(
-         expected,
-      );
+      expect(formatTimelineDate(getI18n("nl"), "nl", { date: ISO_DATE, qualifier })).toBe(expected);
    });
 });

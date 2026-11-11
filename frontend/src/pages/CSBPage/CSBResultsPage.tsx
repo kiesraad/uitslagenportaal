@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { type LoaderFunctionArgs, useParams } from "react-router";
 import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -10,29 +10,19 @@ import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 
-export function csbResultsLoader(queryClient: QueryClient) {
-   return async ({ params }: LoaderFunctionArgs) => {
-      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params, "csb");
-
-      await Promise.all([queryClient.query(electionConfigQueryOptions), queryClient.query(regionQueryOptions)]);
-
-      return {
-         electionConfigQuery: electionConfigQueryOptions,
-         regionQuery: regionQueryOptions,
-      };
-   };
+export async function loadCSBResults(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
+   await Promise.all([
+      client.query(electionConfigQuery(params.electionConfigSlug)),
+      client.query(regionQuery(params, "csb")),
+   ]);
 }
 
-type LoaderData = Awaited<ReturnType<ReturnType<typeof csbResultsLoader>>>;
-
-export function CSBResultsPage() {
-   const { electionConfigQuery, regionQuery } = useLoaderData<LoaderData>();
+export default function CSBResultsPage() {
+   const params = useParams();
    const { t } = useLingui();
    const { formatDate } = useFormatters();
-   // The loader has already resolved both queries, so the data is never pending here.
-   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
-   const { data: region } = useSuspenseQuery(regionQuery);
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(params.electionConfigSlug));
+   const { data: region } = useSuspenseQuery(regionQuery(params, "csb"));
 
    const regionLabels = getRegionLabels(electionConfig.csb_type);
    const csbResultsRoute = appRoutes.csbResults(electionConfig.slug, region.slug);

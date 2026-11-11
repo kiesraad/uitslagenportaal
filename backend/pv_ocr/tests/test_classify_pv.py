@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 from django.core.management import CommandError, call_command
 
-from pv_scraper.utils.pv_classifier import ClassificationResult, PvClassifier, ResultMatch
+from pv_ocr.utils.pv_classifier import ClassificationResult, PvClassifier, ResultMatch
 
 
 def test_classify_pv_carries_on_after_a_failed_classification(tmp_path):

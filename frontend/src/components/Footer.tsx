@@ -4,15 +4,16 @@ import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRevalidator } from "react-router";
+import { API_ORIGIN } from "@/api/client.ts";
 import Button from "@/elements/Button.tsx";
 import { NewWindowHint } from "@/elements/ExternalLinkIcon.tsx";
 import KiesraadGridHexagon from "@/elements/KiesraadGridHexagon.tsx";
 import { type Locale, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
-import { electionConfigQuery, useElectionConfigs } from "../hooks/queries.ts";
+import { electionConfigQuery, electionConfigsQuery } from "../hooks/queries.ts";
 
-// Fixed URLs for non-changing elements
 const KIESRAAD_URL = "https://www.kiesraad.nl/";
-const REPORT_ERROR_URL = "https://www.kiesraad.nl/service/contact";
+// Served by the backend so the email address stays out of the bundle.
+const REPORT_TECHNICAL_ISSUE_URL = `${API_ORIGIN}/api/report-technical-issue/`;
 
 function LanguageSwitcher() {
    // Reading the locale through the hook (rather than the imported singleton)
@@ -58,7 +59,8 @@ export function Footer() {
       enabled: Boolean(electionConfigSlug),
       throwOnError: false,
    });
-   const { data: electionConfigs } = useElectionConfigs();
+   // Prefetched by the root loader, which ignores a failure: the footer then just has no label.
+   const { data: electionConfigs } = useQuery(electionConfigsQuery());
    const electionConfig = routeElectionConfig ?? (electionConfigs?.length === 1 ? electionConfigs[0] : undefined);
 
    const label = electionConfig?.label;
@@ -95,12 +97,11 @@ export function Footer() {
                <div className="footer-right">
                   <div className="footer-col">
                      <h2 className="h4">
-                        <Trans>Zie je een fout op de pagina?</Trans>
+                        <Trans>Technisch probleem op de pagina?</Trans>
                      </h2>
-                     <a href={REPORT_ERROR_URL} target="_blank" rel="noopener noreferrer">
+                     <a href={REPORT_TECHNICAL_ISSUE_URL} rel="nofollow">
                         <FontAwesomeIcon icon={faChevronRight} />
-                        <Trans>Melding maken</Trans>
-                        <NewWindowHint />
+                        <Trans>Technisch probleem melden</Trans>
                      </a>
                   </div>
                   <div className="footer-col">
