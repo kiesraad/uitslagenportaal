@@ -63,6 +63,8 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     certified_document_preview_url = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
     correction_date = serializers.SerializerMethodField()
+    count_date = serializers.SerializerMethodField()
+    election_date = serializers.DateField(source="election.date", read_only=True)
     election_slug = serializers.CharField(source="election.slug", read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
     same_location_stations = SameLocationStationsField()
@@ -81,6 +83,8 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "certified_document_preview_url",
             "timeline_variant",
             "correction_date",
+            "count_date",
+            "election_date",
             "region_category",
             "results_available_at",
             "election_slug",
@@ -123,16 +127,30 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             return None
         return reverse("certified-document-preview", kwargs={"pk": document.pk})
 
-    def get_correction_date(self, region) -> datetime | None:
-        """When the region's latest corrected count EML came in; None while it has only the original."""
+    @staticmethod
+    def _count_emls(region) -> list[ElectionDocument]:
+        """The region's count EMLs (510b for a gemeente, 510c for a kieskring), oldest first."""
         file_type = CORRECTION_COUNT_FILE_TYPES.get(region.region_category)
         if file_type is None:
-            return None
+            return []
+        return list(
+            ElectionDocument.all_objects.filter(region=region, file_type=file_type).order_by("created_at", "pk")
+        )
+
+    def get_count_date(self, region) -> datetime | None:
+        """When the region's first count EML was created, so a later corrigendum does not move this step."""
+        counts = self._count_emls(region)
+        return counts[0].eml_created_at if counts else None
+
+    def get_correction_date(self, region) -> datetime | None:
+        """When the region's latest corrected count EML was created; None while it has only the original."""
         # Identical files are skipped on import, so every count after the first is a corrigendum.
-        counts = ElectionDocument.all_objects.filter(region=region, file_type=file_type).order_by("-created_at", "-pk")
-        if counts.count() < 2:
+        counts = self._count_emls(region)
+        if len(counts) < 2:
             return None
-        return counts.first().created_at
+        latest = counts[-1]
+        # EMLs imported before eml_created_at existed fall back to their import time.
+        return latest.eml_created_at or latest.created_at
 
     def get_timeline_variant(self, region) -> str:
         counting_method = region.counting_method or (region.parent.counting_method if region.parent else None)

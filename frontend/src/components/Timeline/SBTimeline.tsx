@@ -16,6 +16,8 @@ export function SBTimeline({ variant = "DEFAULT", dates, ...timelineProps }: Pro
    const { t } = useLingui();
 
    const variantDescription = VARIANT_DESCRIPTIONS[variant];
+   // The candidate count is the gemeente's 510b.
+   const countDate = timelineProps.municipality?.count_date;
 
    return (
       <div id="results-timeline">
@@ -34,6 +36,7 @@ export function SBTimeline({ variant = "DEFAULT", dates, ...timelineProps }: Pro
                <TimelineEntry
                   title={t`Telling per lijst en kandidaat`}
                   event="municipality_vote_count"
+                  doneAt={countDate}
                   document_types={["PDF_NA31-2-B1"]}
                >
                   <Trans>

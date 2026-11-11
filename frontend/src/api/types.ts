@@ -97,6 +97,10 @@ export type Region = {
    voter_turnout_counts?: VoterTurnoutCount[];
    timeline_variant?: TimelineVariant;
    correction_date?: string | null;
+   // The first count EML's creation time (510b for a gemeente, 510c for a kieskring).
+   count_date?: string | null;
+   // The kr:ElectionDate of the EMLs.
+   election_date?: string;
    documents?: ElectionDocument[];
    certified_document_url?: string | null;
    certified_document_preview_url?: string | null;

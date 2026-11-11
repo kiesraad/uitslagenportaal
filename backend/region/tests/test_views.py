@@ -295,6 +295,38 @@ def test_region_detail_correction_date_is_the_latest_corrected_510b():
 
 
 @pytest.mark.django_db
+def test_region_detail_dates_come_from_the_emls():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    original_created_at = timezone.make_aware(datetime.datetime(2026, 3, 19, 14, 30))
+    corrected_created_at = timezone.make_aware(datetime.datetime(2026, 3, 24, 10, 0))
+    ElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/telling.xml",
+        file_type=ElectionDocument.FileType.EML_510B,
+        eml_created_at=original_created_at,
+        is_current=False,
+    )
+    ElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/telling-2.xml",
+        file_type=ElectionDocument.FileType.EML_510B,
+        eml_created_at=corrected_created_at,
+    )
+
+    data = region_detail(region, "gsb")
+    assert data["count_date"] == original_created_at
+    assert data["correction_date"] == corrected_created_at
+    assert data["election_date"] == region.election.date.isoformat()
+
+
+@pytest.mark.django_db
+def test_region_detail_count_date_is_empty_without_a_count_eml():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+
+    assert region_detail(region, "gsb")["count_date"] is None
+
+
+@pytest.mark.django_db
 def test_region_detail_correction_date_of_a_kieskring_is_the_latest_corrected_510c():
     region = RegionFactory(region_category=RegionCategory.KIESKRING)
     ElectionDocumentFactory(

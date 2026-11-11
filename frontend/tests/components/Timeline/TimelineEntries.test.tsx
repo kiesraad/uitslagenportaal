@@ -281,3 +281,48 @@ describe("HSBVoteCountTimelineEntry", () => {
       expect(screen.getByRole("heading", { level: 3, name: /^Optelling kieskring Zuid/ })).toBeInTheDocument();
    });
 });
+
+describe("dates from the EMLs", () => {
+   const eml520 = {
+      url: "/api/documents/1/download/",
+      name: "Resultaat.eml.xml",
+      type: "xml",
+      size: "1",
+      description: "",
+      file_type: "EML520",
+      correction_number: 1,
+      metadata: {},
+      eml_created_at: "2026-03-27T16:00:00+01:00",
+   } satisfies ElectionDocument;
+
+   it("shows election day for the stembureau count", () => {
+      renderEntry(<SBVoteCountTimelineEntry />, { region: region({ election_date: "2026-03-18" }) });
+
+      expect(screen.getByRole("heading", { level: 3, name: /afgerond$/ })).toBeInTheDocument();
+      expect(screen.getByText("18 maart")).toBeInTheDocument();
+   });
+
+   it("shows the first 510b's date for the municipal count, also after a correction", () => {
+      renderEntry(<GSBVoteCountTimelineEntry />, {
+         region: region({ count_date: "2026-03-19T14:30:00+01:00", correction_date: "2026-03-24T10:00:00+01:00" }),
+      });
+
+      expect(screen.getByRole("heading", { level: 3, name: /afgerond$/ })).toBeInTheDocument();
+      expect(screen.getByText("19 maart")).toBeInTheDocument();
+   });
+
+   it("shows the first 510c's date for the kieskring count", () => {
+      renderEntry(<HSBVoteCountTimelineEntry />, {
+         region: region({ region_category: "KIESKRING", count_date: "2026-03-20T11:00:00+01:00" }),
+      });
+
+      expect(screen.getByText("20 maart")).toBeInTheDocument();
+   });
+
+   it("shows the 520's date for publishing the result", () => {
+      renderEntry(<CsbResultPublishTimelineEntry />, { documents: [eml520] });
+
+      expect(screen.getByRole("heading", { level: 3, name: /afgerond$/ })).toBeInTheDocument();
+      expect(screen.getByText("27 maart")).toBeInTheDocument();
+   });
+});

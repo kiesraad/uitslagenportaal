@@ -63,6 +63,8 @@ export type TimelineEntryStatus = "pending" | "in-progress" | "done";
 export type TimelineEntryProps = {
    title: ReactNode;
    document_types?: ElectionDocumentFileType[];
+   // When the step was completed according to an EML; takes precedence over the EMLs in document_types.
+   doneAt?: string | null;
 } & (
    | {
         date?: Omit<TimelineDate, "event">;
@@ -80,6 +82,7 @@ export default function TimelineEntry({
    date,
    event,
    document_types = [],
+   doneAt,
 }: PropsWithChildren<TimelineEntryProps>) {
    const { formatTimelineDate } = useFormatters();
    const { t } = useLingui();
@@ -90,7 +93,7 @@ export default function TimelineEntry({
    }, [document_types, documents]);
 
    // Once its EML is in, the entry is done and shows the day that file was created.
-   const emlCreatedAt = selectedDocs.find((doc) => doc.eml_created_at)?.eml_created_at;
+   const emlCreatedAt = doneAt || selectedDocs.find((doc) => doc.eml_created_at)?.eml_created_at;
    const planned = event ? date || getTimelineDate(dates, event) : date;
    const resolved: Omit<TimelineDate, "event"> = emlCreatedAt ? { date: emlCreatedAt, qualifier: "all_day" } : planned;
 
@@ -159,11 +162,13 @@ const SB_VOTE_COUNT_BODIES: Record<TimelineVariant, MessageDescriptor> = {
 
 export function SBVoteCountTimelineEntry() {
    const { t } = useLingui();
-   const { variant = "DEFAULT" } = useTimelineContext();
+   const { variant = "DEFAULT", region } = useTimelineContext();
 
    return (
       <TimelineEntry
          event="sb_vote_count"
+         // Stembureaus count on the evening of election day.
+         doneAt={region?.election_date}
          title={t(SB_VOTE_COUNT_TITLES[variant])}
          document_types={["PDF_N10-1", "PDF_N10-2"]}
       >
@@ -177,11 +182,19 @@ export function SBVoteCountTimelineEntry() {
    );
 }
 
+/** When the gemeente's first 510b was created, so a corrigendum does not move the municipal count step. */
+function useMunicipalityCountDate() {
+   const { region, municipality = region } = useTimelineContext();
+   return municipality?.region_category === "GEMEENTE" ? municipality.count_date : undefined;
+}
+
 export function GSBVoteCountTimelineEntry() {
    const { t } = useLingui();
+   const countDate = useMunicipalityCountDate();
    return (
       <TimelineEntry
          event="municipality_vote_count"
+         doneAt={countDate}
          title={t`Optelling per gemeente`}
          document_types={["EML510b", "PDF_NA31-1", "PDF_NA31-2", "PDF_NA31-2-B2"]}
       >
@@ -272,6 +285,7 @@ export function HSBVoteCountTimelineEntry() {
    return (
       <TimelineEntry
          event="electoral_district_vote_count"
+         doneAt={region?.region_category === "KIESKRING" ? region.count_date : undefined}
          title={t`Optelling kieskring ${hsb.region_name}`}
          document_types={["EML510c", "PDF_O7"]}
       >
@@ -332,9 +346,12 @@ export function CsbCheckTimelineEntry() {
 export function CsbResultPublishTimelineEntry() {
    const { t } = useLingui();
    const csbName = useTimelineCsbName();
+   const { documents } = useTimelineContext();
+   // The 520 holds the final result; its file is already listed under the CSB check.
+   const resultCreatedAt = documents?.find((doc) => doc.file_type === "EML520")?.eml_created_at;
 
    return (
-      <TimelineEntry event="csb_result_publish" title={t`${csbName} publiceert de uitslag`}>
+      <TimelineEntry event="csb_result_publish" doneAt={resultCreatedAt} title={t`${csbName} publiceert de uitslag`}>
          <p>
             <Trans>
                In de uitslag staat hoeveel stemmen elke kandidaat heeft gekregen, hoeveel zetels elke partij krijgt en
