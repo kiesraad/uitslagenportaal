@@ -43,8 +43,8 @@ export function detectLocale(): Locale {
 
 /**
  * Loads a catalogue, falling back to `sourceLocale` when it fails. The import specifier must
- * stay a template literal: that is what lets Vite emit one lazily loaded chunk per locale, so a
- * visitor only downloads the language they are actually reading.
+ * stay a template literal: that is what lets Vite emit one lazily loaded chunk per locale. The
+ * shell's (Dutch) catalogue always loads; another only when the visitor chooses that language.
  */
 async function loadMessages(locale: Locale): Promise<{ locale: Locale; messages: Messages }> {
    try {
@@ -83,7 +83,5 @@ export function localeFromCookieHeader(cookieHeader: string | null | undefined):
  * progress bar like every other load. The root route renders its I18nProvider from the result.
  */
 export async function localeLoader(): Promise<{ locale: Locale }> {
-   const locale = await loadCatalog(detectLocale());
-   document.documentElement.lang = locale;
-   return { locale };
+   return { locale: await loadCatalog(detectLocale()) };
 }

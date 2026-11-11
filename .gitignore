@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+frontend/build/
+frontend/.react-router/
 *.local
 
 # Playwright artifacts (written next to wherever `playwright test` is run)

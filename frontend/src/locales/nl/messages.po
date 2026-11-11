@@ -611,10 +611,6 @@ msgstr "Kruimelpad"
 msgid "Laatste stap bovenaan"
 msgstr "Laatste stap bovenaan"
 
-#: src/pages/LoadingPage.tsx
-msgid "Laden…"
-msgstr "Laden…"
-
 #: src/components/ResultsPage/PartyCandidatesResultsContent.tsx
 #: src/components/ResultsPage/RegionResultsContent.tsx
 #: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
@@ -1038,6 +1034,10 @@ msgstr "Uitleg dubbel stembureau {name}"
 #: src/components/Footer.tsx
 msgid "Uitleg over telproces"
 msgstr "Uitleg over telproces"
+
+#: src/pages/LoadingPage.tsx
+msgid "Uitslagenportaal"
+msgstr "Uitslagenportaal"
 
 #: src/components/ElectionConfigTabs.tsx
 msgid "Van stem tot uitslag"

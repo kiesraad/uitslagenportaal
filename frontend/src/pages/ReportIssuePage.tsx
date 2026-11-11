@@ -9,18 +9,22 @@ import { BreadcrumbItem, Breadcrumbs } from "@/components/Breadcrumbs.tsx";
 import Button from "@/elements/Button.tsx";
 import { ExternalLinkIcon } from "@/elements/ExternalLinkIcon.tsx";
 import PageSection from "@/elements/PageSection.tsx";
+import { queryClient } from "@/queryClient.ts";
 import { InfoBox } from "../components/InfoBox.tsx";
 import { LayoutMain } from "../components/LayoutMain.tsx";
 import { electionConfigQuery } from "../hooks/queries.ts";
 import { formatIssueReportDeadlineHeading, getRemainingReportTime } from "../utils/date.ts";
 import { useFormatters } from "../utils/format.ts";
 import { appRoutes } from "../utils/routes.ts";
+import type { Route } from "./+types/ReportIssuePage";
 
 export async function loadReportIssue(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
    await client.query(electionConfigQuery(params.electionConfigSlug));
 }
 
 const DEADLINE_TICK_MS = 60_000;
+
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadReportIssue(queryClient, args);
 
 export default function ReportIssuePage() {
    const params = useParams();

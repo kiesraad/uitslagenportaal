@@ -3,10 +3,12 @@ import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useParams } from "react-router";
 import ElectionConfigTabs from "@/components/ElectionConfigTabs.tsx";
 import { electionConfigQuery, regionsQuery } from "@/hooks/queries.ts";
+import { queryClient } from "@/queryClient.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import { useFormatters } from "../../utils/format.ts";
+import type { Route } from "./+types/ElectionConfigMunicipalityListPage";
 
 export async function loadElectionConfigMunicipalityList(
    client: QueryClient,
@@ -17,6 +19,8 @@ export async function loadElectionConfigMunicipalityList(
       client.query(regionsQuery(params, "GEMEENTE")),
    ]);
 }
+
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadElectionConfigMunicipalityList(queryClient, args);
 
 export default function ElectionConfigMunicipalityListPage() {
    const params = useParams();

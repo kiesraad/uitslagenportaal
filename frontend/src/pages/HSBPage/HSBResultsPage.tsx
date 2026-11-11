@@ -2,6 +2,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useParams } from "react-router";
 import { HSBTimeline } from "@/components/Timeline/HSBTimeline.tsx";
+import { queryClient } from "@/queryClient.ts";
 import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -12,6 +13,7 @@ import { electionConfigQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getCsbCrumb, getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
+import type { Route } from "./+types/HSBResultsPage";
 
 export async function loadHSBResults(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
    const [electionConfig] = await Promise.all([
@@ -23,6 +25,8 @@ export async function loadHSBResults(client: QueryClient, { params }: Pick<Loade
       throw new ApiError("Election has no HSBs", 404);
    }
 }
+
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadHSBResults(queryClient, args);
 
 export default function HSBResultsPage() {
    const params = useParams();

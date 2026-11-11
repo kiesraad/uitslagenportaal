@@ -2,6 +2,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, type LoaderFunctionArgs, type Params, useParams } from "react-router";
 import { SBTimeline } from "@/components/Timeline/SBTimeline.tsx";
+import { queryClient } from "@/queryClient.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent";
@@ -10,6 +11,7 @@ import { electionConfigQuery, regionQuery } from "../../hooks/queries";
 import { useFormatters } from "../../utils/format";
 import { formatStationLabel, getCsbCrumb, getRegionLabels } from "../../utils/region";
 import { appRoutes } from "../../utils/routes";
+import type { Route } from "./+types/PollingStationResultsPage";
 
 /** The election, the gemeente and the stembureau, for both stembureau pages. */
 export function pollingStationQueries(params: Params) {
@@ -37,6 +39,8 @@ export async function loadPollingStationResults(client: QueryClient, { params }:
       client.query(queries.pollingStation),
    ]);
 }
+
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadPollingStationResults(queryClient, args);
 
 export default function PollingStationResultsPage() {
    const queries = pollingStationQueries(useParams());
