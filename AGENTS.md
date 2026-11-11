@@ -209,6 +209,10 @@ docker compose run --rm frontend npm run test    # or: npm run test
 Stub `fetch` with `vi.stubGlobal`; wrap components in `QueryClientProvider` and
 `MemoryRouter` as the existing tests do.
 
+## PV test set (OCR)
+
+See [pv-ocr.md](docs/pv-ocr.md) for the OCR test set and how to generate handwritten test PVs.
+
 ## CI
 
 `.github/workflows/backend-ci.yml`: ruff check + format check, `pytest` against Postgres 16, and

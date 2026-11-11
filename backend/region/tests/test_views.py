@@ -242,6 +242,18 @@ def test_region_detail_lists_each_proces_verbaal_and_previews_the_correction(
 
 
 @pytest.mark.django_db
+def test_stembureau_detail_lists_the_correction_bijlage_of_that_stembureau():
+    station = RegionFactory(region_category=RegionCategory.STEMBUREAU)
+    bijlage = CertifiedElectionDocumentFactory(
+        region=station, storage_key="TK2025/na14-2-b1.pdf", file_type=ElectionDocument.FileType.PDF_NA14_2_B1
+    )
+
+    data = region_detail(station, "sb")
+
+    assert [item["url"] for item in data["documents"]] == [f"/api/documents/{bijlage.pk}/download/"]
+
+
+@pytest.mark.django_db
 def test_region_detail_lists_every_correction_and_previews_the_last_one():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)
     CertifiedElectionDocumentFactory(
