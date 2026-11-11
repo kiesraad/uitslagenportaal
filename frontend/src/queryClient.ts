@@ -17,6 +17,5 @@ export function createQueryClient() {
    });
 }
 
-// Lives outside main.tsx because the route config in router.tsx is built at module
-// scope and has to close over this client to hand it to the loaders.
+// The browser's client, shared by the root layout's provider and the route modules' clientLoaders.
 export const queryClient = createQueryClient();

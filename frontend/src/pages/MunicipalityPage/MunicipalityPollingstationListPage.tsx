@@ -3,8 +3,10 @@ import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, Navigate, useParams } from "react-router";
 import HtmlHead from "@/components/HtmlHead.tsx";
 import { electionConfigQuery, regionQuery, regionsQuery } from "@/hooks/queries.ts";
+import { queryClient } from "@/queryClient.ts";
 import { appRoutes } from "@/utils/routes.ts";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
+import type { Route } from "./+types/MunicipalityPollingstationListPage";
 import MunicipalityPageLayout from "./MunicipalityPageLayout.tsx";
 
 export async function loadMunicipalityPollingstationList(
@@ -17,6 +19,8 @@ export async function loadMunicipalityPollingstationList(
       client.query(regionsQuery(params, "STEMBUREAU")),
    ]);
 }
+
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadMunicipalityPollingstationList(queryClient, args);
 
 export default function MunicipalityPollingstationListPage() {
    const params = useParams();

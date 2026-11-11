@@ -606,10 +606,6 @@ msgstr "Breadcrumb"
 msgid "Laatste stap bovenaan"
 msgstr "Latest step first"
 
-#: src/pages/LoadingPage.tsx
-msgid "Laden…"
-msgstr "Loading…"
-
 #: src/components/ResultsPage/PartyCandidatesResultsContent.tsx
 #: src/components/ResultsPage/RegionResultsContent.tsx
 #: src/pages/MunicipalityPage/MunicipalityPartyResultsPage.tsx
@@ -1018,6 +1014,10 @@ msgstr "About double polling station {name}"
 #: src/components/Footer.tsx
 msgid "Uitleg over telproces"
 msgstr "About the counting process"
+
+#: src/pages/LoadingPage.tsx
+msgid "Uitslagenportaal"
+msgstr "Uitslagenportaal"
 
 #: src/components/ElectionConfigTabs.tsx
 msgid "Van stem tot uitslag"

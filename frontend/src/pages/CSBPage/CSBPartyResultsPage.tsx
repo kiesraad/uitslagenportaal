@@ -2,6 +2,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useParams } from "react-router";
 import { CSBTimeline } from "@/components/Timeline/CSBTimeline.tsx";
+import { queryClient } from "@/queryClient.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import IssueNotice from "../../components/ResultsPage/IssueNotice.tsx";
@@ -13,6 +14,7 @@ import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 import { getPartyVoteCount } from "../../utils/voteCounts.ts";
+import type { Route } from "./+types/CSBPartyResultsPage";
 
 export async function loadCSBPartyResults(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
    const [, region] = await Promise.all([
@@ -23,6 +25,8 @@ export async function loadCSBPartyResults(client: QueryClient, { params }: Pick<
    // Only the region response names the election the matrix is asked for.
    await client.query(csbPartyVoteMatrixQuery(region.election_slug, params.regionSlug, params.partySlug));
 }
+
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadCSBPartyResults(queryClient, args);
 
 export default function CSBPartyResultsPage() {
    const params = useParams();

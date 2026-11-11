@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useParams } from "react-router";
 import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
+import { queryClient } from "@/queryClient.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import SharedTabs from "../../components/SharedTabs.tsx";
@@ -9,6 +10,7 @@ import { electionConfigQuery, regionQuery } from "../../hooks/queries.ts";
 import { useFormatters } from "../../utils/format.ts";
 import { getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
+import type { Route } from "./+types/CSBResultsPage";
 
 export async function loadCSBResults(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
    await Promise.all([
@@ -16,6 +18,8 @@ export async function loadCSBResults(client: QueryClient, { params }: Pick<Loade
       client.query(regionQuery(params, "csb")),
    ]);
 }
+
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadCSBResults(queryClient, args);
 
 export default function CSBResultsPage() {
    const params = useParams();

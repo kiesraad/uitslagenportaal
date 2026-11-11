@@ -31,7 +31,7 @@ export default function ErrorBoundaryPage() {
 
    // A loader that 404s means the election, region or stembureau in the URL does not
    // exist, which is a not-found rather than a failure.
-   // The ErrorBoundary replaces RootLayout, so the header and footer have to be added here.
+   // The ErrorBoundary replaces the root App, so the header and footer have to be added here.
    if (isNotFoundError(error)) {
       return (
          <BaseLayout>
@@ -53,7 +53,7 @@ export default function ErrorBoundaryPage() {
          <LayoutMain title={title} description={description}>
             <div className="page-top flex flex-1 flex-col gap-3">
                <h1 className="font-title text-3xl font-bold whitespace-pre-line sm:text-4xl">{title}</h1>
-               <p>{description}</p>
+               <p role="alert">{description}</p>
                <Button onClick={reloadPage} className="w-fit">
                   <FontAwesomeIcon icon={faArrowRotateRight} /> <Trans>Probeer opnieuw</Trans>
                </Button>

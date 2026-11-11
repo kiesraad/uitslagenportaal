@@ -8,7 +8,7 @@
    },
    "files": {
       "ignoreUnknown": false,
-      "includes": ["**", "!dist", "!playwright-report", "!test-results", "!blob-report"]
+      "includes": ["**", "!dist", "!.react-router", "!build", "!playwright-report", "!test-results", "!blob-report"]
    },
    "formatter": {
       "enabled": true,

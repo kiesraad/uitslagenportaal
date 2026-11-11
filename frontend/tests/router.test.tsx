@@ -1,8 +1,26 @@
+import type { RouteConfigEntry } from "@react-router/dev/routes";
 import { QueryClient } from "@tanstack/react-query";
-import { matchRoutes } from "react-router";
+import { matchRoutes, type RouteObject } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { electionConfigsQuery } from "@/hooks/queries.ts";
-import { loadRoot, routes } from "@/router.tsx";
+import { loadRoot } from "@/root.tsx";
+import routeConfig from "@/routes.ts";
+
+type TestRoute = RouteObject & { file?: string };
+
+// `matchRoutes` wants the shape of a data router; the route config only differs in naming its module `file`.
+function toRoutes(entries: RouteConfigEntry[]): TestRoute[] {
+   return entries.map(({ id, path, index, file, children }) => ({
+      id,
+      path,
+      index,
+      file,
+      children: children && toRoutes(children),
+   })) as TestRoute[];
+}
+
+// The framework mounts routes.ts below root.tsx.
+const routes: TestRoute[] = [{ id: "root", path: "/", children: toRoutes(routeConfig as RouteConfigEntry[]) }];
 
 function match(pathname: string) {
    const matches = matchRoutes(routes, pathname) ?? [];
@@ -11,8 +29,8 @@ function match(pathname: string) {
       chain: matches.map((m) => m.route.id),
       params: matches.at(-1)?.params ?? {},
       // The root route is skipped: its loader loads the catalogue and prefetches the Footer's election list, which is not page data.
-      // Page loaders live inside `lazy`, so a single lazy leaf means data is fetched once.
-      loaders: matches.slice(1).filter((m) => m.route.lazy).length,
+      // Parameter levels render a bare `RouteOutlet` without a loader, so a single other module means data is fetched once.
+      pages: matches.slice(1).filter((m) => !m.route.file?.endsWith("RouteOutlet.tsx")).length,
    };
 }
 
@@ -28,6 +46,8 @@ describe("router", () => {
       ["/gr2026/gsb/ede/resultaten", "MunicipalityResultsPageWithoutCsb"],
       ["/gr2026/gsb/ede/sb-3/vvd", "PollingStationPartyResultsPageWithoutCsb"],
       ["/ab2023/onzin", "NotFoundPageNested"],
+      ["/ab2023", "NotFoundPage"],
+      ["/ab2023/van-stem-tot-uitslag", "ElectionConfigTimelinePage"],
    ])("%s renders %s", (pathname, expected) => {
       expect(match(pathname).chain.at(-1)).toBe(expected);
    });
@@ -58,7 +78,24 @@ describe("router", () => {
       ["/gr2026/gsb/ede"],
       ["/gr2026/gsb/ede/sb-3/vvd"],
    ])("loads the data of %s exactly once", (pathname) => {
-      expect(match(pathname).loaders).toBe(1);
+      expect(match(pathname).pages).toBe(1);
+   });
+});
+
+function routeFiles(entries: RouteConfigEntry[]): string[] {
+   return entries.flatMap((entry) => [entry.file, ...routeFiles(entry.children ?? [])]);
+}
+
+// A page without a clientLoader would render without its data in the cache.
+describe("route modules", () => {
+   const withoutLoader = ["components/RouteOutlet.tsx", "pages/NotFoundPage.tsx"];
+   const pageFiles = [...new Set(routeFiles(routeConfig as RouteConfigEntry[]))].filter(
+      (file) => !withoutLoader.includes(file),
+   );
+
+   it.each(pageFiles)("%s exports a clientLoader", async (file) => {
+      const module = await import(`../src/${file}`);
+      expect(module.clientLoader).toBeTypeOf("function");
    });
 });
 
