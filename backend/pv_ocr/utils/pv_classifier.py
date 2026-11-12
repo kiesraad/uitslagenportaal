@@ -178,8 +178,9 @@ KIESKRING_RE = re.compile(
     re.MULTILINE,
 )
 
-# Models that belong to one stembureau; only for these does a number in the filename name the stembureau.
-STEMBUREAU_MODELS = {"N 10-1", "N 10-2", "Na 14-1", "Na 31-2 Bijlage 1"}
+# Models published per stembureau; only for these does a number in the filename name the stembureau, and the
+# storage name carries it so the bijlagen of one gemeente don't overwrite each other.
+STEMBUREAU_MODELS = {"N 10-1", "N 10-2", "Na 14-1", "Na 14-2 Bijlage 1", "Na 31-2 Bijlage 1"}
 # Models of a centraal stembureau. They name no gemeente; their region is the CSB, which for GR is the gemeente.
 CSB_MODELS = {"P 22-1", "P 22-2"}
 # Models of a hoofdstembureau, of TK, EP and PS with more than one kieskring. Their region is the kieskring.

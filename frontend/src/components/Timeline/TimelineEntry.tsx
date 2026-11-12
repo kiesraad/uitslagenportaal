@@ -200,8 +200,8 @@ export function GSBVoteCountTimelineEntry() {
 }
 
 const CORRECTION_DOCUMENT_TYPES: Partial<Record<RegionCategory, ElectionDocumentFileType[]>> = {
-   STEMBUREAU: ["PDF_NA14-1"],
-   GEMEENTE: ["PDF_NA14-2", "PDF_NA14-2-B1"],
+   STEMBUREAU: ["PDF_NA14-1", "PDF_NA14-2-B1"],
+   GEMEENTE: ["PDF_NA14-2"],
    KIESKRING: ["PDF_P1F-1"],
 };
 

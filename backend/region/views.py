@@ -21,6 +21,7 @@ _DOCUMENT_FILE_TYPES_BY_REPORTING_LEVEL = {
         FileType.PDF_N10_1,
         FileType.PDF_N10_2,
         FileType.PDF_NA14_1,
+        FileType.PDF_NA14_2_B1,
         FileType.PDF_NA31_2_B1,
     ],
     ReportingLevel.GSB: [
@@ -30,7 +31,6 @@ _DOCUMENT_FILE_TYPES_BY_REPORTING_LEVEL = {
         FileType.PDF_NA31_2,
         FileType.PDF_NA31_2_B2,
         FileType.PDF_NA14_2,
-        FileType.PDF_NA14_2_B1,
     ],
     ReportingLevel.HSB: [FileType.EML_510C, FileType.PDF_O7, FileType.PDF_P1F_1],
     ReportingLevel.CSB: [FileType.EML_510D, FileType.EML_520, FileType.PDF_P22_1, FileType.PDF_P22_2],

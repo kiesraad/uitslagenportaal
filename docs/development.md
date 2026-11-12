@@ -159,8 +159,8 @@ PV_IMPORT_SOURCE=folder
 ```
 
 Identity is read from PDF Info keys. `PvElection`, `PvModel` and `PvRegionName` are required.
-`PvStembureau` is required for N10-1, N10-2 and NA14-1 (`PvRegionName` is then the gemeente). `PvCsb` is required
-only for those forms in a waterschapsverkiezing. Subfolders are included.
+`PvStembureau` is required for N10-1, N10-2, NA14-1, NA14-2-B1 and NA31-2-B1 (`PvRegionName` is then the
+gemeente). `PvCsb` is required for N10-1, N10-2 and NA14-1 in a waterschapsverkiezing. Subfolders are included.
 
 ```bash
 docker compose run --rm backend-scripts python manage.py import_pvs

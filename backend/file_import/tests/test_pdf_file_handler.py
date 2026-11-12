@@ -138,23 +138,84 @@ def test_a_rescanned_proces_verbaal_supersedes_the_one_it_replaces():
     assert superseded.is_current is False
 
 
+def _station(gemeente, number, name="Gemeentehuis"):
+    return RegionFactory(
+        election=gemeente.election,
+        parent=gemeente,
+        csb=gemeente.csb,
+        region_category=RegionCategory.STEMBUREAU,
+        region_name=name,
+        region_number=f"0203::SB{number}",
+    )
+
+
 @pytest.mark.django_db
-@pytest.mark.parametrize("model", ["NA14-2", "NA14-2-B1"])
-def test_every_correction_on_one_form_stays_current(model):
-    region = barneveld()
-    write_pdf(f"TK2025_Nederland_{model}_Barneveld.pdf", pv_pdf(b"first correction", PvModel=model))
+@pytest.mark.parametrize(("model", "stembureau"), [("NA14-2", ""), ("NA14-2-B1", "1")])
+def test_every_correction_on_one_form_stays_current(model, stembureau):
+    gemeente = barneveld()
+    region = _station(gemeente, "1") if stembureau else gemeente
+    meta = {"PvModel": model, "PvStembureau": stembureau}
+    write_pdf(f"TK2025_Nederland_{model}_Barneveld.pdf", pv_pdf(b"first correction", **meta))
     PDFFileHandler(storages["pv_import"]).run()
 
-    write_pdf(f"TK2025_Nederland_{model}_Barneveld.pdf", pv_pdf(b"second correction", PvModel=model))
+    write_pdf(f"TK2025_Nederland_{model}_Barneveld.pdf", pv_pdf(b"second correction", **meta))
     assert PDFFileHandler(storages["pv_import"]).run() == 1
 
     corrections = ElectionDocument.objects.filter(region=region).order_by("created_at", "pk")
     assert [default_storage.open(document.storage_key).read() for document in corrections] == [
-        pv_pdf(b"first correction", PvModel=model),
-        pv_pdf(b"second correction", PvModel=model),
+        pv_pdf(b"first correction", **meta),
+        pv_pdf(b"second correction", **meta),
     ]
     # Shared region and file type, so the download names have to part on their timestamp
     assert len({document.download_filename for document in corrections}) == 2
+
+
+@pytest.mark.django_db
+def test_imports_a_correction_bijlage_onto_the_stembureau_of_the_named_gemeente():
+    gemeente = barneveld()
+    _station(gemeente, "1")
+    station = _station(gemeente, "2", "School")
+    write_pdf("b1.pdf", pv_pdf(PvModel="NA14-2-B1", PvStembureau="2"))
+
+    handler = PDFFileHandler(storages["pv_import"])
+    assert handler.run() == 1
+
+    document = ElectionDocument.objects.get()
+    assert document.region == station
+    assert document.file_type == ElectionDocument.FileType.PDF_NA14_2_B1
+    # The bijlage is not in the stembureau zip, so the gemeente's zip is not rebuilt.
+    assert handler.archive_municipality_ids == set()
+
+
+@pytest.mark.django_db
+def test_rejects_a_correction_bijlage_without_stembureau(caplog):
+    gemeente = barneveld()
+    _station(gemeente, "1")
+    write_pdf("b1.pdf", pv_pdf(PvModel="NA14-2-B1"))
+
+    with caplog.at_level(logging.ERROR):
+        assert PDFFileHandler(storages["pv_import"]).run() == 0
+
+    assert not ElectionDocument.objects.exists()
+    assert "Polling-station form needs PvStembureau" in caplog.text
+    assert storages["pv_import"].exists(f"{FAILED_PV_DIRECTORY}/b1.pdf")
+
+
+@pytest.mark.django_db
+def test_keeps_each_correction_bijlage_on_its_own_stembureau():
+    gemeente = barneveld()
+    first = _station(gemeente, "1", "Gemeentehuis")
+    second = _station(gemeente, "2", "School")
+    for number in ("1", "2"):
+        write_pdf(f"b1-{number}.pdf", pv_pdf(number.encode(), PvModel="NA14-2-B1", PvStembureau=number))
+
+    assert PDFFileHandler(storages["pv_import"]).run() == 2
+
+    documents = {document.region: document for document in ElectionDocument.objects.all()}
+    assert set(documents) == {first, second}
+    assert [documents[station].correction_number for station in (first, second)] == [1, 1]
+    assert documents[first].download_filename == "TK2025 Barneveld SB1 Gemeentehuis NA14-2-B1.pdf"
+    assert documents[second].download_filename == "TK2025 Barneveld SB2 School NA14-2-B1.pdf"
 
 
 @pytest.mark.django_db
@@ -280,6 +341,7 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies():
         ("NA31-2", "Alpha", ""),
         ("NA31-2-B1", "Alpha", "1"),
         ("NA14-2", "Alpha", ""),
+        ("NA14-2-B1", "Alpha", "1"),
         ("O7", "North", ""),
         ("P1f-1", "North", ""),
     ):
@@ -308,6 +370,7 @@ def test_imports_sb_gsb_and_hsb_documents_onto_those_bodies():
         (gemeente.id, file_type.PDF_NA31_2),
         (station.id, file_type.PDF_NA31_2_B1),
         (gemeente.id, file_type.PDF_NA14_2),
+        (station.id, file_type.PDF_NA14_2_B1),
         (kieskring.id, file_type.PDF_O7),
         (kieskring.id, file_type.PDF_P1F_1),
     }

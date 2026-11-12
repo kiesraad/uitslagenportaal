@@ -193,6 +193,13 @@ def test_identify_model_keeps_what_ocr_found():
         ("verslag van het gemeentelijk\nstembureau.", {}),
         ("Details van het stembureau\nStembureau 32", {"stembureau": "32"}),
         ("Proces-verbaal van een stembureau\n18 maart 2026\nStembureau 5", {"stembureau": "5"}),
+        # The running header's stembureau wins over a title ending in "stembureau" followed by the gemeente code.
+        (
+            "Bijlage 1 Gemeente 0228 Ede\nStembureau 24\n\nBijlage 1\n\n"
+            "Verslagen van tellingen van stembureaus die zijn\n"
+            "herteld door het gemeentelijk stembureau\n0228 Ede\nLet op! Alleen voor gemeenten",
+            {"code": "0228", "name": "Ede", "stembureau": "24"},
+        ),
         ("1659 Laarbeek", {}),
         ("5741 AB Beek en Donk", {}),
         ("73E9 F1DD A095\n3372 3063 B838 CF21", {}),
@@ -725,6 +732,7 @@ def test_authority_matches(authority, name, expected):
         # Only a stembureau model names a stembureau.
         ("Na 31-2", PvElection("GR2026"), EDE_12, "GR2026_Na31-2_0228-ede.pdf"),
         ("Na 31-2 Bijlage 1", PvElection("GR2026"), EDE_12, "GR2026_Na31-2-B1_0228-ede_SB12.pdf"),
+        ("Na 14-2 Bijlage 1", PvElection("GR2026"), EDE_12, "GR2026_Na14-2-B1_0228-ede_SB12.pdf"),
         ("N 10-1", PvElection("AB2027", authority="Fryslân"), EDE_12, "AB2027_N10-1_fryslan_0228-ede_SB12.pdf"),
         ("Na 31-1", PvElection("PS2027"), PvRegion(name="Bergen (NH)"), "PS2027_Na31-1_bergen-nh.pdf"),
         ("Na 31-1", PvElection("TK2025"), PvRegion(code="1680"), "TK2025_Na31-1_nederland_1680.pdf"),
@@ -827,6 +835,8 @@ def test_storage_name_takes_the_names_it_is_given():
         ("N 10-2", PvElection("GR2026"), PvRegion()),
         # Without its stembureau, a stembureau model's PV would replace those of the gemeente's other stembureaus.
         ("N 10-2", PvElection("GR2026"), PvRegion(code="0228", name="Ede")),
+        # A Na 14-2 Bijlage 1 is per stembureau too, or the gemeente's bijlagen would replace one another.
+        ("Na 14-2 Bijlage 1", PvElection("GR2026"), PvRegion(code="0228", name="Ede")),
         # Without its waterschap, an AB PV would replace that of the gemeente's other waterschap.
         ("N 10-2", PvElection("AB2027"), EDE_12),
     ],
