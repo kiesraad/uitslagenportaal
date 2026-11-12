@@ -188,11 +188,14 @@ describe("CorrectionTimelineEntry", () => {
    });
 });
 
+const correctionBijlage = /^Bijlage 1 bij corrigendum proces-verbaal gemeentelijk stembureau/;
+
 describe("CorrectionTimelineEntry on a stembureau", () => {
-   it("lists only the stembureau's correction PV", () => {
+   it("lists only the stembureau's correction PVs", () => {
       const documents = [
          { file_type: "PDF_NA14-1", url: "/api/documents/1/download/" },
          { file_type: "PDF_NA14-2", url: "/api/documents/2/download/" },
+         { file_type: "PDF_NA14-2-B1", url: "/api/documents/3/download/" },
       ] as ElectionDocument[];
       renderEntry(<CorrectionTimelineEntry />, {
          region: region({ region_category: "STEMBUREAU", correction_date: null }),
@@ -202,7 +205,41 @@ describe("CorrectionTimelineEntry on a stembureau", () => {
 
       expect(screen.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
          "/api/documents/1/download/",
+         "/api/documents/3/download/",
       ]);
+   });
+
+   it("shows the bijlage of the gemeente's corrigendum", () => {
+      const documents = [{ file_type: "PDF_NA14-2-B1", url: "/api/documents/3/download/" }] as ElectionDocument[];
+      renderEntry(<CorrectionTimelineEntry />, {
+         region: region({ region_category: "STEMBUREAU", correction_date: null }),
+         municipality: region({ correction_date: "2026-03-18T10:00:00+01:00" }),
+         documents,
+      });
+
+      expect(screen.getByRole("link", { name: correctionBijlage })).toHaveAttribute(
+         "href",
+         "/api/documents/3/download/",
+      );
+   });
+});
+
+describe("CorrectionTimelineEntry on a gemeente", () => {
+   it("leaves out the bijlage of the corrigendum", () => {
+      const documents = [
+         { file_type: "PDF_NA14-2", url: "/api/documents/2/download/" },
+         { file_type: "PDF_NA14-2-B1", url: "/api/documents/3/download/" },
+      ] as ElectionDocument[];
+      renderEntry(<CorrectionTimelineEntry />, {
+         region: region({ correction_date: "2026-03-18T10:00:00+01:00" }),
+         documents,
+      });
+
+      expect(screen.getByRole("link", { name: /^Corrigendum proces-verbaal gemeentelijk stembureau/ })).toHaveAttribute(
+         "href",
+         "/api/documents/2/download/",
+      );
+      expect(screen.queryByRole("link", { name: correctionBijlage })).not.toBeInTheDocument();
    });
 });
 
