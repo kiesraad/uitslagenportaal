@@ -183,8 +183,8 @@ def test_imports_a_correction_bijlage_onto_the_stembureau_of_the_named_gemeente(
     document = ElectionDocument.objects.get()
     assert document.region == station
     assert document.file_type == ElectionDocument.FileType.PDF_NA14_2_B1
-    # The bijlage is not in the stembureau zip, so the gemeente's zip is not rebuilt.
-    assert handler.archive_municipality_ids == set()
+    # The bijlage is in the stembureau zip, so the gemeente's zip is rebuilt.
+    assert handler.archive_municipality_ids == {gemeente.id}
 
 
 @pytest.mark.django_db
