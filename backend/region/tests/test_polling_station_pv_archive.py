@@ -157,15 +157,21 @@ def test_archive_zip_lists_polling_station_forms_in_station_then_form_order():
 
 
 @pytest.mark.django_db
-def test_archive_zip_leaves_out_the_correction_bijlage_of_a_polling_station():
+def test_archive_zip_includes_the_bijlage_1_pvs_of_a_polling_station():
     election = ElectionFactory(election_config__identifier="TK2025")
     municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Lisserdam")
     station = _station(municipality, "0203::SB1", "Gemeentehuis")
-    form = _pdf(station, ElectionDocument.FileType.PDF_N10_1, b"%PDF-n10", 8)
-    _pdf(station, ElectionDocument.FileType.PDF_NA14_2_B1, b"%PDF-na14-2-b1", 14)
+    correction_bijlage = _pdf(station, ElectionDocument.FileType.PDF_NA14_2_B1, b"%PDF-na14-2-b1", 14)
+    form = _pdf(station, ElectionDocument.FileType.PDF_N10_2, b"%PDF-n10-2", 8)
+    bijlage = _pdf(station, ElectionDocument.FileType.PDF_NA31_2_B1, b"%PDF-na31-2-b1", 14)
+    _pdf(municipality, ElectionDocument.FileType.PDF_NA31_2_B2, b"%PDF-na31-2-b2", 14)
 
-    assert list(polling_station_pv_documents(municipality)) == [form]
-    assert _member_names(municipality) == ["TK2025 Lisserdam SB1 Gemeentehuis N10-1.pdf"]
+    assert set(polling_station_pv_documents(municipality)) == {form, bijlage, correction_bijlage}
+    assert _member_names(municipality) == [
+        "TK2025 Lisserdam SB1 Gemeentehuis N10-2.pdf",
+        "TK2025 Lisserdam SB1 Gemeentehuis NA31-2-B1.pdf",
+        "TK2025 Lisserdam SB1 Gemeentehuis NA14-2-B1.pdf",
+    ]
 
 
 @pytest.mark.django_db

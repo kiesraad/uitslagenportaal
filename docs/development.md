@@ -143,8 +143,8 @@ A PDF that is unreadable or has missing or invalid metadata moves to `pv_import_
 once. Any other failure, such as a region whose EML is not imported yet, is retried after
 5 minutes, 20 minutes, 1 hour, 12 hours and 24 hours before the file moves there too; a
 file uploaded again under the same name starts that schedule afresh. After each sweep it queues one
-zip rebuild per gemeente that received a polling-station form in that sweep; the zip is
-stored in object storage and the download endpoint redirects to it.
+zip rebuild per gemeente that received a polling-station PV (including a Na 31-2 or Na 14-2
+Bijlage 1) in that sweep; the zip is stored in object storage and the download endpoint redirects to it.
 
 | `PV_IMPORT_SOURCE` | `pv_import` is |
 | --- | --- |
