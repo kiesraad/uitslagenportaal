@@ -613,7 +613,7 @@ def make_ws_importer(importer_cls, eml_file):
 
 
 def assert_storage_key(storage_key: str, expected_stem: str) -> None:
-    """storage_key is {election}/{stem}_{timestamp}.eml.xml after corrections."""
+    """storage_key is {election}/emls/{stem}_{timestamp}.eml.xml after corrections."""
     assert re.fullmatch(rf"{re.escape(expected_stem)}_{STORAGE_KEY_TIMESTAMP}\.eml\.xml", storage_key)
 
 
@@ -656,7 +656,7 @@ def test_store_eml_filename_without_parent(importer_cls, expected_label, ws_regi
     importer._store_eml(ws_regions["waterschap"])
 
     doc = ElectionDocument.objects.get()
-    assert_storage_key(doc.storage_key, f"AB2023/AB2023_{expected_label}_17_Scheldestromen")
+    assert_storage_key(doc.storage_key, f"AB2023/emls/AB2023_{expected_label}_17_Scheldestromen")
 
 
 def test_store_eml_filename_with_parent_sanitizes_special_characters(ws_election):
@@ -674,14 +674,14 @@ def test_store_eml_filename_with_parent_sanitizes_special_characters(ws_election
     doc = ElectionDocument.objects.get()
     assert_storage_key(
         doc.storage_key,
-        "AB2023/AB2023_Telling_GSB_1_Scheldestromen_Test_654_s-GravenhageVoorburg",
+        "AB2023/emls/AB2023_Telling_GSB_1_Scheldestromen_Test_654_s-GravenhageVoorburg",
     )
 
 
 def test_store_eml_archives_existing_document_on_reimport(ws_regions):
     """Corrections archive the previous current document, then store a new one."""
     existing = ElectionDocumentFactory(
-        storage_key="AB2023/AB2023_Telling_GSB_17_Scheldestromen.eml.xml",
+        storage_key="AB2023/emls/AB2023_Telling_GSB_17_Scheldestromen.eml.xml",
         region=ws_regions["waterschap"],
         content_type="application/xml",
         file_type=ElectionDocument.FileType.EML_510B,
@@ -700,7 +700,7 @@ def test_store_eml_archives_existing_document_on_reimport(ws_regions):
     assert doc.pk != existing.pk
     assert doc.size == len(content)
     assert default_storage.open(doc.storage_key).read() == content
-    assert_storage_key(doc.storage_key, "AB2023/AB2023_Telling_GSB_17_Scheldestromen")
+    assert_storage_key(doc.storage_key, "AB2023/emls/AB2023_Telling_GSB_17_Scheldestromen")
 
 
 def make_ws_telling(
@@ -808,7 +808,7 @@ def test_510b_marks_region_as_counted_and_stores_document(ws_regions, ws_contest
     assert gemeente.counting_method == CountingMethod.DSO
     doc = ElectionDocument.objects.get()
     assert doc.region == gemeente
-    assert_storage_key(doc.storage_key, "AB2023/AB2023_Telling_GSB_17_Scheldestromen_654_Borsele")
+    assert_storage_key(doc.storage_key, "AB2023/emls/AB2023_Telling_GSB_17_Scheldestromen_654_Borsele")
 
 
 def test_510b_rejects_region_outside_the_election(ws_regions, ws_contest, ws_parties, ws_candidates):

@@ -14,7 +14,7 @@ from django.db.models import Q
 from django.utils import timezone
 from redis.exceptions import LockError
 
-from election.models import ElectionCategory, ElectionConfig, ElectionDocument
+from election.models import PV_DIRECTORY, ElectionCategory, ElectionConfig, ElectionDocument
 from eml_import.exceptions import FileAlreadyImported, InvalidPDFException, PDFImporterException
 from eml_import.models import ImportedFileHash
 from mainsite.models import RegionCategory
@@ -274,7 +274,7 @@ class PDFFileHandler:
     @transaction.atomic
     def _store(self, content: BytesIO, filename: str, election_id: str, region: Region, file_type: str) -> None:
         preview = self._preview_png(content)
-        storage_key = f"{election_id}/{filename}"
+        storage_key = f"{election_id}/{PV_DIRECTORY}/{filename}"
         size = content.getbuffer().nbytes
 
         if file_type not in ElectionDocument.CORRECTION_FILE_TYPES:
@@ -282,12 +282,15 @@ class PDFFileHandler:
 
         content.seek(0)
         stored_key = default_storage.save(storage_key, File(content))
-        default_storage.save(Path(stored_key).with_suffix(".png").as_posix(), ContentFile(preview))
-
-        ElectionDocument.objects.create(
+        document = ElectionDocument.objects.create(
             region=region,
             file_type=file_type,
             storage_key=stored_key,
             content_type="application/pdf",
             size=size,
         )
+        # The preview's key follows from the PV's, so a stale object there must not push it to another name.
+        preview_key = document.preview_storage_key
+        if default_storage.exists(preview_key):
+            default_storage.delete(preview_key)
+        default_storage.save(preview_key, ContentFile(preview))

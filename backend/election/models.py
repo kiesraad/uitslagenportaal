@@ -15,6 +15,13 @@ from mainsite.utils.eml_type import EmlType
 from mainsite.utils.utils import name_to_slug
 from region.models import Region, hsb_kieskringen
 
+# Subdirectories within an election's folder in object storage, so no single folder grows huge.
+# Older documents may still sit directly in the election folder; their storage_key says where.
+EML_DIRECTORY = "emls"
+CSV_DIRECTORY = "csvs"
+PV_DIRECTORY = "pvs"
+PV_THUMBNAIL_DIRECTORY = "pv_thumbnails"
+
 
 @dataclass
 class ElectionCategoryConfig:
@@ -335,6 +342,15 @@ class ElectionDocument(BaseModel):
             Q(created_at__lt=self.created_at) | Q(created_at=self.created_at, pk__lt=self.pk)
         )
         return earlier.count() + 1
+
+    @property
+    def preview_storage_key(self) -> str:
+        """Where the PNG preview of a PV is stored: in the thumbnail folder next to the PV folder, or, for PVs
+        stored before those folders existed, beside the PV itself."""
+        path = Path(self.storage_key).with_suffix(".png")
+        if path.parent.name == PV_DIRECTORY:
+            path = path.parent.with_name(PV_THUMBNAIL_DIRECTORY) / path.name
+        return path.as_posix()
 
     @property
     def download_filename(self) -> str:

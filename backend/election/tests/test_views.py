@@ -204,3 +204,14 @@ def test_certified_document_preview_returns_404_when_the_png_is_missing():
 
     with pytest.raises(Http404):
         certified_document_preview(RequestFactory().get("/"), document.pk)
+
+
+@pytest.mark.django_db
+def test_certified_document_preview_redirects_to_the_png_in_the_thumbnail_folder():
+    default_storage.save("TK2025/pv_thumbnails/pv.png", ContentFile(b"\x89PNG"))
+    document = CertifiedElectionDocumentFactory(storage_key="TK2025/pvs/pv.pdf", region=RegionFactory())
+
+    response = certified_document_preview(RequestFactory().get("/"), document.pk)
+
+    assert response.status_code == 302
+    assert response.url == f"{settings.MEDIA_URL}TK2025/pv_thumbnails/pv.png"

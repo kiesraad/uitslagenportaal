@@ -9,7 +9,7 @@ from typing import IO
 from django.core.files.storage import default_storage
 from django.utils import timezone
 
-from election.models import Election, ElectionConfig, ElectionDocument
+from election.models import CSV_DIRECTORY, Election, ElectionConfig, ElectionDocument
 from eml_import.exceptions import EMLImporterException
 from eml_import.utils.base_importer import BaseImporter
 from mainsite.models import RegionCategory
@@ -128,7 +128,7 @@ class CSVOsv43Importer(BaseImporter):
             )
         )
         filename = re.sub(r"[^A-Za-z0-9_\-:+]", "", filename.replace(" ", "_"))
-        file_path = f"{election_config.identifier}/{filename}.csv"
+        file_path = f"{election_config.identifier}/{CSV_DIRECTORY}/{filename}.csv"
 
         if isinstance(self.file_path, Path):
             file_content = BytesIO(self.file_path.read_bytes())

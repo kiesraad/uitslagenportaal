@@ -98,7 +98,7 @@ def test_parse_stores_the_eml_as_a_current_document_of_the_csb(ws_csb):
         "application/xml",
         len(eml_file.getvalue()),
     )
-    assert document.storage_key.startswith("AB2023/AB2023_Resultaat_Aa_en_Maas_")
+    assert document.storage_key.startswith("AB2023/emls/AB2023_Resultaat_Aa_en_Maas_")
     assert document.storage_key.endswith(".eml.xml")
     with default_storage.open(document.storage_key) as stored:
         assert stored.read() == eml_file.getvalue()

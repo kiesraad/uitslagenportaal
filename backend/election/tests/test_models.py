@@ -1,6 +1,6 @@
 import pytest
 
-from election.models import ElectionCategory, ElectionConfig
+from election.models import ElectionCategory, ElectionConfig, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
@@ -76,3 +76,15 @@ def test_has_hsb_true_when_a_csb_has_several_kieskringen_without_results():
     _csb_with_kieskringen(config, "Leiden", "Rotterdam")
 
     assert config.has_hsb is True
+
+
+@pytest.mark.parametrize(
+    ("storage_key", "preview_key"),
+    [
+        ("TK2025/pvs/TK2025_NA31-2_Barneveld.pdf", "TK2025/pv_thumbnails/TK2025_NA31-2_Barneveld.png"),
+        # PVs stored before the subfolders existed keep their preview beside them.
+        ("TK2025/TK2025_NA31-2_Barneveld.pdf", "TK2025/TK2025_NA31-2_Barneveld.png"),
+    ],
+)
+def test_preview_storage_key(storage_key, preview_key):
+    assert ElectionDocument(storage_key=storage_key).preview_storage_key == preview_key
