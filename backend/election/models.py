@@ -329,6 +329,8 @@ class ElectionDocument(BaseModel):
     )
     is_current = models.BooleanField(default=True, db_index=True)
     metadata = models.JSONField(default=dict)
+    # The EML's <kr:CreationDateTime>; empty for other file types.
+    eml_created_at = models.DateTimeField(null=True, blank=True)
 
     objects = CurrentManager()
     all_objects = models.Manager()

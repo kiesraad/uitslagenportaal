@@ -7,18 +7,18 @@ import TimelineEntry, {
    SBVoteCountTimelineEntry,
 } from "@/components/Timeline/TimelineEntry.tsx";
 
-type Props = Pick<TimelineContextProps, "dates">;
+type Props = Pick<TimelineContextProps, "dates" | "emlDates">;
 
 /**
  * The generic timeline shown on the homepage, the timeline tab (if there are multiple active elections) and
  * on each level when there are no results yet.
  */
-export function GenericTimeline({ dates }: Props) {
+export function GenericTimeline({ dates, emlDates }: Props) {
    const { t } = useLingui();
 
    return (
       <div id="results-timeline">
-         <Timeline dates={dates}>
+         <Timeline dates={dates} emlDates={emlDates}>
             <CsbResultPublishTimelineEntry />
             <CsbCheckTimelineEntry />
             <TimelineEntry key="kieskring" event="electoral_district_vote_count" title={t`Optelling per kieskring`}>

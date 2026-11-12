@@ -809,6 +809,7 @@ def test_510b_marks_region_as_counted_and_stores_document(ws_regions, ws_contest
     doc = ElectionDocument.objects.get()
     assert doc.region == gemeente
     assert_storage_key(doc.storage_key, "AB2023/emls/AB2023_Telling_GSB_17_Scheldestromen_654_Borsele")
+    assert doc.eml_created_at == timezone.make_aware(CREATION_DATE_TIME)
 
 
 def test_510b_rejects_region_outside_the_election(ws_regions, ws_contest, ws_parties, ws_candidates):
@@ -1100,6 +1101,7 @@ def test_510b_leaves_results_available_at_unset_without_a_creation_date(
     gemeente = ws_regions["gemeente"]
     gemeente.refresh_from_db()
     assert gemeente.results_available_at is None
+    assert ElectionDocument.objects.get().eml_created_at is None
 
 
 @pytest.fixture

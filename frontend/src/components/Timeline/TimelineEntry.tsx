@@ -63,6 +63,8 @@ export type TimelineEntryStatus = "pending" | "in-progress" | "done";
 export type TimelineEntryProps = {
    title: ReactNode;
    document_types?: ElectionDocumentFileType[];
+   // When the step was completed according to an EML, for a step without an event.
+   doneAt?: string | null;
 } & (
    | {
         date?: Omit<TimelineDate, "event">;
@@ -80,13 +82,21 @@ export default function TimelineEntry({
    date,
    event,
    document_types = [],
+   doneAt,
 }: PropsWithChildren<TimelineEntryProps>) {
    const { formatTimelineDate } = useFormatters();
    const { t } = useLingui();
-   const { dates, documents } = useTimelineContext();
-   const resolved = event ? date || getTimelineDate(dates, event) : date;
+   const { dates, emlDates, documents } = useTimelineContext();
+
+   // Once its EML is in, the entry is done and shows the day that file was created.
+   const emlCreatedAt = doneAt || (event && emlDates?.[event]);
+   const planned = event ? date || getTimelineDate(dates, event) : date;
+   const resolved: Omit<TimelineDate, "event"> = emlCreatedAt ? { date: emlCreatedAt, qualifier: "all_day" } : planned;
 
    const status = useMemo((): TimelineEntryStatus => {
+      if (emlCreatedAt) {
+         return "done";
+      }
       const entryDate = new Date(resolved.date);
       if (Number.isNaN(entryDate.getTime())) {
          return "pending";
@@ -98,7 +108,7 @@ export default function TimelineEntry({
          return "in-progress";
       }
       return entryDay < today ? "done" : "pending";
-   }, [resolved.date]);
+   }, [emlCreatedAt, resolved.date]);
 
    const selectedDocs = useMemo(() => {
       return documents?.filter((doc) => document_types.includes(doc.file_type)) ?? [];
@@ -211,6 +221,7 @@ export function CorrectionTimelineEntry() {
    return (
       <TimelineEntry
          date={{ date: municipality.correction_date, qualifier: "all_day" }}
+         doneAt={municipality.correction_date}
          title={t`Onderzoek, hertelling en gecorrigeerde resultaten`}
          document_types={documentTypes}
       >
@@ -235,6 +246,7 @@ export function MunicipalityRecountTimelineEntry() {
    return (
       <TimelineEntry
          date={{ date: municipality.correction_date, qualifier: "all_day" }}
+         doneAt={municipality.correction_date}
          title={t`Nieuwe gemeentelijke optelling`}
       >
          <p>

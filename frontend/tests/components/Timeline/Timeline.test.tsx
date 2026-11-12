@@ -36,6 +36,7 @@ function document(overrides: Partial<ElectionDocument>): ElectionDocument {
       file_type: "EML510b",
       correction_number: 1,
       metadata: {},
+      eml_created_at: null,
       ...overrides,
    };
 }
@@ -125,6 +126,23 @@ describe("TimelineEntry", () => {
          "/api/documents/1/download/",
       );
       expect(screen.queryByRole("link", { name: /510c/ })).not.toBeInTheDocument();
+   });
+
+   it("shows the creation date of its EML instead of the planned date", () => {
+      renderEntry(<TimelineEntry event="csb_result_publish" date={published} title="Uitslag publiceren" />, {
+         emlDates: { csb_result_publish: "2026-03-16T15:00:00+01:00" },
+      });
+
+      expect(screen.getByRole("heading", { name: "Uitslag publiceren, afgerond" })).toBeInTheDocument();
+      expect(screen.getByText("16 maart")).toBeInTheDocument();
+   });
+
+   it("is done on the day its EML is created", () => {
+      renderEntry(<TimelineEntry event="csb_result_publish" date={published} title="Uitslag publiceren" />, {
+         emlDates: { csb_result_publish: "2026-03-18T09:00:00+01:00" },
+      });
+
+      expect(screen.getByRole("heading", { name: "Uitslag publiceren, afgerond" })).toBeInTheDocument();
    });
 });
 

@@ -8,6 +8,7 @@ export type ElectionConfig = {
    single_csb: { region_name: string; slug: string } | null;
    has_hsb: boolean;
    timeline_dates: TimelineDate[];
+   eml_dates: EmlDates;
    report_error_url: string;
    counting_info_url: string;
    voting_url: string;
@@ -16,6 +17,9 @@ export type ElectionConfig = {
 export type ElectionConfigsResponse = ElectionConfig[];
 
 export type TimelineVariant = "CSO" | "DSO" | "DEFAULT";
+
+// When each step was completed according to the EMLs.
+export type EmlDates = Partial<Record<TimelineDateEvent, string | null>>;
 
 export type TimelineDateEvent =
    | "sb_vote_count"
@@ -65,6 +69,7 @@ export type ElectionDocument = {
    file_type: ElectionDocumentFileType;
    correction_number: number;
    metadata: Record<string, string | number>;
+   eml_created_at: string | null;
 };
 
 export type ReportingLevel = "gsb" | "hsb" | "csb" | "sb";
@@ -96,6 +101,7 @@ export type Region = {
    voter_turnout_counts?: VoterTurnoutCount[];
    timeline_variant?: TimelineVariant;
    correction_date?: string | null;
+   eml_dates?: EmlDates;
    documents?: ElectionDocument[];
    certified_document_url?: string | null;
    certified_document_preview_url?: string | null;

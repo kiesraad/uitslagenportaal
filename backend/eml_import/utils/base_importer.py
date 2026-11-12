@@ -1,11 +1,13 @@
 import logging
 import re
 from abc import ABC, abstractmethod
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
 from django.core.files.storage import default_storage
 from django.utils import timezone
+from pyeml_bindings import Eml510, Eml520
 
 from election.models import EML_DIRECTORY, Election, ElectionConfig, ElectionDocument
 from eml_import.exceptions import EMLImporterException, FileAlreadyImported
@@ -50,6 +52,23 @@ class EMLStorageMixin:
     file_type: ElectionDocument.FileType
     file_path: Path | NamedBytesIO
     election: Election | None
+    eml: Eml510 | Eml520
+
+    def _eml_created_at(self) -> datetime | None:
+        """
+        The EML's <kr:CreationDateTime>. Optional and repeatable in the schema, and the Kiesraad
+        writes it without a UTC offset, so it is read as a naive datetime in the local timezone.
+        """
+        creation_date_time = self.eml.creation_date_time
+        if not creation_date_time:
+            return None
+        value = creation_date_time[0].value
+        if value is None:
+            return None
+        created = value.to_datetime()
+        if timezone.is_naive(created):
+            created = timezone.make_aware(created)
+        return created
 
     def _store_eml(self, region: Region) -> None:
         election_config = self.election.election_config
@@ -87,4 +106,5 @@ class EMLStorageMixin:
             content_type="application/xml",
             file_type=self.file_type,
             size=size,
+            eml_created_at=self._eml_created_at(),
         )
