@@ -196,6 +196,7 @@ def test_one_election_config_has_empty_region_lists_and_a_timeline(page: Page):
     )
 
     home_election_link(page, WS_LABEL).click()
+    expect(page).to_have_url(re.compile(r"/ab2023"))
     expect_empty_region_lists(page)
 
 
