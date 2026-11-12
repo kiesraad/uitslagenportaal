@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import type { Region } from "@/api/types";
 import { SBTimeline } from "@/components/Timeline/SBTimeline";
 import { renderWithProviders } from "../../testUtils";
 
@@ -26,5 +27,21 @@ describe("SBTimeline", () => {
          screen.getByText(/Na het sluiten van de stembussen tellen de leden van het stembureau/),
       ).toBeInTheDocument();
       expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(4);
+   });
+});
+
+describe("SBTimeline candidate count", () => {
+   it("shows the date of the gemeente's 510b", () => {
+      renderWithProviders(
+         <SBTimeline
+            variant="CSO"
+            dates={[]}
+            region={{ eml_dates: { municipality_vote_count: "2026-03-19T14:30:00+01:00" } } as Region}
+         />,
+      );
+
+      expect(
+         screen.getByRole("heading", { level: 3, name: /^Telling per lijst en kandidaat, afgerond/ }),
+      ).toBeInTheDocument();
    });
 });

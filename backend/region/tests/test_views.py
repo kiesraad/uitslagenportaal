@@ -295,6 +295,30 @@ def test_region_detail_correction_date_is_the_latest_corrected_510b():
 
 
 @pytest.mark.django_db
+def test_region_detail_dates_come_from_the_emls():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    original_created_at = timezone.make_aware(datetime.datetime(2026, 3, 19, 14, 30))
+    corrected_created_at = timezone.make_aware(datetime.datetime(2026, 3, 24, 10, 0))
+    ElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/telling.xml",
+        file_type=ElectionDocument.FileType.EML_510B,
+        eml_created_at=original_created_at,
+        is_current=False,
+    )
+    ElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/telling-2.xml",
+        file_type=ElectionDocument.FileType.EML_510B,
+        eml_created_at=corrected_created_at,
+    )
+
+    data = region_detail(region, "gsb")
+    assert data["eml_dates"]["municipality_vote_count"] == original_created_at
+    assert data["correction_date"] == corrected_created_at
+
+
+@pytest.mark.django_db
 def test_region_detail_correction_date_of_a_kieskring_is_the_latest_corrected_510c():
     region = RegionFactory(region_category=RegionCategory.KIESKRING)
     ElectionDocumentFactory(
@@ -408,6 +432,16 @@ def test_csb_includes_the_520_document_and_gsb_does_not():
     assert {item["file_type"] for item in region_detail(region, "gsb")["documents"]} == {
         ElectionDocument.FileType.EML_510B,
     }
+
+
+@pytest.mark.django_db
+def test_region_detail_documents_include_the_eml_creation_date():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    eml_created_at = timezone.make_aware(datetime.datetime(2026, 3, 19, 14, 30))
+    ElectionDocumentFactory(region=region, file_type=ElectionDocument.FileType.EML_510B, eml_created_at=eml_created_at)
+
+    [document] = region_detail(region, "gsb")["documents"]
+    assert datetime.datetime.fromisoformat(document["eml_created_at"]) == eml_created_at
 
 
 @pytest.mark.django_db

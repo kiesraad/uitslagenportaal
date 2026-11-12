@@ -281,3 +281,20 @@ describe("HSBVoteCountTimelineEntry", () => {
       expect(screen.getByRole("heading", { level: 3, name: /^Optelling kieskring Zuid/ })).toBeInTheDocument();
    });
 });
+
+describe("dates from the EMLs", () => {
+   it("shows the region's EML dates", () => {
+      renderEntry(<GSBVoteCountTimelineEntry />, {
+         region: region({ eml_dates: { municipality_vote_count: "2026-03-19T14:30:00+01:00" } }),
+      });
+
+      expect(screen.getByRole("heading", { level: 3, name: /afgerond$/ })).toBeInTheDocument();
+      expect(screen.getByText("19 maart")).toBeInTheDocument();
+   });
+
+   it("marks a correction done on the day its EML is created", () => {
+      renderEntry(<CorrectionTimelineEntry />, { region: region({ correction_date: new Date().toISOString() }) });
+
+      expect(screen.getByRole("heading", { level: 3, name: /afgerond$/ })).toBeInTheDocument();
+   });
+});

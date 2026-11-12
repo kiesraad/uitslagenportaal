@@ -5,6 +5,7 @@ from django.core.files.storage import default_storage
 from django.urls import reverse
 from rest_framework import serializers
 
+from election.eml_dates import region_eml_dates
 from election.models import ElectionDocument, TimelineVariant
 from election.serializers import ElectionDocumentSerializer
 from mainsite.models import RegionCategory
@@ -63,6 +64,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     certified_document_preview_url = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
     correction_date = serializers.SerializerMethodField()
+    eml_dates = serializers.SerializerMethodField()
     election_slug = serializers.CharField(source="election.slug", read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
     same_location_stations = SameLocationStationsField()
@@ -81,6 +83,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "certified_document_preview_url",
             "timeline_variant",
             "correction_date",
+            "eml_dates",
             "region_category",
             "results_available_at",
             "election_slug",
@@ -123,8 +126,11 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             return None
         return reverse("certified-document-preview", kwargs={"pk": document.pk})
 
+    def get_eml_dates(self, region) -> dict:
+        return region_eml_dates(region)
+
     def get_correction_date(self, region) -> datetime | None:
-        """When the region's latest corrected count EML came in; None while it has only the original."""
+        """When the region's latest corrected count EML was created; None while it has only the original."""
         file_type = CORRECTION_COUNT_FILE_TYPES.get(region.region_category)
         if file_type is None:
             return None
@@ -132,7 +138,9 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         counts = ElectionDocument.all_objects.filter(region=region, file_type=file_type).order_by("-created_at", "-pk")
         if counts.count() < 2:
             return None
-        return counts.first().created_at
+        latest = counts.first()
+        # EMLs imported before eml_created_at existed fall back to their import time.
+        return latest.eml_created_at or latest.created_at
 
     def get_timeline_variant(self, region) -> str:
         counting_method = region.counting_method or (region.parent.counting_method if region.parent else None)

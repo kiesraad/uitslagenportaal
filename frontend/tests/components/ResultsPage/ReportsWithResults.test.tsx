@@ -14,6 +14,7 @@ function correction(overrides: Partial<ElectionDocument>): ElectionDocument {
       file_type: "PDF_NA14-2",
       correction_number: 1,
       metadata: {},
+      eml_created_at: null,
       ...overrides,
    };
 }
