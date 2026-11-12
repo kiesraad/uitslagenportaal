@@ -1,9 +1,9 @@
 from pyeml_bindings import Eml520
 
 from election.models import Election, ElectionDocument
-from eml_import.exceptions import EMLImporterException
-from eml_import.utils.base_importer import EMLStorageMixin
-from eml_import.utils.eml_base_importer import EMLBaseImporter
+from file_import.exceptions import EMLImporterException
+from file_import.utils.base_importer import EMLStorageMixin
+from file_import.utils.eml_base_importer import EMLBaseImporter
 from mainsite.utils.eml_type import EmlType
 from region.models import Region
 

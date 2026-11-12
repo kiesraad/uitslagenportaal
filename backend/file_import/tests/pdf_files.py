@@ -6,7 +6,7 @@ from pypdf import PdfWriter
 
 from election.models import ElectionCategory
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
-from eml_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
+from file_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
 from mainsite.models import RegionCategory
 from region.models import Region
 from region.tests.factories import RegionFactory

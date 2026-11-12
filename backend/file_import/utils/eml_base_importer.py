@@ -11,9 +11,9 @@ from election.models import (
     VoteCount,
     VoterTurnoutCount,
 )
-from eml_import.exceptions import EMLImporterException
-from eml_import.utils.base_importer import BaseImporter
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.exceptions import EMLImporterException
+from file_import.utils.base_importer import BaseImporter
+from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.utils.eml_type import EmlType
 from region.models import Region
 

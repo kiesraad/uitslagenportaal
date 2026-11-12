@@ -6,7 +6,7 @@ from pathlib import Path
 from django.db import models
 
 from election.models import Election
-from eml_import.exceptions import FileAlreadyImported
+from file_import.exceptions import FileAlreadyImported
 from mainsite.models import BaseModel
 
 

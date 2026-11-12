@@ -10,8 +10,8 @@ from django.core.files.storage import default_storage
 from django.utils import timezone
 
 from election.models import CSV_DIRECTORY, Election, ElectionConfig, ElectionDocument
-from eml_import.exceptions import EMLImporterException
-from eml_import.utils.base_importer import BaseImporter
+from file_import.exceptions import EMLImporterException
+from file_import.utils.base_importer import BaseImporter
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import CsvType
 from region.models import Region

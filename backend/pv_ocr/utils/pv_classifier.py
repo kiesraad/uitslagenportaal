@@ -21,7 +21,7 @@ import regex
 from PIL import Image
 from pypdf import PdfWriter
 
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
 from region.models import Region
 

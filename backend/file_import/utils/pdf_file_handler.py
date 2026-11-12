@@ -15,8 +15,8 @@ from django.utils import timezone
 from redis.exceptions import LockError
 
 from election.models import PV_DIRECTORY, ElectionCategory, ElectionConfig, ElectionDocument
-from eml_import.exceptions import FileAlreadyImported, InvalidPDFException, PDFImporterException
-from eml_import.models import ImportedFileHash
+from file_import.exceptions import FileAlreadyImported, InvalidPDFException, PDFImporterException
+from file_import.models import ImportedFileHash
 from mainsite.models import RegionCategory
 from region.models import Region
 from region.polling_station_pv_archive import POLLING_STATION_PV_FILE_TYPES

@@ -137,7 +137,7 @@ and reports every problem it finds rather than stopping at the first one.
 ### Importing proces-verbalen
 
 `import_pvs` reads proces-verbaal PDFs from the `pv_import` storage. A Celery beat task
-(`eml_import.tasks.import_pvs`) runs that same import every 5 minutes. After a PDF is
+(`file_import.tasks.import_pvs`) runs that same import every 5 minutes. After a PDF is
 copied into default storage, or skipped as a duplicate, it is deleted from `pv_import`.
 A PDF that is unreadable or has missing or invalid metadata moves to `pv_import_failed/` at
 once. Any other failure, such as a region whose EML is not imported yet, is retried after

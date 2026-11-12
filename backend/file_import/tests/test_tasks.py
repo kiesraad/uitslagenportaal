@@ -9,8 +9,8 @@ from requests import RequestException
 
 from election.tests.factories import ElectionConfigFactory
 from election.utils import visibility_cutoff
-from eml_import import tasks
-from eml_import.tasks import import_election_eml_commits, import_next_eml_commits, import_pvs, setup_periodic_tasks
+from file_import import tasks
+from file_import.tasks import import_election_eml_commits, import_next_eml_commits, import_pvs, setup_periodic_tasks
 from region.tasks import build_polling_station_pv_zip
 
 

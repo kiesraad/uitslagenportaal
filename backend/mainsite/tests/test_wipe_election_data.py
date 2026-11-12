@@ -4,8 +4,8 @@ from django.core.management import CommandError, call_command
 
 from election.models import ElectionConfig
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
-from eml_import.tests.factories import ImportedCommitFactory
-from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
+from file_import.tests.factories import ImportedCommitFactory
+from file_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
 from mainsite.management.commands import wipe_election_data
 
 

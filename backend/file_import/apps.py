@@ -1,7 +1,7 @@
 from django.apps import AppConfig
 
 
-class EmlImportConfig(AppConfig):
+class FileImportConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "eml_import"
+    name = "file_import"
     label = "eml_import"

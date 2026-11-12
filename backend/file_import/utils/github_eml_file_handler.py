@@ -17,10 +17,10 @@ from github.Repository import Repository
 from redis.exceptions import LockError
 
 from election.models import ElectionConfig
-from eml_import.exceptions import EMLImporterException, GithubImportException
-from eml_import.models import BranchType, ImportedCommit
-from eml_import.utils.file_handler import BaseFileHandler
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.exceptions import EMLImporterException, GithubImportException
+from file_import.models import BranchType, ImportedCommit
+from file_import.utils.file_handler import BaseFileHandler
+from file_import.utils.named_bytes_io import NamedBytesIO
 
 # Seconds before the per-election lock expires on its own, so a worker that dies
 # mid-import does not block that election forever. Acquired afresh for each commit.

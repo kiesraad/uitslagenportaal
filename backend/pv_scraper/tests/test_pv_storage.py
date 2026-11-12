@@ -2,7 +2,7 @@ import pytest
 from django.core.files.storage import storages
 from pypdf import PdfReader
 
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
 from pv_ocr.tests.classified_pvs import BLANK_PDF, EDE_12, blank_pdf, classified
 from pv_ocr.utils.pv_classifier import PvClassificationException, PvClassifier, PvElection, PvRegion

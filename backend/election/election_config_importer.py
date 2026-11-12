@@ -8,7 +8,7 @@ from redis.exceptions import LockError
 
 from election.models import ElectionConfig, ElectionDocument, TimelineDate
 from election.utils import delete_stored_documents, folder_prefixes, tz_aware_from_isoformat
-from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
+from file_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
 
 logger = logging.getLogger(__name__)
 

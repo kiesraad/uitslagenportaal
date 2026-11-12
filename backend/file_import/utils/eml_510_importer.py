@@ -18,11 +18,11 @@ from election.models import (
     VoteCount,
     VoterTurnoutCount,
 )
-from eml_import.exceptions import EMLImporterException
-from eml_import.utils.base_importer import EMLStorageMixin
-from eml_import.utils.csv_osv43_importer import HSB_NUMBER_RE
-from eml_import.utils.eml_base_importer import EMLBaseImporter
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.exceptions import EMLImporterException
+from file_import.utils.base_importer import EMLStorageMixin
+from file_import.utils.csv_osv43_importer import HSB_NUMBER_RE
+from file_import.utils.eml_base_importer import EMLBaseImporter
+from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from party.models import Candidate, Party

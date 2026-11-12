@@ -7,39 +7,39 @@ import pytest
 from election.models import Election, ElectionCategory, ElectionConfig, VoteCount
 from election.tests.factories import ContestFactory, ElectionConfigFactory, ElectionFactory
 from election.utils import visibility_cutoff
-from eml_import.exceptions import EMLImporterException
-from eml_import.models import ImportedFileHash
-from eml_import.tests.fakes import fake_eml_file
-from eml_import.tests.test_eml_110_importer import CONFIG_IDENTIFIER, ELECTION_NAME
-from eml_import.tests.test_eml_110_importer import make_eml as make_110a_eml
-from eml_import.tests.test_eml_230_importer import (
+from file_import.exceptions import EMLImporterException
+from file_import.models import ImportedFileHash
+from file_import.tests.fakes import fake_eml_file
+from file_import.tests.test_eml_110_importer import CONFIG_IDENTIFIER, ELECTION_NAME
+from file_import.tests.test_eml_110_importer import make_eml as make_110a_eml
+from file_import.tests.test_eml_230_importer import (
     CONFIG_IDENTIFIER as CFG_230,
 )
-from eml_import.tests.test_eml_230_importer import (
+from file_import.tests.test_eml_230_importer import (
     ELECTION_DATE as DATE_230,
 )
-from eml_import.tests.test_eml_230_importer import (
+from file_import.tests.test_eml_230_importer import (
     ELECTION_NAME as NAME_230,
 )
-from eml_import.tests.test_eml_230_importer import (
+from file_import.tests.test_eml_230_importer import (
     ELECTION_SUBCATEGORY,
     REGISTERED_NAME,
 )
-from eml_import.tests.test_eml_230_importer import (
+from file_import.tests.test_eml_230_importer import (
     make_eml as make_230b_eml,
 )
-from eml_import.tests.test_eml_510_importer import (
+from file_import.tests.test_eml_510_importer import (
     ELECTION_DATE as WS_DATE,
 )
-from eml_import.tests.test_eml_510_importer import (
+from file_import.tests.test_eml_510_importer import (
     WS_CONFIG_IDENTIFIER,
     WS_ELECTION_NAME,
     make_ws_telling,
 )
-from eml_import.utils.eml_110_importer import EML110aImporter
-from eml_import.utils.eml_230_importer import EML230bImporter
-from eml_import.utils.eml_510_importer import EML510bImporter
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.utils.eml_110_importer import EML110aImporter
+from file_import.utils.eml_230_importer import EML230bImporter
+from file_import.utils.eml_510_importer import EML510bImporter
+from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.utils.eml_type import EmlType
 from party.models import Party
 from party.tests.factories import PartyFactory

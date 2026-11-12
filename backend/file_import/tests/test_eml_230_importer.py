@@ -34,8 +34,8 @@ from xsdata.models.datatype import XmlDate
 
 from election.models import Contest
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
-from eml_import.tests.fakes import fake_eml_file
-from eml_import.utils.eml_230_importer import EML230bImporter
+from file_import.tests.fakes import fake_eml_file
+from file_import.utils.eml_230_importer import EML230bImporter
 from party.models import Candidate, Party
 from party.tests.factories import PartyFactory
 

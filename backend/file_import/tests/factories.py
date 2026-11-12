@@ -2,7 +2,7 @@ import factory
 from factory.django import DjangoModelFactory
 
 from election.tests.factories import ElectionConfigFactory
-from eml_import.models import BranchType, ImportedCommit
+from file_import.models import BranchType, ImportedCommit
 
 
 class ImportedCommitFactory(DjangoModelFactory):
