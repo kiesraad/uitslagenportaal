@@ -13,8 +13,13 @@ concurrency:
 
 jobs:
   playwright:
+    name: playwright (${{ matrix.browser }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
     services:
       postgres:
         image: postgres:16
@@ -88,9 +93,9 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           # uv.lock pins the playwright version, so it doubles as the cache key.
-          key: ${{ runner.os }}-playwright-py-${{ hashFiles('backend/uv.lock') }}
-      # ubuntu-latest already has the libs Chromium needs, and CI runs headless.
-      - run: uv run playwright install --only-shell chromium
+          key: ${{ runner.os }}-playwright-py-${{ matrix.browser }}-${{ hashFiles('backend/uv.lock') }}
+      # Firefox and WebKit need system libs that ubuntu-latest lacks.
+      - run: uv run playwright install --with-deps --only-shell ${{ matrix.browser }}
         working-directory: backend
       - name: Create the storage bucket
         run: uv run python manage.py ensure_bucket
@@ -117,10 +122,10 @@ jobs:
           timeout 60 bash -c 'until curl -sf -o /dev/null http://localhost:8081/; do sleep 1; done'
 
       - name: Playwright
-        run: uv run pytest playwright_tests -m playwright --tracing=retain-on-failure --screenshot=only-on-failure
+        run: uv run pytest playwright_tests -m playwright --browser ${{ matrix.browser }} --tracing=retain-on-failure --screenshot=only-on-failure
         working-directory: backend
       - name: Axe
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && matrix.browser == 'chromium' }}
         run: uv run pytest playwright_tests -m axe --tracing=retain-on-failure --screenshot=only-on-failure
         working-directory: backend
 
@@ -135,6 +140,6 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
-          name: playwright-python-results
+          name: playwright-python-results-${{ matrix.browser }}
           path: backend/test-results/
           retention-days: 14
