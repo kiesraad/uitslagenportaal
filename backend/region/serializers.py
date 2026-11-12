@@ -1,5 +1,4 @@
 from datetime import datetime
-from pathlib import Path
 
 from django.core.files.storage import default_storage
 from django.urls import reverse
@@ -121,7 +120,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         document = self._certified_document(region)
         if document is None:
             return None
-        preview_key = Path(document.storage_key).with_suffix(".png").as_posix()
+        preview_key = document.preview_storage_key
         if not default_storage.exists(preview_key):
             return None
         return reverse("certified-document-preview", kwargs={"pk": document.pk})

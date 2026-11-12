@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from django.core.files.storage import default_storage
 from django.db.models import Q
 from django.http import FileResponse, Http404, HttpResponseRedirect
@@ -103,7 +101,7 @@ def certified_document(request, pk):
 
 def certified_document_preview(request, pk):
     document = _visible_certified_document(pk)
-    preview_key = Path(document.storage_key).with_suffix(".png").as_posix()
+    preview_key = document.preview_storage_key
     if not default_storage.exists(preview_key):
         raise Http404("Preview not found")
 

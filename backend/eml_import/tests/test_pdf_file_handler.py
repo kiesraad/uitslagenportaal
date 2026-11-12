@@ -1,7 +1,6 @@
 import hashlib
 import logging
 from datetime import timedelta
-from pathlib import Path
 
 import pytest
 from django.core.cache import cache
@@ -42,7 +41,9 @@ def test_imports_a_municipal_certified_document_onto_the_gemeente():
     assert document.content_type == "application/pdf"
     assert document.size == len(PDF_BYTES)
     assert default_storage.open(document.storage_key).read() == PDF_BYTES
-    preview_key = Path(document.storage_key).with_suffix(".png").as_posix()
+    assert document.storage_key.startswith("TK2025/pvs/")
+    preview_key = document.preview_storage_key
+    assert preview_key.startswith("TK2025/pv_thumbnails/")
     assert default_storage.open(preview_key).read().startswith(b"\x89PNG\r\n\x1a\n")
     assert not storages["pv_import"].exists(key)
 

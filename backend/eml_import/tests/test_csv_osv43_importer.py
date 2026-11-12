@@ -134,7 +134,7 @@ def test_parse_stores_the_csv_as_a_current_document_of_the_region(ws_csb):
         "text/csv",
         len(csv.getvalue()),
     )
-    assert document.storage_key.startswith("AB2023/AB2023_Telling_OSV4-3_Aa_en_Maas_")
+    assert document.storage_key.startswith("AB2023/csvs/AB2023_Telling_OSV4-3_Aa_en_Maas_")
     assert document.storage_key.endswith(".csv")
     with default_storage.open(document.storage_key) as stored:
         assert stored.read() == csv.getvalue()

@@ -39,6 +39,6 @@ def test_import_pvs_reads_an_object_storage_the_same_way(settings):
 
     document = ElectionDocument.objects.get()
     assert document.region == region
-    assert document.storage_key == "TK2025/TK2025_Nederland_NA31-2_Barneveld.pdf"
+    assert document.storage_key == "TK2025/pvs/TK2025_Nederland_NA31-2_Barneveld.pdf"
     assert default_storage.open(document.storage_key).read() == PDF_BYTES
     assert not storages["pv_import"].exists(key)

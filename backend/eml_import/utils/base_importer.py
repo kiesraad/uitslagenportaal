@@ -9,7 +9,7 @@ from django.core.files.storage import default_storage
 from django.utils import timezone
 from pyeml_bindings import Eml510, Eml520
 
-from election.models import Election, ElectionConfig, ElectionDocument
+from election.models import EML_DIRECTORY, Election, ElectionConfig, ElectionDocument
 from eml_import.exceptions import EMLImporterException, FileAlreadyImported
 from eml_import.models import ImportedFileHash
 from eml_import.utils.named_bytes_io import NamedBytesIO
@@ -90,7 +90,7 @@ class EMLStorageMixin:
             )
         )
         filename = re.sub(r"[^A-Za-z0-9_-]", "", filename.replace(" ", "_"))
-        file_path = f"{election_config.identifier}/{filename}.eml.xml"
+        file_path = f"{election_config.identifier}/{EML_DIRECTORY}/{filename}.eml.xml"
 
         if isinstance(self.file_path, Path):
             file_content = BytesIO(self.file_path.read_bytes())
