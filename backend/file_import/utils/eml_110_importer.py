@@ -4,8 +4,8 @@ from pyeml_bindings import (
 )
 
 from election.models import Contest, ElectionDocument
-from eml_import.exceptions import EMLImporterException
-from eml_import.utils.eml_base_importer import EMLBaseImporter
+from file_import.exceptions import EMLImporterException
+from file_import.utils.eml_base_importer import EMLBaseImporter
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
 from region.models import Region, build_region_slug

@@ -4,7 +4,7 @@ from django.core.files.storage import default_storage, storages
 from django.core.management import call_command
 
 from election.models import ElectionDocument
-from eml_import.tests.pdf_files import PDF_BYTES, barneveld, write_pdf
+from file_import.tests.pdf_files import PDF_BYTES, barneveld, write_pdf
 
 
 def use_pv_import(settings, backend, **options):

@@ -68,12 +68,12 @@ docker-compose.yml  full stack: db, redis, backend, celery, frontend, proxy, obj
 | `election`   | `ElectionConfig`, `Election`, `Contest`, `VoteCount`, `VoterTurnoutCount`, `TimelineDate`, `ElectionDocument`       |
 | `region`     | `Region` — self-referencing tree (CSB → HSB/kieskring → gemeente → stembureau)                                 |
 | `party`      | `Party`, `Candidate`                                                                                           |
-| `eml_import` | EML parsing/import, the GitHub ingress importer, `ImportedCommit`, and the Celery tasks         |
+| `file_import` | EML parsing/import, the GitHub ingress importer, `ImportedCommit`, and the Celery tasks         |
 
 Each app follows Django convention: `models.py`, `serializers.py`, `views.py`, `urls.py`,
 `tests/`. API routes are mounted under `/api/` in `mainsite/urls.py`.
 
-EML import lives in `eml_import/utils/`: `election_importer.py` orchestrates (parallel,
+EML import lives in `file_import/utils/`: `election_importer.py` orchestrates (parallel,
 via `ProcessPoolExecutor`), and per-type importers subclass `EMLBaseImporter`
 (110a definition, 230b candidate lists, 510b/510d counts). Uploaded and generated files
 go to S3-compatible storage through Django's `default_storage`.
@@ -192,7 +192,7 @@ docker compose run --rm backend-scripts pytest election/tests/test_views.py::tes
 - The root `conftest.py` swaps in `InMemoryStorage` for every test, so tests never hit the
   real storage backend.
 - Test Celery tasks by calling the task function directly and patching `.delay` on the
-  ones it fans out to (see `eml_import/tests/test_tasks.py`); no worker or broker runs.
+  ones it fans out to (see `file_import/tests/test_tasks.py`); no worker or broker runs.
 - Unit tests do not read the XML fixture files in `mainsite/tests/fixtures/eml/`. Build
   the EML input in code with the real `pyeml_bindings` dataclasses, as the importer tests
   do — they are about what the importer writes, not about parsing XML. The fixtures are

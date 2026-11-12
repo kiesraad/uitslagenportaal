@@ -11,16 +11,16 @@ from pyeml_bindings import Eml230
 
 from election.models import Contest, Election, ElectionConfig
 from election.tests.factories import ElectionConfigFactory
-from eml_import.exceptions import GithubImportException
-from eml_import.models import BranchType, ImportedCommit, ImportedFileHash
-from eml_import.tests.factories import ImportedCommitFactory
-from eml_import.tests.fakes import FakeCommit, FakeFile, FakeGithub, FakeRepo
-from eml_import.tests.test_eml_110_importer import CONFIG_IDENTIFIER
-from eml_import.tests.test_eml_110_importer import make_eml as make_110a_eml
-from eml_import.tests.test_eml_230_importer import make_eml as make_230b_eml
-from eml_import.utils import github_eml_file_handler
-from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.exceptions import GithubImportException
+from file_import.models import BranchType, ImportedCommit, ImportedFileHash
+from file_import.tests.factories import ImportedCommitFactory
+from file_import.tests.fakes import FakeCommit, FakeFile, FakeGithub, FakeRepo
+from file_import.tests.test_eml_110_importer import CONFIG_IDENTIFIER
+from file_import.tests.test_eml_110_importer import make_eml as make_110a_eml
+from file_import.tests.test_eml_230_importer import make_eml as make_230b_eml
+from file_import.utils import github_eml_file_handler
+from file_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
+from file_import.utils.named_bytes_io import NamedBytesIO
 from party.models import Candidate
 from region.models import Region
 

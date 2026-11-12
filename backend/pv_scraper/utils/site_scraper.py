@@ -15,7 +15,7 @@ from urllib.parse import unquote, urldefrag, urlsplit
 
 from django.utils import timezone
 
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.utils.named_bytes_io import NamedBytesIO
 from pv_scraper.models import ScrapedFile, ScrapedPage, ScrapeSource, ScrapeStatus
 from pv_scraper.utils.link_rules import (
     ELECTION_PAGE_RE,

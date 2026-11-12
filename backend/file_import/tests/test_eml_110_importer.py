@@ -27,12 +27,12 @@ from xsdata.models.datatype import XmlDate
 
 from election.models import Contest, Election
 from election.tests.factories import ElectionConfigFactory
-from eml_import.exceptions import EMLImporterException
-from eml_import.tests.fakes import fake_eml_file
-from eml_import.tests.test_eml_230_importer import CONTEST_NAME, make_affiliation, make_candidate
-from eml_import.tests.test_eml_230_importer import make_eml as make_230b_eml
-from eml_import.utils.eml_110_importer import EML110aImporter
-from eml_import.utils.eml_230_importer import EML230bImporter
+from file_import.exceptions import EMLImporterException
+from file_import.tests.fakes import fake_eml_file
+from file_import.tests.test_eml_230_importer import CONTEST_NAME, make_affiliation, make_candidate
+from file_import.tests.test_eml_230_importer import make_eml as make_230b_eml
+from file_import.utils.eml_110_importer import EML110aImporter
+from file_import.utils.eml_230_importer import EML230bImporter
 from mainsite.models import RegionCategory
 from party.models import Party
 from party.tests.factories import PartyFactory

@@ -1,8 +1,8 @@
 """Classification of EML files by root Id, and OSV4-3 CSVs by header, into import order."""
 
-from eml_import.tests.fakes import fake_osv43_csv
-from eml_import.utils.file_handler import BaseFileHandler
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.tests.fakes import fake_osv43_csv
+from file_import.utils.file_handler import BaseFileHandler
+from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.utils.eml_type import CsvType, EmlType
 
 

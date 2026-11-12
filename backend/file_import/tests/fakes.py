@@ -7,7 +7,7 @@ place, and so the importer asking for something that does not exist fails loudly
 import base64
 from itertools import count
 
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.utils.named_bytes_io import NamedBytesIO
 
 
 class FakeFile:

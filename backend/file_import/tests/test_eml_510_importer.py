@@ -43,10 +43,10 @@ from election.tests.factories import (
     ElectionDocumentFactory,
     ElectionFactory,
 )
-from eml_import.exceptions import EMLImporterException
-from eml_import.tests.fakes import fake_eml_file
-from eml_import.utils.eml_510_importer import EML510bImporter, EML510cImporter, EML510dImporter
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.exceptions import EMLImporterException
+from file_import.tests.fakes import fake_eml_file
+from file_import.utils.eml_510_importer import EML510bImporter, EML510cImporter, EML510dImporter
+from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from party.tests.factories import CandidateFactory, PartyFactory

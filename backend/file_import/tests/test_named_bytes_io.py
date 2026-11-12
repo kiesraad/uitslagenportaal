@@ -1,6 +1,6 @@
 import pytest
 
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.utils.named_bytes_io import NamedBytesIO
 
 
 def test_reads_its_content_like_a_file():

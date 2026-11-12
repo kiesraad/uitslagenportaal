@@ -21,11 +21,11 @@ from xsdata.models.datatype import XmlDate
 
 from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
-from eml_import.exceptions import EMLImporterException
-from eml_import.models import ImportedFileHash
-from eml_import.tests.fakes import fake_eml_file
-from eml_import.utils.eml_520_importer import EML520Importer
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.exceptions import EMLImporterException
+from file_import.models import ImportedFileHash
+from file_import.tests.fakes import fake_eml_file
+from file_import.utils.eml_520_importer import EML520Importer
+from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
 

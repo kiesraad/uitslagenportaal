@@ -8,7 +8,7 @@ from election.models import (
     Contest,
     ElectionDocument,
 )
-from eml_import.utils.eml_base_importer import EMLBaseImporter
+from file_import.utils.eml_base_importer import EMLBaseImporter
 from mainsite.utils.eml_type import EmlType
 from party.models import Candidate, Party
 

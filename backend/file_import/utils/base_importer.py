@@ -10,9 +10,9 @@ from django.utils import timezone
 from pyeml_bindings import Eml510, Eml520
 
 from election.models import EML_DIRECTORY, Election, ElectionConfig, ElectionDocument
-from eml_import.exceptions import EMLImporterException, FileAlreadyImported
-from eml_import.models import ImportedFileHash
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.exceptions import EMLImporterException, FileAlreadyImported
+from file_import.models import ImportedFileHash
+from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.utils.eml_type import EmlType
 from region.models import Region
 

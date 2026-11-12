@@ -15,13 +15,13 @@ from xsdata.formats.dataclass.parsers import XmlParser
 from xsdata.formats.dataclass.parsers.config import ParserConfig
 from xsdata.formats.dataclass.parsers.handlers import XmlEventHandler
 
-from eml_import.utils.base_importer import BaseImporter
-from eml_import.utils.csv_osv43_importer import CSVOsv43Importer
-from eml_import.utils.eml_110_importer import EML110aImporter
-from eml_import.utils.eml_230_importer import EML230bImporter
-from eml_import.utils.eml_510_importer import EML510bImporter, EML510cImporter, EML510dImporter
-from eml_import.utils.eml_520_importer import EML520Importer
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.utils.base_importer import BaseImporter
+from file_import.utils.csv_osv43_importer import CSVOsv43Importer
+from file_import.utils.eml_110_importer import EML110aImporter
+from file_import.utils.eml_230_importer import EML230bImporter
+from file_import.utils.eml_510_importer import EML510bImporter, EML510cImporter, EML510dImporter
+from file_import.utils.eml_520_importer import EML520Importer
+from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.utils.eml_type import CsvType, EmlType
 
 

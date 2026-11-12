@@ -4,7 +4,7 @@ import io
 
 import pypdfium2 as pdfium
 
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.utils.named_bytes_io import NamedBytesIO
 from pv_ocr.utils.pv_classifier import ClassificationResult, PvClassifier, PvElection, PvRegion, ResultMatch
 
 

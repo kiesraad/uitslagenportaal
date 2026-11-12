@@ -5,12 +5,12 @@ from django.core.files.storage import default_storage
 
 from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
-from eml_import.exceptions import EMLImporterException
-from eml_import.models import ImportedFileHash
-from eml_import.tests.fakes import fake_osv43_csv
-from eml_import.utils.csv_osv43_importer import CSVOsv43Importer
-from eml_import.utils.github_eml_file_handler import GithubEmlFileHandler
-from eml_import.utils.named_bytes_io import NamedBytesIO
+from file_import.exceptions import EMLImporterException
+from file_import.models import ImportedFileHash
+from file_import.tests.fakes import fake_osv43_csv
+from file_import.utils.csv_osv43_importer import CSVOsv43Importer
+from file_import.utils.github_eml_file_handler import GithubEmlFileHandler
+from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
 from region.tests.factories import RegionFactory
 

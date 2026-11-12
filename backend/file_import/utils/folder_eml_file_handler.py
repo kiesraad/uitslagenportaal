@@ -6,8 +6,8 @@ import django
 from django.db import connection, connections, transaction
 from xsdata.formats.dataclass.parsers import XmlParser
 
-from eml_import.exceptions import EMLImporterException
-from eml_import.utils.file_handler import BaseFileHandler, build_xml_parser
+from file_import.exceptions import EMLImporterException
+from file_import.utils.file_handler import BaseFileHandler, build_xml_parser
 
 
 class FolderEMLFileHandler(BaseFileHandler):

@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     "election.apps.ElectionConfig",
     "region.apps.RegionConfig",
     "party.apps.PartyConfig",
-    "eml_import.apps.EmlImportConfig",
+    "file_import.apps.FileImportConfig",
     "pv_scraper.apps.PvScraperConfig",
     "pv_ocr.apps.PvOcrConfig",
     "django.contrib.auth",

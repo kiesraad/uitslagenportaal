@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from election.models import ElectionConfig
-from eml_import.models import ImportedFileHash
+from file_import.models import ImportedFileHash
 
 
 class Command(BaseCommand):

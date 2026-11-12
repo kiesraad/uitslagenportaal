@@ -17,8 +17,8 @@ from election.tests.factories import (
     TimelineDateFactory,
 )
 from election.utils import tz_aware_from_isoformat
-from eml_import.models import BranchType, ImportedCommit
-from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
+from file_import.models import BranchType, ImportedCommit
+from file_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
 from region.tests.factories import RegionFactory
 
 MINIMAL_DATA = {

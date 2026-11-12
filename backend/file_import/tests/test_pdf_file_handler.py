@@ -9,9 +9,9 @@ from django.utils import timezone
 
 from election.models import ElectionCategory, ElectionDocument
 from election.tests.factories import ElectionConfigFactory, ElectionFactory
-from eml_import.models import ImportedFileHash
-from eml_import.tests.pdf_files import PDF_BYTES, barneveld, one_page_pdf, pv_pdf, write_pdf
-from eml_import.utils.pdf_file_handler import (
+from file_import.models import ImportedFileHash
+from file_import.tests.pdf_files import PDF_BYTES, barneveld, one_page_pdf, pv_pdf, write_pdf
+from file_import.utils.pdf_file_handler import (
     FAILED_PV_DIRECTORY,
     LOCK_TIMEOUT,
     RETRY_DELAYS,

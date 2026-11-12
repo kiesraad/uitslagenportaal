@@ -14,8 +14,8 @@ from django.db.models import F, Q
 from django.utils import timezone
 
 from election.models import ElectionConfig
-from eml_import.utils.named_bytes_io import NamedBytesIO
-from eml_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
+from file_import.utils.named_bytes_io import NamedBytesIO
+from file_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
 from mainsite.celery import app
 from pv_ocr.tasks import OCR_QUEUE
 from pv_ocr.utils.pv_classifier import PvClassificationException, PvClassifier
