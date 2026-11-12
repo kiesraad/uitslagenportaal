@@ -6,7 +6,7 @@ of are made by generating the form from the template and EML, then filling it in
 scanning it.
 
 - **Models.** Only the Kiesraad models of November 2025 count. Download templates from
-  kiesraad.nl.
+  kiesraad.nl. [pv-models.md](pv-models.md) lists which models hold handwritten vote counts.
 - **Corrections.** The `uitslagenportaal-test-emls` repo has branches `auto-<election>-tel`.
   There, each `correctie_*.zip` follows the `definitieve-documenten_*.zip` it corrects, in
   commit order; the inner `Telling_*.zip` holds the 510b. Name the copies of the 510b

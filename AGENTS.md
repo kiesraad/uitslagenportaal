@@ -14,6 +14,7 @@ Docs and comments are a mix of Dutch and English. Domain terms stay Dutch
 The Kiesraad models (processen-verbaal such as N 10-1, Na 31-2, O 7, and their bijlagen) are listed at
 <https://www.rijksoverheid.nl/themas/overheid-en-democratie/verkiezingen/verkiezingentoolkit/modellen>.
 Each model links to its Kiesraad publication page, which describes the model and what each bijlage contains.
+[pv-models.md](docs/pv-models.md) summarises the models and which of them the PV classifier supports.
 
 Write English in British English with Oxford spelling, in prose, comments, docstrings
 and identifiers alike.
