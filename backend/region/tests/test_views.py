@@ -860,3 +860,56 @@ def test_region_list_is_empty_for_an_expired_election():
 
     assert response.status_code == 200
     assert list(response.data) == []
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("file_types", "shown"),
+    [
+        # Centrale stemopneming: the bijlage with counts per candidate beats the totals-only N 10-2,
+        # whatever order they were scraped in.
+        (
+            [
+                ElectionDocument.FileType.PDF_NA31_2_B1,
+                ElectionDocument.FileType.PDF_NA31_2_B2,
+                ElectionDocument.FileType.PDF_NA31_2,
+                ElectionDocument.FileType.PDF_N10_2,
+            ],
+            ElectionDocument.FileType.PDF_NA31_2_B1,
+        ),
+        # A correction beats the original, and its bijlage beats the correction itself.
+        (
+            [
+                ElectionDocument.FileType.PDF_NA14_2_B1,
+                ElectionDocument.FileType.PDF_NA14_2,
+                ElectionDocument.FileType.PDF_NA31_2_B1,
+                ElectionDocument.FileType.PDF_N10_2,
+            ],
+            ElectionDocument.FileType.PDF_NA14_2_B1,
+        ),
+        # Decentrale stemopneming.
+        (
+            [ElectionDocument.FileType.PDF_NA14_1, ElectionDocument.FileType.PDF_N10_1],
+            ElectionDocument.FileType.PDF_NA14_1,
+        ),
+        # Bijlage 2 has no vote counts and is never shown.
+        ([ElectionDocument.FileType.PDF_NA31_2_B2], None),
+    ],
+)
+def test_stembureau_detail_previews_the_proces_verbaal_by_priority(file_types, shown):
+    station = RegionFactory(region_category=RegionCategory.STEMBUREAU)
+    documents = {}
+    for file_type in file_types:
+        documents[file_type] = CertifiedElectionDocumentFactory(
+            region=station, storage_key=f"TK2025/{file_type}.pdf", file_type=file_type
+        )
+        default_storage.save(f"TK2025/{file_type}.pdf", ContentFile(b"%PDF"))
+        default_storage.save(f"TK2025/{file_type}.png", ContentFile(b"\x89PNG"))
+
+    data = region_detail(station, "sb")
+
+    if shown is None:
+        assert data["certified_document_url"] is None
+    else:
+        assert data["certified_document_url"] == f"/api/certified-documents/{documents[shown].pk}/"
+        assert data["certified_document_preview_url"] == f"/api/certified-documents/{documents[shown].pk}/preview/"

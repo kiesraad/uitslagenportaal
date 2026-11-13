@@ -20,6 +20,29 @@ CORRECTION_COUNT_FILE_TYPES = {
     RegionCategory.KIESKRING: ElectionDocument.FileType.EML_510C,
 }
 
+# Which proces-verbaal the viewer shows, best first: corrections before the forms they correct, and a
+# Bijlage 1 (counts per list and candidate) before its main form (totals per list only). Na 31-2 Bijlage 2
+# holds no vote counts and is never shown.
+VIEWER_PRIORITY = {
+    file_type: rank
+    for rank, file_type in enumerate(
+        (
+            ElectionDocument.FileType.PDF_P1F_1,
+            ElectionDocument.FileType.PDF_NA14_2_B1,
+            ElectionDocument.FileType.PDF_NA14_2,
+            ElectionDocument.FileType.PDF_NA14_1,
+            ElectionDocument.FileType.PDF_P22_1,
+            ElectionDocument.FileType.PDF_P22_2,
+            ElectionDocument.FileType.PDF_O7,
+            ElectionDocument.FileType.PDF_NA31_2_B1,
+            ElectionDocument.FileType.PDF_NA31_2,
+            ElectionDocument.FileType.PDF_NA31_1,
+            ElectionDocument.FileType.PDF_N10_1,
+            ElectionDocument.FileType.PDF_N10_2,
+        )
+    )
+}
+
 
 class SameLocationStationsField(serializers.Field):
     """The other stembureaus at the same location, from the view's `same_location_stations` annotation."""
@@ -95,20 +118,19 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         )
 
     def _certified_document(self, region):
-        # The view prefetches only the documents of the requested level.
-        documents = sorted(
-            (
-                document
-                for document in region.documents.all()
-                if document.file_type in ElectionDocument.CERTIFIED_FILE_TYPES
+        # The view prefetches only the documents of the requested level. The form type decides which one is
+        # shown, not the import date, which follows the scraping order. Among forms of the same type the
+        # newest one wins, so the last of several stacked corrections is shown.
+        documents = [document for document in region.documents.all() if document.file_type in VIEWER_PRIORITY]
+        return min(
+            documents,
+            key=lambda document: (
+                VIEWER_PRIORITY[document.file_type],
+                -document.created_at.timestamp(),
+                -document.pk,
             ),
-            key=lambda document: (document.created_at, document.pk),
-            reverse=True,
+            default=None,
         )
-        corrections = (
-            document for document in documents if document.file_type in ElectionDocument.CORRECTION_FILE_TYPES
-        )
-        return next(corrections, None) or next(iter(documents), None)
 
     def get_certified_document_url(self, region) -> str | None:
         document = self._certified_document(region)
