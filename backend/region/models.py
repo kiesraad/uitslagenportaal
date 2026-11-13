@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Upper
 
 from mainsite.models import BaseModel, CountingMethod, RegionCategory
 from mainsite.utils.utils import name_to_slug
@@ -110,6 +111,10 @@ class Region(BaseModel):
                 fields=["election", "slug", "region_category", "parent"],
                 name="unique_region_identifier_per_election",
             )
+        ]
+        indexes = [
+            # For region_name__iexact lookups.
+            models.Index(Upper("region_name"), name="region_name_upper_idx"),
         ]
 
     def clean(self):

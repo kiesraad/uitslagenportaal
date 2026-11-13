@@ -237,10 +237,9 @@ class PDFFileHandler:
             station = (stembureau or "").removeprefix("SB").lstrip("0")
             if not station.isdigit():
                 raise InvalidPDFException(f"PvStembureau {stembureau!r} is not a stembureau number")
-            # Some EML pads the stembureau number: 0770::SB08.
-            regions = regions.filter(
-                parent__region_name__iexact=region_name, region_number__iregex=rf"::SB0*{station}$"
-            )
+            # Filter by parent id so the indexed parent_id is used. Some EML pads the stembureau number: 0770::SB08.
+            parents = Region.objects.filter(election__election_config=config, region_name__iexact=region_name)
+            regions = regions.filter(parent__in=parents.values("id"), region_number__iregex=rf"::SB0*{station}$")
             missing = f"No stembureau {station} in {region_name!r}"
         else:
             regions = regions.filter(region_name__iexact=region_name)
