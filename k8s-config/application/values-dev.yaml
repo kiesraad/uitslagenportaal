@@ -1,3 +1,5 @@
+environment: "dev"
+
 app:
   hostname: "uitslagenportaal.kiesraad.net"
 

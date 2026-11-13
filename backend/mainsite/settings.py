@@ -343,6 +343,7 @@ BUGSINK_DSN = os.environ.get("BUGSINK_DSN")
 if BUGSINK_DSN:
     sentry_sdk.init(
         BUGSINK_DSN,
+        environment=os.environ.get("BUGSINK_ENVIRONMENT", "local"),
         data_collection={"user_info": False},
         max_request_body_size="always",
         # Importer frames hold whole EML files; Bugsink refuses events over its size limit

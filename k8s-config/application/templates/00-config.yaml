@@ -42,3 +42,5 @@ data:
   ALLOWED_HOSTS: "{{ .Values.app.hostname }}"
   # Behind a TLS-terminating proxy.
   SECURE_PROXY_SSL_HEADER: "HTTP_X_FORWARDED_PROTO,https"
+
+  BUGSINK_ENVIRONMENT: "{{ .Values.environment }}"

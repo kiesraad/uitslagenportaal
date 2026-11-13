@@ -1,3 +1,5 @@
+environment: "staging"
+
 app:
   hostname: "uitslagenportaal-staging.kiesraad.net"
 
