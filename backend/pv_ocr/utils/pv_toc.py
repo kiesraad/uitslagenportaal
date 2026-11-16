@@ -16,8 +16,7 @@ import regex
 from PIL import Image
 
 from file_import.utils.named_bytes_io import NamedBytesIO
-from pv_ocr.utils.pv_classifier import OCR_DIGIT, TO_DIGIT, PvClassifier, letters_only
-from pv_ocr.utils.rendering import render_scale
+from pv_ocr.utils.ocr import OCR_DIGIT, TO_DIGIT, letters_only, ocr, render_scale
 
 # The share of each page, from the top, that is read. Headings of vote-count pages sit within the top fifth; reading
 # more gives false matches from the body.
@@ -390,7 +389,7 @@ class PvDetermineTOC:
         # The pages that took their content from the list before them, which may be blank back pages.
         inherited: list[int] = []
         for number, image in enumerate(self.header_images(), start=1):
-            text = PvClassifier.ocr(image) if image is not None else ""
+            text = ocr(image) if image is not None else ""
             unrestricted = self.identify_heading(text)
             heading = unrestricted
             if self.allowed is not None and unrestricted.content not in self.allowed:

@@ -15,14 +15,13 @@ from pathlib import Path
 from typing import Self
 
 import pypdfium2 as pdfium
-import pytesseract
 import regex
 from PIL import Image
 from pypdf import PdfWriter
 
 from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
-from pv_ocr.utils.rendering import render_scale
+from pv_ocr.utils.ocr import OCR_DIGIT, TO_DIGIT, letters_only, ocr, render_scale, rotate_upright
 from region.models import Region
 
 # OCR of the top 40% first is fastest overall, although OSV forms, whose titles sit lower, then need a full page.
@@ -70,11 +69,6 @@ TITLES = [
 ]
 
 
-def letters_only(text: str) -> str:
-    """Lowercase letters only, so OCR spacing, punctuation and hyphenation don't affect matching."""
-    return re.sub(r"[^a-z]", "", text.lower())
-
-
 # Up to two misread letters still match a title ("sternbureaus", "têllingen").
 TITLE_ERRORS = 2
 TITLE_KEYS = [
@@ -119,12 +113,10 @@ BASES = ["code+title", "title", "code", "conflict", "unknown", "none"]
 
 # OCR mixes up digits and letters ("Model N I0-z", "Modei"), drops spaces ("ModelNa31-2") and sometimes the letters
 # ("Model 31-1").
-OCR_DIGIT = "[0-9IlOoz]"
 MODEL_RE = re.compile(
     rf"(?i:\bmode[li1])\s*(?:([A-Z][a-z]?)\s*-?)?"
     rf"\s*({OCR_DIGIT}{{1,2}})([a-z](?![a-z]))?(?:\s*[-–—~.]\s*({OCR_DIGIT}))?"
 )
-TO_DIGIT = str.maketrans("IlOoz", "11002")
 
 # A gemeente name has no digits and is short, unlike prose; OCR may curl the quote of "'s-Hertogenbosch".
 GEMEENTE_NAME = r"(?:['‘’]s[- ])?[A-Z][^\d\n]{1,40}?"
@@ -420,24 +412,10 @@ class PvClassifier:
         finally:
             pdf.close()
 
-    @staticmethod
-    def ocr(image: Image.Image) -> str:
-        return pytesseract.image_to_string(image, lang="nld", config="--psm 3")
-
     def page_text(self, index: int) -> str:
         """The OCR text of a whole page, or empty when the PDF is shorter."""
         page = self.render_page(index)
-        return self.ocr(page) if page else ""
-
-    @staticmethod
-    def rotate_upright(image: Image.Image) -> Image.Image | None:
-        """Rotate a scan upright using Tesseract's orientation detection, or None if it is upright or unknown."""
-        try:
-            angle = pytesseract.image_to_osd(image, output_type=pytesseract.Output.DICT)["rotate"]
-        except pytesseract.TesseractError:
-            return None
-        # OSD gives the clockwise correction; PIL rotates anticlockwise.
-        return image.rotate(-angle, expand=True) if angle else None
+        return ocr(page) if page else ""
 
     @staticmethod
     def find_codes(text: str) -> list[str]:
@@ -644,14 +622,14 @@ class PvClassifier:
         """Yield (pass, text) from cheapest to most expensive; later passes only run when asked for."""
         if not (page := self.render_page(0)):
             return
-        yield "crop", self.ocr(page.crop((0, 0, page.width, int(page.height * CROP_FRACTION))))
-        full = self.ocr(page)
+        yield "crop", ocr(page.crop((0, 0, page.width, int(page.height * CROP_FRACTION))))
+        full = ocr(page)
         yield "full", full
-        if upright := self.rotate_upright(page):
-            yield "rotated", self.ocr(upright)
+        if upright := rotate_upright(page):
+            yield "rotated", ocr(upright)
         # Some GSB bijlagen have only a title on page 1 and the model on page 2; page 1 keeps the bijlage and region.
         if second := self.render_page(1):
-            yield "page2", full + "\n" + self.ocr(second)
+            yield "page2", full + "\n" + ocr(second)
 
     def classify(self) -> ClassificationResult | None:
         """Run OCR passes until the model is identified, and return the best result, whose matched_on says how certain

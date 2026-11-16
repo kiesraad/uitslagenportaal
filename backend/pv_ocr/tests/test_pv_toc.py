@@ -12,7 +12,8 @@ from pypdf.generic import DecodedStreamObject
 from file_import.utils.named_bytes_io import NamedBytesIO
 from pv_ocr.management.commands.determine_pv_toc import pdf_model
 from pv_ocr.tests.classified_pvs import BLANK_PDF
-from pv_ocr.utils.pv_classifier import MODELS, PDF_METADATA_KEYS, PvClassifier
+from pv_ocr.utils.ocr import DPI
+from pv_ocr.utils.pv_classifier import MODELS, PDF_METADATA_KEYS
 from pv_ocr.utils.pv_toc import (
     HEADER_FRACTION,
     MODEL_CONTENTS,
@@ -23,7 +24,6 @@ from pv_ocr.utils.pv_toc import (
     TocEntry,
     infer_list_numbers,
 )
-from pv_ocr.utils.rendering import DPI, render_scale
 
 HEADING_CASES = [
     ("Inhoudsopgave\nDeel 1 - Verslag van de zitting\nDeel 2 - Telresultaten", Heading(PageContent.TABLE_OF_CONTENTS)),
@@ -217,22 +217,6 @@ def test_infer_list_numbers(entries, numbers, inferred):
     assert [i for i, e in enumerate(entries) if e.list_number_inferred] == inferred
 
 
-@pytest.mark.parametrize(("width", "height"), [(595, 842), (842, 595)], ids=["portrait", "landscape"])
-def test_render_scale_is_the_dpi_scale_for_a4(width, height):
-    assert render_scale(width, height) == pytest.approx(DPI / 72, rel=0.01)
-
-
-def test_render_scale_is_none_for_a_page_over_a3():
-    assert render_scale(2000, 3000) is None
-
-
-def test_render_scale_is_lower_for_a_page_between_a4_and_a3():
-    scale = render_scale(842, 1191)
-
-    assert scale is not None
-    assert scale < DPI / 72
-
-
 HEADERLESS = "Gemeente Ede Stembureau 1"
 
 
@@ -257,7 +241,7 @@ def determine(
     with (
         mock.patch.object(PvDetermineTOC, "header_images", return_value=iter(images)),
         mock.patch.object(PvDetermineTOC, "empty_bodies", side_effect=empty_bodies),
-        mock.patch.object(PvClassifier, "ocr", side_effect=lambda _: next(ocr_texts)),
+        mock.patch("pv_ocr.utils.pv_toc.ocr", side_effect=lambda _: next(ocr_texts)),
     ):
         return PvDetermineTOC(NamedBytesIO(BLANK_PDF, "pv.pdf"), model=model).determine().entries
 

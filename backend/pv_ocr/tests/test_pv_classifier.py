@@ -3,7 +3,6 @@ import io
 from unittest import mock
 
 import pypdfium2 as pdfium
-import pytesseract
 import pytest
 from PIL import Image
 from pypdf import PdfReader
@@ -12,6 +11,7 @@ from election.tests.factories import ElectionFactory
 from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
 from pv_ocr.tests.classified_pvs import BLANK_PDF, EDE_12, classified
+from pv_ocr.utils.ocr import DPI, MAX_PIXELS
 from pv_ocr.utils.pv_classifier import (
     HEADER_LABEL_TAIL_RE,
     PvClassificationException,
@@ -22,7 +22,6 @@ from pv_ocr.utils.pv_classifier import (
     pv_model_short_form,
     uncompact,
 )
-from pv_ocr.utils.rendering import DPI, MAX_PIXELS
 from region.tests.factories import RegionFactory
 
 N_10_2_TITLE = "Proces-verbaal van een stembureau. Zo telt u hoeveel stemmen elke lijst heeft gekregen"
@@ -606,8 +605,8 @@ def test_ocr_passes_add_the_second_page_to_the_full_first_page():
     texts = {id(first): "eerste", id(second): "tweede"}
     with (
         mock.patch.object(pv, "render_page", side_effect=[first, second]),
-        mock.patch.object(pv, "rotate_upright", return_value=None),
-        mock.patch.object(pv, "ocr", side_effect=lambda image: texts.get(id(image), "bovenkant")),
+        mock.patch("pv_ocr.utils.pv_classifier.rotate_upright", return_value=None),
+        mock.patch("pv_ocr.utils.pv_classifier.ocr", side_effect=lambda image: texts.get(id(image), "bovenkant")),
     ):
         result = list(pv.ocr_passes())
 
@@ -619,27 +618,15 @@ def test_ocr_passes_read_a_rotated_scan_and_skip_a_missing_second_page():
     page, upright = Image.new("L", (100, 100)), Image.new("L", (100, 100))
     with (
         mock.patch.object(pv, "render_page", side_effect=[page, None]),
-        mock.patch.object(pv, "rotate_upright", return_value=upright),
-        mock.patch.object(pv, "ocr", side_effect=lambda image: "rechtop" if image is upright else "scheef"),
+        mock.patch("pv_ocr.utils.pv_classifier.rotate_upright", return_value=upright),
+        mock.patch(
+            "pv_ocr.utils.pv_classifier.ocr", side_effect=lambda image: "rechtop" if image is upright else "scheef"
+        ),
     ):
         result = list(pv.ocr_passes())
 
     assert [found_by for found_by, _ in result] == ["crop", "full", "rotated"]
     assert result[2] == ("rotated", "rechtop")
-
-
-@pytest.mark.parametrize(("osd", "size"), [({"rotate": 90}, (50, 100)), ({"rotate": 0}, None)])
-def test_rotate_upright(osd, size):
-    with mock.patch.object(pytesseract, "image_to_osd", return_value=osd):
-        rotated = PvClassifier.rotate_upright(Image.new("L", (100, 50)))
-
-    assert (rotated.size if rotated else None) == size
-
-
-def test_rotate_upright_gives_up_when_tesseract_cannot_tell():
-    error = pytesseract.TesseractError(1, "Too few characters")
-    with mock.patch.object(pytesseract, "image_to_osd", side_effect=error):
-        assert PvClassifier.rotate_upright(Image.new("L", (100, 50))) is None
 
 
 def test_render_page(tmp_path):
