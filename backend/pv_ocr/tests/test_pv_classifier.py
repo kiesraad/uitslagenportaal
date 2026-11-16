@@ -13,9 +13,7 @@ from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
 from pv_ocr.tests.classified_pvs import BLANK_PDF, EDE_12, classified
 from pv_ocr.utils.pv_classifier import (
-    DPI,
     HEADER_LABEL_TAIL_RE,
-    MAX_PIXELS,
     PvClassificationException,
     PvClassifier,
     PvElection,
@@ -24,6 +22,7 @@ from pv_ocr.utils.pv_classifier import (
     pv_model_short_form,
     uncompact,
 )
+from pv_ocr.utils.rendering import DPI, MAX_PIXELS
 from region.tests.factories import RegionFactory
 
 N_10_2_TITLE = "Proces-verbaal van een stembureau. Zo telt u hoeveel stemmen elke lijst heeft gekregen"

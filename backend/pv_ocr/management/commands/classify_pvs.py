@@ -42,8 +42,10 @@ def classify_timed(path: Path) -> tuple[ClassificationResult | None, str, str | 
         result = classifier.classify()
         if result and result.matched_on.is_certain():
             name = classifier.storage_name()
-    except PvClassificationException:
-        pass
+    except PvClassificationException as exc:
+        # From classify() it is the row's error; from storage_name() the PV just has no name.
+        if result is None:
+            error = str(exc)
     except Exception as exc:
         result, error = None, repr(exc)
     return result, name, error, time.perf_counter() - start

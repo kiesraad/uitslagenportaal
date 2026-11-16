@@ -6,7 +6,6 @@ management command runs it on a folder of PDFs.
 
 import datetime
 import logging
-import math
 import re
 import unicodedata
 from collections.abc import Iterator
@@ -23,13 +22,9 @@ from pypdf import PdfWriter
 
 from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
+from pv_ocr.utils.rendering import render_scale
 from region.models import Region
 
-DPI = 300
-# PVs are A4. A page beyond A3, in points with some slack for rounding, is a map or poster and is not read at all; a
-# page in between renders at a lower resolution. An A0 page at full DPI took over 1Gi between the image and Tesseract.
-MAX_PAGE_POINTS = (850, 1200)
-MAX_PIXELS = round(210 / 25.4 * DPI) * round(297 / 25.4 * DPI)
 # OCR of the top 40% first is fastest overall, although OSV forms, whose titles sit lower, then need a full page.
 CROP_FRACTION = 0.4
 
@@ -419,9 +414,8 @@ class PvClassifier:
             pdf.init_forms()
             page = pdf[index]
             width, height = page.get_size()
-            if any(side > limit for side, limit in zip(sorted((width, height)), MAX_PAGE_POINTS)):
+            if (scale := render_scale(width, height)) is None:
                 raise PvClassificationException("Page is larger than A3, so not a PV")
-            scale = min(DPI / 72, math.sqrt(MAX_PIXELS / (width * height)))
             return page.render(scale=scale, grayscale=True).to_pil()
         finally:
             pdf.close()
