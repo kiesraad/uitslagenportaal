@@ -13,6 +13,10 @@ celery:
 ocr:
   image: "ghcr.io/kiesraad/uitslagenportaal-backend:main"
 
+# Shares the managed Redis with dev, which uses db 0.
+redis:
+  db: 1
+
 scraper:
   enabled: true
   image: "ghcr.io/kiesraad/uitslagenportaal-playwright-worker:main"
