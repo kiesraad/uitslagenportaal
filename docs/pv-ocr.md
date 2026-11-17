@@ -44,14 +44,14 @@ candidate votes page its list number. A "Vervolg lijst N" heading, or a followin
 heading, is a continued page (`candidate-votes-continued`) of that list. Such a continued page, or
 any page left unknown, whose body (15-85% of the height) holds no ink is an empty page instead; an
 unknown page with ink is read again down to 40%, as a block above its heading can push the heading
-out of the top fifth. A list number that OCR
+out of the top fifth, and, if still unknown, turned upright when Tesseract finds it scanned sideways
+or upside down. A list number that OCR
 misread or could not read is inferred from the neighbouring lists, only when exactly one number fits
 between them, or from the number a continued page names; the command marks such a number with a "?".
 
 `determine_pv_toc` runs it on files and prints a table of contents per file; nothing is written to
 the database. `--crop-fraction` sets the share of the page read, `--json` prints the table as JSON
-and `--show-text` the text of pages not recognized. Pages scanned sideways or upside down come out
-unknown, as there is no rotation pass.
+and `--show-text` the text of pages not recognized.
 
 With a model, only the contents that model has are recognized (`MODEL_CONTENTS`). The command
 takes the model from the `/PvModel` metadata the classifier writes, so the limits apply to classified

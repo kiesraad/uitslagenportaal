@@ -15,7 +15,7 @@ import regex
 from PIL import Image
 
 from file_import.utils.named_bytes_io import NamedBytesIO
-from pv_ocr.utils.ocr import OCR_DIGIT, TO_DIGIT, letters_only, ocr, open_pdf, pdf_file, render_page
+from pv_ocr.utils.ocr import OCR_DIGIT, TO_DIGIT, letters_only, ocr, open_pdf, pdf_file, render_page, rotate_upright
 
 # The share of each page, from the top, that is read. Headings of vote-count pages sit within the top fifth; reading
 # more gives false matches from the body.
@@ -177,6 +177,7 @@ HEADING_TITLES = [
     ("Gekozen kandidaten in alfabetische volgorde", PageContent.ELECTED_CANDIDATES),
     ("Met voorkeursstemmen gekozen kandidaten", PageContent.SEAT_ALLOCATION),
     ("Uitkomst controleprotocol", PageContent.CHECKS_AND_CORRECTIONS),
+    ("Mogelijke fouten", PageContent.CHECKS_AND_CORRECTIONS),
     ("Deze pagina is expres leeg", PageContent.EMPTY_PAGE),
 ]
 # Part titles also print in the running header of every page of their part, above the section heading. They only
@@ -184,6 +185,8 @@ HEADING_TITLES = [
 # telresultaten" goes on with the toegelaten kiezers, and one headed "Uitslag en zetelverdeling" with a seat table.
 FALLBACK_TITLES = [
     ("Ondertekening", PageContent.SIGNATURES),
+    # A signature page may print no more than names and signatures.
+    ("Handtekening", PageContent.SIGNATURES),
     ("Gecorrigeerde telresultaten", PageContent.ADMITTED_VOTERS),
     ("Onderzoek naar telresultaten", PageContent.INVESTIGATION),
     ("Verschillen met telresultaten stembureau", PageContent.INVESTIGATION),
@@ -331,6 +334,17 @@ class PvDetermineTOC:
                 texts[number] = ocr(image) if image is not None else ""
         return texts
 
+    def upright_header_texts(self, pages: Iterable[int]) -> dict[int, str]:
+        """The OCR text of the header of those of the given pages (1-based) that are scanned rotated, turned upright.
+        Orientation detection needs the whole page."""
+        texts = {}
+        with open_pdf(self.file) as pdf:
+            for number in pages:
+                if (image := render_page(pdf[number - 1])) is None or (upright := rotate_upright(image)) is None:
+                    continue
+                texts[number] = ocr(upright.crop((0, 0, upright.width, round(upright.height * self.header_fraction))))
+        return texts
+
     def empty_bodies(self, pages: Iterable[int]) -> set[int]:
         """The given pages (1-based) whose body holds no ink."""
         empty = set()
@@ -404,6 +418,15 @@ class PvDetermineTOC:
             return self.identify_heading(text, self.allowed, titles), unrestricted
         return unrestricted, unrestricted
 
+    def identify_again(self, entries: list[TocEntry], texts: dict[int, str]) -> None:
+        """Give the pages read again the content their new text names, if it names one."""
+        for entry in entries:
+            if entry.page in texts:
+                heading, _ = self.page_heading(texts[entry.page])
+                if heading.content != PageContent.UNKNOWN:
+                    entry.content, entry.list_number, entry.has_list_heading = heading
+                    entry.text = texts[entry.page]
+
     def determine(self) -> TableOfContents:
         entries: list[TocEntry] = []
         # The pages that took their content from the list before them, which may be blank back pages.
@@ -438,16 +461,13 @@ class PvDetermineTOC:
         unknown = [e.page for e in entries if e.content == PageContent.UNKNOWN and e.page not in unread]
         check = sorted({*inherited, *unknown})
         empty = self.empty_bodies(check) if check else set()
-        # An unknown page with ink is read further down; finding no ink first saves that OCR on blank pages.
-        if (retry := [page for page in unknown if page not in empty]) and self.header_fraction < RETRY_FRACTION:
-            texts = self.header_texts(retry, RETRY_FRACTION)
-            for entry in entries:
-                if entry.page not in texts:
-                    continue
-                heading, _ = self.page_heading(texts[entry.page])
-                if heading.content != PageContent.UNKNOWN:
-                    entry.content, entry.list_number, entry.has_list_heading = heading
-                    entry.text = texts[entry.page]
+        # An unknown page with ink is read further down, and then turned upright if it is scanned rotated. Finding no
+        # ink first saves that OCR on blank pages.
+        retry = [page for page in unknown if page not in empty]
+        if retry and self.header_fraction < RETRY_FRACTION:
+            self.identify_again(entries, self.header_texts(retry, RETRY_FRACTION))
+        if retry := [e.page for e in entries if e.page in retry and e.content == PageContent.UNKNOWN]:
+            self.identify_again(entries, self.upright_header_texts(retry))
         # Inference runs before blank pages are marked, so they still count as continuations of their list and don't
         # end it for the pages after them.
         infer_list_numbers(entries)

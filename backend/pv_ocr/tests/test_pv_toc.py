@@ -74,6 +74,7 @@ HEADING_CASES = [
     ("Stembureau 1\nGemeentehuis\nOver deze bijlage", Heading(PageContent.ABOUT_ATTACHMENT)),
     ("Aantal kiesgerechtigden", Heading(PageContent.ELECTORATE)),
     ("Kiesdeler", Heading(PageContent.SEAT_ALLOCATION)),
+    ("B3 - 2 Mogelijke fouten Het centraal stembureau heeft", Heading(PageContent.CHECKS_AND_CORRECTIONS)),
     ("Toewijzing van zetels aan kandidaten Lijst 3 VVD", Heading(PageContent.SEAT_ALLOCATION)),
     ("Gekozen kandidaten in alfabetische volgorde", Heading(PageContent.ELECTED_CANDIDATES)),
     (
@@ -113,6 +114,7 @@ def test_identify_heading_from_header_text(text, expected):
 PART_CASES = [
     ("Deel 1 - Verslag van de zitting Schagen - Stembureau 17", PageContent.SESSION_REPORT),
     ("Deel 3 - Ondertekening Schagen - Stembureau 17", PageContent.SIGNATURES),
+    ("Stembureau 14 Handtekening: | Naam: Handtekening: |", PageContent.SIGNATURES),
     ("B1 - 2 Verschillen met telresultaten stembureau", PageContent.INVESTIGATION),
     ("Deel 1 - Onderzoek naar telresultaten", PageContent.INVESTIGATION),
     ("Deel 2 — Uitslag en zetelverdeling 27 28 29 Moonen, C.M.M. (Djannes) (v)", PageContent.SEAT_ALLOCATION),
@@ -239,12 +241,21 @@ def determine(
     asked: list[list[int]] | None = None,
     retry: dict[int, str] | None = None,
     retried: list[list[int]] | None = None,
+    upright: dict[int, str] | None = None,
+    turned: list[list[int]] | None = None,
 ) -> list[TocEntry]:
     """Run determine with one fake header image per page, None for a page without image.
 
     `empty` is what `empty_bodies` reports, and the pages it is asked about are appended to `asked`. `retry` holds the
     text a page gives when read further down, empty when not given; the pages read again are appended to `retried`.
+    `upright` holds the text of the pages scanned rotated, read upright; the pages tried are appended to `turned`.
     """
+
+    def upright_header_texts(pages):
+        pages = list(pages)
+        if turned is not None:
+            turned.append(pages)
+        return {page: text for page, text in (upright or {}).items() if page in pages}
 
     def header_texts(pages, fraction):
         pages = list(pages)
@@ -263,6 +274,7 @@ def determine(
         mock.patch.object(PvDetermineTOC, "header_images", return_value=iter(images)),
         mock.patch.object(PvDetermineTOC, "empty_bodies", side_effect=empty_bodies),
         mock.patch.object(PvDetermineTOC, "header_texts", side_effect=header_texts),
+        mock.patch.object(PvDetermineTOC, "upright_header_texts", side_effect=upright_header_texts),
         mock.patch("pv_ocr.utils.pv_toc.ocr", side_effect=lambda _: next(ocr_texts)),
     ):
         return PvDetermineTOC(NamedBytesIO(BLANK_PDF, "pv.pdf"), model=model).determine().entries
@@ -373,6 +385,27 @@ def test_determine_reads_an_unknown_page_further_down():
     assert entries[1].content == PageContent.ABOUT_ATTACHMENT
 
 
+def test_determine_reads_an_unknown_page_upright_when_further_down_does_not_help():
+    texts = ["Cover", "1.1 Presentielijst", "buiwaudowa3s ajpnuazap T-OL N JAPON", "Stembureau 18"]
+    retried, turned = [], []
+
+    entries = determine(texts, retry={4: "Stembureau 18"}, retried=retried, upright={3: "Lijst 2 - VVD"}, turned=turned)
+
+    assert (retried, turned) == ([[3, 4]], [[3, 4]])
+    assert [(e.content, e.list_number) for e in entries[2:]] == [
+        (PageContent.CANDIDATE_VOTES, 2),
+        (PageContent.UNKNOWN, None),
+    ]
+
+
+def test_determine_does_not_turn_a_page_found_further_down():
+    turned = []
+
+    determine(["Cover", "Stembureau 18"], retry={2: "Over deze bijlage"}, turned=turned)
+
+    assert turned == []
+
+
 def test_determine_does_not_read_known_or_continued_pages_further_down():
     retried = []
 
@@ -398,6 +431,7 @@ def test_determine_does_not_read_further_down_when_the_header_is_as_deep():
         with (
             mock.patch.object(PvDetermineTOC, "header_images", return_value=iter([object(), object()])),
             mock.patch.object(PvDetermineTOC, "empty_bodies", return_value=set()),
+            mock.patch.object(PvDetermineTOC, "upright_header_texts", return_value={}),
             mock.patch("pv_ocr.utils.pv_toc.ocr", return_value="Stembureau 18"),
         ):
             entries = entries.determine().entries
@@ -660,6 +694,25 @@ def test_header_images_default_to_the_header_fraction_constant():
     [header] = list(PvDetermineTOC(NamedBytesIO(BLANK_PDF, "pv.pdf")).header_images())
 
     assert header.size[1] == pytest.approx(DPI * HEADER_FRACTION, abs=2)
+
+
+def test_upright_header_texts_read_the_header_of_a_rotated_page_only():
+    pdf = pdfium.PdfDocument.new()
+    pdf.new_page(595, 842)
+    pdf.new_page(595, 842)
+    file = NamedBytesIO(b"", "pv.pdf")
+    pdf.save(file)
+    pdf.close()
+    turned = Image.new("L", (100, 200))
+
+    with (
+        mock.patch("pv_ocr.utils.pv_toc.rotate_upright", side_effect=[turned, None]),
+        mock.patch("pv_ocr.utils.pv_toc.ocr", side_effect=lambda image: f"{image.size}") as ocr,
+    ):
+        texts = PvDetermineTOC(file).upright_header_texts([1, 2])
+
+    assert texts == {1: f"(100, {round(200 * HEADER_FRACTION)})"}
+    ocr.assert_called_once()
 
 
 def test_header_images_yield_none_for_an_oversized_page():
