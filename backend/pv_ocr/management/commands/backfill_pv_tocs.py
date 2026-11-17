@@ -34,9 +34,7 @@ class Command(BaseCommand):
             # Each TOC is saved as it is determined, so a new run goes on where this one stopped.
             elapsed = time.monotonic() - start
             self.stdout.write(
-                self.style.WARNING(
-                    f"Interrupted. {verb.lower()} the table of contents of {count} PV(s) in {elapsed:.1f} s"
-                )
+                self.style.WARNING(f"Interrupted. {verb} the table of contents of {count} PV(s) in {elapsed:.1f} s")
             )
             sys.exit(130)
         elapsed = time.monotonic() - start

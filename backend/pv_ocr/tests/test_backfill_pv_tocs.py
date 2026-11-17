@@ -62,4 +62,4 @@ def test_an_interrupt_stops_with_what_was_done_and_no_traceback(task, documents)
         call_command("backfill_pv_tocs", "--run-sync", stdout=stdout)
 
     assert exit_info.value.code == 130
-    assert re.search(r"Interrupted; determined the table of contents of 1 PV\(s\) in \d+\.\d s", stdout.getvalue())
+    assert re.search(r"Interrupted\. Determined the table of contents of 1 PV\(s\) in \d+\.\d s", stdout.getvalue())
