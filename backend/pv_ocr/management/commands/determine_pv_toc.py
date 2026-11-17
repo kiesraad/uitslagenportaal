@@ -1,19 +1,14 @@
 import itertools
 import json
-import multiprocessing
-import os
-import random
 import time
 from collections import Counter
-from concurrent.futures import ProcessPoolExecutor
-from contextlib import nullcontext
 from pathlib import Path
 from typing import NamedTuple
 
-import django
 from django.core.management.base import BaseCommand, CommandError
 from pypdf import PdfReader
 
+from mainsite.utils.utils import parallel_map
 from pv_ocr.management.commands.classify_pvs import PVS, collect_pdfs, display_path
 from pv_ocr.utils.pv_classifier import MODELS, PDF_METADATA_KEYS, pv_model_short_form
 from pv_ocr.utils.pv_toc import HEADER_FRACTION, VOTE_COUNT_CONTENTS, PageContent, PvDetermineTOC, TableOfContents
@@ -108,34 +103,19 @@ class Command(BaseCommand):
         if options["model"] and options["no_model"]:
             raise CommandError("--model and --no-model cannot be combined")
 
-        pdfs = collect_pdfs(options["paths"], options["glob"])
-        if options["sample"]:
-            pdfs = random.Random(0).sample(pdfs, min(options["sample"], len(pdfs)))
-        elif options["limit"]:
-            pdfs = pdfs[: options["limit"]]
+        pdfs = collect_pdfs(options["paths"], options["glob"], options["limit"], options["sample"])
 
-        jobs = options["jobs"]
-        if jobs > 1:
-            # Tesseract's own threads compete with the workers; one each is faster.
-            os.environ["OMP_THREAD_LIMIT"] = "1"
-        # Workers don't inherit Django's setup, which unpickling a task needs because the classifier imports models.
-        executor = (
-            ProcessPoolExecutor(jobs, mp_context=multiprocessing.get_context("spawn"), initializer=django.setup)
-            if jobs > 1
-            else nullcontext()
-        )
         contents, pages, vote_count_pages, seconds_total, errors, skipped = Counter(), 0, 0, 0.0, 0, 0
-        with executor as pool:
+        with parallel_map(options["jobs"]) as run:
             args = (determine_timed, pdfs, itertools.repeat(fraction), itertools.repeat(options["model"]))
             args += (itertools.repeat(options["no_model"]),)
-            outcomes = pool.map(*args) if pool else map(*args)
-            for path, (toc, model, error, skip, seconds) in zip(pdfs, outcomes):
-                seconds_total += seconds
-                self.stdout.write(f"{display_path(path)}  {model or 'unrestricted'}  {seconds:.1f}s")
+            for path, (toc, model, error, skip, seconds) in zip(pdfs, run(*args)):
                 if skip:
-                    self.stdout.write(f"  skipped: {skip}")
+                    self.stdout.write(f"{display_path(path)}  skipped: {skip}")
                     skipped += 1
                     continue
+                seconds_total += seconds
+                self.stdout.write(f"{display_path(path)}  {model or 'unrestricted'}  {seconds:.1f}s")
                 if error:
                     self.stdout.write(f"  error {error}")
                     errors += 1

@@ -16,6 +16,7 @@ from pv_ocr.utils.ocr import DPI
 from pv_ocr.utils.pv_classifier import MODELS, PDF_METADATA_KEYS
 from pv_ocr.utils.pv_toc import (
     HEADER_FRACTION,
+    MAX_TITLE_ERRORS,
     MODEL_CONTENTS,
     Heading,
     PageContent,
@@ -23,6 +24,7 @@ from pv_ocr.utils.pv_toc import (
     TableOfContents,
     TocEntry,
     infer_list_numbers,
+    title_pattern,
 )
 
 HEADING_CASES = [
@@ -373,6 +375,22 @@ SESSION_TEXT = (
 )
 
 
+def test_title_pattern_caps_the_errors_of_a_long_title():
+    key = "verschillentussenaantalkiezersenuitgebrachtestemmen"
+
+    assert title_pattern(key).pattern.endswith(f"{{e<={MAX_TITLE_ERRORS}}}")
+
+
+def test_identify_heading_takes_the_titles_found_once():
+    titles = PvDetermineTOC.find_titles(SESSION_TEXT)
+
+    with mock.patch.object(PvDetermineTOC, "find_titles") as find_titles:
+        heading = PvDetermineTOC.identify_heading(SESSION_TEXT, MODEL_CONTENTS["Na 31-2"], titles)
+
+    find_titles.assert_not_called()
+    assert heading == PvDetermineTOC.identify_heading(SESSION_TEXT, MODEL_CONTENTS["Na 31-2"])
+
+
 def test_identify_heading_ignores_a_title_the_model_lacks():
     heading = PvDetermineTOC.identify_heading(SESSION_TEXT, MODEL_CONTENTS["Na 31-2"])
 
@@ -520,7 +538,8 @@ def test_determine_pv_toc_skips_a_file_without_a_model_and_counts_it(tmp_path):
     allowed, output = run_command_models(tmp_path, {"a.pdf": None, "b.pdf": "N10-1"})
 
     assert allowed == [MODEL_CONTENTS["N 10-1"]]
-    assert "skipped: no /PvModel" in output
+    assert "a.pdf  skipped: no /PvModel" in output
+    assert "unrestricted" not in output
     assert "1 pages in 1 files, 1 skipped, 0 errors" in output
 
 

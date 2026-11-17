@@ -580,10 +580,13 @@ def test_classify_does_not_read_page_2_again_after_the_page2_pass():
     page_text.assert_not_called()
 
 
-def test_classify_returns_none_for_a_pdf_without_pages():
+def test_classify_raises_for_a_pdf_without_pages():
     pv = classifier()
-    with mock.patch.object(pv, "render_page", return_value=None):
-        assert pv.classify() is None
+    with (
+        mock.patch.object(pv, "render_page", return_value=None),
+        pytest.raises(PvClassificationException, match="no pages"),
+    ):
+        pv.classify()
 
 
 def test_classify_returns_the_best_supported_pass_when_none_identifies():

@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 from django.core.management import CommandError, call_command
 
-from pv_ocr.utils.pv_classifier import ClassificationResult, PvClassifier, ResultMatch
+from pv_ocr.utils.pv_classifier import ClassificationResult, PvClassificationException, PvClassifier, ResultMatch
 
 
 def test_classify_pv_carries_on_after_a_failed_classification(tmp_path):
@@ -13,14 +13,15 @@ def test_classify_pv_carries_on_after_a_failed_classification(tmp_path):
         path.write_bytes(b"%PDF")
     stdout = StringIO()
     result = ClassificationResult("Na 31-2", ResultMatch.CODE_TITLE)
+    no_pages = PvClassificationException("PDF has no pages")
     with (
         mock.patch.object(PvClassifier, "__init__", return_value=None),
-        mock.patch.object(PvClassifier, "classify", side_effect=[None, result]) as classify,
+        mock.patch.object(PvClassifier, "classify", side_effect=[no_pages, result]) as classify,
     ):
         call_command("classify_pv", *paths, stdout=stdout)
 
     assert classify.call_count == 2
-    assert "Classification failed" in stdout.getvalue()
+    assert "Classification failed: PDF has no pages" in stdout.getvalue()
     assert "model: Na 31-2" in stdout.getvalue()
 
 

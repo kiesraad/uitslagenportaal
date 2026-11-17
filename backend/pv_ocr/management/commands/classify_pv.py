@@ -3,7 +3,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-from pv_ocr.utils.pv_classifier import PvClassifier
+from pv_ocr.utils.pv_classifier import PvClassificationException, PvClassifier
 
 
 class Command(BaseCommand):
@@ -18,9 +18,10 @@ class Command(BaseCommand):
 
         for path in options["paths"]:
             self.stdout.write(f"Classifying {path}...")
-            result = PvClassifier(path).classify()
-            if result is None:
-                self.stdout.write("Classification failed")
+            try:
+                result = PvClassifier(path).classify()
+            except PvClassificationException as exc:
+                self.stdout.write(f"Classification failed: {exc}")
                 continue
 
             self.stdout.write("Result:")

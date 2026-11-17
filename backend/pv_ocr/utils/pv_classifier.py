@@ -14,14 +14,13 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Self
 
-import pypdfium2 as pdfium
 import regex
 from PIL import Image
 from pypdf import PdfWriter
 
 from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
-from pv_ocr.utils.ocr import OCR_DIGIT, TO_DIGIT, letters_only, ocr, render_scale, rotate_upright
+from pv_ocr.utils.ocr import OCR_DIGIT, TO_DIGIT, letters_only, ocr, open_pdf, pdf_file, render_page, rotate_upright
 from region.models import Region
 
 # OCR of the top 40% first is fastest overall, although OSV forms, whose titles sit lower, then need a full page.
@@ -394,23 +393,17 @@ class PvClassificationException(Exception):
 
 class PvClassifier:
     def __init__(self, file: Path | NamedBytesIO):
-        self.file = NamedBytesIO.from_path(file) if isinstance(file, Path) else file
+        self.file = pdf_file(file)
         self.result: ClassificationResult | None = None
 
     def render_page(self, index: int) -> Image.Image | None:
-        pdf = pdfium.PdfDocument(self.file)
-        try:
+        """The whole page, or None when the PDF is shorter."""
+        with open_pdf(self.file) as pdf:
             if index >= len(pdf):
                 return None
-            # Filled-in form fields are only drawn once forms are initialized.
-            pdf.init_forms()
-            page = pdf[index]
-            width, height = page.get_size()
-            if (scale := render_scale(width, height)) is None:
+            if (image := render_page(pdf[index])) is None:
                 raise PvClassificationException("Page is larger than A3, so not a PV")
-            return page.render(scale=scale, grayscale=True).to_pil()
-        finally:
-            pdf.close()
+            return image
 
     def page_text(self, index: int) -> str:
         """The OCR text of a whole page, or empty when the PDF is shorter."""
@@ -631,9 +624,9 @@ class PvClassifier:
         if second := self.render_page(1):
             yield "page2", full + "\n" + ocr(second)
 
-    def classify(self) -> ClassificationResult | None:
+    def classify(self) -> ClassificationResult:
         """Run OCR passes until the model is identified, and return the best result, whose matched_on says how certain
-        it is; None when the PDF has no page."""
+        it is."""
         best = None
         for found_by, text in self.ocr_passes():
             result = self.identify_model(text)
@@ -659,6 +652,8 @@ class PvClassifier:
                 result.election = self.find_election(text)
                 break
 
+        if best is None:
+            raise PvClassificationException("PDF has no pages")
         self.result = best
         return self.result
 

@@ -11,12 +11,11 @@ from enum import StrEnum
 from pathlib import Path
 from typing import NamedTuple
 
-import pypdfium2 as pdfium
 import regex
 from PIL import Image
 
 from file_import.utils.named_bytes_io import NamedBytesIO
-from pv_ocr.utils.ocr import OCR_DIGIT, TO_DIGIT, letters_only, ocr, render_scale
+from pv_ocr.utils.ocr import OCR_DIGIT, TO_DIGIT, letters_only, ocr, open_pdf, pdf_file, render_page
 
 # The share of each page, from the top, that is read. Headings of vote-count pages sit within the top fifth; reading
 # more gives false matches from the body.
@@ -186,10 +185,14 @@ FALLBACK_TITLES = [
 ]
 
 
+# More errors make a long title slow to match and let it match loosely.
+MAX_TITLE_ERRORS = 4
+
+
 def title_pattern(key: str) -> regex.Pattern:
-    """OCR misreads headings heavily, so a title may have one misread letter in five; short keys are stricter, as
-    they would match body text."""
-    errors = len(key) // 5 if len(key) >= 12 else len(key) // 8
+    """OCR misreads headings heavily, so a title may have one misread letter in five, up to MAX_TITLE_ERRORS; short
+    keys are stricter, as they would match body text."""
+    errors = min(len(key) // 5, MAX_TITLE_ERRORS) if len(key) >= 12 else len(key) // 8
     return regex.compile(f"(?e)(?:{key}){{e<={errors}}}")
 
 
@@ -251,16 +254,10 @@ def between(lower: int | None, number: int, upper: int | None) -> bool:
 
 
 def infer_run(run: list[TocEntry]) -> None:
-    """
-    Infer numbers in a run of consecutive list pages, going forward.
+    """Infer list numbers in a run of consecutive list pages, going forward.
 
-    A list heading with no number, or one that does not fit between the lists around it, takes the one number
-    between them, only when exactly one fits: numbers may skip, so a wider gap, or no list before or after, is left
-    as read. A number is trusted as the list before only when it fits (or is the first) and is not above all later
-    lists. A continued page takes the number of its list when that is trusted; otherwise its own number, if it fits
-    between the lists around it, replaces the list's, also on the pages before it. A repeated "Lijst N" counts as a
-    misread, as each later page of a list prints "Vervolg lijst N" or no heading, and the number of the next list is
-    taken as read.
+    A missing or unfitting number becomes the one number between the lists around it, if exactly one fits. A continued
+    page takes its list's trusted number, or else gives its own to the list. A repeated "Lijst N" counts as a misread.
     """
     # The trusted number of the list before, of the list a page is in (None when untrusted), the page that opened
     # that list, and its continued pages seen while the number was untrusted.
@@ -307,42 +304,28 @@ class PvDetermineTOC:
         """With a model, only the contents it has (MODEL_CONTENTS) are recognized; without one, all are."""
         if model is not None and model not in MODEL_CONTENTS:
             raise ValueError(f"Unknown model {model!r}")
-        self.file = NamedBytesIO.from_path(file) if isinstance(file, Path) else file
+        self.file = pdf_file(file)
         self.header_fraction = header_fraction
         self.allowed = MODEL_CONTENTS[model] if model else None
 
     def header_images(self) -> Iterator[Image.Image | None]:
         """The top part of each page, or None for a page beyond A3, which is a map or poster and not read."""
-        pdf = pdfium.PdfDocument(self.file)
-        try:
-            # Filled-in form fields are only drawn once forms are initialized.
-            pdf.init_forms()
+        with open_pdf(self.file) as pdf:
             for page in pdf:
-                width, height = page.get_size()
-                if (scale := render_scale(width, height)) is None:
-                    yield None
-                    continue
-                # Crop cuts the rest off in points, so it is never rasterized.
-                crop = (0, height * (1 - self.header_fraction), 0, 0)
-                yield page.render(scale=scale, grayscale=True, crop=crop).to_pil()
-        finally:
-            pdf.close()
+                yield render_page(page, crop=(0, page.get_height() * (1 - self.header_fraction), 0, 0))
 
     def empty_bodies(self, pages: Iterable[int]) -> set[int]:
         """The given pages (1-based) whose body holds no ink."""
-        pdf = pdfium.PdfDocument(self.file)
         empty = set()
-        try:
-            pdf.init_forms()
+        with open_pdf(self.file) as pdf:
             for number in pages:
                 page = pdf[number - 1]
                 width, height = page.get_size()
                 top, bottom = BODY_BAND
                 crop = (width * BODY_SIDE_MARGIN, height * (1 - bottom), width * BODY_SIDE_MARGIN, height * top)
-                if self.body_is_empty(page.render(scale=BODY_DPI / 72, grayscale=True, crop=crop).to_pil()):
+                image = render_page(page, crop, scale=BODY_DPI / 72)
+                if image is not None and self.body_is_empty(image):
                     empty.add(number)
-        finally:
-            pdf.close()
         return empty
 
     @staticmethod
@@ -355,15 +338,27 @@ class PvDetermineTOC:
         return shares.getextrema()[1] / 255 <= EMPTY_STRIP_INK_SHARE
 
     @staticmethod
-    def identify_heading(text: str, allowed: frozenset[PageContent] | None = None) -> Heading:
-        """The content a heading on the page names, the list number of a candidate votes page, and whether a list
-        heading was found. Titles of contents outside `allowed` are ignored."""
+    def find_titles(text: str) -> list[tuple[int, int, PageContent]]:
+        """Where each heading title is found in the text, with its errors and content."""
         page = letters_only(text)
-        # Where each title is found, with its errors. The Inhoudsopgave lists the titles of the parts, so it decides.
-        found = []
-        for content, pattern in HEADING_KEYS:
-            if (allowed is None or content in allowed) and (match := pattern.search(page)):
-                found.append((match.start(), sum(match.fuzzy_counts), content))
+        return [
+            (match.start(), sum(match.fuzzy_counts), content)
+            for content, pattern in HEADING_KEYS
+            if (match := pattern.search(page))
+        ]
+
+    @classmethod
+    def identify_heading(
+        cls,
+        text: str,
+        allowed: frozenset[PageContent] | None = None,
+        titles: list[tuple[int, int, PageContent]] | None = None,
+    ) -> Heading:
+        """The content a heading on the page names, the list number of a candidate votes page, and whether a list
+        heading was found. Titles of contents outside `allowed` are ignored; `titles` are those find_titles gives."""
+        titles = cls.find_titles(text) if titles is None else titles
+        found = [title for title in titles if allowed is None or title[2] in allowed]
+        # The Inhoudsopgave lists the titles of the parts, so it decides.
         if any(content == PageContent.TABLE_OF_CONTENTS for _, _, content in found):
             return Heading(PageContent.TABLE_OF_CONTENTS)
 
@@ -390,10 +385,11 @@ class PvDetermineTOC:
         inherited: list[int] = []
         for number, image in enumerate(self.header_images(), start=1):
             text = ocr(image) if image is not None else ""
-            unrestricted = self.identify_heading(text)
+            titles = self.find_titles(text)
+            unrestricted = self.identify_heading(text, titles=titles)
             heading = unrestricted
             if self.allowed is not None and unrestricted.content not in self.allowed:
-                heading = self.identify_heading(text, self.allowed)
+                heading = self.identify_heading(text, self.allowed, titles)
             content, list_number, has_list_heading = heading
             previous = entries[-1] if entries else None
             if content == PageContent.UNKNOWN and text.strip():

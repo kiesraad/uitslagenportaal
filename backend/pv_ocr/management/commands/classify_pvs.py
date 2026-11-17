@@ -1,16 +1,12 @@
-import multiprocessing
-import os
 import random
 import time
 from collections import Counter
-from concurrent.futures import ProcessPoolExecutor
-from contextlib import nullcontext
 from pathlib import Path
 
-import django
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
+from mainsite.utils.utils import parallel_map
 from pv_ocr.utils.pv_classifier import BASES, MODELS, ClassificationResult, PvClassificationException, PvClassifier
 
 PVS = settings.BASE_DIR / ".data" / "PVs"
@@ -21,15 +17,18 @@ def display_path(path: Path) -> str:
     return path.relative_to(root).as_posix() if path.is_relative_to(root) else str(path)
 
 
-def collect_pdfs(paths: list[Path], pattern: str) -> list[Path]:
-    """Files as given, and in each directory the files matching the glob pattern."""
+def collect_pdfs(paths: list[Path], pattern: str, limit: int = 0, sample: int | None = None) -> list[Path]:
+    """Files as given, and in each directory the files matching the glob pattern: a fixed random sample of them, or
+    the first `limit` (0 for all)."""
     pdfs = []
     for path in paths:
         if path.is_dir():
             pdfs.extend(p for p in sorted(path.glob(pattern)) if "_tools" not in p.parts)
         else:
             pdfs.append(path)
-    return pdfs
+    if sample:
+        return random.Random(0).sample(pdfs, min(sample, len(pdfs)))
+    return pdfs[:limit] if limit else pdfs
 
 
 def classify_timed(path: Path) -> tuple[ClassificationResult | None, str, str | None, float]:
@@ -40,7 +39,7 @@ def classify_timed(path: Path) -> tuple[ClassificationResult | None, str, str | 
     try:
         classifier = PvClassifier(path)
         result = classifier.classify()
-        if result and result.matched_on.is_certain():
+        if result.matched_on.is_certain():
             name = classifier.storage_name()
     except PvClassificationException as exc:
         # From classify() it is the row's error; from storage_name() the PV just has no name.
@@ -72,11 +71,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        pdfs = collect_pdfs(options["paths"], options["glob"])
-        if options["sample"]:
-            pdfs = random.Random(0).sample(pdfs, min(options["sample"], len(pdfs)))
-        elif options["limit"]:
-            pdfs = pdfs[: options["limit"]]
+        pdfs = collect_pdfs(options["paths"], options["glob"], options["limit"], options["sample"])
 
         # Rows are printed as each file is done, so the columns have fixed widths and the file name goes last.
         # "model" is the verdict; "code" and "title" show what OCR found on the page.
@@ -99,20 +94,9 @@ class Command(BaseCommand):
         self.stdout.write(header)
         self.stdout.write("-" * len(header))
 
-        jobs = options["jobs"]
         models, bases, elections = Counter(), Counter(), Counter()
-        if jobs > 1:
-            # Tesseract's own threads compete with the workers; one each is about 1.6x faster with 4 jobs.
-            os.environ["OMP_THREAD_LIMIT"] = "1"
-        # Workers don't inherit Django's setup, which unpickling a task needs because the classifier imports models.
-        # Results come back in input order, so a slow file holds back the rows after it.
-        executor = (
-            ProcessPoolExecutor(jobs, mp_context=multiprocessing.get_context("spawn"), initializer=django.setup)
-            if jobs > 1
-            else nullcontext()
-        )
-        with executor as pool:
-            outcomes = pool.map(classify_timed, pdfs) if pool else map(classify_timed, pdfs)
+        with parallel_map(options["jobs"]) as run:
+            outcomes = run(classify_timed, pdfs)
             result: ClassificationResult
             for path, (result, name, error, seconds) in zip(pdfs, outcomes):
                 if error:
