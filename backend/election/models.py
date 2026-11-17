@@ -223,6 +223,9 @@ class VoteCount(EMLTypeMixin, BaseModel):
         default=RESULT_LEVEL_CANDIDATE,
     )
 
+    class Meta:
+        indexes = [models.Index(fields=["region", "eml_type"], name="votecount_region_eml_type")]
+
 
 class CurrentQuerySet(models.QuerySet):
     def archive(self):
@@ -407,3 +410,6 @@ class VoterTurnoutCount(EMLTypeMixin, BaseModel):
     category = models.CharField(max_length=16, choices=CATEGORY_CHOICES)
     reason_code = models.CharField(max_length=64)
     votes = models.PositiveIntegerField()
+
+    class Meta:
+        indexes = [models.Index(fields=["region", "eml_type"], name="turnoutcount_region_eml_type")]
