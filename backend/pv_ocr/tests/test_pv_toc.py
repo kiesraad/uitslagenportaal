@@ -19,13 +19,12 @@ from pv_ocr.utils.pv_toc import (
     MAX_TITLE_ERRORS,
     MODEL_CONTENTS,
     Heading,
-    PageContent,
     PvDetermineTOC,
-    TableOfContents,
-    TocEntry,
     infer_list_numbers,
+    pv_model,
     title_pattern,
 )
+from pv_ocr.utils.toc_schema import TOC_VERSION, PageContent, TableOfContents, TocEntry
 
 HEADING_CASES = [
     ("Inhoudsopgave\nDeel 1 - Verslag van de zitting\nDeel 2 - Telresultaten", Heading(PageContent.TABLE_OF_CONTENTS)),
@@ -475,12 +474,54 @@ def test_to_json_lists_page_and_content_and_the_list_number_only_when_known_or_i
         ]
     )
 
-    assert toc.to_json() == [
-        {"page": 1, "content": "cover"},
-        {"page": 2, "content": "candidate-votes", "list_number": 5},
-        {"page": 3, "content": "candidate-votes", "list_number": 6, "list_number_inferred": True},
-        {"page": 4, "content": "candidate-votes"},
-    ]
+    assert toc.to_json() == {
+        "version": TOC_VERSION,
+        "entries": [
+            {"page": 1, "content": "cover"},
+            {"page": 2, "content": "candidate-votes", "list_number": 5},
+            {"page": 3, "content": "candidate-votes", "list_number": 6, "list_number_inferred": True},
+            {"page": 4, "content": "candidate-votes"},
+        ],
+    }
+
+
+def test_from_json_reads_back_what_to_json_stores():
+    toc = TableOfContents(
+        [
+            TocEntry(1, PageContent.COVER),
+            TocEntry(2, PageContent.CANDIDATE_VOTES, 5),
+            TocEntry(3, PageContent.CANDIDATE_VOTES_CONTINUED, 5, list_number_inferred=True),
+        ]
+    )
+
+    assert TableOfContents.from_json(toc.to_json()) == toc
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {"version": TOC_VERSION + 1, "entries": []},
+        {"entries": []},
+        {"version": TOC_VERSION, "entries": [{"page": 1, "content": "no-such-content"}]},
+    ],
+)
+def test_from_json_rejects_another_version_or_an_unknown_content(data):
+    with pytest.raises(ValueError):
+        TableOfContents.from_json(data)
+
+
+@pytest.mark.parametrize(
+    ("file_type", "model"),
+    [
+        ("PDF_N10-1", "N 10-1"),
+        ("PDF_NA31-2-B1", "Na 31-2 Bijlage 1"),
+        ("PDF_P1F-1", "P 1f-1"),
+        ("PDF_NA31-2-B2", None),
+        ("EML510b", None),
+    ],
+)
+def test_pv_model_maps_a_file_type_to_its_model(file_type, model):
+    assert pv_model(file_type) == model
 
 
 def test_model_contents_has_every_classifier_model():
@@ -757,7 +798,7 @@ def test_determine_pv_toc_prints_json(tmp_path):
     with mock.patch.object(PvDetermineTOC, "determine", return_value=toc):
         call_command("determine_pv_toc", pdf, "--json", stdout=stdout)
 
-    json_line = next(line for line in stdout.getvalue().splitlines() if line.strip().startswith("["))
+    json_line = next(line for line in stdout.getvalue().splitlines() if line.strip().startswith("{"))
     assert json.loads(json_line) == toc.to_json()
 
 

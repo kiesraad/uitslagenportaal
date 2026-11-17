@@ -11,6 +11,7 @@ from election.tests.factories import ElectionConfigFactory
 from election.utils import visibility_cutoff
 from file_import import tasks
 from file_import.tasks import import_election_eml_commits, import_next_eml_commits, import_pvs, setup_periodic_tasks
+from pv_ocr.tasks import determine_document_toc
 from region.tasks import build_polling_station_pv_zip
 
 
@@ -88,6 +89,7 @@ def test_import_pvs_runs_the_pdf_importer(pdf_file_handler, delay):
     handler = pdf_file_handler.return_value
     handler.run.return_value = 2
     handler.archive_municipality_ids = set()
+    handler.toc_document_ids = set()
 
     assert import_pvs() == 2
 
@@ -102,10 +104,24 @@ def test_import_pvs_queues_one_zip_rebuild_per_gemeente_that_got_a_polling_stati
     handler = pdf_file_handler.return_value
     handler.run.return_value = 4
     handler.archive_municipality_ids = {19, 17}
+    handler.toc_document_ids = set()
 
     assert import_pvs() == 4
 
     assert delay.call_args_list == [call(17), call(19)]
+
+
+@patch.object(determine_document_toc, "delay")
+@patch.object(tasks, "PDFFileHandler", autospec=True)
+def test_import_pvs_queues_the_table_of_contents_of_each_imported_pv(pdf_file_handler, delay):
+    handler = pdf_file_handler.return_value
+    handler.run.return_value = 2
+    handler.archive_municipality_ids = set()
+    handler.toc_document_ids = {8, 3}
+
+    import_pvs()
+
+    assert delay.call_args_list == [call(3), call(8)]
 
 
 def test_setup_periodic_tasks_schedules_the_eml_and_pv_imports():
