@@ -11,27 +11,30 @@ from django.utils import timezone
 
 from file_import.utils.named_bytes_io import NamedBytesIO
 from file_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
-from pv_ocr.tasks import OCR_QUEUE
 from pv_ocr.utils.pv_classifier import ClassificationResult, PvClassificationException, PvClassifier, ResultMatch
 from pv_scraper import tasks
 from pv_scraper.models import ScrapeStatus
-from pv_scraper.tasks import SCRAPER_QUEUE, classify_scraped_file, dispatch_scrape_tasks, run_scrape_for_source
+from pv_scraper.tasks import classify_scraped_file, dispatch_scrape_tasks, run_scrape_for_source
 from pv_scraper.tests.factories import ScrapedFileFactory, ScrapeSourceFactory
 from pv_scraper.utils.pv_storage import STORAGE_ENTRY
 from pv_scraper.utils.site_scraper import FileResult, SiteScraper
 
 
+@pytest.mark.parametrize(("task", "queue"), [(run_scrape_for_source, "scraper"), (classify_scraped_file, "ocr")])
+def test_task_routes_send_the_scrape_to_the_scraper_and_classification_to_the_ocr_queue(task, queue):
+    assert tasks.app.amqp.router.route({}, task.name)["queue"].name == queue
+
+
 @pytest.mark.django_db
 @patch.object(tasks.app, "send_task")
-def test_dispatch_sends_scrapes_to_the_scraper_queue(send_task, settings):
+def test_dispatch_sends_a_scrape_per_source(send_task, settings):
     settings.PV_SCRAPER_DISPATCH_MAX_TASKS = 1
     source = ScrapeSourceFactory()
 
     dispatch_scrape_tasks()
 
-    # send_task is where Celery has merged the task's own options with the call's, so this checks the routing.
-    sent = [(c.args[0], c.args[1], c.kwargs["queue"]) for c in send_task.call_args_list]
-    assert sent == [("pv_scraper.tasks.run_scrape_for_source", (source.id,), SCRAPER_QUEUE)]
+    sent = [(c.args[0], c.args[1]) for c in send_task.call_args_list]
+    assert sent == [("pv_scraper.tasks.run_scrape_for_source", (source.id,))]
 
 
 @pytest.mark.django_db
@@ -110,7 +113,7 @@ def test_scrape_that_fails_to_start_ends_in_error(_):
 @patch("pv_scraper.utils.site_crawler.SiteCrawler.__exit__")
 @patch("pv_scraper.utils.site_crawler.SiteCrawler.__enter__", return_value=MagicMock())
 @patch.object(tasks.app, "send_task")
-def test_scrape_stores_each_file_and_sends_its_classification_to_the_ocr_queue(send_task, *_):
+def test_scrape_stores_each_file_and_sends_its_classification(send_task, *_):
     source = ScrapeSourceFactory(code="gm0228")
     # Two files published under one name are both kept.
     files = [
@@ -122,13 +125,11 @@ def test_scrape_stores_each_file_and_sends_its_classification_to_the_ocr_queue(s
     with patch.object(SiteScraper, "crawl", return_value=iter(files)):
         run_scrape_for_source(source.id)
 
-    # send_task is where Celery has merged the task's own options with the call's, so this checks the routing.
-    sent = [(c.args[0], c.args[1], c.kwargs["queue"]) for c in send_task.call_args_list]
+    sent = [(c.args[0], c.args[1]) for c in send_task.call_args_list]
     assert sent == [
-        ("pv_scraper.tasks.classify_scraped_file", (source.pk, key, file.content.name), OCR_QUEUE)
+        ("pv_scraper.tasks.classify_scraped_file", (source.pk, key, file.content.name))
         for key, file in zip(keys, files)
     ]
-    assert OCR_QUEUE == "ocr"
     assert [storages[STORAGE_ENTRY].open(key).read() for key in keys] == [b"%PDF first", b"%PDF next", b"%PDF"]
     source.refresh_from_db()
     assert source.last_run_status != ScrapeStatus.ERROR

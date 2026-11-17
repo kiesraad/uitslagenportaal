@@ -14,14 +14,8 @@ from pv_ocr.utils.toc_schema import PageContent
 
 logger = logging.getLogger(__name__)
 
-OCR_QUEUE = "ocr"
-"""
-Consumed by the OCR worker and, locally, by the `celery` compose service.
-"""
-
 
 @app.task(
-    queue=OCR_QUEUE,
     ignore_result=True,
     autoretry_for=[DatabaseError, S3ConnectionError],
     retry_backoff=5,

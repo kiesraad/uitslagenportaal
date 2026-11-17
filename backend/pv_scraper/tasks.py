@@ -17,7 +17,6 @@ from election.models import ElectionConfig
 from file_import.utils.named_bytes_io import NamedBytesIO
 from file_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
 from mainsite.celery import app
-from pv_ocr.tasks import OCR_QUEUE
 from pv_ocr.utils.pv_classifier import PvClassificationException, PvClassifier
 from pv_scraper.models import ScrapedFile, ScrapeSource, ScrapeStatus
 from pv_scraper.utils.pv_storage import STORAGE_ENTRY, save_to_storage
@@ -38,11 +37,6 @@ SCRAPE_INTERVAL_DURING_ELECTION = timedelta(hours=24)
 """
 Interval after which a source is due to be queued for scraping,
 in the `SCRAPE_OFTEN_DAYS_AFTER_ELECTION` days after an election.
-"""
-
-SCRAPER_QUEUE = "scraper"
-"""
-Queue of `run_scrape_for_source`, consumed only by the worker with Playwright (`-Q scraper` in prod.dockerfile).
 """
 
 CLASSIFICATION_QUEUE_FOLDER = "classification_queue"
@@ -94,7 +88,6 @@ def dispatch_scrape_tasks():
 
 
 @app.task(
-    queue=SCRAPER_QUEUE,
     autoretry_for=[DatabaseError, S3ConnectionError, BackendError],
     retry_backoff=5,
     max_retries=2,
@@ -129,7 +122,6 @@ def run_scrape_for_source(source_id: int):
 
 
 @app.task(
-    queue=OCR_QUEUE,
     autoretry_for=[DatabaseError, S3ConnectionError],
     retry_backoff=5,
     max_retries=2,

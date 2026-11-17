@@ -17,6 +17,10 @@ TOC = TableOfContents(
 )
 
 
+def test_determine_document_toc_is_routed_to_the_ocr_queue():
+    assert tasks.app.amqp.router.route({}, determine_document_toc.name)["queue"].name == "ocr"
+
+
 @pytest.mark.django_db
 @patch.object(tasks, "PvDetermineTOC", autospec=True)
 def test_determine_document_toc_stores_the_toc_of_the_pv(determine_toc, caplog):
