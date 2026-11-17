@@ -94,8 +94,8 @@ jobs:
           path: ~/.cache/ms-playwright
           # uv.lock pins the playwright version, so it doubles as the cache key.
           key: ${{ runner.os }}-playwright-py-${{ matrix.browser }}-${{ hashFiles('backend/uv.lock') }}
-      # Firefox and WebKit need system libs that ubuntu-latest lacks.
-      - run: uv run playwright install --with-deps --only-shell ${{ matrix.browser }}
+      # ubuntu-latest has Chromium's system libs, not those of Firefox and WebKit.
+      - run: uv run playwright install ${{ matrix.browser != 'chromium' && '--with-deps' || '' }} --only-shell ${{ matrix.browser }}
         working-directory: backend
       - name: Create the storage bucket
         run: uv run python manage.py ensure_bucket
