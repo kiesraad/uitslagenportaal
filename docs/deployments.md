@@ -192,6 +192,10 @@ kubectl -n uitslagenportaal-[env] create secret generic redis-creds \
   --from-file=REDIS_CA_CERT=redis-redis-uitslagenportaal.pem
 ```
 
+Environments that share a Redis each need their own `redis.db` in their values file. Don't put `REDIS_DB` in this
+secret: it overrides the ConfigMap for the application but not for celery-exporter, which then watches another
+environment's broker.
+
 
 **Object storage**
 
