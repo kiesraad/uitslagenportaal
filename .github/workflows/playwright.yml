@@ -13,8 +13,17 @@ concurrency:
 
 jobs:
   playwright:
+    name: ${{ matrix.suite }} (${{ matrix.browser }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { suite: playwright, browser: chromium }
+          - { suite: playwright, browser: firefox }
+          - { suite: playwright, browser: webkit }
+          - { suite: axe, browser: chromium }
     services:
       postgres:
         image: postgres:16
@@ -88,9 +97,9 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           # uv.lock pins the playwright version, so it doubles as the cache key.
-          key: ${{ runner.os }}-playwright-py-${{ hashFiles('backend/uv.lock') }}
-      # ubuntu-latest already has the libs Chromium needs, and CI runs headless.
-      - run: uv run playwright install --only-shell chromium
+          key: ${{ runner.os }}-playwright-py-${{ matrix.browser }}-${{ hashFiles('backend/uv.lock') }}
+      # ubuntu-latest has Chromium's system libs, not those of Firefox and WebKit.
+      - run: uv run playwright install ${{ matrix.browser != 'chromium' && '--with-deps' || '' }} --only-shell ${{ matrix.browser }}
         working-directory: backend
       - name: Create the storage bucket
         run: uv run python manage.py ensure_bucket
@@ -116,12 +125,8 @@ jobs:
           timeout 60 bash -c 'until curl -sf -o /dev/null http://127.0.0.1:8000/api/election_configs/; do sleep 1; done'
           timeout 60 bash -c 'until curl -sf -o /dev/null http://localhost:8081/; do sleep 1; done'
 
-      - name: Playwright
-        run: uv run pytest playwright_tests -m playwright --tracing=retain-on-failure --screenshot=only-on-failure
-        working-directory: backend
-      - name: Axe
-        if: ${{ !cancelled() }}
-        run: uv run pytest playwright_tests -m axe --tracing=retain-on-failure --screenshot=only-on-failure
+      - name: Tests
+        run: uv run pytest playwright_tests -m ${{ matrix.suite }} --browser ${{ matrix.browser }} --tracing=retain-on-failure --screenshot=only-on-failure
         working-directory: backend
 
       - name: Server logs
@@ -135,6 +140,6 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
-          name: playwright-python-results
+          name: playwright-python-results-${{ matrix.suite }}-${{ matrix.browser }}
           path: backend/test-results/
           retention-days: 14
