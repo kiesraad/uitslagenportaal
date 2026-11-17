@@ -4,6 +4,8 @@ localCluster: true
 
 debug: true
 
+environment: "local"
+
 app:
   hostname: "uitslagenportaal.localdev"
 
