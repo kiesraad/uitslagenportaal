@@ -14,6 +14,8 @@ from playwright_tests.conftest import EML_FIXTURES
 pytestmark = [pytest.mark.playwright, pytest.mark.usefixtures("seeded_database")]
 
 
+# Linux WebKit shows the file instead of downloading it, despite Content-Disposition: attachment.
+@pytest.mark.skip_browser("webkit")
 @pytest.mark.parametrize(
     ("url", "name", "description", "fixture"),
     [
