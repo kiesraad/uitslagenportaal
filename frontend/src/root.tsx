@@ -22,8 +22,7 @@ export function loadRoot(client: QueryClient) {
    return localeLoader();
 }
 
-// Runs only to prerender the shell (at build time, and per request under `react-router dev`),
-// loading the catalogue that shell is rendered in.
+// Runs on the server per request, loading the catalogue the shell is rendered in.
 export async function loader() {
    return { locale: await loadCatalog(sourceLocale) };
 }
