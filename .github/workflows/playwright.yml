@@ -13,13 +13,17 @@ concurrency:
 
 jobs:
   playwright:
-    name: playwright (${{ matrix.browser }})
+    name: ${{ matrix.suite }} (${{ matrix.browser }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, firefox, webkit]
+        include:
+          - { suite: playwright, browser: chromium }
+          - { suite: playwright, browser: firefox }
+          - { suite: playwright, browser: webkit }
+          - { suite: axe, browser: chromium }
     services:
       postgres:
         image: postgres:16
@@ -121,12 +125,8 @@ jobs:
           timeout 60 bash -c 'until curl -sf -o /dev/null http://127.0.0.1:8000/api/election_configs/; do sleep 1; done'
           timeout 60 bash -c 'until curl -sf -o /dev/null http://localhost:8081/; do sleep 1; done'
 
-      - name: Playwright
-        run: uv run pytest playwright_tests -m playwright --browser ${{ matrix.browser }} --tracing=retain-on-failure --screenshot=only-on-failure
-        working-directory: backend
-      - name: Axe
-        if: ${{ !cancelled() && matrix.browser == 'chromium' }}
-        run: uv run pytest playwright_tests -m axe --tracing=retain-on-failure --screenshot=only-on-failure
+      - name: Tests
+        run: uv run pytest playwright_tests -m ${{ matrix.suite }} --browser ${{ matrix.browser }} --tracing=retain-on-failure --screenshot=only-on-failure
         working-directory: backend
 
       - name: Server logs
@@ -140,6 +140,6 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
-          name: playwright-python-results-${{ matrix.browser }}
+          name: playwright-python-results-${{ matrix.suite }}-${{ matrix.browser }}
           path: backend/test-results/
           retention-days: 14
