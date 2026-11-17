@@ -1,6 +1,6 @@
 import pytest
 
-from mainsite.utils.utils import name_to_slug
+from mainsite.utils.utils import name_to_slug, parallel_map
 
 
 @pytest.mark.parametrize(
@@ -17,3 +17,8 @@ from mainsite.utils.utils import name_to_slug
 )
 def test_name_to_slug(name, expected):
     assert name_to_slug(name) == expected
+
+
+def test_parallel_map_is_the_builtin_map_for_one_job():
+    with parallel_map(1) as run:
+        assert run is map

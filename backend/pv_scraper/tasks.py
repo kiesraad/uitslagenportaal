@@ -151,7 +151,7 @@ def classify_scraped_file(source_id: int, key: str, file_name: str) -> None:
     rejected_reason = None
     try:
         classification = classifier.classify()
-        if classification and classification.matched_on.is_certain():
+        if classification.matched_on.is_certain():
             logger.info(f"Classified as {classification.model} for {classification.region}, saving file")
             save_to_storage(classifier, source, DEFAULT_PV_DIRECTORY)
         else:

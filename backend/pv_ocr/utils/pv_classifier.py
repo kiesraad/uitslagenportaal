@@ -6,7 +6,6 @@ management command runs it on a folder of PDFs.
 
 import datetime
 import logging
-import math
 import re
 import unicodedata
 from collections.abc import Iterator
@@ -15,21 +14,15 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Self
 
-import pypdfium2 as pdfium
-import pytesseract
 import regex
 from PIL import Image
 from pypdf import PdfWriter
 
 from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import RegionCategory
+from pv_ocr.utils.ocr import OCR_DIGIT, TO_DIGIT, letters_only, ocr, open_pdf, pdf_file, render_page, rotate_upright
 from region.models import Region
 
-DPI = 300
-# PVs are A4. A page beyond A3, in points with some slack for rounding, is a map or poster and is not read at all; a
-# page in between renders at a lower resolution. An A0 page at full DPI took over 1Gi between the image and Tesseract.
-MAX_PAGE_POINTS = (850, 1200)
-MAX_PIXELS = round(210 / 25.4 * DPI) * round(297 / 25.4 * DPI)
 # OCR of the top 40% first is fastest overall, although OSV forms, whose titles sit lower, then need a full page.
 CROP_FRACTION = 0.4
 
@@ -44,7 +37,6 @@ MODELS = {
     "Na 31-1": "gemeentelijk stembureau, decentrale stemopneming",
     "Na 31-2": "gemeentelijk stembureau, centrale stemopneming",
     "Na 31-2 Bijlage 1": "gemeentelijk stembureau, verslagen van tellingen van stembureaus",
-    "Na 31-2 Bijlage 2": "gemeentelijk stembureau, bezwaren van aanwezigen op stembureaus",
     "O 7": "hoofdstembureau",
     "P 1f-1": "corrigendum hoofdstembureau",
     "P 22-1": "centraal stembureau, uitslag TK, EP en PS met meer dan één kieskring",
@@ -67,7 +59,6 @@ TITLES = [
     ("Het gemeentelijk stembureau telt de stemmen per kandidaat", "Na 31-2"),
     ("Bijlage 1 - verslag telling stembureau", "Na 31-2 Bijlage 1"),
     ("Verslagen van tellingen van stembureaus", "Na 31-2 Bijlage 1"),
-    ("Bezwaren van aanwezigen op stembureaus", "Na 31-2 Bijlage 2"),
     ("Proces-verbaal van een hoofdstembureau", "O 7"),
     ("Corrigendum bij het proces-verbaal van een hoofdstembureau", "P 1f-1"),
     ("Gecorrigeerde telresultaten per lijst en kandidaat", "P 1f-1"),
@@ -75,11 +66,6 @@ TITLES = [
     ("Verslag, uitslag en zetelverdeling", "P 22-1"),
     ("Verslag, uitslag en zetelverdeling", "P 22-2"),
 ]
-
-
-def letters_only(text: str) -> str:
-    """Lowercase letters only, so OCR spacing, punctuation and hyphenation don't affect matching."""
-    return re.sub(r"[^a-z]", "", text.lower())
 
 
 # Up to two misread letters still match a title ("sternbureaus", "têllingen").
@@ -126,12 +112,10 @@ BASES = ["code+title", "title", "code", "conflict", "unknown", "none"]
 
 # OCR mixes up digits and letters ("Model N I0-z", "Modei"), drops spaces ("ModelNa31-2") and sometimes the letters
 # ("Model 31-1").
-OCR_DIGIT = "[0-9IlOoz]"
 MODEL_RE = re.compile(
     rf"(?i:\bmode[li1])\s*(?:([A-Z][a-z]?)\s*-?)?"
     rf"\s*({OCR_DIGIT}{{1,2}})([a-z](?![a-z]))?(?:\s*[-–—~.]\s*({OCR_DIGIT}))?"
 )
-TO_DIGIT = str.maketrans("IlOoz", "11002")
 
 # A gemeente name has no digits and is short, unlike prose; OCR may curl the quote of "'s-Hertogenbosch".
 GEMEENTE_NAME = r"(?:['‘’]s[- ])?[A-Z][^\d\n]{1,40}?"
@@ -409,43 +393,22 @@ class PvClassificationException(Exception):
 
 class PvClassifier:
     def __init__(self, file: Path | NamedBytesIO):
-        self.file = NamedBytesIO.from_path(file) if isinstance(file, Path) else file
+        self.file = pdf_file(file)
         self.result: ClassificationResult | None = None
 
     def render_page(self, index: int) -> Image.Image | None:
-        pdf = pdfium.PdfDocument(self.file)
-        try:
+        """The whole page, or None when the PDF is shorter."""
+        with open_pdf(self.file) as pdf:
             if index >= len(pdf):
                 return None
-            # Filled-in form fields are only drawn once forms are initialized.
-            pdf.init_forms()
-            page = pdf[index]
-            width, height = page.get_size()
-            if any(side > limit for side, limit in zip(sorted((width, height)), MAX_PAGE_POINTS)):
+            if (image := render_page(pdf[index])) is None:
                 raise PvClassificationException("Page is larger than A3, so not a PV")
-            scale = min(DPI / 72, math.sqrt(MAX_PIXELS / (width * height)))
-            return page.render(scale=scale, grayscale=True).to_pil()
-        finally:
-            pdf.close()
-
-    @staticmethod
-    def ocr(image: Image.Image) -> str:
-        return pytesseract.image_to_string(image, lang="nld", config="--psm 3")
+            return image
 
     def page_text(self, index: int) -> str:
         """The OCR text of a whole page, or empty when the PDF is shorter."""
         page = self.render_page(index)
-        return self.ocr(page) if page else ""
-
-    @staticmethod
-    def rotate_upright(image: Image.Image) -> Image.Image | None:
-        """Rotate a scan upright using Tesseract's orientation detection, or None if it is upright or unknown."""
-        try:
-            angle = pytesseract.image_to_osd(image, output_type=pytesseract.Output.DICT)["rotate"]
-        except pytesseract.TesseractError:
-            return None
-        # OSD gives the clockwise correction; PIL rotates anticlockwise.
-        return image.rotate(-angle, expand=True) if angle else None
+        return ocr(page) if page else ""
 
     @staticmethod
     def find_codes(text: str) -> list[str]:
@@ -652,18 +615,18 @@ class PvClassifier:
         """Yield (pass, text) from cheapest to most expensive; later passes only run when asked for."""
         if not (page := self.render_page(0)):
             return
-        yield "crop", self.ocr(page.crop((0, 0, page.width, int(page.height * CROP_FRACTION))))
-        full = self.ocr(page)
+        yield "crop", ocr(page.crop((0, 0, page.width, int(page.height * CROP_FRACTION))))
+        full = ocr(page)
         yield "full", full
-        if upright := self.rotate_upright(page):
-            yield "rotated", self.ocr(upright)
+        if upright := rotate_upright(page):
+            yield "rotated", ocr(upright)
         # Some GSB bijlagen have only a title on page 1 and the model on page 2; page 1 keeps the bijlage and region.
         if second := self.render_page(1):
-            yield "page2", full + "\n" + self.ocr(second)
+            yield "page2", full + "\n" + ocr(second)
 
-    def classify(self) -> ClassificationResult | None:
+    def classify(self) -> ClassificationResult:
         """Run OCR passes until the model is identified, and return the best result, whose matched_on says how certain
-        it is; None when the PDF has no page."""
+        it is."""
         best = None
         for found_by, text in self.ocr_passes():
             result = self.identify_model(text)
@@ -689,6 +652,8 @@ class PvClassifier:
                 result.election = self.find_election(text)
                 break
 
+        if best is None:
+            raise PvClassificationException("PDF has no pages")
         self.result = best
         return self.result
 
