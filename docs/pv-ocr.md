@@ -41,8 +41,10 @@ scanning it.
 headings alone. Only the top fifth (20%) of each page is rendered and read with Tesseract, and the
 heading titles are matched fuzzily, since OCR misreads them heavily. A "Lijst N" heading gives a
 candidate votes page its list number. A "Vervolg lijst N" heading, or a following page without a
-heading, is a continued page (`candidate-votes-continued`) of that list; such a page without a
-heading whose body (15-85% of the height) holds no ink is an empty page instead. A list number that OCR
+heading, is a continued page (`candidate-votes-continued`) of that list. Such a continued page, or
+any page left unknown, whose body (15-85% of the height) holds no ink is an empty page instead; an
+unknown page with ink is read again down to 40%, as a block above its heading can push the heading
+out of the top fifth. A list number that OCR
 misread or could not read is inferred from the neighbouring lists, only when exactly one number fits
 between them, or from the number a continued page names; the command marks such a number with a "?".
 

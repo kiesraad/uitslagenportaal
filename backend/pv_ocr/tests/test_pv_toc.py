@@ -39,6 +39,11 @@ HEADING_CASES = [
     ("Deel 2 - Telresultaten\n2.2 Uilgebrochte slemmen", Heading(PageContent.VOTES_CAST)),
     ("B1 - 3.3 Verschillen tussen aantal kiezers en uitgebrachte stemmen", Heading(PageContent.DIFFERENCES)),
     (
+        "Deel 2 - Telresultaten\n2.3 Verschil tussen het aantal toegelaten kiezers en het aantal uitgebrachte stemmen\n"
+        "2.3.1 Vergelijk D (totaal toegelaten kiezers) en H (totaal uitgebrachte stemmen)",
+        Heading(PageContent.DIFFERENCES),
+    ),
+    (
         "Deel 2 Telresultaten Slembureou I\n2.4 Stemmen per lijsl en per kqndidoot\n"
         "tijst 1 Ons Belong Slemmen Kondldool",
         Heading(PageContent.CANDIDATE_VOTES, 1, True),
@@ -71,6 +76,10 @@ HEADING_CASES = [
     ("Kiesdeler", Heading(PageContent.SEAT_ALLOCATION)),
     ("Toewijzing van zetels aan kandidaten Lijst 3 VVD", Heading(PageContent.SEAT_ALLOCATION)),
     ("Gekozen kandidaten in alfabetische volgorde", Heading(PageContent.ELECTED_CANDIDATES)),
+    (
+        "Deel 2 — Uitslag en zetelverdeling Drechterland\nRangschikking van kandidaten voor opvolging",
+        Heading(PageContent.SEAT_ALLOCATION),
+    ),
     (
         "Stembureau 101\nDeze pagina is expres leeg\n"
         "Zo komt het handtekeningen-blad altijd op een losse pagina, ook als het verslag dubbelzijdig is geprint.",
@@ -106,6 +115,7 @@ PART_CASES = [
     ("Deel 3 - Ondertekening Schagen - Stembureau 17", PageContent.SIGNATURES),
     ("B1 - 2 Verschillen met telresultaten stembureau", PageContent.INVESTIGATION),
     ("Deel 1 - Onderzoek naar telresultaten", PageContent.INVESTIGATION),
+    ("Deel 2 — Uitslag en zetelverdeling 27 28 29 Moonen, C.M.M. (Djannes) (v)", PageContent.SEAT_ALLOCATION),
     # "Ede Stembureau" is no title of the session report.
     ("Bijlage 1 Gemeente 0228 Ede Stembureau 24 Stembureau Wijkcentrum De Velder", PageContent.UNKNOWN),
     ("Stembureau 18", PageContent.UNKNOWN),
@@ -227,11 +237,20 @@ def determine(
     model: str | None = None,
     empty: frozenset[int] = frozenset(),
     asked: list[list[int]] | None = None,
+    retry: dict[int, str] | None = None,
+    retried: list[list[int]] | None = None,
 ) -> list[TocEntry]:
     """Run determine with one fake header image per page, None for a page without image.
 
-    `empty` is what `empty_bodies` reports; the pages it is asked about are appended to `asked`.
+    `empty` is what `empty_bodies` reports, and the pages it is asked about are appended to `asked`. `retry` holds the
+    text a page gives when read further down, empty when not given; the pages read again are appended to `retried`.
     """
+
+    def header_texts(pages, fraction):
+        pages = list(pages)
+        if retried is not None:
+            retried.append(pages)
+        return {page: (retry or {}).get(page, "") for page in pages}
 
     def empty_bodies(pages):
         if asked is not None:
@@ -243,6 +262,7 @@ def determine(
     with (
         mock.patch.object(PvDetermineTOC, "header_images", return_value=iter(images)),
         mock.patch.object(PvDetermineTOC, "empty_bodies", side_effect=empty_bodies),
+        mock.patch.object(PvDetermineTOC, "header_texts", side_effect=header_texts),
         mock.patch("pv_ocr.utils.pv_toc.ocr", side_effect=lambda _: next(ocr_texts)),
     ):
         return PvDetermineTOC(NamedBytesIO(BLANK_PDF, "pv.pdf"), model=model).determine().entries
@@ -314,9 +334,84 @@ def test_determine_continues_a_list_without_number_and_infers_it():
     ]
 
 
-def test_determine_keeps_a_page_without_text_unknown():
+def test_determine_lets_a_page_without_text_continue_the_previous_list():
     entries = determine(["Cover", "Lijst 4 - SP", "  \n"])
 
+    assert (entries[2].content, entries[2].list_number) == (PageContent.CANDIDATE_VOTES_CONTINUED, 4)
+
+
+def test_determine_does_not_let_a_blank_page_without_text_end_the_list():
+    asked = []
+
+    entries = determine(["Lijst 3 - VVD", "\x0c", HEADERLESS], empty=frozenset({2}), asked=asked)
+
+    assert asked == [[2, 3]]
+    assert [(e.content, e.list_number) for e in entries] == [
+        (PageContent.CANDIDATE_VOTES, 3),
+        (PageContent.EMPTY_PAGE, None),
+        (PageContent.CANDIDATE_VOTES_CONTINUED, 3),
+    ]
+
+
+def test_determine_makes_an_unknown_page_with_an_empty_body_an_empty_page():
+    texts = ["Cover", "1.1 Presentielijst", "Deel 2 - Telresultaten Helmond - Stembureau 615", "2.1 Toegelaten kiezers"]
+    asked = []
+
+    entries = determine(texts, empty=frozenset({3}), asked=asked)
+
+    assert asked == [[3]]
+    assert entries[2].content == PageContent.EMPTY_PAGE
+
+
+def test_determine_reads_an_unknown_page_further_down():
+    texts = ["Cover", "Bijlage 1 - verslag telling stembureau Gemeente 0852 Waterland Stembureau", "Extra onderzoek"]
+    retried = []
+
+    entries = determine(texts, retry={2: texts[1] + "\nNummer: 12\nOver deze bijlage"}, retried=retried)
+
+    assert retried == [[2]]
+    assert entries[1].content == PageContent.ABOUT_ATTACHMENT
+
+
+def test_determine_does_not_read_known_or_continued_pages_further_down():
+    retried = []
+
+    determine(["Cover", "Lijst 4 - SP", HEADERLESS, "Kiesdeler"], retried=retried)
+
+    assert retried == []
+
+
+def test_determine_does_not_read_a_blank_unknown_page_further_down():
+    asked, retried = [], []
+
+    entries = determine(
+        ["Cover", "Kiesdeler", "Stembureau 18", "Stembureau 18"], empty=frozenset({3}), asked=asked, retried=retried
+    )
+
+    assert (asked, retried) == ([[3, 4]], [[4]])
+    assert [e.content for e in entries[2:]] == [PageContent.EMPTY_PAGE, PageContent.UNKNOWN]
+
+
+def test_determine_does_not_read_further_down_when_the_header_is_as_deep():
+    with mock.patch.object(PvDetermineTOC, "header_texts") as header_texts:
+        entries = PvDetermineTOC(NamedBytesIO(BLANK_PDF, "pv.pdf"), header_fraction=0.5)
+        with (
+            mock.patch.object(PvDetermineTOC, "header_images", return_value=iter([object(), object()])),
+            mock.patch.object(PvDetermineTOC, "empty_bodies", return_value=set()),
+            mock.patch("pv_ocr.utils.pv_toc.ocr", return_value="Stembureau 18"),
+        ):
+            entries = entries.determine().entries
+
+    header_texts.assert_not_called()
+    assert entries[1].content == PageContent.UNKNOWN
+
+
+def test_determine_does_not_check_the_body_of_a_page_without_image():
+    asked = []
+
+    entries = determine(["Cover", "Kiesdeler", None, "Stembureau 18"], asked=asked)
+
+    assert asked == [[4]]
     assert entries[2].content == PageContent.UNKNOWN
 
 

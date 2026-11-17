@@ -20,6 +20,9 @@ from pv_ocr.utils.ocr import OCR_DIGIT, TO_DIGIT, letters_only, ocr, open_pdf, p
 # The share of each page, from the top, that is read. Headings of vote-count pages sit within the top fifth; reading
 # more gives false matches from the body.
 HEADER_FRACTION = 0.2
+# A page left unknown is read again this far down: a block above its heading, such as the stembureau details on page 2
+# of a bijlage, can push the heading out of the header.
+RETRY_FRACTION = 0.4
 
 # The body of a page, as shares of its height from the top, and the share of its width cut off on both sides (punch
 # holes). The band starts below the running header, but high enough to keep a continuation of one or two candidates.
@@ -160,6 +163,8 @@ HEADING_TITLES = [
     ("Toegelaten kiezers", PageContent.ADMITTED_VOTERS),
     ("Uitgebrachte stemmen", PageContent.VOTES_CAST),
     ("Verschillen tussen aantal kiezers en uitgebrachte stemmen", PageContent.DIFFERENCES),
+    # Its "toegelaten kiezers" also matches the admitted voters title, which starts later.
+    ("Verschil tussen het aantal toegelaten kiezers en het aantal uitgebrachte stemmen", PageContent.DIFFERENCES),
     ("Lijsten met verschillen", PageContent.LIST_DIFFERENCES),
     ("Tellingen op lijstniveau", PageContent.LIST_DIFFERENCES),
     ("Stemmen per lijst en per kandidaat", PageContent.CANDIDATE_VOTES),
@@ -168,6 +173,7 @@ HEADING_TITLES = [
     ("Restzetels", PageContent.SEAT_ALLOCATION),
     ("Verdeling van de zetels", PageContent.SEAT_ALLOCATION),
     ("Toewijzing van zetels aan kandidaten", PageContent.SEAT_ALLOCATION),
+    ("Rangschikking van kandidaten voor opvolging", PageContent.SEAT_ALLOCATION),
     ("Gekozen kandidaten in alfabetische volgorde", PageContent.ELECTED_CANDIDATES),
     ("Met voorkeursstemmen gekozen kandidaten", PageContent.SEAT_ALLOCATION),
     ("Uitkomst controleprotocol", PageContent.CHECKS_AND_CORRECTIONS),
@@ -175,13 +181,14 @@ HEADING_TITLES = [
 ]
 # Part titles also print in the running header of every page of their part, above the section heading. They only
 # decide when no section title is found, and the first in this list that matches wins. A page headed "Gecorrigeerde
-# telresultaten" goes on with the toegelaten kiezers.
+# telresultaten" goes on with the toegelaten kiezers, and one headed "Uitslag en zetelverdeling" with a seat table.
 FALLBACK_TITLES = [
     ("Ondertekening", PageContent.SIGNATURES),
     ("Gecorrigeerde telresultaten", PageContent.ADMITTED_VOTERS),
     ("Onderzoek naar telresultaten", PageContent.INVESTIGATION),
     ("Verschillen met telresultaten stembureau", PageContent.INVESTIGATION),
     ("Verslag van de zitting", PageContent.SESSION_REPORT),
+    ("Uitslag en zetelverdeling", PageContent.SEAT_ALLOCATION),
 ]
 
 
@@ -314,6 +321,16 @@ class PvDetermineTOC:
             for page in pdf:
                 yield render_page(page, crop=(0, page.get_height() * (1 - self.header_fraction), 0, 0))
 
+    def header_texts(self, pages: Iterable[int], fraction: float) -> dict[int, str]:
+        """The OCR text of the given share of the top of the given pages (1-based)."""
+        texts = {}
+        with open_pdf(self.file) as pdf:
+            for number in pages:
+                page = pdf[number - 1]
+                image = render_page(page, crop=(0, page.get_height() * (1 - fraction), 0, 0))
+                texts[number] = ocr(image) if image is not None else ""
+        return texts
+
     def empty_bodies(self, pages: Iterable[int]) -> set[int]:
         """The given pages (1-based) whose body holds no ink."""
         empty = set()
@@ -379,20 +396,28 @@ class PvDetermineTOC:
         keys = (key for key in FALLBACK_KEYS if allowed is None or key[0] in allowed)
         return next((content for content, pattern in keys if pattern.search(page)), PageContent.UNKNOWN)
 
+    def page_heading(self, text: str) -> tuple[Heading, Heading]:
+        """The heading of a page within the model, and the one regardless of it."""
+        titles = self.find_titles(text)
+        unrestricted = self.identify_heading(text, titles=titles)
+        if self.allowed is not None and unrestricted.content not in self.allowed:
+            return self.identify_heading(text, self.allowed, titles), unrestricted
+        return unrestricted, unrestricted
+
     def determine(self) -> TableOfContents:
         entries: list[TocEntry] = []
         # The pages that took their content from the list before them, which may be blank back pages.
         inherited: list[int] = []
+        # Pages beyond A3, which are not read.
+        unread: set[int] = set()
         for number, image in enumerate(self.header_images(), start=1):
+            if image is None:
+                unread.add(number)
             text = ocr(image) if image is not None else ""
-            titles = self.find_titles(text)
-            unrestricted = self.identify_heading(text, titles=titles)
-            heading = unrestricted
-            if self.allowed is not None and unrestricted.content not in self.allowed:
-                heading = self.identify_heading(text, self.allowed, titles)
+            heading, unrestricted = self.page_heading(text)
             content, list_number, has_list_heading = heading
             previous = entries[-1] if entries else None
-            if content == PageContent.UNKNOWN and text.strip():
+            if content == PageContent.UNKNOWN and image is not None:
                 content = self.identify_part(text, self.allowed)
                 if (
                     content in VOTE_COUNT_CONTENTS | {PageContent.UNKNOWN}
@@ -406,15 +431,27 @@ class PvDetermineTOC:
                     # The list number may be unknown, and is then inferred.
                     content, list_number = PageContent.CANDIDATE_VOTES_CONTINUED, previous.list_number
                     inherited.append(number)
-                if content == PageContent.UNKNOWN and number == 1:
+                if content == PageContent.UNKNOWN and number == 1 and text.strip():
                     content = PageContent.COVER
             entries.append(TocEntry(number, content, list_number, text, has_list_heading=has_list_heading))
-        # Inference runs first, so blank pages still count as continuations of their list. Checking the
-        # bodies after the loop also keeps a blank page from ending the list for the pages after it.
-        infer_list_numbers(entries)
-        if inherited:
-            empty = self.empty_bodies(inherited)
+        # An unknown page may be blank but for its running header, like a blank continuation page.
+        unknown = [e.page for e in entries if e.content == PageContent.UNKNOWN and e.page not in unread]
+        check = sorted({*inherited, *unknown})
+        empty = self.empty_bodies(check) if check else set()
+        # An unknown page with ink is read further down; finding no ink first saves that OCR on blank pages.
+        if (retry := [page for page in unknown if page not in empty]) and self.header_fraction < RETRY_FRACTION:
+            texts = self.header_texts(retry, RETRY_FRACTION)
             for entry in entries:
-                if entry.page in empty:
-                    entry.content, entry.list_number, entry.list_number_inferred = PageContent.EMPTY_PAGE, None, False
+                if entry.page not in texts:
+                    continue
+                heading, _ = self.page_heading(texts[entry.page])
+                if heading.content != PageContent.UNKNOWN:
+                    entry.content, entry.list_number, entry.has_list_heading = heading
+                    entry.text = texts[entry.page]
+        # Inference runs before blank pages are marked, so they still count as continuations of their list and don't
+        # end it for the pages after them.
+        infer_list_numbers(entries)
+        for entry in entries:
+            if entry.page in empty:
+                entry.content, entry.list_number, entry.list_number_inferred = PageContent.EMPTY_PAGE, None, False
         return TableOfContents(entries)
