@@ -87,6 +87,17 @@ describe("GSBTimeline", () => {
       expect(screen.getByText(/Het stembureau doet een uitgebreide telling/)).toBeInTheDocument();
    });
 
+   it("lists the correction steps below the CSB check", () => {
+      const corrected = { ...gemeenteWithoutHsb, correction_date: "2026-03-18T10:00:00+01:00" } as Region;
+
+      expect(steps(<GSBTimeline dates={[]} region={corrected} />).slice(0, 4)).toEqual([
+         "Het Centraal Stembureau publiceert de uitslag",
+         "Centraal Stembureau controleert",
+         "Nieuwe gemeentelijke optelling",
+         "Onderzoek, hertelling en gecorrigeerde resultaten",
+      ]);
+   });
+
    it("has no variant description by default", () => {
       steps(<GSBTimeline dates={[]} region={gemeenteWithoutHsb} />);
 
