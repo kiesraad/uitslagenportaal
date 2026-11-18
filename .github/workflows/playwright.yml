@@ -84,7 +84,7 @@ jobs:
         working-directory: frontend
         env:
           # Same value docker-compose.yml gives the container: an empty base URL sends
-          # API calls to the origin the page came from, which `vite preview` proxies.
+          # API calls to the origin the page came from, which the proxy below forwards.
           VITE_API_BASE_URL: ""
 
       - uses: astral-sh/setup-uv@v7
@@ -114,15 +114,31 @@ jobs:
       - name: Start the backend
         run: nohup uv run python manage.py runserver 127.0.0.1:8000 --noreload > "$RUNNER_TEMP/django.log" 2>&1 &
         working-directory: backend
-      # Serves frontend/build/client and proxies /api to the backend (see vite.config.ts).
-      - name: Serve the built frontend
-        run: nohup npm run preview -- --port 8081 --strictPort > "$RUNNER_TEMP/vite-preview.log" 2>&1 &
+      - name: Start the frontend
+        run: nohup npm start > "$RUNNER_TEMP/frontend.log" 2>&1 &
         working-directory: frontend
+        env:
+          PORT: "3000"
+      # Stands in for the Gateway: /api goes to Django, the rest to the frontend.
+      - name: Start the proxy
+        run: |
+          cat > "$RUNNER_TEMP/nginx.conf" <<'EOF'
+          events {}
+          http {
+            server {
+              listen 8081;
+              location /api/ { proxy_pass http://127.0.0.1:8000; proxy_set_header Host $host; }
+              location / { proxy_pass http://127.0.0.1:3000; proxy_set_header Host $host; }
+            }
+          }
+          EOF
+          docker run -d --name proxy --network host -v "$RUNNER_TEMP/nginx.conf:/etc/nginx/nginx.conf:ro" nginx:alpine
       # conftest.py waits for the frontend as well, but cannot tell a healthy app from a
-      # preview server with no backend behind it.
-      - name: Wait for both to answer
+      # frontend with no backend behind it.
+      - name: Wait for all to answer
         run: |
           timeout 60 bash -c 'until curl -sf -o /dev/null http://127.0.0.1:8000/api/election_configs/; do sleep 1; done'
+          timeout 60 bash -c 'until curl -sf -o /dev/null http://localhost:8081/api/election_configs/; do sleep 1; done'
           timeout 60 bash -c 'until curl -sf -o /dev/null http://localhost:8081/; do sleep 1; done'
 
       - name: Tests
@@ -131,12 +147,14 @@ jobs:
 
       - name: Server logs
         if: failure()
-        run: tail -n 200 "$RUNNER_TEMP/django.log" "$RUNNER_TEMP/vite-preview.log"
+        run: |
+          tail -n 200 "$RUNNER_TEMP/django.log" "$RUNNER_TEMP/frontend.log"
+          docker logs proxy
       - name: Collect server logs
         if: ${{ !cancelled() }}
         run: |
           mkdir -p backend/test-results
-          cp "$RUNNER_TEMP/django.log" "$RUNNER_TEMP/vite-preview.log" backend/test-results/
+          cp "$RUNNER_TEMP/django.log" "$RUNNER_TEMP/frontend.log" backend/test-results/
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
