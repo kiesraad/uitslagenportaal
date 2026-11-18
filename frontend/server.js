@@ -34,6 +34,8 @@ app.disable("x-powered-by");
 app.use(accessLog);
 app.use(compression());
 app.use("/assets", express.static("build/client/assets", { immutable: true, maxAge: "1y" }));
+// A missing asset is a 404, not a page.
+app.use("/assets", (_req, res) => res.sendStatus(404));
 app.use(express.static("build/client", { maxAge: "1h" }));
 app.all("/{*splat}", createRequestHandler({ build: await import("./build/server/index.js") }));
 

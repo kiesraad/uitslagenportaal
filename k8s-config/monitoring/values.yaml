@@ -388,7 +388,7 @@ alloy:
           forward_to = [loki.process.app_json.receiver]
         }
 
-        // The backend, Celery (LOG_FORMAT) and the frontend's nginx log JSON with the same
+        // The backend, Celery (LOG_FORMAT) and the frontend's server log JSON with the same
         // keys. Its fields go to structured metadata, where Grafana shows them as fields and
         // table columns without a `| json` in every query, and the line itself becomes the
         // message (plus any traceback).

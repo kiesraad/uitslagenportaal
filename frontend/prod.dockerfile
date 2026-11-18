@@ -19,7 +19,6 @@ FROM node:24-slim AS server
 
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PORT=3000
 
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev

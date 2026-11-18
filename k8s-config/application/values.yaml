@@ -79,7 +79,7 @@ frontend:
   port: 3000
   replicas: 2
   resources:
-    # The idle Node server uses about 140Mi.
+    # The idle Node server uses about 90Mi.
     requests:
       cpu: 50m
       memory: 160Mi

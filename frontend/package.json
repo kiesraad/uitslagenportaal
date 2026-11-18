@@ -9,7 +9,6 @@
       "typecheck": "react-router typegen && tsc -b",
       "lint": "biome lint",
       "format": "biome format",
-      "preview": "vite preview",
       "start": "node server.js",
       "test": "vitest run",
       "i18n:extract": "lingui extract",

@@ -400,7 +400,7 @@ other, and the navigation progress bar covers the download.
 > `vite.config.ts` via `@rolldown/plugin-babel`. `@vitejs/plugin-react` v6 removed the `babel`
 > option that most Lingui guides use — wiring it that way fails silently: the build succeeds and
 > the app ships untranslated. After touching the plugin setup, verify against a production build
-> (`npm run build && npm run preview`, which serves `build/client/`), not the dev server.
+> (`npm run build && npm start`, which serves it on port 3000), not the dev server.
 
 ## Playwright tests
 
