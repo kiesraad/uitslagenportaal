@@ -32,6 +32,8 @@ function accessLog(req, res, next) {
 const app = express();
 app.disable("x-powered-by");
 app.use(accessLog);
+// Pages need the backend; the probes should not take the frontend down with it.
+app.get("/healthz", (_req, res) => res.sendStatus(200));
 app.use(compression());
 app.use("/assets", express.static("build/client/assets", { immutable: true, maxAge: "1y" }));
 // A missing asset is a 404, not a page.

@@ -4,7 +4,7 @@ import { useRouteLoaderData } from "react-router";
 import { getLoadedI18n, resolveLocale, sourceLocale } from "@/i18n";
 import type { loadRoot } from "@/root.tsx";
 
-/** The locale the prerendered shell is in, which hydration has to match. */
+/** The locale the server rendered the page in, which hydration has to match. */
 function shellLocale() {
    return typeof document === "undefined" ? sourceLocale : resolveLocale(document.documentElement.lang);
 }
