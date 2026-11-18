@@ -143,6 +143,13 @@ CELERY_BROKER_URL = f"{REDIS_URL}/{REDIS_DB * 4 + 1}"
 CELERY_RESULT_BACKEND = f"{REDIS_URL}/{REDIS_DB * 4 + 2}"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 0.5h
+# Tasks off the default queue. Only the worker with Playwright consumes "scraper" (`-Q scraper` in prod.dockerfile);
+# "ocr" is consumed by the OCR worker and, locally, by the `celery` compose service.
+CELERY_TASK_ROUTES = {
+    "pv_scraper.tasks.run_scrape_for_source": {"queue": "scraper"},
+    "pv_scraper.tasks.classify_scraped_file": {"queue": "ocr"},
+    "pv_ocr.tasks.*": {"queue": "ocr"},
+}
 if REDIS_SSL_OPTIONS:
     CELERY_BROKER_USE_SSL = REDIS_SSL_OPTIONS
     CELERY_REDIS_BACKEND_USE_SSL = REDIS_SSL_OPTIONS

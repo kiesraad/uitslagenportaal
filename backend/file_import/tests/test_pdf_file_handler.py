@@ -36,6 +36,7 @@ def test_imports_a_municipal_certified_document_onto_the_gemeente():
 
     document = ElectionDocument.objects.get()
     assert handler.archive_municipality_ids == set()
+    assert handler.toc_document_ids == {document.pk}
     assert document.region == region
     assert document.file_type == ElectionDocument.FileType.PDF_NA31_2
     assert document.content_type == "application/pdf"
@@ -64,6 +65,7 @@ def test_records_the_hash_and_skips_bytes_that_were_already_imported():
     write_pdf(name)
     assert handler.run() == 0
     assert ElectionDocument.objects.count() == 1
+    assert handler.toc_document_ids == set()
     assert not storages["pv_import"].exists(key)
 
 
@@ -654,6 +656,7 @@ def test_run_skips_the_import_while_another_worker_holds_the_lock(caplog):
     assert imported == 0
     assert ElectionDocument.objects.count() == 0
     assert handler.archive_municipality_ids == set()
+    assert handler.toc_document_ids == set()
     assert warnings_of(caplog) == ["Could not acquire lock, PDFFileHandler is already running"]
 
 
