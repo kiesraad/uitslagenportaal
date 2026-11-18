@@ -3,7 +3,7 @@
 This file gives an overview on how to deploy the application to a Kubernetes (k8s) cluster, either locally or a managed one.
 
 The directory ./k8s-config/ contains all the configuration necessary: the `application` Helm chart, the
-`service-accounts` chart, the `monitoring` chart, and values files for the one-time infra setup.
+`service-accounts` chart, the `monitoring` chart, the optional `mlops` chart, and values files for the one-time infra setup.
 
 Commands in this file have to be run from ./k8s-config/.
 
@@ -300,6 +300,30 @@ kubectl -n monitoring create secret generic bugsink-creds \
   --from-literal=CREATE_SUPERUSER="admin@localhost:admin"
 ```
 
+**MLflow**
+
+In the `mlops` namespace, for the optional MLOps chart (see below). Create the namespace first:
+`kubectl create namespace mlops`. Most keys are the environment variables libpq and boto3 read; `ca.crt` is mounted as
+a file and `MLFLOW_S3_BUCKET` is filled into the server's arguments. Use the private
+endpoint, the user that owns the `mlflow` database (not the application's) and the RDB's CA certificate, as for
+`db-creds`:
+
+```bash
+kubectl -n mlops create secret generic mlflow-db-creds \
+  --from-literal=PGHOST='<private endpoint>' \
+  --from-literal=PGUSER='mlflow' \
+  --from-literal=PGPASSWORD='<db-password>' \
+  --from-file=ca.crt=rdb-rdb-uitslagenportaal.pem
+
+kubectl -n mlops create secret generic mlflow-s3-creds \
+  --from-literal=MLFLOW_S3_BUCKET='' \
+  --from-literal=AWS_ACCESS_KEY_ID='' \
+  --from-literal=AWS_SECRET_ACCESS_KEY=''
+```
+
+A missing `MLFLOW_S3_BUCKET` does not stop the server from starting; it fails at the first artefact upload. The pod
+reads both secrets only when it starts, so restart it after changing one: `kubectl -n mlops rollout restart deploy/mlflow`.
+
 **Basic authentication**
 
 The whole site sits behind HTTP basic auth, with the credentials in a secret holding
@@ -331,6 +355,37 @@ scraped files are classified in a separate `celery-ocr` Deployment, configured u
    ```bash
    kubectl -n uitslagenportaal-[env] exec deploy/uitslagenportaal-backend -- python manage.py import_scrape_sources
    ```
+
+### MLOps chart
+
+The `mlops` chart contains the MLflow server, which tracks experiments and stores the resulting artefacts.
+It can be deployed optionally to a cluster of choice, once, in the `mlops` namespace.
+
+The run metadata lives in an `mlflow` database on the managed Postgres instance. The artefacts live in the S3 bucket
+under `mlflow/`, uploaded through the server (`--serve-artifacts`). The database moves with a `pg_dump` and
+`pg_restore`. The runs record `mlflow-artifacts:/` URIs rather than bucket paths, so the bucket can move without
+touching the database.
+
+1. Create the `mlflow` database and a user that owns it on the managed Postgres instance, and a bucket with a key of
+   its own, so MLflow cannot write to the application's files.
+2. Create the namespace and the `mlflow-db-creds` and `mlflow-s3-creds` secrets (see the Secrets section above).
+3. Get the dependent charts and install:
+   ```bash
+   helm repo add community-charts https://community-charts.github.io/helm-charts
+   helm dependency build mlops
+   helm upgrade --install mlops mlops -n mlops --wait --timeout 10m
+   ```
+
+The chart version pins the MLflow version, and the `db-migration` init container in `mlops/values.yaml` names the same
+image: bump both together. A new MLflow version migrates the database on the next start, and that migration
+does not roll back: take a `pg_dump` first.
+
+There is no route or authentication; reach the UI and the tracking API with a port-forward, and point clients at it
+with `MLFLOW_TRACKING_URI=http://localhost:5005`:
+
+```bash
+kubectl -n mlops port-forward svc/mlflow 5005:80
+```
 
 ### Automatic deploy
 
