@@ -212,7 +212,8 @@ Stub `fetch` with `vi.stubGlobal`; wrap components in `QueryClientProvider` and
 
 ## PV test set (OCR)
 
-See [pv-ocr.md](docs/pv-ocr.md) for the OCR test set and how to generate handwritten test PVs.
+[ml/data/README.md](ml/data/README.md) describes the OCR test set; [pv-ocr.md](docs/pv-ocr.md) how to generate
+handwritten test PVs and set up DVC.
 
 ## CI
 
@@ -223,7 +224,7 @@ See [pv-ocr.md](docs/pv-ocr.md) for the OCR test set and how to generate handwri
 `.github/workflows/playwright.yml`: the browser tests, against a throwaway stack.
 `.github/workflows/helm-ci.yml`: `helm lint` plus `helm template` piped through
 `kubeconform`, for the application chart against `values.yaml` and for the
-`service-accounts` and `monitoring` charts — the combination that actually gets deployed — and for the optional
+`service-accounts` and `monitoring` charts, the combination that actually gets deployed, and for the optional
 `mlops` chart.
 
 All four run on PRs — the backend, frontend and Helm suites filtered by path, Playwright on
