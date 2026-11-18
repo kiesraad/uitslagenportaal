@@ -13,6 +13,7 @@ from election.utils import visibility_cutoff
 from mainsite.models import BaseModel, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from mainsite.utils.utils import name_to_slug
+from pv_ocr.utils.toc_schema import TableOfContentsField
 from region.models import Region, hsb_kieskringen
 
 # Subdirectories within an election's folder in object storage, so no single folder grows huge.
@@ -332,6 +333,8 @@ class ElectionDocument(BaseModel):
     )
     is_current = models.BooleanField(default=True, db_index=True)
     metadata = models.JSONField(default=dict)
+    # What each page of a PV holds; null until determined.
+    toc = TableOfContentsField(null=True, blank=True)
     # The EML's <kr:CreationDateTime>; empty for other file types.
     eml_created_at = models.DateTimeField(null=True, blank=True)
 

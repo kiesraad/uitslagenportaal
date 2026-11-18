@@ -84,6 +84,8 @@ class PDFFileHandler:
         self.storage = storage
         self.root_directory = directory or DEFAULT_PV_DIRECTORY
         self.archive_municipality_ids: set[int] = set()
+        # Imported PVs whose table of contents is still to be determined.
+        self.toc_document_ids: set[int] = set()
 
     @staticmethod
     def cache_lock_key() -> str:
@@ -92,6 +94,7 @@ class PDFFileHandler:
 
     def run(self) -> int:
         self.archive_municipality_ids = set()
+        self.toc_document_ids = set()
         # One sweep at a time, so two workers cannot import the same PDF twice
         lock = cache.lock(self.cache_lock_key(), timeout=LOCK_TIMEOUT, blocking=False)
         if not lock.acquire():
@@ -159,7 +162,7 @@ class PDFFileHandler:
 
         try:
             with ImportedFileHash.if_not_imported(content, region.election):
-                self._store(content, file.name, config.identifier, region, file_type)
+                document = self._store(content, file.name, config.identifier, region, file_type)
         except FileAlreadyImported:
             logger.info("Skipping duplicate proces-verbaal %s", file.name)
             self._delete_from_import_storage(file)
@@ -170,6 +173,7 @@ class PDFFileHandler:
         if file_type in POLLING_STATION_PV_FILE_TYPES and region.parent_id:
             self.archive_municipality_ids.add(region.parent_id)
 
+        self.toc_document_ids.add(document.pk)
         logger.info("Imported %s onto %s %s", file.name, region.region_category, region.region_name)
         return True
 
@@ -271,7 +275,9 @@ class PDFFileHandler:
         return buffer.getvalue()
 
     @transaction.atomic
-    def _store(self, content: BytesIO, filename: str, election_id: str, region: Region, file_type: str) -> None:
+    def _store(
+        self, content: BytesIO, filename: str, election_id: str, region: Region, file_type: str
+    ) -> ElectionDocument:
         preview = self._preview_png(content)
         storage_key = f"{election_id}/{PV_DIRECTORY}/{filename}"
         size = content.getbuffer().nbytes
@@ -293,3 +299,4 @@ class PDFFileHandler:
         if default_storage.exists(preview_key):
             default_storage.delete(preview_key)
         default_storage.save(preview_key, ContentFile(preview))
+        return document

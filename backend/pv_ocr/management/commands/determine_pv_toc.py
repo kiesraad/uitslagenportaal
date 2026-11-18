@@ -11,7 +11,8 @@ from pypdf import PdfReader
 from mainsite.utils.utils import parallel_map
 from pv_ocr.management.commands.classify_pvs import PVS, collect_pdfs, display_path
 from pv_ocr.utils.pv_classifier import MODELS, PDF_METADATA_KEYS, pv_model_short_form
-from pv_ocr.utils.pv_toc import HEADER_FRACTION, VOTE_COUNT_CONTENTS, PageContent, PvDetermineTOC, TableOfContents
+from pv_ocr.utils.pv_toc import HEADER_FRACTION, VOTE_COUNT_CONTENTS, PvDetermineTOC
+from pv_ocr.utils.toc_schema import PageContent, TableOfContents
 
 SHORT_FORMS = {pv_model_short_form(model): model for model in MODELS}
 
