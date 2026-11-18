@@ -19,8 +19,8 @@ export function HSBTimeline({ dates, ...timelineProps }: Props) {
          </h2>
          <Timeline dates={dates} {...timelineProps}>
             <CsbResultPublishTimelineEntry />
-            <CorrectionTimelineEntry />
             <CsbCheckTimelineEntry />
+            <CorrectionTimelineEntry />
             <HSBVoteCountTimelineEntry />
             <GSBVoteCountTimelineEntry />
             <SBVoteCountTimelineEntry />

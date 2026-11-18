@@ -6,8 +6,6 @@ command runs it on a folder of PDFs.
 
 import re
 from collections.abc import Iterable, Iterator
-from dataclasses import dataclass
-from enum import StrEnum
 from pathlib import Path
 from typing import NamedTuple
 
@@ -16,6 +14,8 @@ from PIL import Image
 
 from file_import.utils.named_bytes_io import NamedBytesIO
 from pv_ocr.utils.ocr import OCR_DIGIT, TO_DIGIT, letters_only, ocr, open_pdf, pdf_file, render_page, rotate_upright
+from pv_ocr.utils.pv_classifier import pv_model_short_form
+from pv_ocr.utils.toc_schema import PageContent, TableOfContents, TocEntry
 
 # The share of each page, from the top, that is read. Headings of vote-count pages sit within the top fifth; reading
 # more gives false matches from the body.
@@ -34,27 +34,6 @@ BODY_DPI = 100
 BODY_STRIP_HEIGHT = 0.025
 EMPTY_STRIP_INK_SHARE = 0.005
 INK_GREY_LEVEL = 200
-
-
-class PageContent(StrEnum):
-    COVER = "cover"  # Cover page
-    TABLE_OF_CONTENTS = "table-of-contents"  # Table of contents (Inhoudsopgave)
-    CHECKS_AND_CORRECTIONS = "checks-and-corrections"  # Checks and corrections of the counts
-    SESSION_REPORT = "session-report"  # Report of the session: attendance, events, objections, recounts
-    ABOUT_ATTACHMENT = "about-attachment"  # Introduction to a bijlage (Over deze bijlage)
-    ADMITTED_VOTERS = "admitted-voters"  # Admitted voters (A–D)
-    VOTES_CAST = "votes-cast"  # Votes cast per list and in total (E–H)
-    DIFFERENCES = "differences"  # Differences between admitted voters and votes cast (I, J)
-    LIST_DIFFERENCES = "list-differences"  # Lists whose counts differ
-    CANDIDATE_VOTES = "candidate-votes"  # Votes per candidate of one list
-    CANDIDATE_VOTES_CONTINUED = "candidate-votes-continued"  # Votes per candidate of one list, continued
-    INVESTIGATION = "investigation"  # Investigation of the counts
-    ELECTORATE = "electorate"  # Number of electors (kiesgerechtigden)
-    SEAT_ALLOCATION = "seat-allocation"  # Seat allocation: kiesdeler, full and remaining seats, seats to candidates
-    ELECTED_CANDIDATES = "elected-candidates"  # Elected candidates in alphabetical order
-    EMPTY_PAGE = "empty-page"  # Blank page, or one left empty on purpose
-    SIGNATURES = "signatures"  # Signatures (ondertekening)
-    UNKNOWN = "unknown"  # Not recognized
 
 
 # The contents that hold the vote counts a PV reports.
@@ -222,30 +201,10 @@ class Heading(NamedTuple):
     has_list_heading: bool = False
 
 
-@dataclass
-class TocEntry:
-    page: int
-    content: PageContent
-    list_number: int | None = None
-    # The OCR text of the page header, kept for debugging.
-    text: str = ""
-    # Whether the list number was inferred from the neighbouring pages rather than read.
-    list_number_inferred: bool = False
-    # Whether a list heading was read, whether or not its number was.
-    has_list_heading: bool = False
-
-
-@dataclass
-class TableOfContents:
-    entries: list[TocEntry]
-
-    def to_json(self) -> list[dict]:
-        return [
-            {"page": e.page, "content": str(e.content)}
-            | ({"list_number": e.list_number} if e.list_number else {})
-            | ({"list_number_inferred": True} if e.list_number_inferred else {})
-            for e in self.entries
-        ]
+def pv_model(file_type: str) -> str | None:
+    """The model of a PDF_ file type ("PDF_NA31-2-B1" is "Na 31-2 Bijlage 1"), or None when MODEL_CONTENTS lacks it."""
+    form_code = file_type.removeprefix("PDF_").upper()
+    return next((model for model in MODEL_CONTENTS if pv_model_short_form(model).upper() == form_code), None)
 
 
 def infer_list_numbers(entries: list[TocEntry]) -> None:

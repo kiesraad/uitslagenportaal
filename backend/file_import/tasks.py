@@ -13,6 +13,7 @@ from election.models import ElectionConfig
 from file_import.utils.github_eml_file_handler import GithubEmlFileHandler
 from file_import.utils.pdf_file_handler import PDFFileHandler
 from mainsite.celery import app
+from pv_ocr.tasks import determine_document_toc
 from region.tasks import build_polling_station_pv_zip
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,8 @@ def import_pvs() -> int:
         logger.info("Imported %d proces-verbaal PDF(s).", imported)
     for gemeente_id in sorted(handler.archive_municipality_ids):
         build_polling_station_pv_zip.delay(gemeente_id)
+    for document_id in sorted(handler.toc_document_ids):
+        determine_document_toc.delay(document_id)
     return imported
 
 

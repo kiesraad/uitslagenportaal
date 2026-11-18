@@ -5,7 +5,6 @@ management command runs it on a folder of PDFs.
 """
 
 import datetime
-import logging
 import re
 import unicodedata
 from collections.abc import Iterator
@@ -299,8 +298,6 @@ PDF_METADATA_KEYS = {
     "stembureau": "/PvStembureau",
     "matched_on": "/PvMatchedOn",
 }
-
-logger = logging.getLogger(__name__)
 
 
 class ResultMatch(StrEnum):

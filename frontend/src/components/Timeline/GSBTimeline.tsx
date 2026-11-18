@@ -25,9 +25,9 @@ export function GSBTimeline({ variant = "DEFAULT", dates, ...timelineProps }: Pr
          {variantDescription && <p className={"mb-4"}>{t(variantDescription)}</p>}
          <Timeline variant={variant} dates={dates} {...timelineProps}>
             <CsbResultPublishTimelineEntry />
+            <CsbCheckTimelineEntry />
             <MunicipalityRecountTimelineEntry />
             <CorrectionTimelineEntry />
-            <CsbCheckTimelineEntry />
             <HSBVoteCountTimelineEntry />
             <GSBVoteCountTimelineEntry />
             <SBVoteCountTimelineEntry />
