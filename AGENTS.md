@@ -223,7 +223,8 @@ See [pv-ocr.md](docs/pv-ocr.md) for the OCR test set and how to generate handwri
 `.github/workflows/playwright.yml`: the browser tests, against a throwaway stack.
 `.github/workflows/helm-ci.yml`: `helm lint` plus `helm template` piped through
 `kubeconform`, for the application chart against `values.yaml` and for the
-`service-accounts`, `monitoring` and `mlops` charts — the combination that actually gets deployed.
+`service-accounts` and `monitoring` charts — the combination that actually gets deployed — and for the optional
+`mlops` chart.
 
 All four run on PRs — the backend, frontend and Helm suites filtered by path, Playwright on
 every PR — and the first two check that generated files are in step with the source, so

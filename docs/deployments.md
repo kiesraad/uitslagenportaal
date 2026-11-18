@@ -306,13 +306,16 @@ In the `mlops` namespace, for the optional MLOps chart (see below). Create the n
 `kubectl create namespace mlops`. Most keys are the environment variables libpq and boto3 read; `ca.crt` is mounted as
 a file and `MLFLOW_S3_BUCKET` is filled into the server's arguments. Use the private
 endpoint, the user that owns the `mlflow` database (not the application's) and the RDB's CA certificate, as for
-`db-creds`:
+`db-creds`. `verify-full` would fail: the certificate names the public endpoint, not the private one.
+`PGSSLROOTCERT` is where the chart mounts `ca.crt`:
 
 ```bash
 kubectl -n mlops create secret generic mlflow-db-creds \
   --from-literal=PGHOST='<private endpoint>' \
   --from-literal=PGUSER='mlflow' \
   --from-literal=PGPASSWORD='<db-password>' \
+  --from-literal=PGSSLMODE='verify-ca' \
+  --from-literal=PGSSLROOTCERT='/etc/mlflow/db/ca.crt' \
   --from-file=ca.crt=rdb-rdb-uitslagenportaal.pem
 
 kubectl -n mlops create secret generic mlflow-s3-creds \
@@ -361,8 +364,8 @@ scraped files are classified in a separate `celery-ocr` Deployment, configured u
 The `mlops` chart contains the MLflow server, which tracks experiments and stores the resulting artefacts.
 It can be deployed optionally to a cluster of choice, once, in the `mlops` namespace.
 
-The run metadata lives in an `mlflow` database on the managed Postgres instance. The artefacts live in the S3 bucket
-under `mlflow/`, uploaded through the server (`--serve-artifacts`). The database moves with a `pg_dump` and
+The run metadata lives in an `mlflow` database on the managed Postgres instance. The artefacts live in their own S3
+bucket, under `mlflow/`, uploaded through the server (`--serve-artifacts`). The database moves with a `pg_dump` and
 `pg_restore`. The runs record `mlflow-artifacts:/` URIs rather than bucket paths, so the bucket can move without
 touching the database.
 

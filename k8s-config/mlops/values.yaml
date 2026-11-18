@@ -1,8 +1,8 @@
-# Values for the MLflow chart. Installed in its own namespace, like the monitoring chart. The database host and the
-# buckets come from the secrets in docs/deployments.md.
+# Values for the MLflow chart. Installed in its own namespace, like the monitoring chart. The database host, the TLS
+# settings and the bucket come from the secrets in docs/deployments.md.
 
 mlflow:
-  # Fixes the names of the port-forward in docs/deployments.md and the db-migration init container address.
+  # Fixes the names that docs/deployments.md and the db-migration init container (mlflow-env-configmap) address.
   fullnameOverride: mlflow
 
   # The new pod migrates the schema before it starts, and the old pod cannot run against the migrated one.
@@ -42,10 +42,8 @@ mlflow:
   extraEnvVars:
     MLFLOW_S3_ENDPOINT_URL: https://s3.nl-ams.scw.cloud
     AWS_DEFAULT_REGION: nl-ams
-    # verify-full would fail: the RDB cert CN is the public endpoint, not the private endpoint dialled here.
-    PGSSLMODE: verify-ca
-    PGSSLROOTCERT: /etc/mlflow/db/ca.crt
-    # Runs only GenAI jobs (judges, prompt optimisation); its runner and queue consumers alone exceed 1Gi.
+    # The job runner serves only GenAI jobs (judges, prompt optimisation); it and its queue consumers push the pod
+    # past 1Gi.
     MLFLOW_SERVER_ENABLE_JOB_EXECUTION: "false"
 
   extraVolumes:
@@ -55,13 +53,15 @@ mlflow:
         items:
           - key: ca.crt
             path: ca.crt
+  # PGSSLROOTCERT in mlflow-db-creds points at this path, for both containers.
   extraVolumeMounts:
     - name: db-ca
       mountPath: /etc/mlflow/db
       readOnly: true
 
   # Brings the schema up to the image's MLflow version before the server starts, which refuses an out-of-date one.
-  # The same call as the chart's migration container, with the same connection settings as the server.
+  # The same call as the chart's migration container, with the same connection settings as the server, all from
+  # mlflow-db-creds.
   initContainers:
     - name: db-migration
       # Keep in step with the chart's appVersion, the image the server runs.
@@ -76,11 +76,6 @@ mlflow:
             name: mlflow-env-configmap
         - secretRef:
             name: mlflow-db-creds
-      env:
-        - name: PGSSLMODE
-          value: verify-ca
-        - name: PGSSLROOTCERT
-          value: /etc/mlflow/db/ca.crt
       volumeMounts:
         - name: tmp
           mountPath: /tmp
