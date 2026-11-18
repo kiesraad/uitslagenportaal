@@ -14,18 +14,19 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 COPY . .
 RUN npm run build
 
-## Stage 2 - serve the built frontend using nginx
-FROM nginx:stable-alpine AS server
+## Stage 2 - serve the built frontend with Node
+FROM node:24-slim AS server
 
-# Copy the nginx config file
-COPY .docker/prod.nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
+ENV NODE_ENV=production
 
-# Copy the build from the first stage to the Nginx container
-RUN rm -rf /usr/share/nginx/html/*
-COPY --from=builder /app/build/client /usr/share/nginx/html
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
 
-# Expose port 80 for Nginx
-EXPOSE 80
+COPY --from=builder /app/build ./build
+COPY server.js ./
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+USER node
+EXPOSE 3000
+
+CMD ["npm", "start"]

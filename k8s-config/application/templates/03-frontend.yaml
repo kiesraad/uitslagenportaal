@@ -21,7 +21,13 @@ spec:
           imagePullPolicy: {{ .Values.frontend.pullPolicy }}
           ports:
             - containerPort: {{ .Values.frontend.port }}
-          # Static files only: nginx answering at all means it can serve them.
+          env:
+            - name: PORT
+              value: "{{ .Values.frontend.port }}"
+            # Where the server renders its API calls from, inside the cluster.
+            - name: SSR_API_ORIGIN
+              value: "http://{{ .Release.Name }}-backend:{{ .Values.backend.port }}"
+          # The page shell renders without calling the API, so a backend outage does not take the frontend down.
           readinessProbe:
             httpGet:
               path: /

@@ -131,7 +131,7 @@ To receive error emails at your own address, invite yourself to the Single Team 
 #### Logs
 
 The backend and Celery pods log one JSON object per line (`LOG_FORMAT=json`, set in `backend/prod.dockerfile`), and
-so does the frontend's nginx access log (`frontend/.docker/prod.nginx.conf`), with the same keys. Alloy turns each into
+so does the frontend's access log (`frontend/server.js`), with the same keys. Alloy turns each into
 a line holding just the message (and traceback), with the other fields (`level`, `logger`, `process`, and for requests
 `method`, `path`, `status`, `duration_ms`) as structured metadata. Successful probes are not logged: requests to
 `/healthz/` and `/metrics` on the backend, and the kubelet's on the frontend.

@@ -76,14 +76,15 @@ frontend:
   image: "ghcr.io/kiesraad/uitslagenportaal-frontend:dev"
   # Pull always because we publish new images to the same tag
   pullPolicy: "Always"
-  port: 80
+  port: 3000
   replicas: 2
   resources:
+    # The idle Node server uses about 90Mi.
     requests:
-      cpu: 10m
-      memory: 32Mi
+      cpu: 50m
+      memory: 160Mi
     limits:
-      memory: 64Mi
+      memory: 256Mi
 
 celery:
   image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
