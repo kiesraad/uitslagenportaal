@@ -276,12 +276,13 @@ npm install
 npm run dev
 ```
 
-The frontend uses React Router in framework mode with `ssr: false` (`react-router.config.ts`).
+The frontend uses React Router in framework mode with `ssr: true` (`react-router.config.ts`).
 `src/routes.ts` lists the routes, `src/root.tsx` renders the document, the providers and the root
-loader, and each page module exports its `clientLoader`. `npm run build` writes static files to
-`build/client/`, served by nginx in production and by `npm run preview` locally. Its `index.html` is
-the loading page prerendered at build time, in Dutch: `entry.client.tsx` hydrates it in that language
-and the root `clientLoader` then switches to the visitor's.
+loader, and each page module exports its `clientLoader`. `npm run build` writes `build/client/` and
+`build/server/`, and `npm start` serves both with Node (`server.js`), as in production. The pages
+still load their data in the browser, so the server renders the loading page, in Dutch:
+`entry.client.tsx` hydrates it in that language and the root `clientLoader` then switches to the
+visitor's.
 
 ## Management commands
 
