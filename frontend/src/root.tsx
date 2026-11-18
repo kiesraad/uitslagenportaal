@@ -1,6 +1,6 @@
 import { config as fontAwesomeConfig } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
-import { HydrationBoundary, type QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { dehydrate, HydrationBoundary, type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, Suspense, useState } from "react";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches } from "react-router";
 import { BaseLayout } from "@/components/BaseLayout.tsx";
@@ -11,7 +11,7 @@ import LoadingPage from "@/pages/LoadingPage.tsx";
 import "./index.css";
 import { electionConfigsQuery } from "./hooks/queries.ts";
 import { loadCatalog, localeFromCookieHeader, localeLoader } from "./i18n";
-import { createQueryClient, queryClient, type ServerLoaderData } from "./queryClient.ts";
+import { createQueryClient, createServerQueryClient, queryClient, type ServerLoaderData } from "./queryClient.ts";
 import type { Route } from "./+types/root";
 
 // The icon styles ship with the page's CSS; injected at runtime, prerendered icons show unstyled until then.
@@ -23,9 +23,15 @@ export function loadRoot(client: QueryClient) {
    return localeLoader();
 }
 
-// Renders the page in the language the visitor chose before, saved in the `lang` cookie.
+// Renders the page in the language the visitor chose before, saved in the `lang` cookie. The election
+// list fills the Footer and tabs; without it they render without the list, as in the browser.
 export async function loader({ request }: Route.LoaderArgs) {
-   return { locale: await loadCatalog(localeFromCookieHeader(request.headers.get("Cookie"))) };
+   const client = createServerQueryClient();
+   const [locale] = await Promise.all([
+      loadCatalog(localeFromCookieHeader(request.headers.get("Cookie"))),
+      client.query(electionConfigsQuery()).catch(() => {}),
+   ]);
+   return { locale, dehydratedState: dehydrate(client) };
 }
 
 export const clientLoader = () => loadRoot(queryClient);
