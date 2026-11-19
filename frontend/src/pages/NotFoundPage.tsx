@@ -41,10 +41,12 @@ export function NotFoundPage() {
 }
 
 // An unknown URL answers 404, so the error boundary shows this page with the right status.
-export function loader(): never {
+// Not `clientLoader = loader`: the client build strips `loader`, which would leave it undefined.
+function notFound(): never {
    throw data(null, { status: 404 });
 }
-export const clientLoader = loader;
+export const loader = notFound;
+export const clientLoader = notFound;
 
 // The default export makes this module a route module rather than a resource route.
 export default NotFoundPage;
