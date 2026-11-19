@@ -1,16 +1,19 @@
-## PV test set (OCR)
+## PV OCR
 
-The OCR test set pairs PV scans with the 510b EMLs they should match, organised as
-`<election>/<code>-<slug>/`. Handwritten models we have no scans
-of are made by generating the form from the template and EML, then filling it in by hand and
-scanning it.
+This document describes how test PVs are generated, how the table of contents of a PV is determined, and how to set
+up DVC and get the data.
 
-- **Models.** Only the Kiesraad models of November 2025 count. Download templates from
-  kiesraad.nl. [pv-models.md](pv-models.md) lists which models hold handwritten vote counts.
+### Generating test PVs
+
+The OCR test set in [ml/data/testdata](../ml/data/README.md) pairs PV scans with the 510b EMLs
+they should match. Handwritten models we have no scans of are made by generating the form from
+the template and EML, then filling it in by hand and scanning it.
+
+- **Models.** Download the templates from kiesraad.nl. [pv-models.md](pv-models.md) lists which models hold handwritten vote counts.
 - **Corrections.** The `uitslagenportaal-test-emls` repo has branches `auto-<election>-tel`.
   There, each `correctie_*.zip` follows the `definitieve-documenten_*.zip` it corrects, in
-  commit order; the inner `Telling_*.zip` holds the 510b. Name the copies of the 510b
-  `_origineel` and `_correctie1`, `_correctie2`, … in order.
+  commit order; the inner `Telling_*.zip` holds the 510b. Name the copies as the test set's
+  [layout](../ml/data/README.md#layout) says.
 - **Generating.** Overlay the template PDF with PyMuPDF rather than filling its ODT, which
   is built from absolutely positioned frames. Redact the blue `<…>` placeholders but keep
   their graphics, then draw text at their positions. Print what OSV would print and leave the
@@ -61,3 +64,31 @@ reading the metadata, and `--no-model` reads every file unrestricted.
 ```bash
 docker compose run --rm backend-scripts python manage.py determine_pv_toc <path> --limit 3
 ```
+
+### Machine learning
+
+#### Preparation
+
+`ml/` is a uv project of its own, apart from the backend, so the training dependencies stay out of the backend's
+lock. Run `uv sync` in `ml/` to install DVC and MLflow, and run them with `uv run dvc …` and `uv run mlflow …`, or
+after activating `ml/.venv`.
+
+#### Access to the DVC remote
+
+The DVC remote `storage` is `s3://uitslagenportaal-mlops/dvc` on Scaleway Object Storage (`nl-ams`), set in
+`ml/.dvc/config`. You need a Scaleway API key with read and write access to objects in that bucket; it needs no
+delete rights. Store it in `ml/.dvc/config.local`, which git ignores, from the `ml/` folder:
+
+```bash
+dvc remote modify --local storage access_key_id <access key>
+dvc remote modify --local storage secret_access_key <secret key>
+```
+
+Where nothing should be written to disk, such as CI or a GPU VM, set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+instead. Check access with `dvc status --cloud`.
+
+#### Data
+
+All data lives in `ml/data/` and is tracked with DVC; [ml/data/README.md](../ml/data/README.md) describes each
+directory. From `ml/`, `dvc pull` fetches it, about 9 GB for the test set alone.
+

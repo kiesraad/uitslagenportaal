@@ -1,0 +1,8 @@
+[core]
+    remote = storage
+[cache]
+    type = "hardlink,copy"
+['remote "storage"']
+    url = s3://uitslagenportaal-mlops/dvc
+    endpointurl = https://s3.nl-ams.scw.cloud
+    region = nl-ams

@@ -1,0 +1,13 @@
+[project]
+name = "uitslagenportaal-ml"
+version = "0.1.0"
+description = "Training and evaluation of the PV OCR models"
+requires-python = ">=3.13"
+dependencies = [
+    "dvc[s3]>=3.67.1",
+    "mlflow>=3.18.0",
+]
+
+[tool.uv]
+# Scripts only, nothing to build or install.
+package = false
