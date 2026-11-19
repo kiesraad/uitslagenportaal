@@ -1,5 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Link } from "react-router";
+import { data, Link } from "react-router";
 import { LayoutMain } from "../components/LayoutMain.tsx";
 import PageTop from "../components/PageTop.tsx";
 import { appRoutes } from "../utils/routes.ts";
@@ -39,6 +39,12 @@ export function NotFoundPage() {
       </LayoutMain>
    );
 }
+
+// An unknown URL answers 404, so the error boundary shows this page with the right status.
+export function loader(): never {
+   throw data(null, { status: 404 });
+}
+export const clientLoader = loader;
 
 // The default export makes this module a route module rather than a resource route.
 export default NotFoundPage;
