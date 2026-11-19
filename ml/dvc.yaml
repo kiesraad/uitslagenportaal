@@ -1,0 +1,31 @@
+stages:
+  toc:
+    cmd: python -m scripts.determine_tocs data/testdata data/tocs.json
+    deps:
+    - data/testdata
+    - scripts/determine_tocs.py
+    - ../backend/pv_ocr/utils/pv_toc.py
+    - ../backend/pv_ocr/utils/pv_classifier.py
+    outs:
+    - data/tocs.json
+  extract_crops:
+    cmd: python -m scripts.extract_crops data/testdata data/tocs.json
+    deps:
+    - data/testdata
+    - data/tocs.json
+    - scripts/extract_crops.py
+    params:
+      - jobs
+    outs:
+    - data/crops
+  split:
+    cmd: python -m scripts.split data/crops
+    deps:
+    - data/crops
+    - scripts/split.py
+    params:
+    - split.test
+    - split.train
+    - split.validate
+    outs:
+    - data/split

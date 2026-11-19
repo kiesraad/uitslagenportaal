@@ -1,0 +1,30 @@
+schema: '2.0'
+stages:
+  toc:
+    cmd: python -m scripts.determine_tocs data/testdata data/tocs.json
+    deps:
+    - path: ../backend/pv_ocr/utils/pv_classifier.py
+      hash: md5
+      md5: 0db76f6f4b724192d4b452d8b1c37d7d
+      size: 39230
+      isexec: true
+    - path: ../backend/pv_ocr/utils/pv_toc.py
+      hash: md5
+      md5: e173a92cc7b8ec6a79f7e63175356121
+      size: 24212
+      isexec: true
+    - path: data/testdata
+      hash: md5
+      md5: b9cbdffc6f126a09b183baf612f7219a.dir
+      size: 9101383135
+      nfiles: 3931
+    - path: scripts/determine_tocs.py
+      hash: md5
+      md5: d958b98960acd0ef8357cd2aafefb5f4
+      size: 1772
+      isexec: true
+    outs:
+    - path: data/tocs.json
+      hash: md5
+      md5: 68be9ad432b8af9c3bdc2218e7b2b1dd
+      size: 4005027

@@ -69,26 +69,71 @@ docker compose run --rm backend-scripts python manage.py determine_pv_toc <path>
 
 #### Preparation
 
-`ml/` is a uv project of its own, apart from the backend, so the training dependencies stay out of the backend's
-lock. Run `uv sync` in `ml/` to install DVC and MLflow, and run them with `uv run dvc …` and `uv run mlflow …`, or
-after activating `ml/.venv`.
+DVC, MLflow and the other machine-learning dependencies are the `ml` dependency group of the backend, so the scripts
+in `ml/scripts/` can use the backend's code and the production image leaves them out. They run in the `ml` compose
+service, which has the repo mounted at `/project` and works from `/project/ml`:
+
+```bash
+docker compose up -d --build ml
+docker compose exec ml dvc repro
+```
+
+The profile keeps the service out of a plain `docker compose up --build`, so rebuild it by name after a dependency
+change. For the IDE only, `uv sync --all-groups` in `backend/` installs every group into `backend/.venv`; the
+pipeline itself expects the container. The service extends `backend-scripts`, so Django's settings work as there, with
+the log level at INFO to keep DVC's libraries quiet.
+
+Keep the container running between sessions. `up -d` recreates it whenever the image or its compose config changed,
+which kills whatever runs in it, so check that it is idle first. DVC remembers file hashes by inode, and a recreated
+container may see new inodes and hash all of `data/testdata` again. Run DVC only in the container, never on the host as
+well: the two see different paths and keep invalidating each other's hashes.
 
 #### Access to the DVC remote
 
 The DVC remote `storage` is `s3://uitslagenportaal-mlops/dvc` on Scaleway Object Storage (`nl-ams`), set in
 `ml/.dvc/config`. You need a Scaleway API key with read and write access to objects in that bucket; it needs no
-delete rights. Store it in `ml/.dvc/config.local`, which git ignores, from the `ml/` folder:
+delete rights. Store it in `ml/.dvc/config.local`, which git ignores:
 
 ```bash
-dvc remote modify --local storage access_key_id <access key>
-dvc remote modify --local storage secret_access_key <secret key>
+docker compose exec ml dvc remote modify --local storage access_key_id <access key>
+docker compose exec ml dvc remote modify --local storage secret_access_key <secret key>
 ```
 
 Where nothing should be written to disk, such as CI or a GPU VM, set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-instead. Check access with `dvc status --cloud`.
+instead; the `ml` service passes them through from the host. Check access with
+`docker compose exec ml dvc status --cloud`.
 
 #### Data
 
 All data lives in `ml/data/` and is tracked with DVC; [ml/data/README.md](../ml/data/README.md) describes each
-directory. From `ml/`, `dvc pull` fetches it, about 9 GB for the test set alone.
+directory. `docker compose exec ml dvc pull` fetches it, about 9 GB for the test set alone.
+
+#### Pipeline
+
+`ml/dvc.yaml` defines the stages, each rerun only when its dependencies or params changed; paths are in `ml/data/`:
+
+| Stage           | Reads                     | Writes           |
+|-----------------|---------------------------|------------------|
+| `toc`           | `testdata/`, the TOC code | `tocs.json`      |
+| `extract_crops` | `testdata/`, `tocs.json`  | `crops/`         |
+| `split`         | `crops/`                  | `split/`         |
+
+`toc` is the slow one, a full table-of-contents pass over the test set; it depends on `pv_toc.py` and
+`pv_classifier.py` in the backend, so changing those reruns it. `ml/params.yaml` holds the params, such as `jobs`, the
+number of worker processes.
+
+```bash
+docker compose exec ml dvc repro                  # every stage that is out of date
+docker compose exec ml dvc repro extract_crops    # up to this stage
+docker compose exec ml dvc status                 # what would rerun, and why
+docker compose exec ml python -m scripts.determine_tocs data/testdata/GR2026/0050-zeewolde /tmp/tocs.json
+```
+
+The last runs a script on its own, outside DVC, on part of the data: handy while developing it. Run the scripts as
+modules with `-m`: `scripts/__init__.py` sets Django up before a script imports backend code, which a plain
+`python scripts/….py` skips.
+
+A `dvc` command that is killed, for instance by recreating the container, leaves its locks in `ml/.dvc/tmp`, and the
+next one refuses to start. With no DVC process running in the container, delete `rwlock`, `rwlock.lock` and `lock`
+there.
 

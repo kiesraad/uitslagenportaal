@@ -44,6 +44,11 @@ dev = [
     "watchfiles>=1.2.0",
   "django-watchfiles>=1.4.0",
 ]
+# Shares the lock with production, so dvc's aiobotocore can hold back boto3/botocore until it allows the new version.
+ml = [
+    "dvc[s3]>=3.67.1",
+    "mlflow>=3.18.0",
+]
 # Only the scraper worker image installs this, to keep Playwright out of the runtime image.
 scraper = [
     "playwright>=1.62.0",

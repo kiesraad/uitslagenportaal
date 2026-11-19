@@ -4,15 +4,17 @@ Data for training and evaluating the OCR models. Every directory here is tracked
 `uitslagenportaal-mlops` bucket; git only holds its `.dvc` file. See
 [pv-ocr.md](../../docs/pv-ocr.md#access-to-the-dvc-remote) for access to the remote.
 
+DVC runs in the `ml` compose service, from `ml/`:
+
 ```bash
-cd ml
-dvc pull                                   # everything
-dvc pull data/testdata/GR2026/0228-ede     # part of a directory
+docker compose exec ml dvc pull                                 # everything
+docker compose exec ml dvc pull data/testdata/GR2026/0228-ede   # part of a directory
 ```
 
-| Directory   | Contents                                    | Made by          |
-|-------------|---------------------------------------------|------------------|
-| `testdata/` | PVs, mostly scanned, with the 510b EMLs     | hand, `dvc add`  |
+| Path        | Contents                                                   | Made by          |
+|-------------|------------------------------------------------------------|------------------|
+| `testdata/` | PVs, mostly scanned, with the 510b EMLs                    | hand, `dvc add`  |
+| `tocs.json` | The table of contents of each PV in `testdata/`, or `null` | `toc` stage      |
 
 ## testdata
 
@@ -59,12 +61,12 @@ Files are grouped as `<election>/<code>-<slug>/` and each PV is named after the 
 
 ### Adding PVs
 
-Put the files in place following the layout, update the tables above, then from `ml/`:
+Put the files in place following the layout, update the tables above, then:
 
 ```bash
-dvc add data/testdata
-dvc push
-git add data/testdata.dvc data/README.md
+docker compose exec ml dvc add data/testdata
+docker compose exec ml dvc push
+git add ml/data/testdata.dvc ml/data/README.md
 ```
 
 The files are hardlinked to the DVC cache and read-only; run `dvc unprotect` on a file before changing it.

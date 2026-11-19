@@ -58,7 +58,8 @@ domain rule, a non-obvious trade-off, a reason for doing it the awkward way.
 backend/    Django 6 + DRF, Python 3.13+, managed with uv
 frontend/   React 19 + TypeScript + Vite + Tailwind 4
 .docker/    nginx reverse proxy config, postgres init
-docker-compose.yml  full stack: db, redis, backend, celery, frontend, proxy, object storage
+docker-compose.yml  full stack: db, redis, backend, celery, frontend, proxy, object storage; ml (DVC) on its own profile
+ml/         DVC pipeline and scripts for the PV OCR models; deps are the backend's `ml` group
 ```
 
 ### Backend apps (`backend/`)
