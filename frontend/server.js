@@ -4,6 +4,12 @@ import express from "express";
 
 const port = Number(process.env.PORT ?? 3000);
 
+// Pages fetch their data from the backend while rendering; without its address every page fails.
+if (!process.env.SSR_API_ORIGIN) {
+   console.error("SSR_API_ORIGIN is not set; set it to the backend's origin, e.g. http://localhost:8080");
+   process.exit(1);
+}
+
 // Same keys as the backend's JSON logs, so Alloy and Grafana treat both alike.
 function accessLog(req, res, next) {
    const start = process.hrtime.bigint();

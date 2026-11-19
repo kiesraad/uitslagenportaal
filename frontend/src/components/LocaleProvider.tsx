@@ -11,7 +11,7 @@ function shellLocale() {
 
 /**
  * The i18n instance of the locale the root loader loaded, so a language switch swaps the instance.
- * Without root loader data (hydrating, or the root loader failed) it is the shell's locale, or any
+ * Without root loader data (the root loader failed) it is the locale the page was rendered in, or any
  * loaded one when that catalogue is missing.
  */
 export function useRootI18n() {
