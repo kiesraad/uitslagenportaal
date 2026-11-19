@@ -36,15 +36,18 @@ jobs:
             | tar -xz -C /usr/local/bin kubeconform
 
       # The subcharts are not in git; Chart.lock pins what gets fetched.
-      - name: Build monitoring chart dependencies
+      - name: Build chart dependencies
         run: |
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add community-charts https://community-charts.github.io/helm-charts
           helm dependency build k8s-config/monitoring
+          helm dependency build k8s-config/mlops
 
       - run: helm lint k8s-config/application --namespace uitslagenportaal
       - run: helm lint k8s-config/service-accounts --namespace uitslagenportaal
       - run: helm lint k8s-config/monitoring --namespace monitoring
+      - run: helm lint k8s-config/mlops --namespace mlops
 
       # The gateway and route templates are entirely CRDs, which the default schema
       # set does not cover. Without the catalogue they would be skipped silently —
@@ -58,6 +61,7 @@ jobs:
             helm template uitslagenportaal-service-accounts k8s-config/service-accounts \
               --namespace uitslagenportaal
             helm template monitoring k8s-config/monitoring --namespace monitoring
+            helm template mlops k8s-config/mlops --namespace mlops
           } | kubeconform -strict -summary \
                 -kubernetes-version "$KUBERNETES_VERSION" \
                 -schema-location default \
