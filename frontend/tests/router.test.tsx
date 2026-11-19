@@ -86,9 +86,10 @@ function routeFiles(entries: RouteConfigEntry[]): string[] {
    return entries.flatMap((entry) => [entry.file, ...routeFiles(entry.children ?? [])]);
 }
 
-// A page without a clientLoader would render without its data in the cache.
+// A page without a clientLoader would render without its data in the cache, and one without a
+// loader would reach the server as an empty shell.
 describe("route modules", () => {
-   const withoutLoader = ["components/RouteOutlet.tsx", "pages/NotFoundPage.tsx"];
+   const withoutLoader = ["components/RouteOutlet.tsx"];
    const pageFiles = [...new Set(routeFiles(routeConfig as RouteConfigEntry[]))].filter(
       (file) => !withoutLoader.includes(file),
    );
@@ -96,6 +97,11 @@ describe("route modules", () => {
    it.each(pageFiles)("%s exports a clientLoader", async (file) => {
       const module = await import(`../src/${file}`);
       expect(module.clientLoader).toBeTypeOf("function");
+   });
+
+   it.each(pageFiles)("%s exports a loader", async (file) => {
+      const module = await import(`../src/${file}`);
+      expect(module.loader).toBeTypeOf("function");
    });
 });
 

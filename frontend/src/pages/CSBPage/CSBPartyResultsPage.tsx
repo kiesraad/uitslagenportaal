@@ -2,7 +2,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useParams } from "react-router";
 import { CSBTimeline } from "@/components/Timeline/CSBTimeline.tsx";
-import { queryClient } from "@/queryClient.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import IssueNotice from "../../components/ResultsPage/IssueNotice.tsx";
@@ -26,6 +26,7 @@ export async function loadCSBPartyResults(client: QueryClient, { params }: Pick<
    await client.query(csbPartyVoteMatrixQuery(region.election_slug, params.regionSlug, params.partySlug));
 }
 
+export const loader = serverLoader(loadCSBPartyResults);
 export const clientLoader = (args: Route.ClientLoaderArgs) => loadCSBPartyResults(queryClient, args);
 
 export default function CSBPartyResultsPage() {

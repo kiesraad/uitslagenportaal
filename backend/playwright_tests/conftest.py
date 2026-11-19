@@ -11,6 +11,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.db import OperationalError, connections
 from django.test import override_settings
+from playwright.sync_api import Page
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 
@@ -131,3 +132,21 @@ def browser_context_args(browser_context_args: dict, base_url: str) -> dict:
             "origins": [{"origin": base_url, "localStorage": [{"name": "lang", "value": "nl"}]}],
         },
     }
+
+
+# The server sends a page before React takes it over; typing into it before then is lost.
+HYDRATED = "() => Object.keys(document.querySelector('main') ?? {}).some(k => k.startsWith('__reactFiber'))"
+
+
+@pytest.fixture
+def page(page: Page) -> Page:
+    """Wait after each navigation until the page is interactive, as a visitor would."""
+    goto = page.goto
+
+    def goto_and_hydrate(url: str, **kwargs):
+        response = goto(url, **kwargs)
+        page.wait_for_function(HYDRATED)
+        return response
+
+    page.goto = goto_and_hydrate
+    return page

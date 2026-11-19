@@ -2,7 +2,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, type LoaderFunctionArgs, type Params, useParams } from "react-router";
 import { SBTimeline } from "@/components/Timeline/SBTimeline.tsx";
-import { queryClient } from "@/queryClient.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent";
@@ -40,6 +40,7 @@ export async function loadPollingStationResults(client: QueryClient, { params }:
    ]);
 }
 
+export const loader = serverLoader(loadPollingStationResults);
 export const clientLoader = (args: Route.ClientLoaderArgs) => loadPollingStationResults(queryClient, args);
 
 export default function PollingStationResultsPage() {

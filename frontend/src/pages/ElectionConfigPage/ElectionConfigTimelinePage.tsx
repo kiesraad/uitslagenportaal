@@ -6,7 +6,7 @@ import { LayoutMain } from "@/components/LayoutMain.tsx";
 import PageTop from "@/components/PageTop.tsx";
 import { ElectionTimelineSection } from "@/components/Timeline/ElectionTimelineSection.tsx";
 import { electionConfigQuery } from "@/hooks/queries.ts";
-import { queryClient } from "@/queryClient.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { useFormatters } from "@/utils/format.ts";
 import type { Route } from "./+types/ElectionConfigTimelinePage";
 
@@ -14,6 +14,7 @@ export async function loadElectionConfigTimeline(client: QueryClient, { params }
    await client.query(electionConfigQuery(params.electionConfigSlug));
 }
 
+export const loader = serverLoader(loadElectionConfigTimeline);
 export const clientLoader = (args: Route.ClientLoaderArgs) => loadElectionConfigTimeline(queryClient, args);
 
 export default function ElectionConfigTimelinePage() {
