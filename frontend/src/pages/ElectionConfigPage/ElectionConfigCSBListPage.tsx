@@ -9,7 +9,7 @@ import PageTop from "@/components/PageTop.tsx";
 import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
 import ResultsNotPublished from "@/components/ResultsPage/ResultsNotPublished.tsx";
 import { electionConfigQuery, regionQuery, regionsQuery } from "@/hooks/queries.ts";
-import { queryClient } from "@/queryClient.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { useFormatters } from "@/utils/format.ts";
 import type { Route } from "./+types/ElectionConfigCSBListPage";
 
@@ -66,6 +66,7 @@ function CsbRegionList({ electionConfig, regionsQuery }: CsbRegionListProps) {
    );
 }
 
+export const loader = serverLoader(loadElectionConfigCSBList);
 export const clientLoader = (args: Route.ClientLoaderArgs) => loadElectionConfigCSBList(queryClient, args);
 
 export default function ElectionConfigCSBListPage() {

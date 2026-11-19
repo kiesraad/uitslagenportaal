@@ -90,6 +90,8 @@ services:
       # port instead of the (unpublished) internal dev-server port.
       VITE_HMR_CLIENT_PORT: "8080"
       SSR_API_ORIGIN: http://backend:8000
+      # Host inotify instance limit is 128; the static-copy plugin's watcher polls instead.
+      CHOKIDAR_USEPOLLING: "true"
     volumes:
       - ./frontend:/app
       - /app/node_modules

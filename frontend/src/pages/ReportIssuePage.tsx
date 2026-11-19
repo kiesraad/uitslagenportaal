@@ -9,7 +9,7 @@ import { BreadcrumbItem, Breadcrumbs } from "@/components/Breadcrumbs.tsx";
 import Button from "@/elements/Button.tsx";
 import { ExternalLinkIcon } from "@/elements/ExternalLinkIcon.tsx";
 import PageSection from "@/elements/PageSection.tsx";
-import { queryClient } from "@/queryClient.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { InfoBox } from "../components/InfoBox.tsx";
 import { LayoutMain } from "../components/LayoutMain.tsx";
 import { electionConfigQuery } from "../hooks/queries.ts";
@@ -24,6 +24,7 @@ export async function loadReportIssue(client: QueryClient, { params }: Pick<Load
 
 const DEADLINE_TICK_MS = 60_000;
 
+export const loader = serverLoader(loadReportIssue);
 export const clientLoader = (args: Route.ClientLoaderArgs) => loadReportIssue(queryClient, args);
 
 export default function ReportIssuePage() {

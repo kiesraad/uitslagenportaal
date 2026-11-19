@@ -7,7 +7,7 @@ import { LayoutMain } from "@/components/LayoutMain.tsx";
 import { RegionList } from "@/components/ListPage/RegionList.tsx";
 import PageTop from "@/components/PageTop.tsx";
 import { electionConfigQuery, regionsQuery } from "@/hooks/queries.ts";
-import { queryClient } from "@/queryClient.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { useFormatters } from "@/utils/format.ts";
 import type { Route } from "./+types/ElectionConfigHSBListPage";
 
@@ -22,6 +22,7 @@ export async function loadElectionConfigHSBList(client: QueryClient, { params }:
    }
 }
 
+export const loader = serverLoader(loadElectionConfigHSBList);
 export const clientLoader = (args: Route.ClientLoaderArgs) => loadElectionConfigHSBList(queryClient, args);
 
 export default function ElectionConfigHSBListPage() {
