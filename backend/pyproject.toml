@@ -42,7 +42,9 @@ dev = [
     "factory-boy>=3.3.3",
     "fakeredis[lua]>=2.37.0",
     "watchfiles>=1.2.0",
-  "django-watchfiles>=1.4.0",
+    "django-watchfiles>=1.4.0",
+    "opencv-python-headless>=5.1.0.95",
+    "numpy>=2.5.5",
 ]
 # Shares the lock with production, so dvc's aiobotocore can hold back boto3/botocore until it allows the new version.
 ml = [

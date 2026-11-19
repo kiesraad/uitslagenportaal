@@ -15,6 +15,7 @@ docker compose exec ml dvc pull data/testdata/GR2026/0228-ede   # part of a dire
 |-------------|------------------------------------------------------------|------------------|
 | `testdata/` | PVs, mostly scanned, with the 510b EMLs                    | hand, `dvc add`  |
 | `tocs.json` | The table of contents of each PV in `testdata/`, or `null` | `toc` stage      |
+| `crops/`    | A crop of each handwritten number, with its 510b value     | `extract_crops`  |
 
 ## testdata
 
@@ -70,3 +71,29 @@ git add ml/data/testdata.dvc ml/data/README.md
 ```
 
 The files are hardlinked to the DVC cache and read-only; run `dvc unprotect` on a file before changing it.
+
+## crops
+
+The `extract_crops` stage crops each handwritten number on the vote pages of the OCR models, as `tocs.json` finds them:
+the counts A–J and the votes per candidate. `pv_ocr/utils/vote_tables.py` finds where they are written. Gemeenten fill
+in the templates differently, so a page is first turned upright and then tries each layout: digit boxes in a ruled
+table, then a gray or black column of candidate numbers. The counts are found by their printed description ("Blanco
+stemmen", "Totaal lijst 3"), read with Tesseract. Crops are named `<election>/<pv>/p<page>_<field>.png`, the field
+being `A`…`J`, `E.<list>` or `L<list>-<candidate>`.
+
+`crops.csv` lists each crop with its PV, model, page, field and `label`, the value in the 510b. That is the first 510b,
+which holds the counts the gemeentelijk stembureau set; for Na 14-2 Bijlage 1 it is the last `_correctie<n>`.
+`blank` says whether the area holds no writing. On N 10 and Na 31-2 Bijlage 1 a blank area means 0; a corrigendum
+leaves a count blank when it did not change, so a blank crop of a corrigendum says nothing about its label. For Na 14-2
+Bijlage 1, `changed` says whether the count differs from the `_origineel`. A label can still differ from what is
+written, where the PV and the 510b disagree. A crop covers its row or field only: a number written across the line
+below it is cut there, and part of its neighbour can show.
+
+Pages where the fields cannot be placed reliably are skipped, and a PV where many counts that are not 0 come out blank is
+left out: it was matched to the wrong stembureau, or holds pages of another model. Both are logged. For a trial run on a
+few PVs, with each page drawn with its areas:
+
+```bash
+docker compose exec ml python -m scripts.extract_crops data/testdata data/tocs.json /tmp/crops \
+    --glob "GR2026/0059-achtkarspelen/*SB1.pdf" --debug /tmp/debug
+```
