@@ -1,0 +1,12 @@
+apiVersion: v2
+name: uitslagenportaal-mlops
+description: MLOps services for tracking ML experiments
+type: application
+version: 0.1.0
+
+# The chart version fixes the MLflow version; upgrading it migrates the database one way. The
+# db-migration init container in values.yaml names the same image and moves with it.
+dependencies:
+  - name: mlflow
+    version: 1.11.7
+    repository: https://community-charts.github.io/helm-charts
