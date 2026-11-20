@@ -79,6 +79,7 @@ export default function HSBResultsPage() {
          <ResultsPageColumns
             previewUrl={region.certified_document_preview_url}
             documentUrl={region.certified_document_url}
+            documentToc={region.certified_document_toc}
          >
             <RegionResultsContent
                intro={

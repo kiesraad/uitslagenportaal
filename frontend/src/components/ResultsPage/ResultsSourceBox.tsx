@@ -2,7 +2,7 @@ import { faArrowRight, faMaximize } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { flushSync } from "react-dom";
 import { Link, useParams } from "react-router";
 import { NewWindowHint } from "@/elements/ExternalLinkIcon.tsx";
@@ -15,15 +15,18 @@ import PdfViewerPanel from "./PdfViewerPanel";
 type Props = {
    previewUrl?: string | null;
    documentUrl?: string | null;
+   // The page the viewer shows, or null while it is closed.
+   viewerPage: number | null;
+   onViewerPageChange: (page: number | null) => void;
 };
 
-export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
+export default function ResultsSourceBox({ previewUrl, documentUrl, viewerPage, onViewerPageChange }: Props) {
    const { t } = useLingui();
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(electionConfigSlug));
    const { formatDate } = useFormatters();
    const deadline = formatDate(electionConfig.issue_report_deadline, { delimiter: "at", withYear: false });
-   const [isViewerOpen, setViewerOpen] = useState(false);
+   const isViewerOpen = viewerPage !== null;
    const thumbnailRef = useRef<HTMLButtonElement>(null);
 
    // One column has no room for the viewer; there the thumbnail opens the PDF in a new tab. Matches `lg:`.
@@ -31,14 +34,14 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
       if (!isViewerOpen) return;
       const wide = window.matchMedia("(min-width: 64rem)");
       const closeWhenNarrow = () => {
-         if (!wide.matches) setViewerOpen(false);
+         if (!wide.matches) onViewerPageChange(null);
       };
       wide.addEventListener("change", closeWhenNarrow);
       return () => wide.removeEventListener("change", closeWhenNarrow);
-   }, [isViewerOpen]);
+   }, [isViewerOpen, onViewerPageChange]);
 
    function closeViewer() {
-      flushSync(() => setViewerOpen(false));
+      flushSync(() => onViewerPageChange(null));
       thumbnailRef.current?.focus();
    }
 
@@ -66,7 +69,14 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
    }
 
    if (isViewerOpen) {
-      return <PdfViewerPanel documentUrl={documentUrl} onClose={closeViewer} />;
+      return (
+         <PdfViewerPanel
+            documentUrl={documentUrl}
+            pageNumber={viewerPage}
+            onPageChange={onViewerPageChange}
+            onClose={closeViewer}
+         />
+      );
    }
 
    const thumbnail = (
@@ -99,7 +109,7 @@ export default function ResultsSourceBox({ previewUrl, documentUrl }: Props) {
                <button
                   type="button"
                   ref={thumbnailRef}
-                  onClick={() => setViewerOpen(true)}
+                  onClick={() => onViewerPageChange(1)}
                   className="results-image-container w-full cursor-pointer"
                >
                   {thumbnail}

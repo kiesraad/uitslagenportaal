@@ -10,10 +10,12 @@ const PdfDocument = lazy(() => import("./PdfDocument"));
 
 type Props = {
    documentUrl: string;
+   pageNumber: number;
+   onPageChange: (page: number) => void;
    onClose: () => void;
 };
 
-export default function PdfViewerPanel({ documentUrl, onClose }: Props) {
+export default function PdfViewerPanel({ documentUrl, pageNumber, onPageChange, onClose }: Props) {
    const headingRef = useRef<HTMLHeadingElement>(null);
 
    // Only mounts when opened, so focus moves into the panel and a screen reader announces it.
@@ -41,7 +43,12 @@ export default function PdfViewerPanel({ documentUrl, onClose }: Props) {
             }
          >
             {/* Streamed by the backend, because the bucket the link redirects to does not allow this site to fetch it. */}
-            <PdfDocument key={documentUrl} file={`${documentUrl}?stream`} />
+            <PdfDocument
+               key={documentUrl}
+               file={`${documentUrl}?stream`}
+               pageNumber={pageNumber}
+               onPageChange={onPageChange}
+            />
          </Suspense>
          <p>
             <a href={documentUrl} target="_blank" rel="noopener noreferrer">

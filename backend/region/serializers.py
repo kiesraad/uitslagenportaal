@@ -84,6 +84,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     documents = ElectionDocumentSerializer(read_only=True, many=True)
     certified_document_url = serializers.SerializerMethodField()
     certified_document_preview_url = serializers.SerializerMethodField()
+    certified_document_toc = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
     correction_date = serializers.SerializerMethodField()
     eml_dates = serializers.SerializerMethodField()
@@ -103,6 +104,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "documents",
             "certified_document_url",
             "certified_document_preview_url",
+            "certified_document_toc",
             "timeline_variant",
             "correction_date",
             "eml_dates",
@@ -146,6 +148,12 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         if not default_storage.exists(preview_key):
             return None
         return reverse("certified-document-preview", kwargs={"pk": document.pk})
+
+    def get_certified_document_toc(self, region) -> list[dict] | None:
+        document = self._certified_document(region)
+        if document is None or document.toc is None:
+            return None
+        return document.toc.to_json()["entries"]
 
     def get_eml_dates(self, region) -> dict:
         return region_eml_dates(region)
