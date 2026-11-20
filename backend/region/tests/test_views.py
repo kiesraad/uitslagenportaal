@@ -17,6 +17,7 @@ from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
 from party.tests.factories import PartyFactory
+from pv_ocr.utils.toc_schema import PageContent, TableOfContents, TocEntry
 from region.tests.factories import RegionFactory
 from region.views import RegionDetailView, RegionListView
 
@@ -164,6 +165,7 @@ def test_region_detail_has_no_certified_document_preview_without_a_document():
 
     assert data["certified_document_url"] is None
     assert data["certified_document_preview_url"] is None
+    assert data["certified_document_toc"] is None
 
 
 @pytest.mark.django_db
@@ -185,6 +187,23 @@ def test_region_detail_links_the_certified_document_when_one_is_imported():
     assert by_type[ElectionDocument.FileType.PDF_NA31_2]["url"] == f"/api/documents/{document.pk}/download/"
     assert data["certified_document_url"] == f"/api/certified-documents/{document.pk}/"
     assert data["certified_document_preview_url"] == f"/api/certified-documents/{document.pk}/preview/"
+    assert data["certified_document_toc"] is None
+
+
+@pytest.mark.django_db
+def test_region_detail_has_the_table_of_contents_of_the_certified_document():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    CertifiedElectionDocumentFactory(
+        region=region,
+        toc=TableOfContents([TocEntry(1, PageContent.COVER), TocEntry(3, PageContent.ADMITTED_VOTERS)]),
+    )
+
+    data = region_detail(region, "gsb")
+
+    assert data["certified_document_toc"] == [
+        {"page": 1, "content": "cover"},
+        {"page": 3, "content": "admitted-voters"},
+    ]
 
 
 @pytest.mark.django_db

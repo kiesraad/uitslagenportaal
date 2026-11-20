@@ -1,13 +1,17 @@
 import { QueryClient } from "@tanstack/react-query";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { type ReactElement, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ElectionConfig } from "@/api/types";
+import type { ElectionConfig, TocEntry } from "@/api/types";
+import PvPageLink from "@/components/ResultsPage/PvPageLink";
+import ResultsPageColumns from "@/components/ResultsPage/ResultsPageColumns";
 import ResultsSourceBox from "@/components/ResultsPage/ResultsSourceBox";
 import { electionConfigQuery } from "@/hooks/queries";
 import { renderWithProviders } from "../../testUtils";
 
 // PDF.js needs a canvas and a worker, which jsdom does not have.
-const PdfDocument = vi.hoisted(() => vi.fn((_props: { file: string }) => null));
+type PdfDocumentProps = { file: string; pageNumber: number; onPageChange: (page: number) => void };
+const PdfDocument = vi.hoisted(() => vi.fn((_props: PdfDocumentProps) => null));
 vi.mock("@/components/ResultsPage/PdfDocument", () => ({ default: PdfDocument }));
 
 // jsdom has no matchMedia. `screenWidth.narrow()` makes the window drop below the two-column breakpoint.
@@ -42,19 +46,28 @@ const electionConfig: ElectionConfig = {
    voting_url: "https://example.test/stemmen",
 };
 
-function renderBox(locale: "nl" | "en" = "nl", previewUrl?: string | null, documentUrl?: string | null) {
+function StatefulBox(props: { previewUrl?: string | null; documentUrl?: string | null }) {
+   const [page, setPage] = useState<number | null>(null);
+   return <ResultsSourceBox {...props} viewerPage={page} onViewerPageChange={setPage} />;
+}
+
+function renderWithConfig(ui: ReactElement, locale: "nl" | "en" = "nl") {
    const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
    });
    const query = electionConfigQuery(electionConfig.slug);
    queryClient.setQueryData(query.queryKey, electionConfig);
 
-   return renderWithProviders(<ResultsSourceBox previewUrl={previewUrl} documentUrl={documentUrl} />, {
+   return renderWithProviders(ui, {
       locale,
       initialEntries: [`/${electionConfig.slug}/gsb/lisserdam`],
       path: "/:electionConfigSlug/*",
       queryClient,
    });
+}
+
+function renderBox(locale: "nl" | "en" = "nl", previewUrl?: string | null, documentUrl?: string | null) {
+   return renderWithConfig(<StatefulBox previewUrl={previewUrl} documentUrl={documentUrl} />, locale);
 }
 
 describe("ResultsSourceBox", () => {
@@ -159,5 +172,65 @@ describe("ResultsSourceBox", () => {
          screen.getByRole("heading", { level: 2, name: "Where do these counting results come from?" }),
       ).toBeInTheDocument();
       expect(screen.getByText(/The certified election results have not been published yet/)).toBeInTheDocument();
+   });
+});
+
+describe("PvPageLink", () => {
+   const previewUrl = "/api/certified-documents/7/preview/";
+   const documentUrl = "/api/certified-documents/7/";
+   const toc: TocEntry[] = [
+      { page: 1, content: "cover" },
+      { page: 3, content: "admitted-voters" },
+   ];
+
+   function columns(url = documentUrl, documentToc: TocEntry[] | null = toc) {
+      return (
+         <ResultsPageColumns previewUrl={previewUrl} documentUrl={url} documentToc={documentToc}>
+            <PvPageLink content="admitted-voters" />
+         </ResultsPageColumns>
+      );
+   }
+
+   beforeEach(() => {
+      PdfDocument.mockClear();
+      screenWidth.matches = true;
+   });
+
+   it("Shows no link while the page is unknown", () => {
+      renderWithConfig(columns(documentUrl, null));
+
+      expect(screen.queryByText("Toon in proces-verbaal")).not.toBeInTheDocument();
+   });
+
+   it("Opens the viewer at the page, and jumps there when it is open", async () => {
+      renderWithConfig(columns());
+
+      fireEvent.click(screen.getByRole("button", { name: "Toon in proces-verbaal" }));
+      await waitFor(() => expect(PdfDocument).toHaveBeenCalled());
+      expect(PdfDocument.mock.lastCall?.[0].pageNumber).toBe(3);
+
+      act(() => PdfDocument.mock.lastCall?.[0].onPageChange(1));
+      expect(PdfDocument.mock.lastCall?.[0].pageNumber).toBe(1);
+
+      fireEvent.click(screen.getByRole("button", { name: "Toon in proces-verbaal" }));
+      expect(PdfDocument.mock.lastCall?.[0].pageNumber).toBe(3);
+   });
+
+   it("Opens the PDF at the page in a new tab on one column", () => {
+      renderWithConfig(columns());
+
+      const link = screen.getByRole("link", { name: /Toon in proces-verbaal/ });
+      expect(link).toHaveAttribute("href", `${documentUrl}#page=3`);
+      expect(link).toHaveAttribute("target", "_blank");
+   });
+
+   it("Starts at page 1 when the viewer shows another document", async () => {
+      const { rerender } = renderWithConfig(columns());
+      fireEvent.click(screen.getByRole("button", { name: "Toon in proces-verbaal" }));
+      await waitFor(() => expect(PdfDocument.mock.lastCall?.[0].pageNumber).toBe(3));
+
+      rerender(columns("/api/certified-documents/8/"));
+
+      expect(PdfDocument.mock.lastCall?.[0].pageNumber).toBe(1);
    });
 });

@@ -990,6 +990,10 @@ msgstr "Telresultaten volgen binnenkort"
 msgid "Toegelaten kiezers"
 msgstr "Toegelaten kiezers"
 
+#: src/components/ResultsPage/PvPageLink.tsx
+msgid "Toon in proces-verbaal"
+msgstr "Toon in proces-verbaal"
+
 #. Between a date and a time: 8 december tot 21:00
 #: src/utils/format.ts
 msgid "tot"

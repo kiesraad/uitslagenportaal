@@ -7,6 +7,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { VoterTurnoutCount } from "../../api/types";
 import { useFormatters } from "../../utils/format";
+import PvPageLink from "./PvPageLink";
 
 // `reason_code` is a key matched literally against the API, not display text —
 // it stays in the source language it arrives in. Only `label` is translated.
@@ -76,9 +77,12 @@ export default function VotesResume({ votes, type }: Props & { type: VotesResume
    return (
       <section className="admitted-voters">
          {type === "admittedVoters" && (
-            <h3 className="mb-2">
-               <Trans>Toegelaten kiezers</Trans>
-            </h3>
+            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4">
+               <h3>
+                  <Trans>Toegelaten kiezers</Trans>
+               </h3>
+               <PvPageLink content="admitted-voters" />
+            </div>
          )}
          <dl className={"admitted-voters-box"}>
             {boxVotes.map((vote) => (

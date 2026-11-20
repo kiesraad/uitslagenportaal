@@ -1,5 +1,5 @@
 import { act, fireEvent, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import PdfViewerPanel from "@/components/ResultsPage/PdfViewerPanel";
 import { renderWithProviders } from "../../testUtils";
@@ -32,8 +32,13 @@ vi.stubGlobal(
 
 const documentUrl = "/api/certified-documents/7/";
 
+function StatefulPanel({ url }: { url: string }) {
+   const [page, setPage] = useState(1);
+   return <PdfViewerPanel documentUrl={url} pageNumber={page} onPageChange={setPage} onClose={() => {}} />;
+}
+
 function panel(url = documentUrl) {
-   return <PdfViewerPanel documentUrl={url} onClose={() => {}} />;
+   return <StatefulPanel url={url} />;
 }
 
 async function renderLoadedPanel() {
@@ -95,17 +100,6 @@ describe("PdfViewerPanel", () => {
       fireEvent.click(screen.getByRole("button", { name: "Volgende pagina" }));
 
       expect(page.scrollTop).toBe(0);
-   });
-
-   it("Starts at page 1 again when it shows another document", async () => {
-      const { rerender } = await renderLoadedPanel();
-      fireEvent.click(screen.getByRole("button", { name: "Volgende pagina" }));
-      expect(screen.getByText("Pagina 2 van 3")).toBeInTheDocument();
-
-      rerender(panel("/api/certified-documents/8/"));
-      act(() => pdf.load());
-
-      expect(screen.getByText("Pagina 1 van 3")).toBeInTheDocument();
    });
 
    it("Links to the PDF in a new tab", async () => {
