@@ -8,6 +8,7 @@ import { API_ORIGIN } from "@/api/client.ts";
 import Button from "@/elements/Button.tsx";
 import { NewWindowHint } from "@/elements/ExternalLinkIcon.tsx";
 import KiesraadGridHexagon from "@/elements/KiesraadGridHexagon.tsx";
+import { useNow } from "@/hooks/useNow.ts";
 import { type Locale, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
 import { electionConfigQuery, electionConfigsQuery } from "../hooks/queries.ts";
 
@@ -49,7 +50,7 @@ function ExternalLinkIcon() {
 }
 
 export function Footer() {
-   const currentYear = new Date().getFullYear();
+   const currentYear = useNow()?.getFullYear();
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
 
    // On election pages the config comes from the route; elsewhere (e.g. the home
@@ -138,7 +139,7 @@ export function Footer() {
                      <Trans>In samenwerking met de Kiesraad</Trans>
                   </p>
                </div>
-               <span className="footer-copy">© {currentYear} De Kiesraad</span>
+               <span className="footer-copy">© {currentYear ? `${currentYear} ` : ""}De Kiesraad</span>
             </div>
          </div>
 

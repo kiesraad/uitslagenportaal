@@ -278,11 +278,12 @@ npm run dev
 
 The frontend uses React Router in framework mode with `ssr: true` (`react-router.config.ts`).
 `src/routes.ts` lists the routes, `src/root.tsx` renders the document, the providers and the root
-loader, and each page module exports its `clientLoader`. `npm run build` writes `build/client/` and
-`build/server/`, and `npm start` serves both with Node (`server.js`), as in production. The pages
-still load their data in the browser, so the server renders the loading page, in Dutch:
-`entry.client.tsx` hydrates it in that language and the root `clientLoader` then switches to the
-visitor's.
+loader. Each page module exports a `loader`, which loads its data on the server (`serverLoader` in
+`src/queryClient.ts`), and a `clientLoader` for navigating in the browser. The server renders in the
+language of the `lang` cookie. `npm run build` writes `build/client/` and `build/server/`, and
+`npm start` serves both with Node (`server.js`), as in production; it needs `SSR_API_ORIGIN`, the
+backend to render from, e.g. `SSR_API_ORIGIN=http://localhost:8080 npm start` with the compose stack
+running.
 
 ## Management commands
 
@@ -400,7 +401,7 @@ other, and the navigation progress bar covers the download.
 > `vite.config.ts` via `@rolldown/plugin-babel`. `@vitejs/plugin-react` v6 removed the `babel`
 > option that most Lingui guides use — wiring it that way fails silently: the build succeeds and
 > the app ships untranslated. After touching the plugin setup, verify against a production build
-> (`npm run build && npm start`, which serves it on port 3000), not the dev server.
+> (`npm run build && npm start`, which serves it on port 3000; see above for `SSR_API_ORIGIN`), not the dev server.
 
 ## Playwright tests
 

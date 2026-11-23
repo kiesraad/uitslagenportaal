@@ -117,6 +117,8 @@ jobs:
       - name: Start the frontend
         run: nohup npm start > "$RUNNER_TEMP/frontend.log" 2>&1 &
         working-directory: frontend
+        env:
+          SSR_API_ORIGIN: http://127.0.0.1:8000
       # Stands in for the Gateway: /api goes to Django, the rest to the frontend.
       - name: Start the proxy
         run: |

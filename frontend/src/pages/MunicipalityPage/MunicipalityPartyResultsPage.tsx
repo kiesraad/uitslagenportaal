@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useParams } from "react-router";
-import { queryClient } from "@/queryClient.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -30,6 +30,7 @@ export async function loadMunicipalityPartyResults(
    }
 }
 
+export const loader = serverLoader(loadMunicipalityPartyResults);
 export const clientLoader = (args: Route.ClientLoaderArgs) => loadMunicipalityPartyResults(queryClient, args);
 
 export default function MunicipalityPartyResultsPage() {

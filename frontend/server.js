@@ -4,6 +4,12 @@ import express from "express";
 
 const port = Number(process.env.PORT ?? 3000);
 
+// Pages fetch their data from the backend while rendering; without its address every page fails.
+if (!process.env.SSR_API_ORIGIN) {
+   console.error("SSR_API_ORIGIN is not set; set it to the backend's origin, e.g. http://localhost:8080");
+   process.exit(1);
+}
+
 // Same keys as the backend's JSON logs, so Alloy and Grafana treat both alike.
 function accessLog(req, res, next) {
    const start = process.hrtime.bigint();
@@ -32,6 +38,8 @@ function accessLog(req, res, next) {
 const app = express();
 app.disable("x-powered-by");
 app.use(accessLog);
+// Pages need the backend; the probes should not take the frontend down with it.
+app.get("/healthz", (_req, res) => res.sendStatus(200));
 app.use(compression());
 app.use("/assets", express.static("build/client/assets", { immutable: true, maxAge: "1y" }));
 // A missing asset is a 404, not a page.

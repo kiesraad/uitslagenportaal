@@ -2,7 +2,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useParams } from "react-router";
 import { HSBTimeline } from "@/components/Timeline/HSBTimeline.tsx";
-import { queryClient } from "@/queryClient.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -31,6 +31,7 @@ export async function loadHSBPartyResults(client: QueryClient, { params }: Pick<
    await client.query(hsbPartyVoteMatrixQuery(region.election_slug, params.regionSlug, params.partySlug));
 }
 
+export const loader = serverLoader(loadHSBPartyResults);
 export const clientLoader = (args: Route.ClientLoaderArgs) => loadHSBPartyResults(queryClient, args);
 
 export default function HSBPartyResultsPage() {

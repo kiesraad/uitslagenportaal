@@ -3,7 +3,7 @@ import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useParams } from "react-router";
 import ElectionConfigTabs from "@/components/ElectionConfigTabs.tsx";
 import { electionConfigQuery, regionsQuery } from "@/hooks/queries.ts";
-import { queryClient } from "@/queryClient.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -20,6 +20,7 @@ export async function loadElectionConfigMunicipalityList(
    ]);
 }
 
+export const loader = serverLoader(loadElectionConfigMunicipalityList);
 export const clientLoader = (args: Route.ClientLoaderArgs) => loadElectionConfigMunicipalityList(queryClient, args);
 
 export default function ElectionConfigMunicipalityListPage() {
