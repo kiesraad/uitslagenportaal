@@ -188,8 +188,8 @@ class EML510bImporter(EML510BaseImporter):
     def _delete(self, region: Region) -> None:
         """
         Archive the previous telling under this municipality so the normal import path
-        can recreate it. The municipality region itself stays current; its stembureaus
-        and this eml_type's counts are archived.
+        can recreate it. Only this eml_type's counts are replaced; the stembureaus stay,
+        so the PVs attached to them stay too.
         """
         stations = Region.objects.filter(
             election=self.election,
@@ -200,7 +200,6 @@ class EML510bImporter(EML510BaseImporter):
         VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
         VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
         ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
-        stations.delete()
 
     @staticmethod
     def _polling_station_name(unit: ReportingUnitVotes) -> str:
@@ -222,7 +221,8 @@ class EML510bImporter(EML510BaseImporter):
 
     def _ensure_polling_stations(self, region: Region) -> dict[tuple[str, str], Region]:
         """
-        Create all polling stations of this file up front, keyed by (number, name).
+        Create all polling stations of this file up front, keyed by (number, name),
+        and delete the ones this file no longer lists.
 
         Replaces a per-station get_or_create (a SELECT plus an INSERT each, in the
         hottest loop of the import) with one SELECT, one bulk INSERT and one SELECT
@@ -243,6 +243,10 @@ class EML510bImporter(EML510BaseImporter):
             for unit in contest_data.reporting_unit_votes:
                 key = (str(unit.reporting_unit_identifier.id), self._polling_station_name(unit))
                 postal_code_by_key[key] = self._polling_station_postal_code(unit)
+
+        stale = existing.keys() - postal_code_by_key.keys()
+        if stale:
+            Region.objects.filter(pk__in=[existing.pop(key).pk for key in stale]).delete()
 
         missing = postal_code_by_key.keys() - existing.keys()
         if not missing:
