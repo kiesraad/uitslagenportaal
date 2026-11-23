@@ -4,6 +4,7 @@ import VotesList, { VotesListItem } from "@/components/ResultsPage/VotesList.tsx
 import { formatCandidateName } from "@/utils/formatCandidateName.ts";
 import { getCandidateVoteCountsForParty, getPartyVoteCount } from "@/utils/voteCounts.ts";
 import IssueNotice from "./IssueNotice";
+import PvPageLink from "./PvPageLink";
 import ResultsPageIndex from "./ResultsPageIndex";
 
 type Props = {
@@ -28,7 +29,10 @@ export default function PartyCandidatesResultsContent({ voteCounts, partySlug, i
             <h2 className="mb-4.5">
                <Trans>Telresultaten lijst {listNumber}</Trans>
             </h2>
-            <h3 className="party-level-title mb-2">{partyName}</h3>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+               <h3 className="party-level-title">{partyName}</h3>
+               {partyListNumber != null && <PvPageLink content="candidate-votes" listNumber={partyListNumber} />}
+            </div>
             <VotesList
                indexColumn={t`Kandidaat`}
                total={{

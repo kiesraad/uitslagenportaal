@@ -5,6 +5,7 @@ import type { ElectionDocument, RegionCategory, VoteCount, VoteCounts, VoterTurn
 import { getPartyLevelVoteCounts } from "@/utils/voteCounts.ts";
 import { InfoBox } from "../InfoBox";
 import IssueNotice from "./IssueNotice";
+import PvPageLink from "./PvPageLink";
 import ReportsWithResults from "./ReportsWithResults";
 import ResultsNotPublished from "./ResultsNotPublished";
 import ResultsPageIndex from "./ResultsPageIndex";
@@ -57,9 +58,12 @@ export default function RegionResultsContent({
          </section>
          <VotesResume type="admittedVoters" votes={turnoutVotes} />
          <section className="votes-cast">
-            <h3 className="mb-2">
-               <Trans>Uitgebrachte stemmen</Trans>
-            </h3>
+            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4">
+               <h3>
+                  <Trans>Uitgebrachte stemmen</Trans>
+               </h3>
+               <PvPageLink content="votes-cast" />
+            </div>
             <p className="mb-4">
                <Trans>Klik op een lijst om de stemmen per kandidaat te zien</Trans>
             </p>

@@ -15,16 +15,17 @@ const options = { wasmUrl: `${import.meta.env.BASE_URL}pdfjs-wasm/` };
 
 type Props = {
    file: string;
+   pageNumber: number;
+   onPageChange: (page: number) => void;
 };
 
-export default function PdfDocument({ file }: Props) {
+export default function PdfDocument({ file, pageNumber, onPageChange }: Props) {
    const { t } = useLingui();
    const containerRef = useRef<HTMLElement>(null);
    const previousRef = useRef<HTMLButtonElement>(null);
    const nextRef = useRef<HTMLButtonElement>(null);
    const [width, setWidth] = useState<number>();
    const [numPages, setNumPages] = useState<number>();
-   const [pageNumber, setPageNumber] = useState(1);
 
    useEffect(() => {
       const container = containerRef.current;
@@ -37,14 +38,19 @@ export default function PdfDocument({ file }: Props) {
       return () => observer.disconnect();
    }, []);
 
-   function goToPage(page: number) {
-      setPageNumber(page);
-      // The button that was pressed becomes disabled at either end, so focus moves to the other one.
-      if (page === 1) nextRef.current?.focus();
-      if (page === numPages) previousRef.current?.focus();
+   // Back to the top on every page change, also one made by a link outside the viewer.
+   // biome-ignore lint/correctness/useExhaustiveDependencies: runs on a page change
+   useEffect(() => {
       if (containerRef.current) {
          containerRef.current.scrollTop = 0;
       }
+   }, [pageNumber]);
+
+   function goToPage(page: number) {
+      onPageChange(page);
+      // The button that was pressed becomes disabled at either end, so focus moves to the other one.
+      if (page === 1) nextRef.current?.focus();
+      if (page === numPages) previousRef.current?.focus();
    }
 
    const loading = <p role="status">{t`Proces-verbaal laden…`}</p>;

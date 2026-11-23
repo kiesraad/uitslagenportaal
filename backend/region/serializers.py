@@ -1,12 +1,10 @@
 from datetime import datetime
 
-from django.core.files.storage import default_storage
-from django.urls import reverse
 from rest_framework import serializers
 
 from election.eml_dates import region_eml_dates
 from election.models import ElectionDocument, TimelineVariant
-from election.serializers import ElectionDocumentSerializer
+from election.serializers import CertifiedDocumentSerializer, ElectionDocumentSerializer
 from mainsite.models import RegionCategory
 from mainsite.serializers import (
     RegionSummarySerializer,
@@ -82,8 +80,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     voter_turnout_counts = VoterTurnoutCountSummarySerializer(read_only=True, many=True)
     vote_counts = VoteCountSummarySerializer(read_only=True, many=True)
     documents = ElectionDocumentSerializer(read_only=True, many=True)
-    certified_document_url = serializers.SerializerMethodField()
-    certified_document_preview_url = serializers.SerializerMethodField()
+    certified_document = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
     correction_date = serializers.SerializerMethodField()
     eml_dates = serializers.SerializerMethodField()
@@ -101,8 +98,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "vote_counts",
             "slug",
             "documents",
-            "certified_document_url",
-            "certified_document_preview_url",
+            "certified_document",
             "timeline_variant",
             "correction_date",
             "eml_dates",
@@ -117,12 +113,12 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "hsb",
         )
 
-    def _certified_document(self, region):
+    def get_certified_document(self, region) -> dict | None:
         # The view prefetches only the documents of the requested level. The form type decides which one is
         # shown, not the import date, which follows the scraping order. Among forms of the same type the
         # newest one wins, so the last of several stacked corrections is shown.
         documents = [document for document in region.documents.all() if document.file_type in VIEWER_PRIORITY]
-        return min(
+        document = min(
             documents,
             key=lambda document: (
                 VIEWER_PRIORITY[document.file_type],
@@ -131,21 +127,7 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             ),
             default=None,
         )
-
-    def get_certified_document_url(self, region) -> str | None:
-        document = self._certified_document(region)
-        if document is None or not default_storage.exists(document.storage_key):
-            return None
-        return reverse("certified-document", kwargs={"pk": document.pk})
-
-    def get_certified_document_preview_url(self, region) -> str | None:
-        document = self._certified_document(region)
-        if document is None:
-            return None
-        preview_key = document.preview_storage_key
-        if not default_storage.exists(preview_key):
-            return None
-        return reverse("certified-document-preview", kwargs={"pk": document.pk})
+        return CertifiedDocumentSerializer(document).data if document else None
 
     def get_eml_dates(self, region) -> dict:
         return region_eml_dates(region)
