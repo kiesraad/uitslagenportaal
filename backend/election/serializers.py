@@ -1,3 +1,4 @@
+from django.core.files.storage import default_storage
 from django.urls import reverse
 from rest_framework import serializers
 
@@ -42,6 +43,38 @@ class ElectionDocumentSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_url(obj: ElectionDocument) -> str:
         return reverse("document-download", kwargs={"pk": obj.pk})
+
+
+class CertifiedDocumentSerializer(serializers.ModelSerializer):
+    """The proces-verbaal shown in the viewer."""
+
+    url = serializers.SerializerMethodField()
+    preview_url = serializers.SerializerMethodField()
+    toc = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ElectionDocument
+        fields = (
+            "url",
+            "preview_url",
+            "toc",
+        )
+
+    @staticmethod
+    def get_url(obj: ElectionDocument) -> str | None:
+        if not default_storage.exists(obj.storage_key):
+            return None
+        return reverse("certified-document", kwargs={"pk": obj.pk})
+
+    @staticmethod
+    def get_preview_url(obj: ElectionDocument) -> str | None:
+        if not default_storage.exists(obj.preview_storage_key):
+            return None
+        return reverse("certified-document-preview", kwargs={"pk": obj.pk})
+
+    @staticmethod
+    def get_toc(obj: ElectionDocument) -> list[dict] | None:
+        return obj.toc.to_json()["entries"] if obj.toc is not None else None
 
 
 class TimelineDateSerializer(serializers.ModelSerializer):

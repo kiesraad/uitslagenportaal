@@ -18,6 +18,7 @@ from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
 from party.tests.factories import PartyFactory
+from pv_ocr.utils.toc_schema import PageContent, TableOfContents, TocEntry
 from region.tests.factories import RegionFactory
 from region.views import RegionDetailView, RegionListView
 
@@ -163,8 +164,7 @@ def test_region_detail_has_no_certified_document_preview_without_a_document():
 
     data = region_detail(region, "gsb")
 
-    assert data["certified_document_url"] is None
-    assert data["certified_document_preview_url"] is None
+    assert data["certified_document"] is None
 
 
 @pytest.mark.django_db
@@ -184,8 +184,25 @@ def test_region_detail_links_the_certified_document_when_one_is_imported():
     by_type = {item["file_type"]: item for item in data["documents"]}
     assert set(by_type) == {ElectionDocument.FileType.EML_510B, ElectionDocument.FileType.PDF_NA31_2}
     assert by_type[ElectionDocument.FileType.PDF_NA31_2]["url"] == f"/api/documents/{document.pk}/download/"
-    assert data["certified_document_url"] == f"/api/certified-documents/{document.pk}/"
-    assert data["certified_document_preview_url"] == f"/api/certified-documents/{document.pk}/preview/"
+    assert data["certified_document"]["url"] == f"/api/certified-documents/{document.pk}/"
+    assert data["certified_document"]["preview_url"] == f"/api/certified-documents/{document.pk}/preview/"
+    assert data["certified_document"]["toc"] is None
+
+
+@pytest.mark.django_db
+def test_region_detail_has_the_table_of_contents_of_the_certified_document():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    CertifiedElectionDocumentFactory(
+        region=region,
+        toc=TableOfContents([TocEntry(1, PageContent.COVER), TocEntry(3, PageContent.ADMITTED_VOTERS)]),
+    )
+
+    data = region_detail(region, "gsb")
+
+    assert data["certified_document"]["toc"] == [
+        {"page": 1, "content": "cover"},
+        {"page": 3, "content": "admitted-voters"},
+    ]
 
 
 @pytest.mark.django_db
@@ -238,8 +255,8 @@ def test_region_detail_lists_each_proces_verbaal_and_previews_the_correction(
         f"/api/documents/{original.pk}/download/",
         f"/api/documents/{correction.pk}/download/",
     }
-    assert data["certified_document_url"] == f"/api/certified-documents/{correction.pk}/"
-    assert data["certified_document_preview_url"] == f"/api/certified-documents/{correction.pk}/preview/"
+    assert data["certified_document"]["url"] == f"/api/certified-documents/{correction.pk}/"
+    assert data["certified_document"]["preview_url"] == f"/api/certified-documents/{correction.pk}/preview/"
 
 
 @pytest.mark.django_db
@@ -284,8 +301,8 @@ def test_region_detail_lists_every_correction_and_previews_the_last_one():
         f"/api/documents/{last.pk}/download/",
     ]
     assert [item["correction_number"] for item in corrections] == [1, 2]
-    assert data["certified_document_url"] == f"/api/certified-documents/{last.pk}/"
-    assert data["certified_document_preview_url"] == f"/api/certified-documents/{last.pk}/preview/"
+    assert data["certified_document"]["url"] == f"/api/certified-documents/{last.pk}/"
+    assert data["certified_document"]["preview_url"] == f"/api/certified-documents/{last.pk}/preview/"
 
 
 @pytest.mark.django_db
@@ -364,8 +381,8 @@ def test_region_detail_previews_the_newer_proces_verbaal_when_there_is_no_correc
 
     data = region_detail(region, "gsb")
 
-    assert data["certified_document_url"] == f"/api/certified-documents/{newer.pk}/"
-    assert data["certified_document_preview_url"] == f"/api/certified-documents/{newer.pk}/preview/"
+    assert data["certified_document"]["url"] == f"/api/certified-documents/{newer.pk}/"
+    assert data["certified_document"]["preview_url"] == f"/api/certified-documents/{newer.pk}/preview/"
 
 
 @pytest.mark.django_db
@@ -376,8 +393,8 @@ def test_region_detail_has_no_preview_when_the_png_is_missing():
 
     data = region_detail(region, "gsb")
 
-    assert data["certified_document_url"] == f"/api/certified-documents/{document.pk}/"
-    assert data["certified_document_preview_url"] is None
+    assert data["certified_document"]["url"] == f"/api/certified-documents/{document.pk}/"
+    assert data["certified_document"]["preview_url"] is None
 
 
 @pytest.mark.django_db
@@ -485,10 +502,10 @@ def test_gsb_and_csb_each_list_and_preview_their_own_proces_verbaal_for_the_same
         ElectionDocument.FileType.PDF_NA14_2,
     }
     gsb_preview = documents[ElectionDocument.FileType.PDF_NA14_2]
-    assert gsb["certified_document_url"] == f"/api/certified-documents/{gsb_preview.pk}/"
+    assert gsb["certified_document"]["url"] == f"/api/certified-documents/{gsb_preview.pk}/"
     assert {item["file_type"] for item in csb["documents"]} == {ElectionDocument.FileType.PDF_P22_2}
     csb_preview = documents[ElectionDocument.FileType.PDF_P22_2]
-    assert csb["certified_document_url"] == f"/api/certified-documents/{csb_preview.pk}/"
+    assert csb["certified_document"]["url"] == f"/api/certified-documents/{csb_preview.pk}/"
 
 
 @pytest.mark.django_db
@@ -911,7 +928,7 @@ def test_stembureau_detail_previews_the_proces_verbaal_by_priority(file_types, s
     data = region_detail(station, "sb")
 
     if shown is None:
-        assert data["certified_document_url"] is None
+        assert data["certified_document"] is None
     else:
-        assert data["certified_document_url"] == f"/api/certified-documents/{documents[shown].pk}/"
-        assert data["certified_document_preview_url"] == f"/api/certified-documents/{documents[shown].pk}/preview/"
+        assert data["certified_document"]["url"] == f"/api/certified-documents/{documents[shown].pk}/"
+        assert data["certified_document"]["preview_url"] == f"/api/certified-documents/{documents[shown].pk}/preview/"
