@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useParams } from "react-router";
-import { queryClient } from "@/queryClient.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
@@ -25,6 +25,7 @@ export async function loadHSBMunicipalityList(client: QueryClient, { params }: P
    }
 }
 
+export const loader = serverLoader(loadHSBMunicipalityList);
 export const clientLoader = (args: Route.ClientLoaderArgs) => loadHSBMunicipalityList(queryClient, args);
 
 export default function HSBMunicipalityListPage() {

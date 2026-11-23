@@ -2,7 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, useParams } from "react-router";
 import { CSBResultsComponent } from "@/components/ResultsPage/CSBResultsComponent.tsx";
-import { queryClient } from "@/queryClient.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
 import SharedTabs from "../../components/SharedTabs.tsx";
@@ -19,6 +19,7 @@ export async function loadCSBResults(client: QueryClient, { params }: Pick<Loade
    ]);
 }
 
+export const loader = serverLoader(loadCSBResults);
 export const clientLoader = (args: Route.ClientLoaderArgs) => loadCSBResults(queryClient, args);
 
 export default function CSBResultsPage() {

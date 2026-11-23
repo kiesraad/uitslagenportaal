@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type LoaderFunctionArgs, type Params, useParams } from "react-router";
-import { queryClient } from "@/queryClient.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import { RegionList } from "../../components/ListPage/RegionList.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -25,6 +25,7 @@ export async function loadCSBMunicipalityList(client: QueryClient, { params }: P
    ]);
 }
 
+export const loader = serverLoader(loadCSBMunicipalityList);
 export const clientLoader = (args: Route.ClientLoaderArgs) => loadCSBMunicipalityList(queryClient, args);
 
 export default function CSBMunicipalityListPage() {
