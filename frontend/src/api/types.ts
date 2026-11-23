@@ -102,6 +102,13 @@ export type TocEntry = {
    list_number_inferred?: boolean;
 };
 
+// The proces-verbaal shown in the viewer.
+export type CertifiedDocument = {
+   url: string | null;
+   preview_url: string | null;
+   toc: TocEntry[] | null;
+};
+
 export type Region = {
    region_name: string;
    slug: string;
@@ -111,9 +118,7 @@ export type Region = {
    correction_date?: string | null;
    eml_dates?: EmlDates;
    documents?: ElectionDocument[];
-   certified_document_url?: string | null;
-   certified_document_preview_url?: string | null;
-   certified_document_toc?: TocEntry[] | null;
+   certified_document?: CertifiedDocument | null;
    region_category: RegionCategory;
    results_available_at: string | null;
    election_slug?: string;

@@ -20,9 +20,9 @@ export function CSBResultsComponent({ electionConfig, region }: Props) {
 
    return (
       <ResultsPageColumns
-         previewUrl={region.certified_document_preview_url}
-         documentUrl={region.certified_document_url}
-         documentToc={region.certified_document_toc}
+         previewUrl={region.certified_document?.preview_url}
+         documentUrl={region.certified_document?.url}
+         documentToc={region.certified_document?.toc}
       >
          <RegionResultsContent
             intro={
