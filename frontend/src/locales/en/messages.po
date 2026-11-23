@@ -992,7 +992,7 @@ msgstr "Admitted voters"
 
 #: src/components/ResultsPage/PvPageLink.tsx
 msgid "Toon in proces-verbaal"
-msgstr "Show in the certified election results"
+msgstr "Show in the certified election document"
 
 #. Between a date and a time: 8 december tot 21:00
 #: src/utils/format.ts
