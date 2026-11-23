@@ -196,6 +196,24 @@ describe("PvPageLink", () => {
       screenWidth.matches = true;
    });
 
+   it("Links to the first candidate page of the given list only", () => {
+      const listToc: TocEntry[] = [
+         { page: 5, content: "candidate-votes", list_number: 1 },
+         { page: 6, content: "candidate-votes", list_number: 2 },
+         { page: 7, content: "candidate-votes-continued", list_number: 2 },
+      ];
+      renderWithConfig(
+         <ResultsPageColumns previewUrl={previewUrl} documentUrl={documentUrl} documentToc={listToc}>
+            <PvPageLink content="candidate-votes" listNumber={2} />
+            <PvPageLink content="candidate-votes" listNumber={3} />
+         </ResultsPageColumns>,
+      );
+
+      const links = screen.getAllByRole("link", { name: /Toon in proces-verbaal/ });
+      expect(links).toHaveLength(1);
+      expect(links[0]).toHaveAttribute("href", `${documentUrl}#page=6`);
+   });
+
    it("Shows no link while the page is unknown", () => {
       renderWithConfig(columns(documentUrl, null));
 

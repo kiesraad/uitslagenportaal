@@ -67,6 +67,7 @@ export default function MunicipalityPartyResultsPage() {
          <ResultsPageColumns
             previewUrl={region.certified_document?.preview_url}
             documentUrl={region.certified_document?.url}
+            documentToc={region.certified_document?.toc}
          >
             <PartyCandidatesResultsContent
                voteCounts={region.vote_counts}

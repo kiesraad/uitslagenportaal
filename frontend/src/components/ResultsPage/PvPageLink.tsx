@@ -7,12 +7,16 @@ import { usePvViewerContext } from "./ResultsPageColumns";
 
 type Props = {
    content: TocEntry["content"];
+   // Narrows the pages to those of one list.
+   listNumber?: number;
 };
 
 /** Links to the first page of the proces-verbaal that holds `content`; renders nothing while that page is unknown. */
-export default function PvPageLink({ content }: Props) {
+export default function PvPageLink({ content, listNumber }: Props) {
    const { documentUrl, toc, openViewerAt } = usePvViewerContext();
-   const page = toc?.find((entry) => entry.content === content)?.page;
+   const page = toc?.find(
+      (entry) => entry.content === content && (listNumber === undefined || entry.list_number === listNumber),
+   )?.page;
    if (!documentUrl || page === undefined) return null;
 
    const label = (
