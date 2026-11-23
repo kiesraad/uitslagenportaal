@@ -9,6 +9,7 @@ from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from mainsite.serializers import CandidateSummarySerializer
 from mainsite.utils.eml_type import EmlType
+from mainsite.views import CachedReadMixin
 from party.models import Candidate, Party
 from party.serializers import PartyDetailSerializer, PartyListSerializer
 from region.models import Region
@@ -83,8 +84,11 @@ def _build_matrix_response(
     )
 
 
-class CSBPartyResultMatrixView(APIView):
+class CSBPartyResultMatrixView(CachedReadMixin, APIView):
     def get(self, request):
+        return self.cached(request, self._matrix)
+
+    def _matrix(self, request):
         election_slug = request.query_params.get("election")
         party_slug = request.query_params.get("party")
         csb_slug = request.query_params.get("csb")
@@ -139,8 +143,11 @@ class CSBPartyResultMatrixView(APIView):
         )
 
 
-class HSBPartyResultMatrixView(APIView):
+class HSBPartyResultMatrixView(CachedReadMixin, APIView):
     def get(self, request):
+        return self.cached(request, self._matrix)
+
+    def _matrix(self, request):
         election_slug = request.query_params.get("election")
         party_slug = request.query_params.get("party")
         hsb_slug = request.query_params.get("hsb")
@@ -185,7 +192,7 @@ class HSBPartyResultMatrixView(APIView):
         )
 
 
-class PartyViewSet(viewsets.ReadOnlyModelViewSet):
+class PartyViewSet(CachedReadMixin, viewsets.ReadOnlyModelViewSet):
     queryset = Party.objects.all()
 
     def get_queryset(self):

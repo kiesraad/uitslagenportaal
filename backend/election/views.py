@@ -13,9 +13,10 @@ from election.serializers import (
     ElectionConfigSerializer,
 )
 from election.utils import visibility_cutoff
+from mainsite.views import CachedReadMixin
 
 
-class ElectionConfigViewSet(viewsets.ReadOnlyModelViewSet):
+class ElectionConfigViewSet(CachedReadMixin, viewsets.ReadOnlyModelViewSet):
     queryset = ElectionConfig.objects.all()
     lookup_field = "slug"
 
@@ -23,7 +24,7 @@ class ElectionConfigViewSet(viewsets.ReadOnlyModelViewSet):
         return ElectionConfigSerializer
 
 
-class ContestViewSet(viewsets.ReadOnlyModelViewSet):
+class ContestViewSet(CachedReadMixin, viewsets.ReadOnlyModelViewSet):
     queryset = Contest.objects.all()
 
     def get_queryset(self):
