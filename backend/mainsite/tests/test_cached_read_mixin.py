@@ -30,3 +30,14 @@ def test_error_responses_are_not_cached(client):
     ElectionConfigFactory(slug="later")
 
     assert client.get("/api/election_configs/later/").status_code == 200
+
+
+@pytest.mark.django_db
+def test_timeout_of_zero_turns_the_cache_off(client, settings):
+    settings.API_CACHE_TIMEOUT = 0
+    ElectionConfigFactory()
+    client.get("/api/election_configs/")
+
+    ElectionConfigFactory()
+
+    assert len(client.get("/api/election_configs/").json()) == 2

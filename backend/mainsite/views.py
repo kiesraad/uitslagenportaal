@@ -8,8 +8,6 @@ from rest_framework.response import Response
 class CachedReadMixin:
     """Caches the data of successful list and retrieve responses per URL; the API is public, so cookies play no part."""
 
-    cache_timeout = 60 * 10
-
     def list(self, request, *args, **kwargs):
         return self.cached(request, super().list, *args, **kwargs)
 
@@ -17,13 +15,15 @@ class CachedReadMixin:
         return self.cached(request, super().retrieve, *args, **kwargs)
 
     def cached(self, request, handler, *args, **kwargs):
+        if not settings.API_CACHE_TIMEOUT:
+            return handler(request, *args, **kwargs)
         key = f"api:{request.get_full_path()}"
         data = cache.get(key)
         if data is not None:
             return Response(data)
         response = handler(request, *args, **kwargs)
         if response.status_code == 200:
-            cache.set(key, response.data, self.cache_timeout)
+            cache.set(key, response.data, settings.API_CACHE_TIMEOUT)
         return response
 
 
