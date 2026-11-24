@@ -12,6 +12,8 @@ services:
     environment:
       CORS_ALLOWED_ORIGINS: http://localhost:8081
       S3_PUBLIC_DOMAIN: localhost:19000/uitslagenportaal
+      # The specs change the data between page loads, so a cached response would be stale.
+      API_CACHE_TIMEOUT: "0"
 
   backend-scripts:
     profiles:

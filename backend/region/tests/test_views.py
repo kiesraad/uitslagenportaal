@@ -1,6 +1,7 @@
 import datetime
 
 import pytest
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.utils import timezone
@@ -319,6 +320,7 @@ def test_region_detail_correction_date_is_the_latest_corrected_510b():
     corrected = ElectionDocumentFactory(
         region=region, storage_key="TK2025/telling-2.xml", file_type=ElectionDocument.FileType.EML_510B
     )
+    cache.clear()
 
     assert region_detail(region, "gsb")["correction_date"] == corrected.created_at
 
