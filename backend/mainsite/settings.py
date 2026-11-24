@@ -178,6 +178,8 @@ CACHES = {
         },
     }
 }
+# Seconds the API keeps a response; 0 turns the API cache off.
+API_CACHE_TIMEOUT = int(os.environ.get("API_CACHE_TIMEOUT", 60 * 10))
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
