@@ -569,7 +569,7 @@ def test_ensure_polling_stations_creates_missing_stations(ws_regions):
 
     stations = importer._ensure_polling_stations(ws_regions["gemeente"])
 
-    assert set(stations.keys()) == {("0654::SB1", "A"), ("0654::SB2", "B")}
+    assert set(stations.keys()) == {"0654::SB1", "0654::SB2"}
     created = Region.objects.filter(parent=ws_regions["gemeente"], region_category=RegionCategory.STEMBUREAU)
     assert created.count() == 2
     # The polling stations hang off the gemeente, but their CSB is the election-tree root
@@ -582,8 +582,8 @@ def test_ensure_polling_stations_stores_the_postal_code(ws_regions):
 
     stations = importer._ensure_polling_stations(ws_regions["gemeente"])
 
-    assert stations[("0654::SB1", "A")].postal_code == "4451 CZ"
-    assert stations[("0654::SB2", "B")].postal_code is None
+    assert stations["0654::SB1"].postal_code == "4451 CZ"
+    assert stations["0654::SB2"].postal_code is None
 
 
 def test_ensure_polling_stations_reuses_existing_stations(ws_regions):
@@ -599,8 +599,27 @@ def test_ensure_polling_stations_reuses_existing_stations(ws_regions):
 
     stations = importer._ensure_polling_stations(ws_regions["gemeente"])
 
-    assert stations[("0654::SB1", "A")] == existing
+    assert stations["0654::SB1"] == existing
     assert Region.objects.filter(parent=ws_regions["gemeente"], region_category=RegionCategory.STEMBUREAU).count() == 2
+
+
+def test_ensure_polling_stations_updates_a_renamed_station(ws_regions):
+    existing = RegionFactory(
+        election=ws_regions["gemeente"].election,
+        parent=ws_regions["gemeente"],
+        region_category=RegionCategory.STEMBUREAU,
+        region_number="0654::SB1",
+        region_name="Oud",
+        postal_code="4451 CZ",
+    )
+    eml = make_polling_station_document(("0654::SB1", "Stembureau Nieuw (postcode: 4451 AA)"))
+    importer = EML510bImporter(fake_eml_file(), eml=eml)
+
+    stations = importer._ensure_polling_stations(ws_regions["gemeente"])
+
+    station = Region.objects.get(pk=existing.pk)
+    assert stations["0654::SB1"] == station
+    assert (station.region_name, station.postal_code, station.slug) == ("Nieuw", "4451 AA", "SB1-nieuw")
 
 
 def test_ensure_polling_stations_deletes_stations_no_longer_in_the_file(ws_regions):
@@ -615,7 +634,7 @@ def test_ensure_polling_stations_deletes_stations_no_longer_in_the_file(ws_regio
 
     stations = importer._ensure_polling_stations(ws_regions["gemeente"])
 
-    assert set(stations.keys()) == {("0654::SB1", "A")}
+    assert set(stations.keys()) == {"0654::SB1"}
     assert not Region.objects.filter(pk=dropped.pk).exists()
 
 
