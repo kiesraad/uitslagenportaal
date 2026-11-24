@@ -8,6 +8,7 @@ from election.models import ElectionConfig, ElectionDocument, VoteCount, VoterTu
 from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, ReportingLevel
+from mainsite.views import CachedReadMixin
 from region.models import Region, hsb_kieskringen
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
@@ -70,7 +71,7 @@ def _has_results():
     )
 
 
-class RegionListView(ListAPIView):
+class RegionListView(CachedReadMixin, ListAPIView):
     serializer_class = RegionListSerializer
 
     def get_queryset(self):
@@ -112,7 +113,7 @@ class RegionListView(ListAPIView):
         return _with_same_location_stations(result)
 
 
-class RegionDetailView(RetrieveAPIView):
+class RegionDetailView(CachedReadMixin, RetrieveAPIView):
     serializer_class = RegionDetailSerializer
 
     def get_object(self):

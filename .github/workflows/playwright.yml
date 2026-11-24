@@ -65,6 +65,8 @@ jobs:
       S3_SECRET_KEY: password
       S3_URL_PROTOCOL: "http:"
       S3_ADDRESSING_STYLE: path
+      # The specs change the data between page loads, so a cached response would be stale.
+      API_CACHE_TIMEOUT: "0"
       # conftest.py defaults to the compose stack's published ports; point it here.
       PLAYWRIGHT_DB_HOST: 127.0.0.1
       PLAYWRIGHT_DB_PORT: "5432"
