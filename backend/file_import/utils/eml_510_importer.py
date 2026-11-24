@@ -1,6 +1,5 @@
 import re
 from abc import ABC
-from pathlib import Path
 
 from django.db import transaction
 from django.db.models import Q
@@ -22,7 +21,6 @@ from file_import.exceptions import EMLImporterException
 from file_import.utils.base_importer import EMLStorageMixin
 from file_import.utils.csv_osv43_importer import HSB_NUMBER_RE
 from file_import.utils.eml_base_importer import EMLBaseImporter
-from file_import.utils.named_bytes_io import NamedBytesIO
 from mainsite.models import CountingMethod, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from party.models import Candidate, Party
@@ -35,10 +33,6 @@ DUTCH_POSTAL_CODE_RE = re.compile(r"^(\d{4})\s*([A-Za-z]{2})$")
 
 class EML510BaseImporter(EMLStorageMixin, EMLBaseImporter[Eml510], ABC):
     file_type: ElectionDocument.FileType
-
-    def __init__(self, file_path: Path | NamedBytesIO, eml: Eml510):
-        super().__init__(file_path, eml=eml)
-        self.election_documents = {doc.storage_key: doc for doc in ElectionDocument.objects.all()}
 
     @staticmethod
     def _counting_method(count) -> str | None:
