@@ -8,12 +8,28 @@ stages:
     - ../backend/pv_ocr/utils/pv_classifier.py
     outs:
     - data/tocs.json
-  extract_crops:
-    cmd: python -m scripts.extract_crops data/testdata data/tocs.json data/crops
+  orientations:
+    cmd: python -m scripts.determine_orientations data/testdata data/tocs.json data/orientations.json
     deps:
     - data/testdata
     - data/tocs.json
+    - scripts/determine_orientations.py
+    - scripts/ocr_models.py
+    - ../backend/pv_ocr/utils/orientation.py
+    - ../backend/pv_ocr/utils/ocr.py
+    params:
+      - jobs
+    outs:
+    - data/orientations.json
+  extract_crops:
+    cmd: python -m scripts.extract_crops data/testdata data/tocs.json data/orientations.json data/crops
+    deps:
+    - data/testdata
+    - data/tocs.json
+    - data/orientations.json
     - scripts/extract_crops.py
+    - scripts/ocr_models.py
+    - ../backend/pv_ocr/utils/orientation.py
     - ../backend/pv_ocr/utils/vote_tables.py
     - ../backend/pv_ocr/utils/ocr.py
     - ../backend/pv_ocr/utils/pv_toc.py
@@ -23,7 +39,7 @@ stages:
     outs:
     - data/crops
   split:
-    cmd: python -m scripts.split data/crops
+    cmd: python -m scripts.split data/crops data/split
     deps:
     - data/crops
     - scripts/split.py
@@ -31,5 +47,7 @@ stages:
     - split.test
     - split.train
     - split.validate
+    - split.blank
+    - split.seed
     outs:
     - data/split

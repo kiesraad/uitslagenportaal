@@ -14,6 +14,7 @@ import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterator
+from itertools import combinations
 from typing import NamedTuple
 
 import cv2
@@ -22,6 +23,7 @@ import pytesseract
 import regex
 
 from pv_ocr.utils.ocr import OCR_DIGIT, TO_DIGIT, letters_only
+from pv_ocr.utils.orientation import tesseract_image
 from pv_ocr.utils.pv_toc import title_pattern
 
 type Box = tuple[int, int, int, int]  # x, y, width, height
@@ -285,8 +287,8 @@ class GrayColumnDetector(VoteAreaDetector):
 
 class BorderedTableDetector(VoteAreaDetector):
     """Candidate tables drawn in lines, ending in four digit boxes. Those are anchored on their five vertical lines,
-    the rows on the horizontal lines between them. Na 14-2 Bijlage 1 prints the original count in a gray column before
-    them; only the boxes are handwritten."""
+    the rows on the horizontal lines between them. Na 14-2 Bijlage 1 prints the original count before them, in a gray
+    column or in boxes of its own; only the last boxes are handwritten."""
 
     DIGIT_BOXES = 4
     # Digit boxes are 1.2–6% of the page wide, and within 30% of each other.
@@ -316,7 +318,8 @@ class BorderedTableDetector(VoteAreaDetector):
 
     def anchors(self, gray: np.ndarray) -> list[Box]:
         """The digit boxes of each table: four boxes as wide as the last, between lines of about the same height,
-        found from the right. Other lines in between, of a subtotal row or handwriting, are passed over."""
+        found from the right. Shorter lines in between, of a subtotal row or handwriting, and those of boxes found
+        already are passed over; a column line of another width ends the boxes."""
         w = gray.shape[1]
         low, high = self.DIGIT_WIDTH[0] * w, self.DIGIT_WIDTH[1] * w
 
@@ -337,11 +340,9 @@ class BorderedTableDetector(VoteAreaDetector):
                 if gap > high:
                     break
                 last_gap = lines[run[0]][0] - lines[run[1]][0] if len(run) > 1 else gap
-                if (
-                    gap >= low
-                    and same_height(lines[i], lines[j])
-                    and abs(gap - last_gap) <= self.SIMILAR_WIDTH * last_gap
-                ):
+                if gap >= low and j not in used and same_height(lines[i], lines[j]):
+                    if abs(gap - last_gap) > self.SIMILAR_WIDTH * last_gap:
+                        break
                     run.append(j)
                     if len(run) > self.DIGIT_BOXES:
                         break
@@ -354,15 +355,27 @@ class BorderedTableDetector(VoteAreaDetector):
                 bottom = max(box[1] + box[3] for box in boxes)
                 anchors.append((left, top, right - left, bottom - top))
         anchors.sort()
-        # The digit boxes of a subtotal are below those of their table.
-        return [
-            a for a in anchors if not any(b[1] < a[1] and b[0] < a[0] + a[2] and a[0] < b[0] + b[2] for b in anchors)
-        ]
+
+        def printed(a: Box, b: Box) -> bool:
+            # Na 14-2 Bijlage 1 can print the original count in boxes right before the handwritten ones, which can be
+            # wider.
+            box = max(a[2], b[2]) / self.DIGIT_BOXES
+            overlap_y = min(a[1] + a[3], b[1] + b[3]) - max(a[1], b[1])
+            return -box < b[0] - (a[0] + a[2]) < box and overlap_y > a[3] / 2
+
+        def below(a: Box, b: Box) -> bool:
+            # The digit boxes of a subtotal, or the same boxes found again, start below those of their table.
+            return b[1] < a[1] and b[0] < a[0] + a[2] and a[0] < b[0] + b[2]
+
+        anchors = [a for a in anchors if not any(printed(a, b) for b in anchors)]
+        return [a for a in anchors if not any(below(a, b) for b in anchors)]
 
     def skew(self, gray: np.ndarray, area: Box) -> float:
-        """Skew from the leftmost vertical line of the digit boxes."""
+        """Skew from the rightmost vertical line of the digit boxes; the leftmost can be the edge of a shaded column,
+        which `vertical_lines` gives as upright."""
         x, y, w, h = area
-        line = next(line for line in self.vertical_lines(gray) if line[0] == x)
+        # A subtotal row can end in a line at the same x.
+        line = max((line for line in self.vertical_lines(gray) if line[0] + line[2] == x + w), key=lambda line: line[3])
         lx, ly, lw, lh = line
         ys, xs = [], []
         for yy in range(ly, ly + lh, 4):
@@ -432,6 +445,14 @@ DESCRIPTIONS = [
     ("E.", "totaallijst"),
 ]
 DESCRIPTION_KEYS = [(field, title_pattern(key)) for field, key in DESCRIPTIONS]
+# "Totaal" is bold against a black box, and read as up to five other letters ("ros", "Frea"). The rest of the
+# description is particular enough without it: the "(A+B)" and "(E+F+G)" endings keep out running text ("het aantal
+# toegelaten kiezers") and the heading "Uitgebrachte stemmen"; "stemmen op kandidaten" is found nowhere else.
+TOTAL_KEYS = [
+    ("D", regex.compile(r"[a-z]{0,5}?(?:toegelatenkiezers){e<=2}ab")),
+    ("E", regex.compile(r"[a-z]{0,5}?(?:stemmenopkandidaten){e<=2}")),
+    ("H", regex.compile(r"[a-z]{0,5}?(?:uitgebrachtestemmen){e<=2}efg")),
+]
 DIFFERENCE_RE = regex.compile(r"(?:aantal){e<=1}(\w{1,8}?)(?:getelde){e<=1}")
 PUNCTUATION = "_-–—‚,.'\"(|"
 # A label as OCR reads it: "E.1", "E1", "(D", "H".
@@ -446,8 +467,8 @@ class CountFieldDetector:
 
     # Each segmentation mode misses lines the other finds; together they find about 95% of the counts.
     PAGE_SEGMENTATION_MODES = (3, 12)
-    # The number is written in up to 13% of the page width left of its box.
-    COUNT_WIDTH = 0.13
+    # The number is written in up to 12% of the page width left of its box.
+    COUNT_WIDTH = 0.12
     # The width of a label box, with its margins, where no label on the page is read.
     LABEL_WIDTH = 0.05
 
@@ -490,20 +511,41 @@ class CountFieldDetector:
             right if right is not None else round(line.description_left - span)
             for (_, line), right in zip(found, rights)
         ]
-        # The label boxes are in one column too; a box can be measured wrong either way, so most decide.
-        boxes = main_column(rights, 0.01 * w)
+        # The label boxes are in one column too, slanting with the scan; a box can be measured wrong either way, so each
+        # area ends at the line through most of them.
         areas = []
-        for (field, line), (top, bottom), right in zip(found, rows, rights):
-            right = right if abs(right - boxes) < 0.01 * w else boxes
+        for (field, line), row, right in zip(found, rows, column_line(centres, rights, 0.01 * w)):
+            top, bottom = self.ruled_row(gray, right - round(self.COUNT_WIDTH * w), right, row)
             bounds = (max(0, right - round(self.COUNT_WIDTH * w)), top, right, bottom)
-            left = (
-                max(self.after_gray_fill(gray, bounds), self.digit_boxes_start(gray, bounds))
-                if originals
-                else bounds[0]
-            )
+            left = bounds[0]
+            if originals:
+                # Handwriting in the first box can pass for gray fill, so the digit boxes go first.
+                left = self.digit_boxes_start(gray, bounds)
+                if left == bounds[0]:
+                    left = self.after_gray_fill(gray, bounds)
             if right - left > 0.02 * w:
                 areas.append((field, (left, top, right - left, bottom - top)))
         return areas
+
+    @staticmethod
+    def ruled_row(gray: np.ndarray, x0: int, x1: int, row: tuple[int, int]) -> tuple[int, int]:
+        """The row centred between the ruled lines of its digit boxes nearest its top and bottom, where both are within
+        a third of a row; a description can be printed off the middle of its row. Lines closer together than most of
+        a row include a dash written for 0, and digits can stick out of their boxes, so the row keeps its height."""
+        top, bottom = row
+        h = bottom - top
+        y0, y1 = max(0, top - h // 2), min(gray.shape[0], bottom + h // 2)
+        dark = (gray[y0:y1, max(0, x0) : x1] < 160).mean(axis=1) >= 0.6
+        lines = [y0 + (a + b) // 2 for a, b in runs(dark)]
+
+        def nearest(y: int) -> int | None:
+            return min((line for line in lines if abs(line - y) < h / 3), key=lambda line: abs(line - y), default=None)
+
+        ruled_top, ruled_bottom = nearest(top), nearest(bottom)
+        if ruled_top is None or ruled_bottom is None or ruled_bottom - ruled_top < 0.8 * h:
+            return row
+        shift = (ruled_top + ruled_bottom) // 2 - (top + bottom) // 2
+        return top + shift, bottom + shift
 
     @staticmethod
     def label_box_left(gray: np.ndarray, row: tuple[int, int], line: Line) -> int | None:
@@ -515,7 +557,14 @@ class CountFieldDetector:
         x0, x1 = max(0, line.description_left - round(0.1 * w)), line.description_left
 
         def nearest(dark: np.ndarray) -> int | None:
-            for a, b in reversed(runs(dark)):
+            # A wide white label ("I") can cut a box in two; a grid line or pen stroke next to it is too thin to join.
+            merged: list[tuple[int, int]] = []
+            for a, b in runs(dark):
+                if merged and a - merged[-1][1] < 0.005 * w and min(b - a, merged[-1][1] - merged[-1][0]) >= 0.01 * w:
+                    merged[-1] = (merged[-1][0], b)
+                else:
+                    merged.append((a, b))
+            for a, b in reversed(merged):
                 if x1 - (x0 + b) < 0.05 * w and 0.015 * w < b - a < 0.09 * w:
                     return x0 + a
             return None
@@ -540,6 +589,8 @@ class CountFieldDetector:
         black = cv2.morphologyEx(
             (cv2.medianBlur(part, 5) < 100).astype(np.uint8), cv2.MORPH_OPEN, kernel(0.012 * w / 0.7, 0.012 * h)
         )
+        # The label can cut its box in two; inverted apart, the black between them reads into the description.
+        black = cv2.morphologyEx(black, cv2.MORPH_CLOSE, kernel(0.012 * w / 0.7, 1))
         for x, y, bw, bh in components(black):
             if bw < 0.08 * w / 0.7:
                 part[y : y + bh, x : x + bw] = 255 - part[y : y + bh, x : x + bw]
@@ -547,7 +598,9 @@ class CountFieldDetector:
 
     @staticmethod
     def read_lines(part: np.ndarray, mode: int) -> Iterator[tuple[str, Line]]:
-        data = pytesseract.image_to_data(part, lang="nld", config=f"--psm {mode}", output_type=pytesseract.Output.DICT)
+        data = pytesseract.image_to_data(
+            tesseract_image(part), lang="nld", config=f"--psm {mode}", output_type=pytesseract.Output.DICT
+        )
         lines = defaultdict(list)
         for i, text in enumerate(data["text"]):
             if text.strip():
@@ -558,11 +611,11 @@ class CountFieldDetector:
             for k, i in enumerate(words):
                 # A description follows a label ("E‚3 {Totaal lijst 3"), or starts the line; in running text it
                 # follows a lowercase word ("aantal geldige stempassen en volmachtbewijzen"), where a misread label
-                # is capitalised ("ES Totaal lijst 5"). The label and handwriting read as words ("W, 5", "Ò") can
-                # match along with it, so the rightmost start that matches wins.
+                # is capitalised ("ES Totaal lijst 5"). The label and handwriting read as words ("W, 5", "Ò"), or
+                # glued to it ("|__\Aantal"), can match along with it, so the rightmost start that matches wins.
                 previous = texts[k - 1].strip(PUNCTUATION) if k else ""
                 if (
-                    not re.sub(r"^\W+", "", texts[k])[:1].isalpha()
+                    not re.sub(r"^[\W_]+", "", texts[k])[:1].isalpha()
                     or len(previous) > 4
                     or len(previous) > 1
                     and previous.isalpha()
@@ -590,18 +643,24 @@ class CountFieldDetector:
     @staticmethod
     def digit_boxes_start(gray: np.ndarray, bounds: tuple[int, int, int, int]) -> int:
         """Where the area within bounds (x0, y0, x1, y1) starts: at the first of the digit boxes ending it, if it has
-        three or more of the same width; a wider box before them holds a printed original count."""
+        three or more of the same width; a wider box before them holds a printed original count. A stroke written in a
+        box can pass for a line, so each step goes to the line closest to one box further."""
         x0, y0, x1, y1 = bounds
+        w = gray.shape[1]
         quarter = (y1 - y0) // 4
         dark = (gray[y0 + quarter : y1 - quarter, x0:x1] < 160).mean(axis=0) >= 0.8
         lines = [x0 + (a + b) // 2 for a, b in runs(dark)]
-        start = len(lines) - 1
-        while start > 0:
-            gap, last = lines[start] - lines[start - 1], lines[-1] - lines[-2]
-            if gap < 0.012 * gray.shape[1] or abs(gap - last) > 0.3 * last:
-                break
-            start -= 1
-        return lines[start] if len(lines) - start >= 4 else x0
+
+        def boxes_of(width: int) -> tuple[int, int]:
+            start, boxes = len(lines) - 1, 0
+            while fits := [i for i in range(start) if abs(lines[start] - lines[i] - width) <= 0.3 * width]:
+                start = min(fits, key=lambda i: abs(lines[start] - lines[i] - width))
+                boxes += 1
+            return boxes, start
+
+        widths = [lines[-1] - line for line in lines[:-1] if 0.012 * w <= lines[-1] - line <= 0.06 * w]
+        boxes, start = max((boxes_of(width) for width in widths), key=lambda result: result[0], default=(0, 0))
+        return lines[start] if boxes >= 3 else x0
 
 
 def description_field(words: list[str]) -> str | None:
@@ -615,7 +674,7 @@ def description_field(words: list[str]) -> str | None:
                 return field
             number = LIST_NUMBER_RE.search(" ".join(words[:4]))
             return f"E.{int(number.group(1).translate(TO_DIGIT))}" if number else None
-    return None
+    return next((field for field, pattern in TOTAL_KEYS if pattern.match(text)), None)
 
 
 def right_column(xs: list[int], tolerance: float) -> int:
@@ -630,6 +689,18 @@ def main_column(xs: list[int], tolerance: float) -> int:
     return int(np.median(max(clusters, key=lambda c: (len(c), np.median(c)))))
 
 
+def column_line(ys: list[float], xs: list[int], tolerance: float) -> list[int]:
+    """Where a column is at each y: on the line through the positions within `tolerance` of the main column, with the
+    median slope between them, so that a few positions measured wrong don't tilt it."""
+    column = main_column(xs, tolerance)
+    points = [(y, x) for y, x in zip(ys, xs) if abs(x - column) < tolerance]
+    slopes = [(x2 - x1) / (y2 - y1) for (y1, x1), (y2, x2) in combinations(points, 2) if y2 != y1]
+    # A scan is skewed by a degree at most; a steeper slope comes from a short list with boxes measured wrong.
+    slope = float(np.clip(np.median(slopes), -0.02, 0.02)) if len(points) >= 3 else 0.0
+    offset = float(np.median([x - slope * y for y, x in points]))
+    return [round(offset + slope * y) for y in ys]
+
+
 def in_order(candidates: list[tuple[str, Line]], fields: list[str]) -> list[tuple[str, Line]]:
     """The most fields among the candidates that come both in the order of `fields` and top to bottom. A misread
     field, such as E.8 for E.6, or a description in running text breaks the order and is left out."""
@@ -642,21 +713,6 @@ def in_order(candidates: list[tuple[str, Line]], fields: list[str]) -> list[tupl
         ]
         best.append(max(runs_before, key=len, default=[]) + [i])
     return [candidates[i] for i in max(best, key=len, default=[])]
-
-
-def upright(gray: np.ndarray) -> np.ndarray:
-    """The page turned upright by Tesseract's orientation detection; a table scanned upside down looks the same to the
-    detectors, but with its rows reversed. Half the resolution is as reliable, and twice as fast."""
-    small = cv2.resize(gray, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
-    try:
-        osd = pytesseract.image_to_osd(small, output_type=pytesseract.Output.DICT)
-    except pytesseract.TesseractError:
-        return gray
-    # OSD gives the clockwise correction.
-    turns = {90: cv2.ROTATE_90_CLOCKWISE, 180: cv2.ROTATE_180, 270: cv2.ROTATE_90_COUNTERCLOCKWISE}
-    if osd["rotate"] in turns and osd["orientation_conf"] > 1:
-        return cv2.rotate(gray, turns[osd["rotate"]])
-    return gray
 
 
 def is_blank(crop: np.ndarray) -> bool:

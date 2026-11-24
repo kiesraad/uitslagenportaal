@@ -11,11 +11,13 @@ docker compose exec ml dvc pull                                 # everything
 docker compose exec ml dvc pull data/testdata/GR2026/0228-ede   # part of a directory
 ```
 
-| Path        | Contents                                                   | Made by          |
-|-------------|------------------------------------------------------------|------------------|
-| `testdata/` | PVs, mostly scanned, with the 510b EMLs                    | hand, `dvc add`  |
-| `tocs.json` | The table of contents of each PV in `testdata/`, or `null` | `toc` stage      |
-| `crops/`    | A crop of each handwritten number, with its 510b value     | `extract_crops`  |
+| Path                | Contents                                                   | Made by          |
+|---------------------|------------------------------------------------------------|------------------|
+| `testdata/`         | PVs, mostly scanned, with the 510b EMLs                    | hand, `dvc add`  |
+| `tocs.json`         | The table of contents of each PV in `testdata/`, or `null` | `toc` stage      |
+| `orientations.json` | The rotation of each vote page of the OCR models           | `orientations`   |
+| `crops/`            | A crop of each handwritten number, with its 510b value     | `extract_crops`  |
+| `split/`            | The crops for training, validation and testing             | `split`          |
 
 ## testdata
 
@@ -81,19 +83,65 @@ table, then a gray or black column of candidate numbers. The counts are found by
 stemmen", "Totaal lijst 3"), read with Tesseract. Crops are named `<election>/<pv>/p<page>_<field>.png`, the field
 being `A`…`J`, `E.<list>` or `L<list>-<candidate>`.
 
+Turning a page upright takes Tesseract's orientation check, over a third of the time of `extract_crops`, so the
+`orientations` stage stores the rotation of each page in `orientations.json`, and a change to the detectors reruns only
+`extract_crops`. A page missing from it, as in a trial run with another `--glob`, is checked on the spot.
+
 `crops.csv` lists each crop with its PV, model, page, field and `label`, the value in the 510b. That is the first 510b,
-which holds the counts the gemeentelijk stembureau set; for Na 14-2 Bijlage 1 it is the last `_correctie<n>`.
+which holds the counts the gemeentelijk stembureau set; for a corrigendum (Na 14-1, Na 14-2 Bijlage 1) it is the last
+`_correctie<n>`, if any. Some gemeenten attach the original N 10 PV to a Na 14-1; its pages, recognised by the model in
+their footer, are labelled from the first 510b as that N 10 model, or left out where the N 10 PV is in `testdata/` too.
 `blank` says whether the area holds no writing. On N 10 and Na 31-2 Bijlage 1 a blank area means 0; a corrigendum
-leaves a count blank when it did not change, so a blank crop of a corrigendum says nothing about its label. For Na 14-2
-Bijlage 1, `changed` says whether the count differs from the `_origineel`. A label can still differ from what is
-written, where the PV and the 510b disagree. A crop covers its row or field only: a number written across the line
-below it is cut there, and part of its neighbour can show.
+leaves a count blank when it did not change, so a blank crop of a corrigendum says nothing about its label. For a
+corrigendum, `changed` says whether the count differs from the `_origineel`. A label can still differ from what is
+written, where the PV and the 510b disagree: with centrale stemopneming (N 10-2) the gemeentelijk stembureau counts
+the votes again, and the 510b holds its count. A crop covers its row or field, and a third of its height below it, as
+many write on the bottom line; part of a neighbouring number can show at the top or bottom.
 
 Pages where the fields cannot be placed reliably are skipped, and a PV where many counts that are not 0 come out blank is
-left out: it was matched to the wrong stembureau, or holds pages of another model. Both are logged. For a trial run on a
+left out: it was matched to the wrong stembureau, or holds pages of another model. Both are logged. Crops stop at the
+"Bijlage voor een experiment met een nieuw stembiljet" (Noordoostpolder), whose layout differs. For a trial run on a
 few PVs, with each page drawn with its areas:
 
 ```bash
-docker compose exec ml python -m scripts.extract_crops data/testdata data/tocs.json /tmp/crops \
+docker compose exec ml python -m scripts.extract_crops data/testdata data/tocs.json data/orientations.json /tmp/crops \
     --glob "GR2026/0059-achtkarspelen/*SB1.pdf" --debug /tmp/debug
 ```
+
+To check crops by hand, browse them with their labels in [FiftyOne](https://docs.voxel51.com/), filter on model, field,
+label or `blank`, and tag the wrong ones. FiftyOne needs OpenCV 4, so it runs on the host in an environment of its own,
+from the repository root:
+
+```bash
+uv run ml/scripts/browse_crops.py --sample 5000     # http://localhost:5151; --browser opens it
+uv run ml/scripts/browse_crops.py                   # the same crops again, with their tags
+uv run ml/scripts/browse_crops.py --export-tags tagged.csv
+```
+
+Once `split` has run, each crop has a `split` field, `train`, `validate` or `test`, or empty when `split` left it out,
+and each split has a saved view of that name, kept in step on every start, so these names can't hold a selection.
+`--split` limits the crops of a `--view` to one split.
+
+To measure how many labels are wrong, check a fixed random set: `--view` saves it under a name in the dataset, and
+prints how many of its crops carry each tag. The same name opens it again, with the tags given; `--reload` drops both,
+and the same options then select the same crops again.
+
+```bash
+uv run ml/scripts/browse_crops.py --view n10-2-check --model N10-2 --content votes-cast --written --take 200
+uv run ml/scripts/browse_crops.py --view n10-2-check
+uv run ml/scripts/browse_crops.py --view test-check --split test --written --take 500
+```
+
+## split
+
+The `split` stage writes `train.csv`, `validate.csv` and `test.csv`, listing crops as `crops.csv` does, in the shares
+of `params.yaml`. It splits by gemeente, so no handwriting is in two splits, and puts each model in every split. Half
+the crops are blank, nearly all 0, so only `split.blank` of them is kept, as a share of the written crops.
+
+A corrigendum is filled in only where a count changed, and its other fields may well be empty or show stray marks
+`blank` misses, so only its `changed` crops are kept; with a single 510b none are. That 510b, or the `_origineel`, can
+hold the corrections already where the gemeentelijk stembureau made the corrigendum before setting its counts, so an
+original PV of the same stembureau, attached or on its own, leaves out the fields its corrigendum filled in.
+
+The votes-cast and differences crops of N 10-2 are in `train` only: the 510b holds the recount of the gemeentelijk
+stembureau, which differs from what the stembureau wrote in about 5% of them, nearly always by 1 or 2.

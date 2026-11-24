@@ -1,5 +1,8 @@
 jobs: 8
 split:
-  train: 0.75
+  train: 0.7
   validate: 0.15
   test: 0.15
+  # Blank crops kept, as a share of the written ones; blank means 0 and is easy to tell.
+  blank: 0.05
+  seed: 0
