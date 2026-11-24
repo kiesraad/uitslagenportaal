@@ -31,10 +31,10 @@ export async function loader({ request }: Route.LoaderArgs) {
       loadCatalog(localeFromCookieHeader(request.headers.get("Cookie"))),
       client.query(electionConfigsQuery()).catch(() => {}),
    ]);
-   return { locale, dehydratedState: dehydrate(client) };
+   return { locale, origin: new URL(request.url).origin, dehydratedState: dehydrate(client) };
 }
 
-export const clientLoader = () => loadRoot(queryClient);
+export const clientLoader = async () => ({ ...(await loadRoot(queryClient)), origin: window.location.origin });
 
 /** The query data the server loaders of all matched routes rendered the page with. */
 function useServerQueries(): ServerLoaderData["dehydratedState"] {

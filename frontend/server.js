@@ -37,6 +37,8 @@ function accessLog(req, res, next) {
 
 const app = express();
 app.disable("x-powered-by");
+// Behind the gateway, so page URLs (canonical, og:url) get the public https origin.
+app.set("trust proxy", true);
 app.use(accessLog);
 // Pages need the backend; the probes should not take the frontend down with it.
 app.get("/healthz", (_req, res) => res.sendStatus(200));
