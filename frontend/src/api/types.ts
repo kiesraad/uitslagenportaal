@@ -119,6 +119,8 @@ export type Region = {
    eml_dates?: EmlDates;
    documents?: ElectionDocument[];
    certified_document?: CertifiedDocument | null;
+   // A proces-verbaal exists, but its corrections differ from those of the counts.
+   certified_document_mismatch?: boolean;
    region_category: RegionCategory;
    results_available_at: string | null;
    election_slug?: string;

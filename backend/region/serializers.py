@@ -41,6 +41,40 @@ VIEWER_PRIORITY = {
     )
 }
 
+FileType = ElectionDocument.FileType
+
+# Per proces-verbaal in the viewer: whether its counts sit on the region's parent (a stembureau's come from the
+# gemeente's 510b), the count EML, and the corrigenda that go with a corrected EML.
+PV_CORRECTIONS = {
+    **dict.fromkeys(
+        (FileType.PDF_N10_1, FileType.PDF_N10_2, FileType.PDF_NA31_2_B1, FileType.PDF_NA14_1, FileType.PDF_NA14_2_B1),
+        (True, FileType.EML_510B, {FileType.PDF_NA14_1, FileType.PDF_NA14_2_B1}),
+    ),
+    **dict.fromkeys(
+        (FileType.PDF_NA31_1, FileType.PDF_NA31_2, FileType.PDF_NA14_2),
+        (False, FileType.EML_510B, {FileType.PDF_NA14_2}),
+    ),
+    **dict.fromkeys((FileType.PDF_O7, FileType.PDF_P1F_1), (False, FileType.EML_510C, {FileType.PDF_P1F_1})),
+}
+
+
+def pv_matches_counts(region: Region, document: ElectionDocument) -> bool:
+    """Whether the PV has been corrected as often as the count EML, so both show the same numbers."""
+    if document.file_type not in PV_CORRECTIONS:
+        return True
+    on_parent, eml_file_type, correction_file_types = PV_CORRECTIONS[document.file_type]
+    region_id = region.parent_id if on_parent else region.pk
+    # Identical files are skipped on import, so every count after the first is a corrigendum.
+    eml_versions = ElectionDocument.all_objects.filter(region_id=region_id, file_type=eml_file_type).count()
+    if not eml_versions:
+        return True
+    eml_corrections = eml_versions - 1
+    pv_corrections = sum(1 for other in region.documents.all() if other.file_type in correction_file_types)
+    if on_parent:
+        # A corrected 510b need not change every stembureau, so only whether both sides are corrected is compared.
+        return (eml_corrections > 0) == (pv_corrections > 0)
+    return eml_corrections == pv_corrections
+
 
 class SameLocationStationsField(serializers.Field):
     """The other stembureaus at the same location, from the view's `same_location_stations` annotation."""
@@ -113,12 +147,22 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "hsb",
         )
 
-    def get_certified_document(self, region) -> dict | None:
+    def to_representation(self, region):
+        data = super().to_representation(region)
+        # A PV whose corrections differ from those of the counts is withheld, as its numbers differ from the page's.
+        document = self._viewer_document(region)
+        data["certified_document_mismatch"] = bool(document) and not pv_matches_counts(region, document)
+        if data["certified_document_mismatch"]:
+            data["certified_document"] = None
+        return data
+
+    @staticmethod
+    def _viewer_document(region) -> ElectionDocument | None:
         # The view prefetches only the documents of the requested level. The form type decides which one is
         # shown, not the import date, which follows the scraping order. Among forms of the same type the
         # newest one wins, so the last of several stacked corrections is shown.
         documents = [document for document in region.documents.all() if document.file_type in VIEWER_PRIORITY]
-        document = min(
+        return min(
             documents,
             key=lambda document: (
                 VIEWER_PRIORITY[document.file_type],
@@ -127,6 +171,9 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             ),
             default=None,
         )
+
+    def get_certified_document(self, region) -> dict | None:
+        document = self._viewer_document(region)
         return CertifiedDocumentSerializer(document).data if document else None
 
     def get_eml_dates(self, region) -> dict:

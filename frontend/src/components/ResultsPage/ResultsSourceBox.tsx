@@ -15,12 +15,19 @@ import PdfViewerPanel from "./PdfViewerPanel";
 type Props = {
    previewUrl?: string | null;
    documentUrl?: string | null;
+   documentMismatch?: boolean;
    // The page the viewer shows, or null while it is closed.
    viewerPage: number | null;
    onViewerPageChange: (page: number | null) => void;
 };
 
-export default function ResultsSourceBox({ previewUrl, documentUrl, viewerPage, onViewerPageChange }: Props) {
+export default function ResultsSourceBox({
+   previewUrl,
+   documentUrl,
+   documentMismatch,
+   viewerPage,
+   onViewerPageChange,
+}: Props) {
    const { t } = useLingui();
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(electionConfigSlug));
@@ -57,11 +64,19 @@ export default function ResultsSourceBox({ previewUrl, documentUrl, viewerPage, 
             <InfoBox disableMargin>
                {heading}
                <span>
-                  <Trans>
-                     De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het
-                     proces-verbaal dat gemaakt is na het tellen van de stemmen. Momenteel is het proces-verbaal nog
-                     niet gepubliceerd en daarom niet zichtbaar.
-                  </Trans>
+                  {documentMismatch ? (
+                     <Trans>
+                        De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het
+                        proces-verbaal dat gemaakt is na het tellen van de stemmen. De telresultaten zijn gecorrigeerd.
+                        Het proces-verbaal met deze correctie is nog niet beschikbaar.
+                     </Trans>
+                  ) : (
+                     <Trans>
+                        De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het
+                        proces-verbaal dat gemaakt is na het tellen van de stemmen. Momenteel is het proces-verbaal nog
+                        niet gepubliceerd en daarom niet zichtbaar.
+                     </Trans>
+                  )}
                </span>
             </InfoBox>
          </div>

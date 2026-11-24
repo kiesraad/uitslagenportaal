@@ -385,6 +385,77 @@ def test_region_detail_previews_the_newer_proces_verbaal_when_there_is_no_correc
     assert data["certified_document"]["preview_url"] == f"/api/certified-documents/{newer.pk}/preview/"
 
 
+def add_counts(region, file_type, versions):
+    """Import `versions` count EMLs on the region; all but the first are corrections."""
+    for version in range(versions):
+        ElectionDocumentFactory(region=region, file_type=file_type, is_current=version == versions - 1)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("category", "level", "eml_type", "original_type", "correction_type"),
+    [
+        (
+            RegionCategory.GEMEENTE,
+            "gsb",
+            ElectionDocument.FileType.EML_510B,
+            ElectionDocument.FileType.PDF_NA31_2,
+            ElectionDocument.FileType.PDF_NA14_2,
+        ),
+        (
+            RegionCategory.KIESKRING,
+            "hsb",
+            ElectionDocument.FileType.EML_510C,
+            ElectionDocument.FileType.PDF_O7,
+            ElectionDocument.FileType.PDF_P1F_1,
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    ("eml_versions", "pv_corrections", "shown"),
+    [(1, 0, True), (2, 1, True), (2, 0, False), (1, 1, False), (3, 1, False)],
+)
+def test_region_detail_withholds_the_pv_when_its_corrections_differ_from_the_counts(
+    category, level, eml_type, original_type, correction_type, eml_versions, pv_corrections, shown
+):
+    region = RegionFactory(region_category=category)
+    add_counts(region, eml_type, eml_versions)
+    CertifiedElectionDocumentFactory(region=region, file_type=original_type)
+    for _ in range(pv_corrections):
+        CertifiedElectionDocumentFactory(region=region, file_type=correction_type)
+
+    data = region_detail(region, level)
+
+    assert (data["certified_document"] is not None) == shown
+    assert data["certified_document_mismatch"] == (not shown)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("eml_versions", "correction_type", "shown"),
+    [
+        (1, None, True),
+        (2, ElectionDocument.FileType.PDF_NA14_1, True),
+        (2, ElectionDocument.FileType.PDF_NA14_2_B1, True),
+        (3, ElectionDocument.FileType.PDF_NA14_1, True),
+        (2, None, False),
+        (1, ElectionDocument.FileType.PDF_NA14_1, False),
+    ],
+)
+def test_stembureau_detail_withholds_the_pv_when_only_one_side_is_corrected(eml_versions, correction_type, shown):
+    gemeente = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    station = RegionFactory(election=gemeente.election, parent=gemeente, region_category=RegionCategory.STEMBUREAU)
+    add_counts(gemeente, ElectionDocument.FileType.EML_510B, eml_versions)
+    CertifiedElectionDocumentFactory(region=station, file_type=ElectionDocument.FileType.PDF_N10_1)
+    if correction_type:
+        CertifiedElectionDocumentFactory(region=station, file_type=correction_type)
+
+    data = region_detail(station, "sb")
+
+    assert (data["certified_document"] is not None) == shown
+    assert data["certified_document_mismatch"] == (not shown)
+
+
 @pytest.mark.django_db
 def test_region_detail_has_no_preview_when_the_png_is_missing():
     region = RegionFactory(region_category=RegionCategory.GEMEENTE)

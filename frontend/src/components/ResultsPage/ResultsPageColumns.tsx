@@ -17,9 +17,16 @@ type Props = {
    previewUrl?: string | null;
    documentUrl?: string | null;
    documentToc?: TocEntry[] | null;
+   documentMismatch?: boolean;
 };
 
-export default function ResultsPageColumns({ children, previewUrl, documentUrl, documentToc }: Props) {
+export default function ResultsPageColumns({
+   children,
+   previewUrl,
+   documentUrl,
+   documentToc,
+   documentMismatch,
+}: Props) {
    // The document and page the viewer shows, or null while it is closed.
    const [viewer, setViewer] = useState<{ documentUrl?: string | null; page: number } | null>(null);
    // Another document, as after going to another region, starts at page 1.
@@ -40,6 +47,7 @@ export default function ResultsPageColumns({ children, previewUrl, documentUrl, 
                <ResultsSourceBox
                   previewUrl={previewUrl}
                   documentUrl={documentUrl}
+                  documentMismatch={documentMismatch}
                   viewerPage={viewerPage}
                   onViewerPageChange={setViewerPage}
                />

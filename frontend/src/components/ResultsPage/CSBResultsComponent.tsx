@@ -23,6 +23,7 @@ export function CSBResultsComponent({ electionConfig, region }: Props) {
          previewUrl={region.certified_document?.preview_url}
          documentUrl={region.certified_document?.url}
          documentToc={region.certified_document?.toc}
+         documentMismatch={region.certified_document_mismatch}
       >
          <RegionResultsContent
             intro={

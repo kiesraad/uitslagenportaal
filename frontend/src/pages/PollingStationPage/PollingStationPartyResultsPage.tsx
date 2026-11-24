@@ -84,6 +84,7 @@ export default function PollingStationPartyResultsPage() {
             previewUrl={pollingStation.certified_document?.preview_url}
             documentUrl={pollingStation.certified_document?.url}
             documentToc={pollingStation.certified_document?.toc}
+            documentMismatch={pollingStation.certified_document_mismatch}
          >
             <PartyCandidatesResultsContent
                voteCounts={pollingStation.vote_counts}

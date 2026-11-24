@@ -87,6 +87,14 @@ describe("ResultsSourceBox", () => {
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
    });
 
+   it("Says the corrected certified election document is not available when it does not match the counts", () => {
+      renderWithConfig(<ResultsSourceBox documentMismatch viewerPage={null} onViewerPageChange={() => {}} />);
+
+      expect(screen.getByText(/Het proces-verbaal met deze correctie is nog niet beschikbaar/)).toBeInTheDocument();
+      expect(screen.queryByText(/nog niet gepubliceerd/)).not.toBeInTheDocument();
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+   });
+
    it("Opens the full certified election document from the picture and from the link", () => {
       const previewUrl = "/api/certified-documents/7/preview/";
       const documentUrl = "/api/certified-documents/7/";

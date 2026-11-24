@@ -274,6 +274,10 @@ msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn o
 msgstr "The counting results on this page come from the results software. They were transcribed from the certified election results drawn up after the votes were counted."
 
 #: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen. De telresultaten zijn gecorrigeerd. Het proces-verbaal met deze correctie is nog niet beschikbaar."
+msgstr "The counting results on this page come from the results software. They were transcribed from the certified election results drawn up after the votes were counted. The counting results have been corrected. The certified election results with this correction are not available yet."
+
+#: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen. Momenteel is het proces-verbaal nog niet gepubliceerd en daarom niet zichtbaar."
 msgstr "The counting results on this page come from the results software. They were transcribed from the certified election results drawn up after the votes were counted. The certified election results have not been published yet, so they cannot be shown here."
 
