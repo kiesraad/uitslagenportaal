@@ -19,13 +19,13 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     && rm -rf /var/lib/apt/lists/*
 
 # The ml compose service: base plus the ml group. It branches off before `COPY . .`, so editing the source does not
-# rebuild it; the service mounts the repo instead.
+# rebuild it; the service mounts the repo instead. A pylock.toml keeps the wheel URLs, so torch comes from the CPU index.
 FROM base AS ml
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv export --locked --no-emit-project --only-group ml --format requirements-txt > /tmp/requirements-ml.txt \
-    && uv pip install --system -r /tmp/requirements-ml.txt
+    uv export --locked --no-emit-project --only-group ml --format pylock.toml > /tmp/pylock.ml.toml \
+    && uv pip install --system -r /tmp/pylock.ml.toml
 # A repo mounted from a Windows or macOS host has a different owner, which git refuses without this.
 RUN git config --system --add safe.directory /project
 ENV PYTHONPATH=/project/backend

@@ -93,7 +93,7 @@ def main():
     params = api.params_show()["split"]
     args = get_args()
     rows = list(csv.DictReader((Path(args.crops) / "crops.csv").open()))
-    rng = random.Random(params["seed"])
+    rng = random.Random(params["random-seed"])
     total = sum(params[split] for split in SPLITS)
     splits = assign(select(rows, params["blank"], rng), {split: params[split] / total for split in SPLITS}, rng)
     for split in ("validate", "test"):

@@ -92,10 +92,16 @@ services:
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       # Django's DEBUG default would also show DVC's own debug logging (dulwich, fsspec).
       LOG_LEVEL: INFO
+      # The cluster's MLflow through `kubectl port-forward` on the host; see docs/pv-ocr.md.
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://host.docker.internal:5005}
+    extra_hosts:
+      - host.docker.internal:host-gateway
     volumes: !override
       - .:/project
       # Hides the host's venv, as for the backend; the image installs into system Python.
       - /project/backend/.venv
+      # Downloaded model checkpoints, kept when the container is recreated.
+      - huggingface_cache:/root/.cache/huggingface
 
   frontend:
     build:
@@ -175,3 +181,4 @@ volumes:
   db_data:
   redis_data:
   rustfs_data:
+  huggingface_cache:

@@ -113,12 +113,13 @@ directory. `docker compose exec ml dvc pull` fetches it, about 9 GB for the test
 
 `ml/dvc.yaml` defines the stages, each rerun only when its dependencies or params changed; paths are in `ml/data/`:
 
-| Stage           | Reads                                         | Writes              |
-|-----------------|-----------------------------------------------|---------------------|
-| `toc`           | `testdata/`, the TOC code                     | `tocs.json`         |
-| `orientations`  | `testdata/`, `tocs.json`                      | `orientations.json` |
-| `extract_crops` | `testdata/`, `tocs.json`, `orientations.json` | `crops/`            |
-| `split`         | `crops/`                                      | `split/`            |
+| Stage             | Reads                                         | Writes                 |
+|-------------------|-----------------------------------------------|------------------------|
+| `toc`             | `testdata/`, the TOC code                     | `tocs.json`            |
+| `orientations`    | `testdata/`, `tocs.json`                      | `orientations.json`    |
+| `extract_crops`   | `testdata/`, `tocs.json`, `orientations.json` | `crops/`               |
+| `split`           | `crops/`                                      | `split/`               |
+| `evaluate@<name>` | `split/test.csv`, `crops/`, the reader code   | `evaluation/<name>/`   |
 
 `toc` is a full table-of-contents pass over the test set; it depends on `pv_toc.py` and `pv_classifier.py` in the
 backend, so changing those reruns it. `orientations` stores the rotation of each page `extract_crops` reads, found
@@ -146,3 +147,32 @@ A `dvc` command that is killed, for instance by recreating the container, leaves
 next one refuses to start. With no DVC process running in the container, delete `rwlock`, `rwlock.lock` and `lock`
 there.
 
+#### Evaluating number readers
+
+A number reader reads the handwritten number in a crop: `NumberReader` in `backend/pv_ocr/readers/` takes a batch of
+crops and returns, per crop, its digits and a confidence. `get_reader` picks one by name. The `evaluate` stage runs
+once per entry in `evaluate.readers` of `ml/params.yaml`, as `evaluate@<name>`, so a reader whose code or entry did
+not change is not run again. [ml/data/README.md](../ml/data/README.md#evaluation) describes the scores.
+
+```bash
+docker compose exec ml dvc repro evaluate             # every reader
+docker compose exec ml dvc repro evaluate@trocr-small # one reader
+docker compose exec ml dvc metrics show               # the scores of every reader side by side
+```
+
+The runs are logged to the MLflow server of the `mlops` chart (see [deployments.md](deployments.md#mlops-chart)).
+The `ml` service reaches it at `host.docker.internal:5005`, through a port-forward on the host; with Docker Engine
+rather than Docker Desktop, the port-forward must also listen on the Docker bridge, `172.17.0.1` by default. Don't use
+`0.0.0.0`: the server has no authentication. Set `MLFLOW_TRACKING_URI` to use another server.
+
+```bash
+kubectl -n mlops port-forward svc/mlflow 5005:80                                 # Docker Desktop
+kubectl -n mlops port-forward --address 127.0.0.1,172.17.0.1 svc/mlflow 5005:80  # Docker Engine
+```
+
+The UI is at <http://localhost:5005>.
+
+To add a reader, subclass `NumberReader`, register it in `READERS` in `pv_ocr/readers/__init__.py`, and add an entry
+to `evaluate.readers` with `reader` set to its name and its options beside it. Its dependencies go in the `ml` group
+and are imported in its own module, so the application does not load them. Hugging Face checkpoints are kept
+in the `huggingface_cache` volume between containers.
