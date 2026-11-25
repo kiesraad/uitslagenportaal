@@ -77,12 +77,7 @@ export default function HSBResultsPage() {
                />
             }
          />
-         <ResultsPageColumns
-            previewUrl={region.certified_document?.preview_url}
-            documentUrl={region.certified_document?.url}
-            documentToc={region.certified_document?.toc}
-            documentMismatch={region.certified_document_mismatch}
-         >
+         <ResultsPageColumns documents={region.certified_documents} pvMayDiffer={region.pv_may_differ}>
             <RegionResultsContent
                intro={
                   <Trans>

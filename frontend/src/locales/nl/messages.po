@@ -152,6 +152,11 @@ msgstr "Brondocumenten"
 msgid "Centraal Stembureau controleert"
 msgstr "Centraal Stembureau controleert"
 
+#. placeholder {0}: document.correction_number
+#: src/components/ResultsPage/ResultsPageColumns.tsx
+msgid "Corrigendum {0}"
+msgstr "Corrigendum {0}"
+
 #: src/components/ElectionFileEntry.tsx
 msgid "Corrigendum op het proces-verbaal van het gemeentelijk stembureau."
 msgstr "Corrigendum op het proces-verbaal van het gemeentelijk stembureau."
@@ -274,10 +279,6 @@ msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn o
 msgstr "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen."
 
 #: src/components/ResultsPage/ResultsSourceBox.tsx
-msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen. De telresultaten zijn gecorrigeerd. Het proces-verbaal met deze correctie is nog niet beschikbaar."
-msgstr "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen. De telresultaten zijn gecorrigeerd. Het proces-verbaal met deze correctie is nog niet beschikbaar."
-
-#: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen. Momenteel is het proces-verbaal nog niet gepubliceerd en daarom niet zichtbaar."
 msgstr "De telresultaten op deze pagina komen uit de uitslagensoftware. Ze zijn overgetypt uit het proces-verbaal dat gemaakt is na het tellen van de stemmen. Momenteel is het proces-verbaal nog niet gepubliceerd en daarom niet zichtbaar."
 
@@ -365,6 +366,10 @@ msgstr "EML_NL verkiezingsdefinitie 110a"
 msgid "Er is een fout opgetreden"
 msgstr "Er is een fout opgetreden"
 
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Er zijn correcties verwerkt in de telresultaten of in het proces-verbaal. Mogelijk zijn deze nog niet allebei bijgewerkt. De aantallen in het proces-verbaal kunnen daardoor afwijken van die op deze pagina."
+msgstr "Er zijn correcties verwerkt in de telresultaten of in het proces-verbaal. Mogelijk zijn deze nog niet allebei bijgewerkt. De aantallen in het proces-verbaal kunnen daardoor afwijken van die op deze pagina."
+
 #: src/pages/ErrorBoundaryPage.tsx
 msgid "Fout"
 msgstr "Fout"
@@ -413,6 +418,10 @@ msgstr "Gemeenten"
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
 msgid "Geplaatst op: {publishedAt}"
 msgstr "Geplaatst op: {publishedAt}"
+
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Getoond: {shownLabel}. Dit onderdeel staat niet in {switchedFromLabel}."
+msgstr "Getoond: {shownLabel}. Dit onderdeel staat niet in {switchedFromLabel}."
 
 #: src/components/ElectionFileEntry.tsx
 msgid "Handgeschreven verslagen van {present} van de {total} stembureaus"
@@ -578,6 +587,10 @@ msgstr "In samenwerking met de Kiesraad"
 #: src/components/ResultsPage/PartyVoteMatrixTable.tsx
 msgid "Kandidaat"
 msgstr "Kandidaat"
+
+#: src/components/ResultsPage/PvSelect.tsx
+msgid "Kies een proces-verbaal"
+msgstr "Kies een proces-verbaal"
 
 #: src/utils/region.ts
 msgid "Kieskring"
@@ -780,6 +793,7 @@ msgstr "Probeer opnieuw"
 
 #: src/components/ResultsPage/PdfDocument.tsx
 #: src/components/ResultsPage/PdfViewerPanel.tsx
+#: src/components/ResultsPage/ResultsPageColumns.tsx
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Proces-verbaal"
 msgstr "Proces-verbaal"

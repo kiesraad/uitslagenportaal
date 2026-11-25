@@ -107,6 +107,9 @@ export type CertifiedDocument = {
    url: string | null;
    preview_url: string | null;
    toc: TocEntry[] | null;
+   file_type: ElectionDocumentFileType;
+   // The place of a corrigendum among the region's corrigenda, counted from one; null for an original.
+   correction_number: number | null;
 };
 
 export type Region = {
@@ -118,9 +121,10 @@ export type Region = {
    correction_date?: string | null;
    eml_dates?: EmlDates;
    documents?: ElectionDocument[];
-   certified_document?: CertifiedDocument | null;
-   // A proces-verbaal exists, but its corrections differ from those of the counts.
-   certified_document_mismatch?: boolean;
+   // Every proces-verbaal of the region, best first.
+   certified_documents?: CertifiedDocument[];
+   // The counts or a proces-verbaal have been corrected, so the proces-verbaal may not match the counts yet.
+   pv_may_differ?: boolean;
    region_category: RegionCategory;
    results_available_at: string | null;
    election_slug?: string;

@@ -11,13 +11,12 @@ type Props = {
    listNumber?: number;
 };
 
-/** Links to the first page of the proces-verbaal that holds `content`; renders nothing while that page is unknown. */
+/** Links to the first page that holds `content`, in the selected PV when it has one, else in the first PV that
+ * does; renders nothing while no PV has that page. So the links stay put when another PV is chosen. */
 export default function PvPageLink({ content, listNumber }: Props) {
-   const { documentUrl, toc, openViewerAt } = usePvViewerContext();
-   const page = toc?.find(
-      (entry) => entry.content === content && (listNumber === undefined || entry.list_number === listNumber),
-   )?.page;
-   if (!documentUrl || page === undefined) return null;
+   const { findTarget, openViewerAt } = usePvViewerContext();
+   const target = findTarget(content, listNumber);
+   if (!target) return null;
 
    const label = (
       <>
@@ -28,13 +27,18 @@ export default function PvPageLink({ content, listNumber }: Props) {
    return (
       <>
          {/* One column has no room for the viewer; there the PDF opens at the page in a new tab. */}
-         <a href={`${documentUrl}#page=${page}`} target="_blank" rel="noopener noreferrer" className="lg:hidden">
+         <a
+            href={`${target.pv.url}#page=${target.page}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="lg:hidden"
+         >
             {label}
             <NewWindowHint />
          </a>
          <button
             type="button"
-            onClick={() => openViewerAt(page)}
+            onClick={() => openViewerAt(target)}
             className="cursor-pointer text-blue-500 hover:underline max-lg:hidden"
          >
             {label}
