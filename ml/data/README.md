@@ -115,12 +115,15 @@ from the repository root:
 ```bash
 uv run ml/scripts/browse_crops.py --sample 5000     # http://localhost:5151; --browser opens it
 uv run ml/scripts/browse_crops.py                   # the same crops again, with their tags
+uv run ml/scripts/browse_crops.py --all             # with the crops left out of every split
 uv run ml/scripts/browse_crops.py --export-tags tagged.csv
 ```
 
 Once `split` has run, each crop has a `split` field, `train`, `validate` or `test`, or empty when `split` left it out,
 and each split has a saved view of that name, kept in step on every start, so these names can't hold a selection.
-`--split` limits the crops of a `--view` to one split.
+The browser then opens the `train` view. The crops `split` leaves out keep the label of their 510b, also where the
+crop does not show it, as with the blank counts of a corrigendum, or the counts of an original PV that its corrigendum
+corrected (see [split](#split)). `--all` shows them too, and `--split` limits the crops of a `--view` to one split.
 
 To measure how many labels are wrong, check a fixed random set: `--view` saves it under a name in the dataset, and
 prints how many of its crops carry each tag. The same name opens it again, with the tags given; `--reload` drops both,

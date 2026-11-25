@@ -110,6 +110,7 @@ def get_args():
     parser.add_argument("--sample", type=int, help="Load this many crops at random rather than all of them")
     parser.add_argument("--reload", action="store_true", help="Load crops.csv again, which drops the tags given")
     parser.add_argument("--export-tags", type=Path, help="Write the tagged crops to this CSV instead of browsing")
+    parser.add_argument("--all", action="store_true", help="Open all crops rather than the train split")
     parser.add_argument("--view", help="Open this saved view, saved anew with the crops the options below select")
     parser.add_argument("--split", choices=SPLITS, help="Only the crops of this split")
     parser.add_argument("--model", help="Only the crops of this model, e.g. N10-2")
@@ -135,7 +136,13 @@ def main():
         dataset = fo.load_dataset(NAME)
     # Every run, so the splits stay in step with a new split run without dropping the tags.
     mark_splits(dataset, args.crops, args.splits)
-    crops = saved_view(dataset, args) if args.view else dataset
+    if args.view:
+        crops = saved_view(dataset, args)
+    elif "train" in dataset.list_saved_views() and not (args.all or args.export_tags):
+        # The crops left out of every split are no use for training, such as a corrigendum's unchanged blanks.
+        crops = dataset.load_saved_view("train")
+    else:
+        crops = dataset
     if args.view:
         # The share of crops tagged wrong is the error rate of the view.
         tags = ", ".join(f"{tag} {count}" for tag, count in sorted(crops.count_sample_tags().items()))

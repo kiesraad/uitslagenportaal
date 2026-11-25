@@ -26,24 +26,33 @@ stages:
       md5: 68be9ad432b8af9c3bdc2218e7b2b1dd
       size: 4005027
   extract_crops:
-    cmd: python -m scripts.extract_crops data/testdata data/tocs.json data/crops
+    cmd: python -m scripts.extract_crops data/testdata data/tocs.json 
+      data/orientations.json data/crops
     deps:
     - path: ../backend/pv_ocr/utils/ocr.py
       hash: md5
       md5: 7404c4ef81371bd4fd516fd17d3559c2
       size: 2927
+    - path: ../backend/pv_ocr/utils/orientation.py
+      hash: md5
+      md5: 1f4e5e2ab8207dc2481bfc04106d1f3b
+      size: 1742
     - path: ../backend/pv_ocr/utils/pv_classifier.py
       hash: md5
-      md5: 0db76f6f4b724192d4b452d8b1c37d7d
-      size: 39230
+      md5: b1b96c04ddba683268a968dd7a434f7d
+      size: 39177
     - path: ../backend/pv_ocr/utils/pv_toc.py
       hash: md5
-      md5: e173a92cc7b8ec6a79f7e63175356121
-      size: 24212
+      md5: 215d439de8b5d2e616bccd98fb5604cf
+      size: 22390
     - path: ../backend/pv_ocr/utils/vote_tables.py
       hash: md5
-      md5: 3134f67ca97f11c8995270cc3316aa1f
-      size: 35043
+      md5: de3fa1f5a2e9850cc0a3e124a1dcdbf5
+      size: 38368
+    - path: data/orientations.json
+      hash: md5
+      md5: d8bd8a6f2f489e8d989e378709c16bd8
+      size: 581930
     - path: data/testdata
       hash: md5
       md5: e0df9223047589dc9f982906a4727984.dir
@@ -55,29 +64,33 @@ stages:
       size: 4005027
     - path: scripts/extract_crops.py
       hash: md5
-      md5: 71b5085a8d74497e939dd08011d2e783
-      size: 12640
+      md5: 04a17167efce76d24c3ac308a2b5b0f2
+      size: 16433
+    - path: scripts/ocr_models.py
+      hash: md5
+      md5: be8398a71b27a57d238fd2ad7bb05419
+      size: 111
     params:
       params.yaml:
         jobs: 8
     outs:
     - path: data/crops
       hash: md5
-      md5: 2d5f932e1b3ca6fe62a98a77246dec03.dir
-      size: 3490559908
-      nfiles: 474307
+      md5: fa3ff79db41b04bee150390d1e230d2f.dir
+      size: 3846804772
+      nfiles: 480303
   split:
     cmd: python -m scripts.split data/crops data/split
     deps:
     - path: data/crops
       hash: md5
-      md5: 2d5f932e1b3ca6fe62a98a77246dec03.dir
-      size: 3490559908
-      nfiles: 474307
+      md5: fa3ff79db41b04bee150390d1e230d2f.dir
+      size: 3846804772
+      nfiles: 480303
     - path: scripts/split.py
       hash: md5
-      md5: 553a722e49d53bce654f6f2a46a59beb
-      size: 3735
+      md5: 7a3bc02f05d7c8a8d089423ba4119d89
+      size: 4793
     params:
       params.yaml:
         split.blank: 0.05
@@ -88,8 +101,8 @@ stages:
     outs:
     - path: data/split
       hash: md5
-      md5: 2b552bbcfa2f6a279405452d93217ab0.dir
-      size: 46072758
+      md5: a67e1e86470ba3aaf337b63c11555c15.dir
+      size: 44066715
       nfiles: 3
   orientations:
     cmd: python -m scripts.determine_orientations data/testdata data/tocs.json 
