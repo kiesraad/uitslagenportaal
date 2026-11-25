@@ -45,16 +45,20 @@ FileType = ElectionDocument.FileType
 
 # Per proces-verbaal in the viewer: whether its counts sit on the region's parent (a stembureau's come from the
 # gemeente's 510b), the count EML, and the corrigenda that go with a corrected EML.
+_STEMBUREAU = (True, FileType.EML_510B, {FileType.PDF_NA14_1, FileType.PDF_NA14_2_B1})
+_GEMEENTE = (False, FileType.EML_510B, {FileType.PDF_NA14_2})
+_HSB = (False, FileType.EML_510C, {FileType.PDF_P1F_1})
 PV_CORRECTIONS = {
-    **dict.fromkeys(
-        (FileType.PDF_N10_1, FileType.PDF_N10_2, FileType.PDF_NA31_2_B1, FileType.PDF_NA14_1, FileType.PDF_NA14_2_B1),
-        (True, FileType.EML_510B, {FileType.PDF_NA14_1, FileType.PDF_NA14_2_B1}),
-    ),
-    **dict.fromkeys(
-        (FileType.PDF_NA31_1, FileType.PDF_NA31_2, FileType.PDF_NA14_2),
-        (False, FileType.EML_510B, {FileType.PDF_NA14_2}),
-    ),
-    **dict.fromkeys((FileType.PDF_O7, FileType.PDF_P1F_1), (False, FileType.EML_510C, {FileType.PDF_P1F_1})),
+    FileType.PDF_N10_1: _STEMBUREAU,
+    FileType.PDF_N10_2: _STEMBUREAU,
+    FileType.PDF_NA31_2_B1: _STEMBUREAU,
+    FileType.PDF_NA14_1: _STEMBUREAU,
+    FileType.PDF_NA14_2_B1: _STEMBUREAU,
+    FileType.PDF_NA31_1: _GEMEENTE,
+    FileType.PDF_NA31_2: _GEMEENTE,
+    FileType.PDF_NA14_2: _GEMEENTE,
+    FileType.PDF_O7: _HSB,
+    FileType.PDF_P1F_1: _HSB,
 }
 
 
