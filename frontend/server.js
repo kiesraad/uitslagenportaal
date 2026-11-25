@@ -39,6 +39,13 @@ const app = express();
 app.disable("x-powered-by");
 // Behind the gateway, so page URLs (canonical, og:url) get the public https origin.
 app.set("trust proxy", true);
+// Only production is indexed, so dev and staging don't compete with it in search results.
+if (process.env.ALLOW_INDEXING !== "true") {
+   app.use((_req, res, next) => {
+      res.set("X-Robots-Tag", "noindex, nofollow");
+      next();
+   });
+}
 app.use(accessLog);
 // Pages need the backend; the probes should not take the frontend down with it.
 app.get("/healthz", (_req, res) => res.sendStatus(200));
