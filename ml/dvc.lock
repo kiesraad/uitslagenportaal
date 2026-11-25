@@ -1,0 +1,144 @@
+schema: '2.0'
+stages:
+  toc:
+    cmd: python -m scripts.determine_tocs data/testdata data/tocs.json
+    deps:
+    - path: ../backend/pv_ocr/utils/pv_classifier.py
+      hash: md5
+      md5: b1b96c04ddba683268a968dd7a434f7d
+      size: 39177
+    - path: ../backend/pv_ocr/utils/pv_toc.py
+      hash: md5
+      md5: 215d439de8b5d2e616bccd98fb5604cf
+      size: 22390
+    - path: data/testdata
+      hash: md5
+      md5: e0df9223047589dc9f982906a4727984.dir
+      size: 9105348710
+      nfiles: 3938
+    - path: scripts/determine_tocs.py
+      hash: md5
+      md5: d958b98960acd0ef8357cd2aafefb5f4
+      size: 1772
+    outs:
+    - path: data/tocs.json
+      hash: md5
+      md5: 68be9ad432b8af9c3bdc2218e7b2b1dd
+      size: 4005027
+  extract_crops:
+    cmd: python -m scripts.extract_crops data/testdata data/tocs.json 
+      data/orientations.json data/crops
+    deps:
+    - path: ../backend/pv_ocr/utils/ocr.py
+      hash: md5
+      md5: 7404c4ef81371bd4fd516fd17d3559c2
+      size: 2927
+    - path: ../backend/pv_ocr/utils/orientation.py
+      hash: md5
+      md5: 1f4e5e2ab8207dc2481bfc04106d1f3b
+      size: 1742
+    - path: ../backend/pv_ocr/utils/pv_classifier.py
+      hash: md5
+      md5: b1b96c04ddba683268a968dd7a434f7d
+      size: 39177
+    - path: ../backend/pv_ocr/utils/pv_toc.py
+      hash: md5
+      md5: 215d439de8b5d2e616bccd98fb5604cf
+      size: 22390
+    - path: ../backend/pv_ocr/utils/vote_tables.py
+      hash: md5
+      md5: de3fa1f5a2e9850cc0a3e124a1dcdbf5
+      size: 38368
+    - path: data/orientations.json
+      hash: md5
+      md5: d8bd8a6f2f489e8d989e378709c16bd8
+      size: 581930
+    - path: data/testdata
+      hash: md5
+      md5: e0df9223047589dc9f982906a4727984.dir
+      size: 9105348710
+      nfiles: 3938
+    - path: data/tocs.json
+      hash: md5
+      md5: 68be9ad432b8af9c3bdc2218e7b2b1dd
+      size: 4005027
+    - path: scripts/extract_crops.py
+      hash: md5
+      md5: 07e052158ca692163dd4ec4de5f714ff
+      size: 17039
+    - path: scripts/ocr_models.py
+      hash: md5
+      md5: be8398a71b27a57d238fd2ad7bb05419
+      size: 111
+    params:
+      params.yaml:
+        extract_crops.blank: 0.2
+        jobs: 8
+    outs:
+    - path: data/crops
+      hash: md5
+      md5: e30a4457dbd9935810998ef5156dc312.dir
+      size: 2551252186
+      nfiles: 291167
+  split:
+    cmd: python -m scripts.split data/crops data/split
+    deps:
+    - path: data/crops
+      hash: md5
+      md5: e30a4457dbd9935810998ef5156dc312.dir
+      size: 2551252186
+      nfiles: 291167
+    - path: scripts/split.py
+      hash: md5
+      md5: aa01e5f1c33c79f6e466cf112cc673a1
+      size: 5275
+    params:
+      params.yaml:
+        split.blank: 0.05
+        split.seed: 0
+        split.test: 0.15
+        split.train: 0.7
+        split.validate: 0.15
+    outs:
+    - path: data/split
+      hash: md5
+      md5: e5d3ca96453b54bd03d1859b8c00903e.dir
+      size: 45398466
+      nfiles: 3
+  orientations:
+    cmd: python -m scripts.determine_orientations data/testdata data/tocs.json 
+      data/orientations.json
+    deps:
+    - path: ../backend/pv_ocr/utils/ocr.py
+      hash: md5
+      md5: 7404c4ef81371bd4fd516fd17d3559c2
+      size: 2927
+    - path: ../backend/pv_ocr/utils/orientation.py
+      hash: md5
+      md5: 1f4e5e2ab8207dc2481bfc04106d1f3b
+      size: 1742
+    - path: data/testdata
+      hash: md5
+      md5: e0df9223047589dc9f982906a4727984.dir
+      size: 9105348710
+      nfiles: 3938
+    - path: data/tocs.json
+      hash: md5
+      md5: 68be9ad432b8af9c3bdc2218e7b2b1dd
+      size: 4005027
+    - path: scripts/determine_orientations.py
+      hash: md5
+      md5: 154bb2d26ab14d0ce0ca359a3d6df499
+      size: 3098
+    - path: scripts/ocr_models.py
+      hash: md5
+      md5: be8398a71b27a57d238fd2ad7bb05419
+      size: 111
+    params:
+      params.yaml:
+        jobs: 8
+    outs:
+    - path: data/orientations.json
+      hash: md5
+      md5: d8bd8a6f2f489e8d989e378709c16bd8
+      size: 581930

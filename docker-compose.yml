@@ -78,6 +78,25 @@ services:
       watchfiles --filter python --sigint-timeout 30
       "celery -A mainsite worker -Q scraper --loglevel=INFO"
 
+  # Runs the DVC pipeline in ml/, e.g.: docker compose exec ml dvc repro
+  # The DVC remote's credentials come from ml/.dvc/config.local or the AWS_* variables; see docs/pv-ocr.md.
+  ml:
+    extends:
+      service: backend-scripts
+    build:
+      target: ml
+    profiles:
+      - ml
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      # Django's DEBUG default would also show DVC's own debug logging (dulwich, fsspec).
+      LOG_LEVEL: INFO
+    volumes: !override
+      - .:/project
+      # Hides the host's venv, as for the backend; the image installs into system Python.
+      - /project/backend/.venv
+
   frontend:
     build:
       context: ./frontend
