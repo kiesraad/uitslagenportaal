@@ -3,8 +3,10 @@ import datetime
 import pytest
 from django.utils import timezone
 
-from election.tests.factories import ElectionConfigFactory, ElectionFactory
+from election.models import VoteCount
+from election.tests.factories import ContestFactory, ElectionConfigFactory, ElectionFactory
 from mainsite.models import RegionCategory
+from party.tests.factories import PartyFactory
 from region.tests.factories import RegionFactory
 
 
@@ -15,6 +17,7 @@ def test_index_links_to_the_sections(client):
     assert response.status_code == 200
     assert b"/sitemap/verkiezingen.xml" in response.content
     assert b"/sitemap/regios.xml" in response.content
+    assert b"/sitemap/partijen.xml" in response.content
 
 
 @pytest.mark.django_db
@@ -59,3 +62,20 @@ def test_leaves_out_the_csb_of_a_municipality_that_is_its_own_csb(client):
     assert "https://testserver/gr2026/csb/zeist</loc>" in content
     assert "https://testserver/gr2026/gsb/zeist</loc>" in content
     assert "https://testserver/gr2026/gsb/zeist/resultaten</loc>" in content
+
+
+@pytest.mark.django_db
+def test_lists_the_results_of_each_party_with_votes_in_the_region_or_below_it(client):
+    election = ElectionFactory(election_config=ElectionConfigFactory(slug="ps2027", category="PS"))
+    contest = ContestFactory(election=election)
+    province = RegionFactory(election=election, region_category=RegionCategory.PROVINCIE, slug="utrecht")
+    zeist = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, csb=province, slug="zeist")
+    party = PartyFactory(election=election, slug="partij-a")
+    PartyFactory(election=election, slug="no-votes")
+    VoteCount.objects.create(contest=contest, region=zeist, party=party, valid_votes=1)
+
+    content = client.get("/sitemap/partijen.xml").content.decode()
+
+    assert "https://testserver/ps2027/csb/utrecht/resultaten/partij-a</loc>" in content
+    assert "https://testserver/ps2027/gsb/zeist/csb/utrecht/resultaten/partij-a</loc>" in content
+    assert "no-votes" not in content
