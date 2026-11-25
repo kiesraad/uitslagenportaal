@@ -182,8 +182,8 @@ class EML510bImporter(EML510BaseImporter):
     def _delete(self, region: Region) -> None:
         """
         Archive the previous telling under this municipality so the normal import path
-        can recreate it. The municipality region itself stays current; its stembureaus
-        and this eml_type's counts are archived.
+        can recreate it. Only this eml_type's counts are replaced; the stembureaus stay,
+        so the PVs attached to them stay too.
         """
         stations = Region.objects.filter(
             election=self.election,
@@ -194,7 +194,6 @@ class EML510bImporter(EML510BaseImporter):
         VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
         VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
         ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
-        stations.delete()
 
     @staticmethod
     def _polling_station_name(unit: ReportingUnitVotes) -> str:
@@ -214,9 +213,13 @@ class EML510bImporter(EML510BaseImporter):
             return f"{dutch.group(1)} {dutch.group(2).upper()}"
         return postal_code or None
 
-    def _ensure_polling_stations(self, region: Region) -> dict[tuple[str, str], Region]:
+    def _ensure_polling_stations(self, region: Region) -> dict[str, Region]:
         """
-        Create all polling stations of this file up front, keyed by (number, name).
+        Create all polling stations of this file up front, keyed by number, update the
+        name and postal code of existing ones, and delete the ones this file no longer lists.
+
+        A polling station is identified by its number alone, as in the PV import, so a
+        renamed station keeps its PVs.
 
         Replaces a per-station get_or_create (a SELECT plus an INSERT each, in the
         hottest loop of the import) with one SELECT, one bulk INSERT and one SELECT
@@ -227,18 +230,35 @@ class EML510bImporter(EML510BaseImporter):
             "parent": region,
             "region_category": RegionCategory.STEMBUREAU,
         }
-        existing = {
-            (station.region_number, station.region_name): station
-            for station in Region.objects.filter(**stations_filter)
-        }
+        existing = {station.region_number: station for station in Region.objects.filter(**stations_filter)}
 
-        postal_code_by_key: dict[tuple[str, str], str | None] = {}
+        name_and_postal_code_by_number: dict[str, tuple[str, str | None]] = {}
         for contest_data in self.eml.count.election.contests.contest:
             for unit in contest_data.reporting_unit_votes:
-                key = (str(unit.reporting_unit_identifier.id), self._polling_station_name(unit))
-                postal_code_by_key[key] = self._polling_station_postal_code(unit)
+                name_and_postal_code_by_number[str(unit.reporting_unit_identifier.id)] = (
+                    self._polling_station_name(unit),
+                    self._polling_station_postal_code(unit),
+                )
 
-        missing = postal_code_by_key.keys() - existing.keys()
+        stale = existing.keys() - name_and_postal_code_by_number.keys()
+        if stale:
+            Region.objects.filter(pk__in=[existing.pop(number).pk for number in stale]).delete()
+
+        changed = []
+        for number, station in existing.items():
+            name, postal_code = name_and_postal_code_by_number[number]
+            if (station.region_name, station.postal_code) != (name, postal_code):
+                station.region_name, station.postal_code = name, postal_code
+                station.slug = build_region_slug(number, name)
+                changed.append(station)
+        if changed:
+            Region.objects.bulk_update(changed, ["region_name", "postal_code", "slug"], batch_size=self.BULK_BATCH_SIZE)
+
+        missing = {
+            number: name_and_postal_code
+            for number, name_and_postal_code in name_and_postal_code_by_number.items()
+            if number not in existing
+        }
         if not missing:
             return existing
 
@@ -249,22 +269,19 @@ class EML510bImporter(EML510BaseImporter):
                     election=self.election,
                     region_number=region_number,
                     region_name=region_name,
-                    postal_code=postal_code_by_key[(region_number, region_name)],
+                    postal_code=postal_code,
                     parent=region,
                     csb=csb,
                     region_category=RegionCategory.STEMBUREAU,
                     # bulk_create bypasses Region.save(), so derive the slug here
                     slug=build_region_slug(region_number, region_name),
                 )
-                for region_number, region_name in missing
+                for region_number, (region_name, postal_code) in missing.items()
             ],
             batch_size=self.BULK_BATCH_SIZE,
         )
 
-        return {
-            (station.region_number, station.region_name): station
-            for station in Region.objects.filter(**stations_filter)
-        }
+        return {station.region_number: station for station in Region.objects.filter(**stations_filter)}
 
     def _parse_data(self) -> None:
         authority_el = self.eml.managing_authority.authority_identifier
@@ -324,9 +341,7 @@ class EML510bImporter(EML510BaseImporter):
                 )
                 self._collect_turnout_counts(contest, region, contest_data.total_votes, turnout_counts)
                 for unit in contest_data.reporting_unit_votes:
-                    polling_station = polling_stations[
-                        (str(unit.reporting_unit_identifier.id), self._polling_station_name(unit))
-                    ]
+                    polling_station = polling_stations[str(unit.reporting_unit_identifier.id)]
                     self._parse_party_candidate_votecounts(
                         contest,
                         polling_station,
