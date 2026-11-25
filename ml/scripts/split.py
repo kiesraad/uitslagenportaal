@@ -30,21 +30,33 @@ def stembureau(row: dict) -> tuple[PurePosixPath, str]:
 
 
 def select(rows: list[dict], blank_share: float, rng: random.Random) -> list[dict]:
-    """The crops whose label is what is written, and as many blank ones at random as `blank_share` of those.
+    """The saved crops whose label is what is written, and as many saved blank ones at random as `blank_share` of those.
 
-    A corrigendum is filled in only where a count changed, so only its changed crops are kept. The first 510b can hold
-    its corrections already, so the original PV of its stembureau leaves out the fields it filled in."""
+    A corrigendum is filled in only where a count changed, so only its changed crops are kept. Where its count did not
+    change, or it has a single 510b, the first 510b may hold the correction already, so the original PV of that
+    stembureau leaves out the field. Where it changed, the `_origineel` holds the count from before, which that PV
+    says."""
     corrigenda = [row for row in rows if row["model"] in CORRIGENDUM_MODELS]
-    corrected = {(stembureau(row), row["field"]) for row in corrigenda if row["blank"] != "True"}
+    corrected = {
+        (stembureau(row), row["field"]) for row in corrigenda if row["blank"] != "True" and row["changed"] != "True"
+    }
     kept = [row for row in corrigenda if row["changed"] == "True"]
     kept += [
         row
         for row in rows
         if row["model"] not in CORRIGENDUM_MODELS and (stembureau(row), row["field"]) not in corrected
     ]
+    kept = [row for row in kept if row["saved"] == "True"]
     written = [row for row in kept if row["blank"] != "True"]
     blank = [row for row in kept if row["blank"] == "True" and row["model"] not in CORRIGENDUM_MODELS]
-    return written + rng.sample(blank, min(len(blank), round(blank_share * len(written))))
+    wanted = round(blank_share * len(written))
+    if len(blank) < wanted:
+        logger.warning(
+            "%d saved blank crops, fewer than the %d `split.blank` asks for; raise `extract_crops.blank`",
+            len(blank),
+            wanted,
+        )
+    return written + rng.sample(blank, min(len(blank), wanted))
 
 
 def assign(rows: list[dict], shares: dict[str, float], rng: random.Random) -> dict[str, list[dict]]:

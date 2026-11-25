@@ -1,4 +1,7 @@
 jobs: 8
+extract_crops:
+  # The share of blank crops saved, corrigenda aside; it must leave enough for split.blank.
+  blank: 0.2
 split:
   train: 0.7
   validate: 0.15

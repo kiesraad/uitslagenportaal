@@ -25,7 +25,7 @@ def flag(value: str) -> bool | None:
 
 
 def load(crops: Path, sample: int | None) -> fo.Dataset:
-    rows = list(csv.DictReader((crops / "crops.csv").open()))
+    rows = [row for row in csv.DictReader((crops / "crops.csv").open()) if row["saved"] == "True"]
     if sample and sample < len(rows):
         rows = random.Random(0).sample(rows, sample)
     dataset = fo.Dataset(NAME, overwrite=True, persistent=True)
@@ -139,7 +139,7 @@ def main():
     if args.view:
         crops = saved_view(dataset, args)
     elif "train" in dataset.list_saved_views() and not (args.all or args.export_tags):
-        # The crops left out of every split are no use for training, such as a corrigendum's unchanged blanks.
+        # The crops left out of every split are no use for training, such as the blank crops past `split.blank`.
         crops = dataset.load_saved_view("train")
     else:
         crops = dataset

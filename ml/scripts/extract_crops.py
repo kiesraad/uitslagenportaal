@@ -3,6 +3,7 @@ import csv
 import json
 import logging
 import re
+import zlib
 from functools import lru_cache, partial
 from pathlib import Path
 
@@ -67,7 +68,7 @@ COUNT_REASONS = {
     "I": "meer getelde stembiljetten",
     "J": "minder getelde stembiljetten",
 }
-CSV_FIELDS = ["path", "pdf", "model", "page", "content", "field", "label", "blank", "changed"]
+CSV_FIELDS = ["path", "pdf", "model", "page", "content", "field", "label", "blank", "changed", "saved"]
 
 
 def get_args():
@@ -200,10 +201,24 @@ def draw(gray: np.ndarray, areas: list[tuple[str, Box]]) -> np.ndarray:
     return image
 
 
+def is_saved(row: dict, blank_share: float) -> bool:
+    """Whether to save the crop: a corrigendum's changed ones, else the written ones and a stable share of the blank
+    ones, which `split` samples from."""
+    if row["model"] in CORRIGENDUM_MODELS:
+        return row["changed"] is True
+    return not row["blank"] or zlib.crc32(row["path"].encode()) / 2**32 < blank_share
+
+
 def extract(
-    pdf: Path, toc: list[dict] | None, rotations: dict[str, int] | None, root: Path, output: Path, debug: Path | None
+    pdf: Path,
+    toc: list[dict] | None,
+    rotations: dict[str, int] | None,
+    root: Path,
+    output: Path,
+    debug: Path | None,
+    blank_share: float,
 ) -> list[dict]:
-    """Write the crop of each number on the vote pages of the PDF, and return its rows for the CSV."""
+    """Return the rows for the CSV of each number on the vote pages of the PDF; write the saved crops."""
     relative = pdf.relative_to(root).as_posix()
 
     def page_upright(image: Image.Image, page: int) -> np.ndarray:
@@ -284,20 +299,21 @@ def extract(
                 for field, (x, y, w, h) in areas:
                     path = crop_dir / f"p{entry['page']}_{field}.png"
                     right = x + w + (round(RIGHT_PADDING * h) if content in LIST_CONTENTS else 0)
-                    crops.append((path, gray[y : y + h + round(BOTTOM_PADDING * h), x:right]))
-                    rows.append(
-                        {
-                            "path": path.relative_to(output).as_posix(),
-                            "pdf": relative,
-                            "model": page_model,
-                            "page": entry["page"],
-                            "content": entry["content"],
-                            "field": field,
-                            "label": page_counts[field],
-                            "blank": is_blank(gray[y : y + h, x : x + w]),
-                            "changed": "" if original is None or attached else counts[field] != original.get(field),
-                        }
-                    )
+                    row = {
+                        "path": path.relative_to(output).as_posix(),
+                        "pdf": relative,
+                        "model": page_model,
+                        "page": entry["page"],
+                        "content": entry["content"],
+                        "field": field,
+                        "label": page_counts[field],
+                        "blank": is_blank(gray[y : y + h, x : x + w]),
+                        "changed": "" if original is None or attached else counts[field] != original.get(field),
+                    }
+                    row["saved"] = is_saved(row, blank_share)
+                    rows.append(row)
+                    if row["saved"]:
+                        crops.append((path, gray[y : y + h + round(BOTTOM_PADDING * h), x:right]))
         # Where many counts are blank that the 510b says are not, the PV was matched to the wrong stembureau, or its
         # pages to the wrong model. A corrigendum leaves unchanged counts blank, so cannot tell.
         nonzero = [row for row in rows if row["label"] and row["model"] not in CORRIGENDUM_MODELS]
@@ -307,7 +323,7 @@ def extract(
         crop_dir.mkdir(parents=True, exist_ok=True)
         for path, crop in crops:
             cv2.imwrite(str(path), crop)
-        logger.info("%s: %d crops, pages skipped: %s", relative, len(rows), skipped or "none")
+        logger.info("%s: %d crops, %d saved, pages skipped: %s", relative, len(rows), len(crops), skipped or "none")
         return rows
     except Exception as exc:  # noqa: BLE001
         logger.error("%s: %s", relative, exc)
@@ -316,7 +332,7 @@ def extract(
 
 def main():
     """Crop each handwritten number on the vote pages of the OCR models in `dir` into `output`, with `crops.csv`
-    listing each crop and its value in the 510b."""
+    listing each crop and its value in the 510b; only the crops `saved` marks are written."""
     params = api.params_show()
     args = get_args()
     root, output = Path(args.dir), Path(args.output)
@@ -330,7 +346,7 @@ def main():
 
     with parallel_map(params["jobs"]) as run:
         found = run(
-            partial(extract, root=root, output=output, debug=debug),
+            partial(extract, root=root, output=output, debug=debug, blank_share=params["extract_crops"]["blank"]),
             pdfs,
             [tocs.get(pdf.relative_to(root).as_posix()) for pdf in pdfs],
             [orientations.get(pdf.relative_to(root).as_posix()) for pdf in pdfs],

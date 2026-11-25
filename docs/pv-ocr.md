@@ -80,13 +80,14 @@ docker compose exec ml dvc repro
 
 The profile keeps the service out of a plain `docker compose up --build`, so rebuild it by name after a dependency
 change. For the IDE only, `uv sync --all-groups` in `backend/` installs every group into `backend/.venv`; the
-pipeline itself expects the container. The service extends `backend-scripts`, so Django's settings work as there, with
-the log level at INFO to keep DVC's libraries quiet.
+pipeline itself expects the container. The service extends `backend-scripts`, so Django's settings work as expected,
+with the log level at INFO to keep DVC's libraries quiet.
 
 Keep the container running between sessions. `up -d` recreates it whenever the image or its compose config changed,
 which kills whatever runs in it, so check that it is idle first. DVC remembers file hashes by inode, and a recreated
 container may see new inodes and hash all of `data/testdata` again. Run DVC only in the container, never on the host as
-well: the two see different paths and keep invalidating each other's hashes.
+well: the two see different paths and keep invalidating each other's hashes. On Windows it can help to move the project
+to a WSL folder, and run it from there.
 
 #### Access to the DVC remote
 
@@ -112,15 +113,23 @@ directory. `docker compose exec ml dvc pull` fetches it, about 9 GB for the test
 
 `ml/dvc.yaml` defines the stages, each rerun only when its dependencies or params changed; paths are in `ml/data/`:
 
-| Stage           | Reads                     | Writes           |
-|-----------------|---------------------------|------------------|
-| `toc`           | `testdata/`, the TOC code | `tocs.json`      |
-| `extract_crops` | `testdata/`, `tocs.json`  | `crops/`         |
-| `split`         | `crops/`                  | `split/`         |
+| Stage           | Reads                                         | Writes              |
+|-----------------|-----------------------------------------------|---------------------|
+| `toc`           | `testdata/`, the TOC code                     | `tocs.json`         |
+| `orientations`  | `testdata/`, `tocs.json`                      | `orientations.json` |
+| `extract_crops` | `testdata/`, `tocs.json`, `orientations.json` | `crops/`            |
+| `split`         | `crops/`                                      | `split/`            |
 
-`toc` is the slow one, a full table-of-contents pass over the test set; it depends on `pv_toc.py` and
-`pv_classifier.py` in the backend, so changing those reruns it. `ml/params.yaml` holds the params, such as `jobs`, the
-number of worker processes.
+`toc` is a full table-of-contents pass over the test set; it depends on `pv_toc.py` and `pv_classifier.py` in the
+backend, so changing those reruns it. `orientations` stores the rotation of each page `extract_crops` reads, found
+with Tesseract's orientation detection (`pv_ocr/utils/orientation.py`). That takes about a third of the time of
+`extract_crops`, and doesn't depend on the detectors in `vote_tables.py`, so changing those reruns only
+`extract_crops` and `split`. `ml/params.yaml` holds the params, such as `jobs`, the number of worker processes.
+
+Any change in `testdata/` reruns `toc`, also a new or replaced 510b, which it doesn't read. Where no PV changed,
+`dvc commit toc` records the new state without running it.
+
+A full run takes hours.
 
 ```bash
 docker compose exec ml dvc repro                  # every stage that is out of date

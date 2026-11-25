@@ -98,6 +98,11 @@ written, where the PV and the 510b disagree: with centrale stemopneming (N 10-2)
 the votes again, and the 510b holds its count. A crop covers its row or field, and a third of its height below it, as
 many write on the bottom line; part of a neighbouring number can show at the top or bottom.
 
+`crops.csv` lists every crop found, but only the ones with `saved` true are on disk, as many would go unused: the
+changed crops of a corrigendum, the written crops of the other models, and a share of their blank ones, `extract_crops.blank`
+in `params.yaml`, chosen by a hash of the path so a rerun saves the same ones. It must leave enough blank crops for
+`split.blank`. The unsaved rows stay in the CSV, as `split` needs them.
+
 Pages where the fields cannot be placed reliably are skipped, and a PV where many counts that are not 0 come out blank is
 left out: it was matched to the wrong stembureau, or holds pages of another model. Both are logged. Crops stop at the
 "Bijlage voor een experiment met een nieuw stembiljet" (Noordoostpolder), whose layout differs. For a trial run on a
@@ -119,11 +124,12 @@ uv run ml/scripts/browse_crops.py --all             # with the crops left out of
 uv run ml/scripts/browse_crops.py --export-tags tagged.csv
 ```
 
+The dataset is kept between starts; after `extract_crops` has run again, `--reload` loads the crops it saved.
+
 Once `split` has run, each crop has a `split` field, `train`, `validate` or `test`, or empty when `split` left it out,
 and each split has a saved view of that name, kept in step on every start, so these names can't hold a selection.
 The browser then opens the `train` view. The crops `split` leaves out keep the label of their 510b, also where the
-crop does not show it, as with the blank counts of a corrigendum, or the counts of an original PV that its corrigendum
-corrected (see [split](#split)). `--all` shows them too, and `--split` limits the crops of a `--view` to one split.
+crop does not show it, as with the counts of an original PV that its corrigendum corrected (see [split](#split)). `--all` shows them too, and `--split` limits the crops of a `--view` to one split.
 
 To measure how many labels are wrong, check a fixed random set: `--view` saves it under a name in the dataset, and
 prints how many of its crops carry each tag. The same name opens it again, with the tags given; `--reload` drops both,
@@ -142,9 +148,11 @@ of `params.yaml`. It splits by gemeente, so no handwriting is in two splits, and
 the crops are blank, nearly all 0, so only `split.blank` of them is kept, as a share of the written crops.
 
 A corrigendum is filled in only where a count changed, and its other fields may well be empty or show stray marks
-`blank` misses, so only its `changed` crops are kept; with a single 510b none are. That 510b, or the `_origineel`, can
-hold the corrections already where the gemeentelijk stembureau made the corrigendum before setting its counts, so an
-original PV of the same stembureau, attached or on its own, leaves out the fields its corrigendum filled in.
+`blank` misses, so only its `changed` crops are kept; with a single 510b none are. Where a count changed, the
+`_origineel` holds the count from before the correction, which the original PV of that stembureau says, so its crop is
+kept. Where the counts are equal, or there is a single 510b, the first 510b may hold the correction already, as when the
+gemeentelijk stembureau made the corrigendum before setting its counts, so an original PV of the same stembureau,
+attached or on its own, leaves out the fields its corrigendum filled in.
 
 The votes-cast and differences crops of N 10-2 are in `train` only: the 510b holds the recount of the gemeentelijk
 stembureau, which differs from what the stembureau wrote in about 5% of them, nearly always by 1 or 2.

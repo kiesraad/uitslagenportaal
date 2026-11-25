@@ -5,12 +5,12 @@ stages:
     deps:
     - path: ../backend/pv_ocr/utils/pv_classifier.py
       hash: md5
-      md5: 0db76f6f4b724192d4b452d8b1c37d7d
-      size: 39230
+      md5: b1b96c04ddba683268a968dd7a434f7d
+      size: 39177
     - path: ../backend/pv_ocr/utils/pv_toc.py
       hash: md5
-      md5: e173a92cc7b8ec6a79f7e63175356121
-      size: 24212
+      md5: 215d439de8b5d2e616bccd98fb5604cf
+      size: 22390
     - path: data/testdata
       hash: md5
       md5: e0df9223047589dc9f982906a4727984.dir
@@ -64,33 +64,34 @@ stages:
       size: 4005027
     - path: scripts/extract_crops.py
       hash: md5
-      md5: 04a17167efce76d24c3ac308a2b5b0f2
-      size: 16433
+      md5: 07e052158ca692163dd4ec4de5f714ff
+      size: 17039
     - path: scripts/ocr_models.py
       hash: md5
       md5: be8398a71b27a57d238fd2ad7bb05419
       size: 111
     params:
       params.yaml:
+        extract_crops.blank: 0.2
         jobs: 8
     outs:
     - path: data/crops
       hash: md5
-      md5: fa3ff79db41b04bee150390d1e230d2f.dir
-      size: 3846804772
-      nfiles: 480303
+      md5: e30a4457dbd9935810998ef5156dc312.dir
+      size: 2551252186
+      nfiles: 291167
   split:
     cmd: python -m scripts.split data/crops data/split
     deps:
     - path: data/crops
       hash: md5
-      md5: fa3ff79db41b04bee150390d1e230d2f.dir
-      size: 3846804772
-      nfiles: 480303
+      md5: e30a4457dbd9935810998ef5156dc312.dir
+      size: 2551252186
+      nfiles: 291167
     - path: scripts/split.py
       hash: md5
-      md5: 7a3bc02f05d7c8a8d089423ba4119d89
-      size: 4793
+      md5: aa01e5f1c33c79f6e466cf112cc673a1
+      size: 5275
     params:
       params.yaml:
         split.blank: 0.05
@@ -101,8 +102,8 @@ stages:
     outs:
     - path: data/split
       hash: md5
-      md5: a67e1e86470ba3aaf337b63c11555c15.dir
-      size: 44066715
+      md5: e5d3ca96453b54bd03d1859b8c00903e.dir
+      size: 45398466
       nfiles: 3
   orientations:
     cmd: python -m scripts.determine_orientations data/testdata data/tocs.json 
