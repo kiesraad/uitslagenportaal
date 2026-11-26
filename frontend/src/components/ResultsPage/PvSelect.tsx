@@ -1,5 +1,7 @@
+import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans } from "@lingui/react/macro";
-import { useId } from "react";
+import { Button, Label, ListBox, ListBoxItem, Popover, Select, SelectValue } from "react-aria-components";
 import type { ViewablePv } from "./ResultsPageColumns";
 
 type Props = {
@@ -10,26 +12,35 @@ type Props = {
 
 /** Picks which of the region's PVs is shown; renders nothing when there is only one. */
 export default function PvSelect({ pvs, selected, onSelect }: Props) {
-   const id = useId();
    if (pvs.length < 2) return null;
 
    return (
-      <div className="flex flex-col gap-1">
-         <label htmlFor={id}>
+      <Select value={selected.url} onChange={(url) => onSelect(String(url))} className="flex flex-col gap-1">
+         <Label>
             <Trans>Kies een proces-verbaal</Trans>
-         </label>
-         <select
-            id={id}
-            value={selected.url}
-            onChange={(event) => onSelect(event.target.value)}
-            className="rounded border border-gray-400 bg-white px-2 py-1"
+         </Label>
+         <Button className="flex cursor-pointer items-center justify-between gap-2 rounded-xs border border-blue-500 bg-white px-3 py-2 text-left data-focus-visible:outline-2 data-focus-visible:outline-blue-400">
+            <SelectValue />
+            <FontAwesomeIcon icon={faChevronDown} aria-hidden="true" />
+         </Button>
+         <Popover
+            placement="bottom start"
+            offset={4}
+            className="w-(--trigger-width) rounded-xs border border-blue-500 bg-white"
          >
-            {pvs.map((pv) => (
-               <option key={pv.url} value={pv.url}>
-                  {pv.label}
-               </option>
-            ))}
-         </select>
-      </div>
+            <ListBox className="max-h-100 divide-y divide-gray-200 overflow-y-auto">
+               {pvs.map((pv) => (
+                  <ListBoxItem
+                     key={pv.url}
+                     id={pv.url}
+                     textValue={pv.label}
+                     className="flex min-h-12 cursor-pointer items-center p-3 select-none data-focused:bg-blue-50 data-hovered:bg-blue-50 data-selected:font-bold"
+                  >
+                     {pv.label}
+                  </ListBoxItem>
+               ))}
+            </ListBox>
+         </Popover>
+      </Select>
    );
 }

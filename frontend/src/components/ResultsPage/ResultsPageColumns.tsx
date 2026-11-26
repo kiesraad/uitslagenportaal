@@ -78,7 +78,15 @@ export default function ResultsPageColumns({ children, documents, pvMayDiffer }:
    function selectPv(url: string) {
       setSelectedUrl(url);
       setSwitchedFrom(null);
-      if (viewer) setViewer({ url, page: 1 });
+      if (viewerPage === null || !selected) return;
+      // Opens the chosen PV at the section the viewer was showing, or at page 1 when it lacks that section.
+      const pv = pvs.find((candidate) => candidate.url === url);
+      const entry = selected.toc?.find((candidate) => candidate.page === viewerPage);
+      let page = pv && entry ? pageOf(pv, entry.content, entry.list_number) : undefined;
+      if (pv && page === undefined && entry?.content === "candidate-votes-continued") {
+         page = pageOf(pv, "candidate-votes", entry.list_number);
+      }
+      setViewer({ url, page: page ?? 1 });
    }
 
    function findTarget(content: TocEntry["content"], listNumber?: number): PvTarget | undefined {

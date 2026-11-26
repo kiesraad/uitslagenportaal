@@ -79,6 +79,20 @@ function columns(documents: CertifiedDocument[], children: ReactNode = null, pvM
    );
 }
 
+const pvChoice = () => screen.queryByRole("button", { name: /Kies een proces-verbaal/ });
+
+function pvOptions() {
+   fireEvent.click(pvChoice() as HTMLElement);
+   const options = screen.getAllByRole("option").map((option) => option.textContent);
+   fireEvent.keyDown(screen.getByRole("listbox"), { key: "Escape" });
+   return options;
+}
+
+function choosePv(name: string) {
+   fireEvent.click(pvChoice() as HTMLElement);
+   fireEvent.click(screen.getByRole("option", { name }));
+}
+
 function renderBox(locale: "nl" | "en" = "nl", documents: CertifiedDocument[] = []) {
    return renderWithConfig(columns(documents), locale);
 }
@@ -187,7 +201,7 @@ describe("ResultsSourceBox", () => {
    it("Offers no choice when the region has one PV", () => {
       renderBox("nl", [pv(7)]);
 
-      expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+      expect(pvChoice()).not.toBeInTheDocument();
    });
 
    it("Lets the visitor choose a PV, the best one first, skipping one that cannot be shown", () => {
@@ -197,18 +211,14 @@ describe("ResultsSourceBox", () => {
          pv(7),
       ]);
 
-      const select = screen.getByRole("combobox", { name: "Kies een proces-verbaal" });
-      expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
-         "Corrigendum 2",
-         "Proces-verbaal",
-      ]);
-      expect(select).toHaveValue("/api/certified-documents/9/");
+      expect(pvOptions()).toEqual(["Corrigendum 2", "Proces-verbaal"]);
+      expect(pvChoice()).toHaveTextContent("Corrigendum 2");
       expect(screen.getAllByRole("img", { name: "Proces-verbaal" })[0]).toHaveAttribute(
          "src",
          "/api/certified-documents/9/preview/",
       );
 
-      fireEvent.change(select, { target: { value: "/api/certified-documents/7/" } });
+      choosePv("Proces-verbaal");
 
       expect(screen.getAllByRole("img", { name: "Proces-verbaal" })[0]).toHaveAttribute(
          "src",
@@ -222,22 +232,53 @@ describe("ResultsSourceBox", () => {
    it("Names several originals by their form", () => {
       renderBox("nl", [pv(8, { file_type: "PDF_NA31-2-B1" }), pv(7, { file_type: "PDF_N10-1" })]);
 
-      expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      expect(pvOptions()).toEqual([
          "Bijlage 1 bij proces-verbaal gemeentelijk stembureau (CSO)",
          "Proces-verbaal stembureau",
       ]);
    });
 
-   it("Switches the open viewer to the chosen PV at page 1", async () => {
+   it("Switches the open viewer to the chosen PV at page 1 when it lacks the section shown", async () => {
       renderBox("nl", [pv(9, { file_type: "PDF_NA14-2", correction_number: 1 }), pv(7)]);
       fireEvent.click(screen.getByRole("button", { name: "Proces-verbaal" }));
       await waitFor(() => expect(PdfDocument).toHaveBeenCalled());
       act(() => PdfDocument.mock.lastCall?.[0].onPageChange(4));
 
-      fireEvent.change(screen.getByRole("combobox"), { target: { value: "/api/certified-documents/7/" } });
+      choosePv("Proces-verbaal");
 
       expect(PdfDocument.mock.lastCall?.[0].file).toBe("/api/certified-documents/7/?stream");
       expect(PdfDocument.mock.lastCall?.[0].pageNumber).toBe(1);
+   });
+
+   it("Keeps the section shown when switching to a PV that has it", async () => {
+      renderBox("nl", [
+         pv(9, {
+            file_type: "PDF_NA14-2",
+            correction_number: 1,
+            toc: [
+               { page: 2, content: "candidate-votes", list_number: 5 },
+               { page: 3, content: "candidate-votes-continued", list_number: 5 },
+            ],
+         }),
+         pv(7, {
+            toc: [
+               { page: 6, content: "candidate-votes", list_number: 4 },
+               { page: 8, content: "candidate-votes", list_number: 5 },
+            ],
+         }),
+      ]);
+      fireEvent.click(screen.getByRole("button", { name: "Proces-verbaal" }));
+      await waitFor(() => expect(PdfDocument).toHaveBeenCalled());
+      act(() => PdfDocument.mock.lastCall?.[0].onPageChange(3));
+
+      // A continued page of list 5 opens the original at list 5.
+      choosePv("Proces-verbaal");
+      expect(PdfDocument.mock.lastCall?.[0].file).toBe("/api/certified-documents/7/?stream");
+      expect(PdfDocument.mock.lastCall?.[0].pageNumber).toBe(8);
+
+      choosePv("Corrigendum 1");
+      expect(PdfDocument.mock.lastCall?.[0].file).toBe("/api/certified-documents/9/?stream");
+      expect(PdfDocument.mock.lastCall?.[0].pageNumber).toBe(2);
    });
 
    it("Warns the PV may differ from the counts, in the box and in the viewer", () => {
@@ -357,7 +398,7 @@ describe("PvPageLink", () => {
       await waitFor(() => expect(PdfDocument).toHaveBeenCalled());
       expect(PdfDocument.mock.lastCall?.[0].file).toBe("/api/certified-documents/7/?stream");
       expect(PdfDocument.mock.lastCall?.[0].pageNumber).toBe(8);
-      expect(screen.getByRole("combobox")).toHaveValue("/api/certified-documents/7/");
+      expect(pvChoice()).toHaveTextContent("Proces-verbaal");
       expect(
          screen.getByText("Getoond: Proces-verbaal. Dit onderdeel staat niet in Corrigendum 1."),
       ).toBeInTheDocument();
@@ -381,7 +422,7 @@ describe("PvPageLink", () => {
       fireEvent.click(screen.getByRole("button", { name: "Toon in proces-verbaal" }));
       await waitFor(() => expect(screen.getByText(/Getoond:/)).toBeInTheDocument());
 
-      fireEvent.change(screen.getByRole("combobox"), { target: { value: "/api/certified-documents/9/" } });
+      choosePv("Corrigendum 1");
 
       expect(screen.queryByText(/Getoond:/)).not.toBeInTheDocument();
    });
