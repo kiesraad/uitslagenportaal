@@ -1,0 +1,30 @@
+# Uitslagenportaal - Kiesraad
+
+> The Uitslagenportaal of the Kiesraad (Dutch Electoral Council) shows the counting results of Dutch elections, from every polling station up to the national total. It publishes the digital counting files (EML) and the scanned official reports (processen-verbaal) they are based on.
+
+The paper process is leading: votes are counted by hand and recorded in official reports (processen-verbaal). The digital results on this site are derived from those reports. When citing a result, link to the page it comes from and mention that the official report is the authoritative source.
+
+Expired elections are removed from the site. The site is in Dutch; an English version is available through the language switch.
+
+## How the site is organised
+
+Each election has its own slug, such as `tk2025` (Tweede Kamer 2025) or `ps2023` (Provinciale Staten 2023). Results are shown per level of the counting process:
+
+- `/{election}/gsb`: all municipalities (gemeentelijk stembureau, GSB)
+- `/{election}/gsb/{municipality}/csb/{csb}`: a municipality with its polling stations (the `/csb/{csb}` part is left out when the municipality is its own CSB, as in municipal elections)
+- `/{election}/gsb/{municipality}/csb/{csb}/{polling-station}`: the results of a single polling station
+- `/{election}/hsb/{kieskring}`: an electoral district (hoofdstembureau, HSB), only for elections that have them
+- `/{election}/csb/{region}`: the central electoral committee (centraal stembureau, CSB): the country, a province or a water board
+- `/{election}/van-stem-tot-uitslag`: the timeline from vote to final result
+
+Add `/resultaten` to a municipality, HSB or CSB page for its results, and `/resultaten/{party}` for the results of a single party.
+
+## Finding pages
+
+- [Sitemap](https://uitslagen.kiesraad.nl/sitemap.xml): every election, region and party results page (polling-station pages are left out, find them through their municipality page)
+- [Home](https://uitslagen.kiesraad.nl/): the current elections
+
+## Optional
+
+- [Kiesraad](https://www.kiesraad.nl/): the Dutch Electoral Council
+- [Source code](https://github.com/kiesraad/uitslagenportaal)
