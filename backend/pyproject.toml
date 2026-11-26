@@ -42,12 +42,31 @@ dev = [
     "factory-boy>=3.3.3",
     "fakeredis[lua]>=2.37.0",
     "watchfiles>=1.2.0",
-  "django-watchfiles>=1.4.0",
+    "django-watchfiles>=1.4.0",
+    "opencv-python-headless>=5.1.0.95",
+    "numpy>=2.5.5",
+]
+# Shares the lock with production, so dvc's aiobotocore can hold back boto3/botocore until it allows the new version.
+ml = [
+    "dvc[s3]>=3.67.1",
+    "mlflow>=3.18.0",
+    "sentencepiece>=0.2.0",
+    "torch>=2.9.0",
+    "transformers>=4.57.0",
 ]
 # Only the scraper worker image installs this, to keep Playwright out of the runtime image.
 scraper = [
     "playwright>=1.62.0",
 ]
+
+# CPU-only torch: the CUDA wheels add gigabytes the ml image does not use.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
 
 [tool.setuptools]
 py-modules = []

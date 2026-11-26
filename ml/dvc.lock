@@ -1,0 +1,260 @@
+schema: '2.0'
+stages:
+  toc:
+    cmd: python -m scripts.determine_tocs data/testdata data/tocs.json
+    deps:
+    - path: ../backend/pv_ocr/utils/pv_classifier.py
+      hash: md5
+      md5: b1b96c04ddba683268a968dd7a434f7d
+      size: 39177
+    - path: ../backend/pv_ocr/utils/pv_toc.py
+      hash: md5
+      md5: 215d439de8b5d2e616bccd98fb5604cf
+      size: 22390
+    - path: data/testdata
+      hash: md5
+      md5: e0df9223047589dc9f982906a4727984.dir
+      size: 9105348710
+      nfiles: 3938
+    - path: scripts/determine_tocs.py
+      hash: md5
+      md5: d958b98960acd0ef8357cd2aafefb5f4
+      size: 1772
+    outs:
+    - path: data/tocs.json
+      hash: md5
+      md5: 68be9ad432b8af9c3bdc2218e7b2b1dd
+      size: 4005027
+  extract_crops:
+    cmd: python -m scripts.extract_crops data/testdata data/tocs.json 
+      data/orientations.json data/crops
+    deps:
+    - path: ../backend/pv_ocr/utils/ocr.py
+      hash: md5
+      md5: 7404c4ef81371bd4fd516fd17d3559c2
+      size: 2927
+    - path: ../backend/pv_ocr/utils/orientation.py
+      hash: md5
+      md5: 1f4e5e2ab8207dc2481bfc04106d1f3b
+      size: 1742
+    - path: ../backend/pv_ocr/utils/pv_classifier.py
+      hash: md5
+      md5: b1b96c04ddba683268a968dd7a434f7d
+      size: 39177
+    - path: ../backend/pv_ocr/utils/pv_toc.py
+      hash: md5
+      md5: 215d439de8b5d2e616bccd98fb5604cf
+      size: 22390
+    - path: ../backend/pv_ocr/utils/vote_tables.py
+      hash: md5
+      md5: de3fa1f5a2e9850cc0a3e124a1dcdbf5
+      size: 38368
+    - path: data/orientations.json
+      hash: md5
+      md5: d8bd8a6f2f489e8d989e378709c16bd8
+      size: 581930
+    - path: data/testdata
+      hash: md5
+      md5: e0df9223047589dc9f982906a4727984.dir
+      size: 9105348710
+      nfiles: 3938
+    - path: data/tocs.json
+      hash: md5
+      md5: 68be9ad432b8af9c3bdc2218e7b2b1dd
+      size: 4005027
+    - path: scripts/extract_crops.py
+      hash: md5
+      md5: 07e052158ca692163dd4ec4de5f714ff
+      size: 17039
+    - path: scripts/ocr_models.py
+      hash: md5
+      md5: be8398a71b27a57d238fd2ad7bb05419
+      size: 111
+    params:
+      params.yaml:
+        extract_crops.blank: 0.2
+        jobs: 8
+    outs:
+    - path: data/crops
+      hash: md5
+      md5: e30a4457dbd9935810998ef5156dc312.dir
+      size: 2551252186
+      nfiles: 291167
+  split:
+    cmd: python -m scripts.split data/crops data/split
+    deps:
+    - path: data/crops
+      hash: md5
+      md5: e30a4457dbd9935810998ef5156dc312.dir
+      size: 2551252186
+      nfiles: 291167
+    - path: scripts/split.py
+      hash: md5
+      md5: a93833480de7fcb54ab529f46b27d283
+      size: 5282
+    params:
+      params.yaml:
+        split.blank: 0.05
+        split.random-seed: 0
+        split.test: 0.15
+        split.train: 0.7
+        split.validate: 0.15
+    outs:
+    - path: data/split
+      hash: md5
+      md5: e5d3ca96453b54bd03d1859b8c00903e.dir
+      size: 45398466
+      nfiles: 3
+  orientations:
+    cmd: python -m scripts.determine_orientations data/testdata data/tocs.json 
+      data/orientations.json
+    deps:
+    - path: ../backend/pv_ocr/utils/ocr.py
+      hash: md5
+      md5: 7404c4ef81371bd4fd516fd17d3559c2
+      size: 2927
+    - path: ../backend/pv_ocr/utils/orientation.py
+      hash: md5
+      md5: 1f4e5e2ab8207dc2481bfc04106d1f3b
+      size: 1742
+    - path: data/testdata
+      hash: md5
+      md5: e0df9223047589dc9f982906a4727984.dir
+      size: 9105348710
+      nfiles: 3938
+    - path: data/tocs.json
+      hash: md5
+      md5: 68be9ad432b8af9c3bdc2218e7b2b1dd
+      size: 4005027
+    - path: scripts/determine_orientations.py
+      hash: md5
+      md5: 154bb2d26ab14d0ce0ca359a3d6df499
+      size: 3098
+    - path: scripts/ocr_models.py
+      hash: md5
+      md5: be8398a71b27a57d238fd2ad7bb05419
+      size: 111
+    params:
+      params.yaml:
+        jobs: 8
+    outs:
+    - path: data/orientations.json
+      hash: md5
+      md5: d8bd8a6f2f489e8d989e378709c16bd8
+      size: 581930
+  evaluate@trocr-base:
+    cmd: python -m scripts.evaluate data/split/test.csv data/crops 
+      data/evaluation/trocr-base --reader trocr-base
+    deps:
+    - path: ../backend/pv_ocr/readers/__init__.py
+      hash: md5
+      md5: 81f9a3f81eecc4c8a2befb5e7570b334
+      size: 1165
+    - path: ../backend/pv_ocr/readers/trocr.py
+      hash: md5
+      md5: 2133a83224526bf4f6d6ea9d45ed6bf4
+      size: 2069
+    - path: ../backend/pv_ocr/utils/ocr.py
+      hash: md5
+      md5: 7404c4ef81371bd4fd516fd17d3559c2
+      size: 2927
+    - path: data/crops
+      hash: md5
+      md5: e30a4457dbd9935810998ef5156dc312.dir
+      size: 2551252186
+      nfiles: 291167
+    - path: data/split/test.csv
+      hash: md5
+      md5: 4834863403dc2129cb40e29848443e14
+      size: 6250416
+    - path: scripts/evaluate.py
+      hash: md5
+      md5: b126df117c689bcabba918b749c52ff6
+      size: 11862
+    params:
+      params.yaml:
+        evaluate.macro-min-crops: 200
+        evaluate.pages: 300
+        evaluate.random-seed: 0
+        evaluate.readers.trocr-base:
+          reader: trocr
+          checkpoint: microsoft/trocr-base-handwritten
+    outs:
+    - path: data/evaluation/trocr-base/calibration.csv
+      hash: md5
+      md5: e91af28bb685426ca81411965420e118
+      size: 2399
+    - path: data/evaluation/trocr-base/confusion.csv
+      hash: md5
+      md5: 5d0c08ca235015ec564fe176ff32efe6
+      size: 2330
+    - path: data/evaluation/trocr-base/metrics.json
+      hash: md5
+      md5: e68a9bc71ebd849e1696d65030ce4589
+      size: 2383
+    - path: data/evaluation/trocr-base/misreads.csv
+      hash: md5
+      md5: ff147c08f0a57a87d56baa22ddb6410b
+      size: 167315
+    - path: data/evaluation/trocr-base/per_group.csv
+      hash: md5
+      md5: fc1a1c3ae361d7a200519689d6afc85f
+      size: 1122
+  evaluate@trocr-small:
+    cmd: python -m scripts.evaluate data/split/test.csv data/crops 
+      data/evaluation/trocr-small --reader trocr-small
+    deps:
+    - path: ../backend/pv_ocr/readers/__init__.py
+      hash: md5
+      md5: 81f9a3f81eecc4c8a2befb5e7570b334
+      size: 1165
+    - path: ../backend/pv_ocr/readers/trocr.py
+      hash: md5
+      md5: 2133a83224526bf4f6d6ea9d45ed6bf4
+      size: 2069
+    - path: ../backend/pv_ocr/utils/ocr.py
+      hash: md5
+      md5: 7404c4ef81371bd4fd516fd17d3559c2
+      size: 2927
+    - path: data/crops
+      hash: md5
+      md5: e30a4457dbd9935810998ef5156dc312.dir
+      size: 2551252186
+      nfiles: 291167
+    - path: data/split/test.csv
+      hash: md5
+      md5: 4834863403dc2129cb40e29848443e14
+      size: 6250416
+    - path: scripts/evaluate.py
+      hash: md5
+      md5: b126df117c689bcabba918b749c52ff6
+      size: 11862
+    params:
+      params.yaml:
+        evaluate.macro-min-crops: 200
+        evaluate.pages: 300
+        evaluate.random-seed: 0
+        evaluate.readers.trocr-small:
+          reader: trocr
+          checkpoint: microsoft/trocr-small-handwritten
+    outs:
+    - path: data/evaluation/trocr-small/calibration.csv
+      hash: md5
+      md5: 27883c7cbd1c80afb16adc2b605e356f
+      size: 2343
+    - path: data/evaluation/trocr-small/confusion.csv
+      hash: md5
+      md5: 4078ba1d9ba3c8901fe0e0c03e89598f
+      size: 2333
+    - path: data/evaluation/trocr-small/metrics.json
+      hash: md5
+      md5: bbd1f9c8cee095cfc0363d03892a3c23
+      size: 2400
+    - path: data/evaluation/trocr-small/misreads.csv
+      hash: md5
+      md5: eaca7d0795b3f7b931ee92253eb6f988
+      size: 186349
+    - path: data/evaluation/trocr-small/per_group.csv
+      hash: md5
+      md5: baf12235a1d7ecbd8b638bb58d99cdfe
+      size: 1139

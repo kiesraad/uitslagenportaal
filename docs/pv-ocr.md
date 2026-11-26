@@ -69,26 +69,110 @@ docker compose run --rm backend-scripts python manage.py determine_pv_toc <path>
 
 #### Preparation
 
-`ml/` is a uv project of its own, apart from the backend, so the training dependencies stay out of the backend's
-lock. Run `uv sync` in `ml/` to install DVC and MLflow, and run them with `uv run dvc …` and `uv run mlflow …`, or
-after activating `ml/.venv`.
+DVC, MLflow and the other machine-learning dependencies are the `ml` dependency group of the backend, so the scripts
+in `ml/scripts/` can use the backend's code and the production image leaves them out. They run in the `ml` compose
+service, which has the repo mounted at `/project` and works from `/project/ml`:
+
+```bash
+docker compose up -d --build ml
+docker compose exec ml dvc repro
+```
+
+The profile keeps the service out of a plain `docker compose up --build`, so rebuild it by name after a dependency
+change. For the IDE only, `uv sync --all-groups` in `backend/` installs every group into `backend/.venv`; the
+pipeline itself expects the container. The service extends `backend-scripts`, so Django's settings work as expected,
+with the log level at INFO to keep DVC's libraries quiet.
+
+Keep the container running between sessions. `up -d` recreates it whenever the image or its compose config changed,
+which kills whatever runs in it, so check that it is idle first. DVC remembers file hashes by inode, and a recreated
+container may see new inodes and hash all of `data/testdata` again. Run DVC only in the container, never on the host as
+well: the two see different paths and keep invalidating each other's hashes. On Windows it can help to move the project
+to a WSL folder, and run it from there.
 
 #### Access to the DVC remote
 
 The DVC remote `storage` is `s3://uitslagenportaal-mlops/dvc` on Scaleway Object Storage (`nl-ams`), set in
 `ml/.dvc/config`. You need a Scaleway API key with read and write access to objects in that bucket; it needs no
-delete rights. Store it in `ml/.dvc/config.local`, which git ignores, from the `ml/` folder:
+delete rights. Store it in `ml/.dvc/config.local`, which git ignores:
 
 ```bash
-dvc remote modify --local storage access_key_id <access key>
-dvc remote modify --local storage secret_access_key <secret key>
+docker compose exec ml dvc remote modify --local storage access_key_id <access key>
+docker compose exec ml dvc remote modify --local storage secret_access_key <secret key>
 ```
 
 Where nothing should be written to disk, such as CI or a GPU VM, set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-instead. Check access with `dvc status --cloud`.
+instead; the `ml` service passes them through from the host. Check access with
+`docker compose exec ml dvc status --cloud`.
 
 #### Data
 
 All data lives in `ml/data/` and is tracked with DVC; [ml/data/README.md](../ml/data/README.md) describes each
-directory. From `ml/`, `dvc pull` fetches it, about 9 GB for the test set alone.
+directory. `docker compose exec ml dvc pull` fetches it, about 9 GB for the test set alone.
 
+#### Pipeline
+
+`ml/dvc.yaml` defines the stages, each rerun only when its dependencies or params changed; paths are in `ml/data/`:
+
+| Stage             | Reads                                         | Writes                 |
+|-------------------|-----------------------------------------------|------------------------|
+| `toc`             | `testdata/`, the TOC code                     | `tocs.json`            |
+| `orientations`    | `testdata/`, `tocs.json`                      | `orientations.json`    |
+| `extract_crops`   | `testdata/`, `tocs.json`, `orientations.json` | `crops/`               |
+| `split`           | `crops/`                                      | `split/`               |
+| `evaluate@<name>` | `split/test.csv`, `crops/`, the reader code   | `evaluation/<name>/`   |
+
+`toc` is a full table-of-contents pass over the test set; it depends on `pv_toc.py` and `pv_classifier.py` in the
+backend, so changing those reruns it. `orientations` stores the rotation of each page `extract_crops` reads, found
+with Tesseract's orientation detection (`pv_ocr/utils/orientation.py`). That takes about a third of the time of
+`extract_crops`, and doesn't depend on the detectors in `vote_tables.py`, so changing those reruns only
+`extract_crops` and `split`. `ml/params.yaml` holds the params, such as `jobs`, the number of worker processes.
+
+Any change in `testdata/` reruns `toc`, also a new or replaced 510b, which it doesn't read. Where no PV changed,
+`dvc commit toc` records the new state without running it.
+
+A full run takes hours.
+
+```bash
+docker compose exec ml dvc repro                  # every stage that is out of date
+docker compose exec ml dvc repro extract_crops    # up to this stage
+docker compose exec ml dvc status                 # what would rerun, and why
+docker compose exec ml python -m scripts.determine_tocs data/testdata/GR2026/0050-zeewolde /tmp/tocs.json
+```
+
+The last runs a script on its own, outside DVC, on part of the data: handy while developing it. Run the scripts as
+modules with `-m`: `scripts/__init__.py` sets Django up before a script imports backend code, which a plain
+`python scripts/….py` skips.
+
+A `dvc` command that is killed, for instance by recreating the container, leaves its locks in `ml/.dvc/tmp`, and the
+next one refuses to start. With no DVC process running in the container, delete `rwlock`, `rwlock.lock` and `lock`
+there.
+
+#### Evaluating number readers
+
+A number reader reads the handwritten number in a crop: `NumberReader` in `backend/pv_ocr/readers/` takes a batch of
+crops and returns, per crop, its digits and a confidence. `get_reader` picks one by name. The `evaluate` stage runs
+once per entry in `evaluate.readers` of `ml/params.yaml`, as `evaluate@<name>`, so a reader whose code or entry did
+not change is not run again. [ml/data/README.md](../ml/data/README.md#evaluation) describes the scores.
+
+```bash
+docker compose exec ml dvc repro evaluate             # every reader
+docker compose exec ml dvc repro evaluate@trocr-small # one reader
+docker compose exec ml dvc metrics show               # the scores of every reader side by side
+```
+
+The runs are logged to the MLflow server of the `mlops` chart (see [deployments.md](deployments.md#mlops-chart)).
+The `ml` service reaches it at `host.docker.internal:5005`, through a port-forward on the host; with Docker Engine
+rather than Docker Desktop, the port-forward must also listen on the Docker bridge, `172.17.0.1` by default. Don't use
+`0.0.0.0`: the server has no authentication. Set `MLFLOW_TRACKING_URI` to use another server.
+
+```bash
+kubectl -n mlops port-forward svc/mlflow 5005:80                                 # Docker Desktop
+kubectl -n mlops port-forward --address 127.0.0.1,172.17.0.1 svc/mlflow 5005:80  # Docker Engine
+```
+
+The UI is at <http://localhost:5005>.
+
+To add a reader, subclass `NumberReader`, register it in `READERS` in `pv_ocr/readers/__init__.py`, and add an entry
+to `evaluate.readers` with `reader` set to its name and its options beside it. Its dependencies go in the `ml` group
+and are imported in its own module, so the application does not load them. Hugging Face checkpoints are kept
+in the `huggingface_cache` volume between containers.
