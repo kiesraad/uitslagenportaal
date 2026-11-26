@@ -1,7 +1,8 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { type LoaderFunctionArgs, useParams } from "react-router";
 import { HSBTimeline } from "@/components/Timeline/HSBTimeline.tsx";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { ApiError } from "../../api/client.ts";
 import { LayoutMain } from "../../components/LayoutMain.tsx";
 import PageTop from "../../components/PageTop.tsx";
@@ -14,45 +15,34 @@ import { useFormatters } from "../../utils/format.ts";
 import { getCsbCrumb, getRegionLabels } from "../../utils/region.ts";
 import { appRoutes } from "../../utils/routes.ts";
 import { getPartyVoteCount } from "../../utils/voteCounts.ts";
+import type { Route } from "./+types/HSBPartyResultsPage";
 
-export function hsbPartyResultsLoader(queryClient: QueryClient) {
-   return async ({ params }: LoaderFunctionArgs) => {
-      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params, "hsb");
+export async function loadHSBPartyResults(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
+   const [electionConfig, region] = await Promise.all([
+      client.query(electionConfigQuery(params.electionConfigSlug)),
+      client.query(regionQuery(params, "hsb")),
+   ]);
 
-      const [electionConfig, region] = await Promise.all([
-         queryClient.query(electionConfigQueryOptions),
-         queryClient.query(regionQueryOptions),
-      ]);
+   if (!electionConfig.has_hsb) {
+      throw new ApiError("Election has no HSBs", 404);
+   }
 
-      if (!electionConfig.has_hsb) {
-         throw new ApiError("Election has no HSBs", 404);
-      }
-
-      const partyVoteMatrixQueryOptions = hsbPartyVoteMatrixQuery(
-         region.election_slug,
-         params.regionSlug,
-         params.partySlug,
-      );
-      await queryClient.query(partyVoteMatrixQueryOptions);
-
-      return {
-         electionConfigQuery: electionConfigQueryOptions,
-         regionQuery: regionQueryOptions,
-         partyVoteMatrixQuery: partyVoteMatrixQueryOptions,
-      };
-   };
+   // Only the region response names the election the matrix is asked for.
+   await client.query(hsbPartyVoteMatrixQuery(region.election_slug, params.regionSlug, params.partySlug));
 }
 
-type LoaderData = Awaited<ReturnType<ReturnType<typeof hsbPartyResultsLoader>>>;
+export const loader = serverLoader(loadHSBPartyResults);
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadHSBPartyResults(queryClient, args);
 
-export function HSBPartyResultsPage() {
-   const { electionConfigQuery, regionQuery, partyVoteMatrixQuery } = useLoaderData<LoaderData>();
+export default function HSBPartyResultsPage() {
+   const params = useParams();
    const { t } = useLingui();
    const { formatDate } = useFormatters();
-   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
-   const { data: region } = useSuspenseQuery(regionQuery);
-   const { data: partyVoteMatrix } = useSuspenseQuery(partyVoteMatrixQuery);
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(params.electionConfigSlug));
+   const { data: region } = useSuspenseQuery(regionQuery(params, "hsb"));
+   const { data: partyVoteMatrix } = useSuspenseQuery(
+      hsbPartyVoteMatrixQuery(region.election_slug, params.regionSlug, params.partySlug),
+   );
 
    const regionLabels = getRegionLabels("KIESKRING");
    const partySlug = partyVoteMatrix.party.slug;

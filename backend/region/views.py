@@ -8,6 +8,7 @@ from election.models import ElectionConfig, ElectionDocument, VoteCount, VoterTu
 from election.utils import visibility_cutoff
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EML_TYPE_BY_REPORTING_LEVEL, ReportingLevel
+from mainsite.views import CachedReadMixin
 from region.models import Region, hsb_kieskringen
 from region.serializers import RegionDetailSerializer, RegionListSerializer
 
@@ -21,6 +22,7 @@ _DOCUMENT_FILE_TYPES_BY_REPORTING_LEVEL = {
         FileType.PDF_N10_1,
         FileType.PDF_N10_2,
         FileType.PDF_NA14_1,
+        FileType.PDF_NA14_2_B1,
         FileType.PDF_NA31_2_B1,
     ],
     ReportingLevel.GSB: [
@@ -30,7 +32,6 @@ _DOCUMENT_FILE_TYPES_BY_REPORTING_LEVEL = {
         FileType.PDF_NA31_2,
         FileType.PDF_NA31_2_B2,
         FileType.PDF_NA14_2,
-        FileType.PDF_NA14_2_B1,
     ],
     ReportingLevel.HSB: [FileType.EML_510C, FileType.PDF_O7, FileType.PDF_P1F_1],
     ReportingLevel.CSB: [FileType.EML_510D, FileType.EML_520, FileType.PDF_P22_1, FileType.PDF_P22_2],
@@ -70,7 +71,7 @@ def _has_results():
     )
 
 
-class RegionListView(ListAPIView):
+class RegionListView(CachedReadMixin, ListAPIView):
     serializer_class = RegionListSerializer
 
     def get_queryset(self):
@@ -112,7 +113,7 @@ class RegionListView(ListAPIView):
         return _with_same_location_stations(result)
 
 
-class RegionDetailView(RetrieveAPIView):
+class RegionDetailView(CachedReadMixin, RetrieveAPIView):
     serializer_class = RegionDetailSerializer
 
     def get_object(self):

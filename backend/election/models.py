@@ -13,7 +13,15 @@ from election.utils import visibility_cutoff
 from mainsite.models import BaseModel, RegionCategory
 from mainsite.utils.eml_type import EmlType
 from mainsite.utils.utils import name_to_slug
+from pv_ocr.utils.toc_schema import TableOfContentsField
 from region.models import Region, hsb_kieskringen
+
+# Subdirectories within an election's folder in object storage, so no single folder grows huge.
+# Older documents may still sit directly in the election folder; their storage_key says where.
+EML_DIRECTORY = "emls"
+CSV_DIRECTORY = "csvs"
+PV_DIRECTORY = "pvs"
+PV_THUMBNAIL_DIRECTORY = "pv_thumbnails"
 
 
 @dataclass
@@ -216,6 +224,9 @@ class VoteCount(EMLTypeMixin, BaseModel):
         default=RESULT_LEVEL_CANDIDATE,
     )
 
+    class Meta:
+        indexes = [models.Index(fields=["region", "eml_type"], name="votecount_region_eml_type")]
+
 
 class CurrentQuerySet(models.QuerySet):
     def archive(self):
@@ -322,6 +333,10 @@ class ElectionDocument(BaseModel):
     )
     is_current = models.BooleanField(default=True, db_index=True)
     metadata = models.JSONField(default=dict)
+    # What each page of a PV holds; null until determined.
+    toc = TableOfContentsField(null=True, blank=True)
+    # The EML's <kr:CreationDateTime>; empty for other file types.
+    eml_created_at = models.DateTimeField(null=True, blank=True)
 
     objects = CurrentManager()
     all_objects = models.Manager()
@@ -335,6 +350,15 @@ class ElectionDocument(BaseModel):
             Q(created_at__lt=self.created_at) | Q(created_at=self.created_at, pk__lt=self.pk)
         )
         return earlier.count() + 1
+
+    @property
+    def preview_storage_key(self) -> str:
+        """Where the PNG preview of a PV is stored: in the thumbnail folder next to the PV folder, or, for PVs
+        stored before those folders existed, beside the PV itself."""
+        path = Path(self.storage_key).with_suffix(".png")
+        if path.parent.name == PV_DIRECTORY:
+            path = path.parent.with_name(PV_THUMBNAIL_DIRECTORY) / path.name
+        return path.as_posix()
 
     @property
     def download_filename(self) -> str:
@@ -389,3 +413,6 @@ class VoterTurnoutCount(EMLTypeMixin, BaseModel):
     category = models.CharField(max_length=16, choices=CATEGORY_CHOICES)
     reason_code = models.CharField(max_length=64)
     votes = models.PositiveIntegerField()
+
+    class Meta:
+        indexes = [models.Index(fields=["region", "eml_type"], name="turnoutcount_region_eml_type")]

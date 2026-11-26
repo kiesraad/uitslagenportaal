@@ -1,0 +1,81 @@
+{
+  "all": {
+    "crops": 2416,
+    "pages": 300,
+    "exact_match": 0.2913907284768212,
+    "page_exact_match": 0.043333333333333335,
+    "blank_exact_match": 0.5660377358490566,
+    "written_exact_match": 0.2787878787878788,
+    "ece": 0.19108761659950138,
+    "confusion_1_7": 0.00949367088607595,
+    "confusion_7_1": 0.14814814814814814,
+    "digit_error_rate": 0.5768244346001399
+  },
+  "N10-1": {
+    "crops": 1017,
+    "pages": 97,
+    "exact_match": 0.35988200589970504,
+    "page_exact_match": 0.020618556701030927,
+    "blank_exact_match": 0.5555555555555556,
+    "written_exact_match": 0.35454545454545455,
+    "ece": 0.26743376134958846,
+    "confusion_1_7": 0.011976047904191617,
+    "confusion_7_1": 0.08955223880597014,
+    "digit_error_rate": 0.5304990757855823
+  },
+  "N10-2": {
+    "crops": 290,
+    "pages": 97,
+    "exact_match": 0.2793103448275862,
+    "page_exact_match": 0.09278350515463918,
+    "written_exact_match": 0.2793103448275862,
+    "ece": 0.07996723382567669,
+    "confusion_1_7": 0.012345679012345678,
+    "confusion_7_1": 0.11904761904761904,
+    "digit_error_rate": 0.4837355718782791
+  },
+  "Na14-1": {
+    "crops": 3,
+    "pages": 1,
+    "exact_match": 0.3333333333333333,
+    "page_exact_match": 0.0,
+    "written_exact_match": 0.3333333333333333,
+    "ece": 0.3223419211183985,
+    "confusion_1_7": 0.0,
+    "digit_error_rate": 0.6
+  },
+  "Na14-2-B1": {
+    "crops": 20,
+    "pages": 8,
+    "exact_match": 0.0,
+    "page_exact_match": 0.0,
+    "written_exact_match": 0.0,
+    "ece": 0.08174096277798526,
+    "confusion_1_7": 0.125,
+    "confusion_7_1": 0.2,
+    "digit_error_rate": 0.6274509803921569
+  },
+  "Na31-2-B1": {
+    "crops": 1086,
+    "pages": 97,
+    "exact_match": 0.23572744014732966,
+    "page_exact_match": 0.020618556701030927,
+    "blank_exact_match": 0.569620253164557,
+    "written_exact_match": 0.20953326713008938,
+    "ece": 0.16438287806265964,
+    "confusion_1_7": 0.004514672686230248,
+    "confusion_7_1": 0.25,
+    "digit_error_rate": 0.6741098370549186
+  },
+  "macro": {
+    "models": 3,
+    "blank_exact_match": 0.5625879043600563,
+    "confusion_1_7": 0.009612133200922515,
+    "confusion_7_1": 0.15286661928452974,
+    "digit_error_rate": 0.5627814949062601,
+    "ece": 0.1705946244126416,
+    "exact_match": 0.2916399302915403,
+    "page_exact_match": 0.044673539518900345,
+    "written_exact_match": 0.2811296888343767
+  }
+}

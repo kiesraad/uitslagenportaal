@@ -1,3 +1,5 @@
+environment: "staging"
+
 app:
   hostname: "uitslagenportaal-staging.kiesraad.net"
 
@@ -10,6 +12,13 @@ frontend:
 celery:
   image: "ghcr.io/kiesraad/uitslagenportaal-backend:main"
 
+ocr:
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:main"
+
+# Shares the managed Redis with dev, which uses db 0.
+redis:
+  db: 1
+
 scraper:
-  enabled: false
+  enabled: true
   image: "ghcr.io/kiesraad/uitslagenportaal-playwright-worker:main"

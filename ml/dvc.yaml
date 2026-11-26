@@ -1,0 +1,78 @@
+stages:
+  toc:
+    cmd: python -m scripts.determine_tocs data/testdata data/tocs.json
+    deps:
+    - data/testdata
+    - scripts/determine_tocs.py
+    - ../backend/pv_ocr/utils/pv_toc.py
+    - ../backend/pv_ocr/utils/pv_classifier.py
+    outs:
+    - data/tocs.json
+  orientations:
+    cmd: python -m scripts.determine_orientations data/testdata data/tocs.json data/orientations.json
+    deps:
+    - data/testdata
+    - data/tocs.json
+    - scripts/determine_orientations.py
+    - scripts/ocr_models.py
+    - ../backend/pv_ocr/utils/orientation.py
+    - ../backend/pv_ocr/utils/ocr.py
+    params:
+      - jobs
+    outs:
+    - data/orientations.json
+  extract_crops:
+    cmd: python -m scripts.extract_crops data/testdata data/tocs.json data/orientations.json data/crops
+    deps:
+    - data/testdata
+    - data/tocs.json
+    - data/orientations.json
+    - scripts/extract_crops.py
+    - scripts/ocr_models.py
+    - ../backend/pv_ocr/utils/orientation.py
+    - ../backend/pv_ocr/utils/vote_tables.py
+    - ../backend/pv_ocr/utils/ocr.py
+    - ../backend/pv_ocr/utils/pv_toc.py
+    - ../backend/pv_ocr/utils/pv_classifier.py
+    params:
+      - jobs
+      - extract_crops.blank
+    outs:
+    - data/crops
+  split:
+    cmd: python -m scripts.split data/crops data/split
+    deps:
+    - data/crops
+    - scripts/split.py
+    params:
+    - split.test
+    - split.train
+    - split.validate
+    - split.blank
+    - split.random-seed
+    outs:
+    - data/split
+  evaluate:
+    foreach: ${evaluate.readers}
+    do:
+      cmd: python -m scripts.evaluate data/split/test.csv data/crops data/evaluation/${key} --reader ${key}
+      deps:
+      - data/split/test.csv
+      - data/crops
+      - scripts/evaluate.py
+      - ../backend/pv_ocr/readers/__init__.py
+      - ../backend/pv_ocr/readers/trocr.py
+      - ../backend/pv_ocr/utils/ocr.py
+      params:
+      - evaluate.pages
+      - evaluate.random-seed
+      - evaluate.macro-min-crops
+      - evaluate.readers.${key}
+      metrics:
+      - data/evaluation/${key}/metrics.json:
+          cache: false
+      outs:
+      - data/evaluation/${key}/misreads.csv
+      - data/evaluation/${key}/calibration.csv
+      - data/evaluation/${key}/confusion.csv
+      - data/evaluation/${key}/per_group.csv

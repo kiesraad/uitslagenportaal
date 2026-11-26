@@ -147,6 +147,26 @@ def test_certified_document_redirects_to_the_pdf():
 
 
 @pytest.mark.django_db
+def test_certified_document_streams_the_pdf_when_asked():
+    default_storage.save("TK2025/TK2025_NA31-2_Barneveld.pdf", ContentFile(b"%PDF-1.4"))
+    document = CertifiedElectionDocumentFactory(
+        storage_key="TK2025/TK2025_NA31-2_Barneveld.pdf",
+        region=RegionFactory(
+            election=ElectionFactory(election_config__identifier="TK2025"),
+            region_name="Barneveld",
+        ),
+    )
+
+    response = certified_document(RequestFactory().get("/?stream"), document.pk)
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/pdf"
+    assert response["Content-Disposition"] == 'inline; filename="TK2025 Barneveld NA31-2.pdf"'
+    assert response["Cache-Control"] == "public, max-age=86400"
+    assert b"".join(response.streaming_content) == b"%PDF-1.4"
+
+
+@pytest.mark.django_db
 def test_certified_document_rejects_a_source_file():
     default_storage.save("TK2025/telling.xml", ContentFile(b"<eml/>"))
     document = ElectionDocumentFactory(storage_key="TK2025/telling.xml", region=RegionFactory())
@@ -184,3 +204,14 @@ def test_certified_document_preview_returns_404_when_the_png_is_missing():
 
     with pytest.raises(Http404):
         certified_document_preview(RequestFactory().get("/"), document.pk)
+
+
+@pytest.mark.django_db
+def test_certified_document_preview_redirects_to_the_png_in_the_thumbnail_folder():
+    default_storage.save("TK2025/pv_thumbnails/pv.png", ContentFile(b"\x89PNG"))
+    document = CertifiedElectionDocumentFactory(storage_key="TK2025/pvs/pv.pdf", region=RegionFactory())
+
+    response = certified_document_preview(RequestFactory().get("/"), document.pk)
+
+    assert response.status_code == 302
+    assert response.url == f"{settings.MEDIA_URL}TK2025/pv_thumbnails/pv.png"

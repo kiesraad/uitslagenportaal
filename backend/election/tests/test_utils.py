@@ -1,9 +1,19 @@
 import datetime
+from unittest.mock import patch
 
 import pytest
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 
 from election import utils
-from election.utils import DELETION_GRACE_DAYS, deletion_cutoff, tz_aware_from_isoformat, visibility_cutoff
+from election.utils import (
+    DELETION_GRACE_DAYS,
+    delete_stored_documents,
+    deletion_cutoff,
+    folder_prefixes,
+    tz_aware_from_isoformat,
+    visibility_cutoff,
+)
 
 
 @pytest.fixture
@@ -59,3 +69,39 @@ def test_tz_aware_from_isoformat_reads_naive_values_in_the_project_time_zone(set
     settings.TIME_ZONE = time_zone
 
     assert tz_aware_from_isoformat(value) == expected_utc.replace(tzinfo=datetime.timezone.utc)
+
+
+class FakeBucket:
+    """Deletes by prefix from the in-memory storage, like an S3 bucket does."""
+
+    def __init__(self):
+        self.objects = self
+
+    def filter(self, Prefix):
+        self.prefix = Prefix
+        return self
+
+    def delete(self):
+        keys = self._keys(self.prefix.rstrip("/"))
+        for key in keys:
+            default_storage.delete(key)
+        return [{"Deleted": [{"Key": key} for key in keys]}]
+
+    def _keys(self, folder):
+        folders, files = default_storage.listdir(folder)
+        return [f"{folder}/{name}" for name in files] + [
+            key for name in folders for key in self._keys(f"{folder}/{name}")
+        ]
+
+
+def test_delete_stored_documents_removes_the_election_folder_with_its_subfolders():
+    storage_keys = ["TK2025/emls/a.eml.xml", "TK2025/csvs/b.csv", "TK2025/pvs/c.pdf", "TK2025/d.pdf"]
+    stored = [*storage_keys, "TK2025/pv_thumbnails/c.png", "TK2025/d.png", "GR2026/emls/e.eml.xml"]
+    for key in stored:
+        default_storage.save(key, ContentFile(b"x"))
+
+    with patch.object(default_storage, "bucket", FakeBucket(), create=True):
+        deleted, failed = delete_stored_documents(storage_keys, folder_prefixes(storage_keys))
+
+    assert (deleted, failed) == (6, [])
+    assert [key for key in stored if default_storage.exists(key)] == ["GR2026/emls/e.eml.xml"]

@@ -4,7 +4,7 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { createContext, type ReactElement, useContext } from "react";
-import type { ElectionDocument, Region, TimelineDate, TimelineVariant } from "@/api/types.ts";
+import type { ElectionDocument, EmlDates, Region, TimelineDate, TimelineVariant } from "@/api/types.ts";
 import type { TimelineEntryProps } from "@/components/Timeline/TimelineEntry.tsx";
 import { usePersistedState } from "@/hooks/usePersistedState.ts";
 
@@ -19,6 +19,7 @@ export const VARIANT_DESCRIPTIONS: Record<TimelineVariant, MessageDescriptor | n
 export type TimelineContextProps = {
    variant?: TimelineVariant;
    dates: TimelineDate[];
+   emlDates?: EmlDates;
    documents?: ElectionDocument[];
    region?: Region;
    // The gemeente of a stembureau region; on a gemeente page, region is the gemeente itself.
@@ -37,7 +38,7 @@ type TimelineProps = TimelineContextProps & {
    children: (ReactElement<TimelineEntryProps> | boolean | null | undefined)[];
 };
 
-export function Timeline({ variant, dates, documents, region, municipality, children }: TimelineProps) {
+export function Timeline({ variant, dates, emlDates, documents, region, municipality, children }: TimelineProps) {
    const { t } = useLingui();
    const [sortDesc, setSortDesc] = usePersistedState<boolean>(
       TIMELINE_ORDER_KEY,
@@ -46,7 +47,9 @@ export function Timeline({ variant, dates, documents, region, municipality, chil
    );
 
    return (
-      <TimelineContext value={{ variant, dates, documents, region, municipality }}>
+      <TimelineContext
+         value={{ variant, dates, emlDates: emlDates ?? region?.eml_dates, documents, region, municipality }}
+      >
          <button type="button" onClick={() => setSortDesc((prev) => !prev)} className="result-order-hint">
             <span>
                <FontAwesomeIcon icon={faArrowUp} color={sortDesc ? "Black" : "Grey"} />

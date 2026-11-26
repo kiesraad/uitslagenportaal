@@ -1,4 +1,4 @@
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
+import type { AnchorHTMLAttributes, ComponentProps } from "react";
 import { twMerge } from "tailwind-merge";
 import { tw } from "@/utils/tw.ts";
 
@@ -12,7 +12,7 @@ const variantClasses = {
 type ButtonVariant = keyof typeof variantClasses;
 
 type ButtonProps = { variant?: ButtonVariant } & (
-   | (ButtonHTMLAttributes<HTMLButtonElement> & { href?: never })
+   | (ComponentProps<"button"> & { href?: never })
    | (AnchorHTMLAttributes<HTMLAnchorElement> & { href: string; disabled?: boolean })
 );
 

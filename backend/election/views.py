@@ -1,9 +1,8 @@
-from pathlib import Path
-
 from django.core.files.storage import default_storage
 from django.db.models import Q
-from django.http import Http404, HttpResponseRedirect
+from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.utils.cache import patch_cache_control
 from django.utils.http import content_disposition_header
 from rest_framework import viewsets
 
@@ -14,9 +13,10 @@ from election.serializers import (
     ElectionConfigSerializer,
 )
 from election.utils import visibility_cutoff
+from mainsite.views import CachedReadMixin
 
 
-class ElectionConfigViewSet(viewsets.ReadOnlyModelViewSet):
+class ElectionConfigViewSet(CachedReadMixin, viewsets.ReadOnlyModelViewSet):
     queryset = ElectionConfig.objects.all()
     lookup_field = "slug"
 
@@ -24,7 +24,7 @@ class ElectionConfigViewSet(viewsets.ReadOnlyModelViewSet):
         return ElectionConfigSerializer
 
 
-class ContestViewSet(viewsets.ReadOnlyModelViewSet):
+class ContestViewSet(CachedReadMixin, viewsets.ReadOnlyModelViewSet):
     queryset = Contest.objects.all()
 
     def get_queryset(self):
@@ -77,6 +77,17 @@ def certified_document(request, pk):
     if not default_storage.exists(document.storage_key):
         raise Http404("Document not found")
 
+    # The PDF viewer fetches the file from the page, so it has to come from this origin rather than the bucket.
+    if "stream" in request.GET:
+        response = FileResponse(
+            default_storage.open(document.storage_key),
+            content_type="application/pdf",
+            filename=document.download_filename,
+        )
+        # A new PV gets a new id, so this file never changes; the day keeps removed elections from lingering.
+        patch_cache_control(response, public=True, max_age=24 * 60 * 60)
+        return response
+
     # Shown in a new tab, so inline; the name only matters once the visitor saves it.
     return HttpResponseRedirect(
         default_storage.url(
@@ -91,7 +102,7 @@ def certified_document(request, pk):
 
 def certified_document_preview(request, pk):
     document = _visible_certified_document(pk)
-    preview_key = Path(document.storage_key).with_suffix(".png").as_posix()
+    preview_key = document.preview_storage_key
     if not default_storage.exists(preview_key):
         raise Http404("Preview not found")
 

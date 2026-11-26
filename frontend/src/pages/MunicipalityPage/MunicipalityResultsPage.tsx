@@ -1,34 +1,30 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { type LoaderFunctionArgs, useParams } from "react-router";
 import HtmlHead from "@/components/HtmlHead.tsx";
 import { GSBTimeline } from "@/components/Timeline/GSBTimeline.tsx";
 import { electionConfigQuery, regionQuery } from "@/hooks/queries.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import RegionResultsContent from "../../components/ResultsPage/RegionResultsContent.tsx";
 import ResultsPageColumns from "../../components/ResultsPage/ResultsPageColumns.tsx";
+import type { Route } from "./+types/MunicipalityResultsPage";
 import MunicipalityPageLayout from "./MunicipalityPageLayout.tsx";
 
-export function municipalityResultsLoader(queryClient: QueryClient) {
-   return async ({ params }: LoaderFunctionArgs) => {
-      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      const regionQueryOptions = regionQuery(params, "gsb");
-
-      await Promise.all([queryClient.query(electionConfigQueryOptions), queryClient.query(regionQueryOptions)]);
-
-      return {
-         electionConfigQuery: electionConfigQueryOptions,
-         regionQuery: regionQueryOptions,
-      };
-   };
+export async function loadMunicipalityResults(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
+   await Promise.all([
+      client.query(electionConfigQuery(params.electionConfigSlug)),
+      client.query(regionQuery(params, "gsb")),
+   ]);
 }
 
-export type MunicipalityLoaderData = Awaited<ReturnType<ReturnType<typeof municipalityResultsLoader>>>;
+export const loader = serverLoader(loadMunicipalityResults);
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadMunicipalityResults(queryClient, args);
 
-export function MunicipalityResultsPage() {
+export default function MunicipalityResultsPage() {
+   const params = useParams();
    const { t } = useLingui();
-   const { electionConfigQuery, regionQuery } = useLoaderData<MunicipalityLoaderData>();
-   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
-   const { data: region } = useSuspenseQuery(regionQuery);
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(params.electionConfigSlug));
+   const { data: region } = useSuspenseQuery(regionQuery(params, "gsb"));
 
    // Named rather than inlined, so the catalogue carries `{regionName}` instead of `{0}`.
    const regionName = region.region_name;
@@ -38,8 +34,9 @@ export function MunicipalityResultsPage() {
       <MunicipalityPageLayout electionConfig={electionConfig} region={region} municipalityTitle={municipalityTitle}>
          <HtmlHead title={t`Resultaten ${municipalityTitle}`} />
          <ResultsPageColumns
-            previewUrl={region.certified_document_preview_url}
-            documentUrl={region.certified_document_url}
+            previewUrl={region.certified_document?.preview_url}
+            documentUrl={region.certified_document?.url}
+            documentToc={region.certified_document?.toc}
          >
             <RegionResultsContent
                intro={

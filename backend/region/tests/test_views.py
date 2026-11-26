@@ -1,6 +1,7 @@
 import datetime
 
 import pytest
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.utils import timezone
@@ -17,6 +18,7 @@ from election.utils import VISIBILITY_MONTHS
 from mainsite.models import RegionCategory
 from mainsite.utils.eml_type import EmlType
 from party.tests.factories import PartyFactory
+from pv_ocr.utils.toc_schema import PageContent, TableOfContents, TocEntry
 from region.tests.factories import RegionFactory
 from region.views import RegionDetailView, RegionListView
 
@@ -162,8 +164,7 @@ def test_region_detail_has_no_certified_document_preview_without_a_document():
 
     data = region_detail(region, "gsb")
 
-    assert data["certified_document_url"] is None
-    assert data["certified_document_preview_url"] is None
+    assert data["certified_document"] is None
 
 
 @pytest.mark.django_db
@@ -183,8 +184,25 @@ def test_region_detail_links_the_certified_document_when_one_is_imported():
     by_type = {item["file_type"]: item for item in data["documents"]}
     assert set(by_type) == {ElectionDocument.FileType.EML_510B, ElectionDocument.FileType.PDF_NA31_2}
     assert by_type[ElectionDocument.FileType.PDF_NA31_2]["url"] == f"/api/documents/{document.pk}/download/"
-    assert data["certified_document_url"] == f"/api/certified-documents/{document.pk}/"
-    assert data["certified_document_preview_url"] == f"/api/certified-documents/{document.pk}/preview/"
+    assert data["certified_document"]["url"] == f"/api/certified-documents/{document.pk}/"
+    assert data["certified_document"]["preview_url"] == f"/api/certified-documents/{document.pk}/preview/"
+    assert data["certified_document"]["toc"] is None
+
+
+@pytest.mark.django_db
+def test_region_detail_has_the_table_of_contents_of_the_certified_document():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    CertifiedElectionDocumentFactory(
+        region=region,
+        toc=TableOfContents([TocEntry(1, PageContent.COVER), TocEntry(3, PageContent.ADMITTED_VOTERS)]),
+    )
+
+    data = region_detail(region, "gsb")
+
+    assert data["certified_document"]["toc"] == [
+        {"page": 1, "content": "cover"},
+        {"page": 3, "content": "admitted-voters"},
+    ]
 
 
 @pytest.mark.django_db
@@ -237,8 +255,20 @@ def test_region_detail_lists_each_proces_verbaal_and_previews_the_correction(
         f"/api/documents/{original.pk}/download/",
         f"/api/documents/{correction.pk}/download/",
     }
-    assert data["certified_document_url"] == f"/api/certified-documents/{correction.pk}/"
-    assert data["certified_document_preview_url"] == f"/api/certified-documents/{correction.pk}/preview/"
+    assert data["certified_document"]["url"] == f"/api/certified-documents/{correction.pk}/"
+    assert data["certified_document"]["preview_url"] == f"/api/certified-documents/{correction.pk}/preview/"
+
+
+@pytest.mark.django_db
+def test_stembureau_detail_lists_the_correction_bijlage_of_that_stembureau():
+    station = RegionFactory(region_category=RegionCategory.STEMBUREAU)
+    bijlage = CertifiedElectionDocumentFactory(
+        region=station, storage_key="TK2025/na14-2-b1.pdf", file_type=ElectionDocument.FileType.PDF_NA14_2_B1
+    )
+
+    data = region_detail(station, "sb")
+
+    assert [item["url"] for item in data["documents"]] == [f"/api/documents/{bijlage.pk}/download/"]
 
 
 @pytest.mark.django_db
@@ -271,8 +301,8 @@ def test_region_detail_lists_every_correction_and_previews_the_last_one():
         f"/api/documents/{last.pk}/download/",
     ]
     assert [item["correction_number"] for item in corrections] == [1, 2]
-    assert data["certified_document_url"] == f"/api/certified-documents/{last.pk}/"
-    assert data["certified_document_preview_url"] == f"/api/certified-documents/{last.pk}/preview/"
+    assert data["certified_document"]["url"] == f"/api/certified-documents/{last.pk}/"
+    assert data["certified_document"]["preview_url"] == f"/api/certified-documents/{last.pk}/preview/"
 
 
 @pytest.mark.django_db
@@ -290,8 +320,33 @@ def test_region_detail_correction_date_is_the_latest_corrected_510b():
     corrected = ElectionDocumentFactory(
         region=region, storage_key="TK2025/telling-2.xml", file_type=ElectionDocument.FileType.EML_510B
     )
+    cache.clear()
 
     assert region_detail(region, "gsb")["correction_date"] == corrected.created_at
+
+
+@pytest.mark.django_db
+def test_region_detail_dates_come_from_the_emls():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    original_created_at = timezone.make_aware(datetime.datetime(2026, 3, 19, 14, 30))
+    corrected_created_at = timezone.make_aware(datetime.datetime(2026, 3, 24, 10, 0))
+    ElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/telling.xml",
+        file_type=ElectionDocument.FileType.EML_510B,
+        eml_created_at=original_created_at,
+        is_current=False,
+    )
+    ElectionDocumentFactory(
+        region=region,
+        storage_key="TK2025/telling-2.xml",
+        file_type=ElectionDocument.FileType.EML_510B,
+        eml_created_at=corrected_created_at,
+    )
+
+    data = region_detail(region, "gsb")
+    assert data["eml_dates"]["municipality_vote_count"] == original_created_at
+    assert data["correction_date"] == corrected_created_at
 
 
 @pytest.mark.django_db
@@ -326,8 +381,8 @@ def test_region_detail_previews_the_newer_proces_verbaal_when_there_is_no_correc
 
     data = region_detail(region, "gsb")
 
-    assert data["certified_document_url"] == f"/api/certified-documents/{newer.pk}/"
-    assert data["certified_document_preview_url"] == f"/api/certified-documents/{newer.pk}/preview/"
+    assert data["certified_document"]["url"] == f"/api/certified-documents/{newer.pk}/"
+    assert data["certified_document"]["preview_url"] == f"/api/certified-documents/{newer.pk}/preview/"
 
 
 @pytest.mark.django_db
@@ -338,8 +393,8 @@ def test_region_detail_has_no_preview_when_the_png_is_missing():
 
     data = region_detail(region, "gsb")
 
-    assert data["certified_document_url"] == f"/api/certified-documents/{document.pk}/"
-    assert data["certified_document_preview_url"] is None
+    assert data["certified_document"]["url"] == f"/api/certified-documents/{document.pk}/"
+    assert data["certified_document"]["preview_url"] is None
 
 
 @pytest.mark.django_db
@@ -411,6 +466,16 @@ def test_csb_includes_the_520_document_and_gsb_does_not():
 
 
 @pytest.mark.django_db
+def test_region_detail_documents_include_the_eml_creation_date():
+    region = RegionFactory(region_category=RegionCategory.GEMEENTE)
+    eml_created_at = timezone.make_aware(datetime.datetime(2026, 3, 19, 14, 30))
+    ElectionDocumentFactory(region=region, file_type=ElectionDocument.FileType.EML_510B, eml_created_at=eml_created_at)
+
+    [document] = region_detail(region, "gsb")["documents"]
+    assert datetime.datetime.fromisoformat(document["eml_created_at"]) == eml_created_at
+
+
+@pytest.mark.django_db
 def test_gsb_and_csb_each_list_and_preview_their_own_proces_verbaal_for_the_same_region():
     region = RegionFactory(
         election__election_config__category=ElectionCategory.GR.value,
@@ -437,10 +502,10 @@ def test_gsb_and_csb_each_list_and_preview_their_own_proces_verbaal_for_the_same
         ElectionDocument.FileType.PDF_NA14_2,
     }
     gsb_preview = documents[ElectionDocument.FileType.PDF_NA14_2]
-    assert gsb["certified_document_url"] == f"/api/certified-documents/{gsb_preview.pk}/"
+    assert gsb["certified_document"]["url"] == f"/api/certified-documents/{gsb_preview.pk}/"
     assert {item["file_type"] for item in csb["documents"]} == {ElectionDocument.FileType.PDF_P22_2}
     csb_preview = documents[ElectionDocument.FileType.PDF_P22_2]
-    assert csb["certified_document_url"] == f"/api/certified-documents/{csb_preview.pk}/"
+    assert csb["certified_document"]["url"] == f"/api/certified-documents/{csb_preview.pk}/"
 
 
 @pytest.mark.django_db
@@ -814,3 +879,56 @@ def test_region_list_is_empty_for_an_expired_election():
 
     assert response.status_code == 200
     assert list(response.data) == []
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("file_types", "shown"),
+    [
+        # Centrale stemopneming: the bijlage with counts per candidate beats the totals-only N 10-2,
+        # whatever order they were scraped in.
+        (
+            [
+                ElectionDocument.FileType.PDF_NA31_2_B1,
+                ElectionDocument.FileType.PDF_NA31_2_B2,
+                ElectionDocument.FileType.PDF_NA31_2,
+                ElectionDocument.FileType.PDF_N10_2,
+            ],
+            ElectionDocument.FileType.PDF_NA31_2_B1,
+        ),
+        # A correction beats the original, and its bijlage beats the correction itself.
+        (
+            [
+                ElectionDocument.FileType.PDF_NA14_2_B1,
+                ElectionDocument.FileType.PDF_NA14_2,
+                ElectionDocument.FileType.PDF_NA31_2_B1,
+                ElectionDocument.FileType.PDF_N10_2,
+            ],
+            ElectionDocument.FileType.PDF_NA14_2_B1,
+        ),
+        # Decentrale stemopneming.
+        (
+            [ElectionDocument.FileType.PDF_NA14_1, ElectionDocument.FileType.PDF_N10_1],
+            ElectionDocument.FileType.PDF_NA14_1,
+        ),
+        # Bijlage 2 has no vote counts and is never shown.
+        ([ElectionDocument.FileType.PDF_NA31_2_B2], None),
+    ],
+)
+def test_stembureau_detail_previews_the_proces_verbaal_by_priority(file_types, shown):
+    station = RegionFactory(region_category=RegionCategory.STEMBUREAU)
+    documents = {}
+    for file_type in file_types:
+        documents[file_type] = CertifiedElectionDocumentFactory(
+            region=station, storage_key=f"TK2025/{file_type}.pdf", file_type=file_type
+        )
+        default_storage.save(f"TK2025/{file_type}.pdf", ContentFile(b"%PDF"))
+        default_storage.save(f"TK2025/{file_type}.png", ContentFile(b"\x89PNG"))
+
+    data = region_detail(station, "sb")
+
+    if shown is None:
+        assert data["certified_document"] is None
+    else:
+        assert data["certified_document"]["url"] == f"/api/certified-documents/{documents[shown].pk}/"
+        assert data["certified_document"]["preview_url"] == f"/api/certified-documents/{documents[shown].pk}/preview/"

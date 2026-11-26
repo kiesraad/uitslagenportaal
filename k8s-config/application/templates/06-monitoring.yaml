@@ -179,8 +179,8 @@ spec:
         # `for` has to outlast.
         - alert: CeleryBeatNotEnqueuing
           expr: |
-            sum by (namespace) (increase(celery_task_sent_total{namespace="{{ .Release.Namespace }}", name="eml_import.tasks.import_next_eml_commits"}[30m])) == 0
-              or absent(celery_task_sent_total{namespace="{{ .Release.Namespace }}", name="eml_import.tasks.import_next_eml_commits"})
+            sum by (namespace) (increase(celery_task_sent_total{namespace="{{ .Release.Namespace }}", name="file_import.tasks.import_next_eml_commits"}[30m])) == 0
+              or absent(celery_task_sent_total{namespace="{{ .Release.Namespace }}", name="file_import.tasks.import_next_eml_commits"})
           for: 30m
           labels:
             severity: critical

@@ -14,6 +14,7 @@ import type {
 } from "@/api/types.ts";
 import ElectionFileEntry from "@/components/ElectionFileEntry.tsx";
 import { useTimelineContext } from "@/components/Timeline/Timeline.tsx";
+import { useNow } from "@/hooks/useNow.ts";
 import { electionDay, useFormatters } from "@/utils/format.ts";
 import { getRegionLabels, regionWithName } from "@/utils/region.ts";
 import { uppercaseFirst } from "@/utils/text.ts";
@@ -43,15 +44,14 @@ const STATUS_CLASSES: Record<TimelineEntryStatus, { line: string; marker: string
 };
 
 /**
- * Get the TimelineDate object for the given event or default to now if it's not found.
- * @param dates
- * @param event
+ * Get the TimelineDate object for the given event or default to now if it's not found. Without a
+ * time (on the server) the default has no date.
  */
-export function getTimelineDate(dates: TimelineDate[], event: TimelineDateEvent) {
+export function getTimelineDate(dates: TimelineDate[], event: TimelineDateEvent, now: Date | null = new Date()) {
    return (
       dates.find((date) => date.event === event) ??
       ({
-         date: new Date().toISOString(),
+         date: now?.toISOString() ?? "",
          event: event,
          qualifier: "all_day",
       } as TimelineDate)
@@ -63,6 +63,8 @@ export type TimelineEntryStatus = "pending" | "in-progress" | "done";
 export type TimelineEntryProps = {
    title: ReactNode;
    document_types?: ElectionDocumentFileType[];
+   // When the step was completed according to an EML, for a step without an event.
+   doneAt?: string | null;
 } & (
    | {
         date?: Omit<TimelineDate, "event">;
@@ -80,25 +82,34 @@ export default function TimelineEntry({
    date,
    event,
    document_types = [],
+   doneAt,
 }: PropsWithChildren<TimelineEntryProps>) {
    const { formatTimelineDate } = useFormatters();
    const { t } = useLingui();
-   const { dates, documents } = useTimelineContext();
-   const resolved = event ? date || getTimelineDate(dates, event) : date;
+   const { dates, emlDates, documents } = useTimelineContext();
+   const now = useNow();
+
+   // Once its EML is in, the entry is done and shows the day that file was created.
+   const emlCreatedAt = doneAt || (event && emlDates?.[event]);
+   const planned = event ? date || getTimelineDate(dates, event, now) : date;
+   const resolved: Omit<TimelineDate, "event"> = emlCreatedAt ? { date: emlCreatedAt, qualifier: "all_day" } : planned;
 
    const status = useMemo((): TimelineEntryStatus => {
+      if (emlCreatedAt) {
+         return "done";
+      }
       const entryDate = new Date(resolved.date);
-      if (Number.isNaN(entryDate.getTime())) {
+      if (now === null || Number.isNaN(entryDate.getTime())) {
          return "pending";
       }
-      const today = electionDay(new Date());
+      const today = electionDay(now);
       const entryDay = electionDay(entryDate);
 
       if (entryDay === today) {
          return "in-progress";
       }
       return entryDay < today ? "done" : "pending";
-   }, [resolved.date]);
+   }, [emlCreatedAt, resolved.date, now]);
 
    const selectedDocs = useMemo(() => {
       return documents?.filter((doc) => document_types.includes(doc.file_type)) ?? [];
@@ -190,8 +201,8 @@ export function GSBVoteCountTimelineEntry() {
 }
 
 const CORRECTION_DOCUMENT_TYPES: Partial<Record<RegionCategory, ElectionDocumentFileType[]>> = {
-   STEMBUREAU: ["PDF_NA14-1"],
-   GEMEENTE: ["PDF_NA14-2", "PDF_NA14-2-B1"],
+   STEMBUREAU: ["PDF_NA14-1", "PDF_NA14-2-B1"],
+   GEMEENTE: ["PDF_NA14-2"],
    KIESKRING: ["PDF_P1F-1"],
 };
 
@@ -211,6 +222,7 @@ export function CorrectionTimelineEntry() {
    return (
       <TimelineEntry
          date={{ date: municipality.correction_date, qualifier: "all_day" }}
+         doneAt={municipality.correction_date}
          title={t`Onderzoek, hertelling en gecorrigeerde resultaten`}
          document_types={documentTypes}
       >
@@ -235,6 +247,7 @@ export function MunicipalityRecountTimelineEntry() {
    return (
       <TimelineEntry
          date={{ date: municipality.correction_date, qualifier: "all_day" }}
+         doneAt={municipality.correction_date}
          title={t`Nieuwe gemeentelijke optelling`}
       >
          <p>

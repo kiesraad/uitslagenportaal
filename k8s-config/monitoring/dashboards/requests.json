@@ -66,7 +66,7 @@
          "targets": [
             {
                "refId": "A",
-               "expr": "sum by (container, status) (count_over_time({namespace=\"$namespace\", container=~\"$container\"} | logger=~\"mainsite.access|nginx.access\" | status >= $min_status | path=~\".*$path.*\" [$__auto]))",
+               "expr": "sum by (container, status) (count_over_time({namespace=\"$namespace\", container=~\"$container\"} | logger=~\"mainsite.access|frontend.access\" | status >= $min_status | path=~\".*$path.*\" [$__auto]))",
                "legendFormat": "{{container}} {{status}}",
                "queryType": "range"
             }
@@ -86,13 +86,13 @@
          "targets": [
             {
                "refId": "A",
-               "expr": "quantile_over_time(0.5, {namespace=\"$namespace\", container=~\"$container\"} | logger=~\"mainsite.access|nginx.access\" | status >= $min_status | path=~\".*$path.*\" | unwrap duration_ms [$__auto]) by (container)",
+               "expr": "quantile_over_time(0.5, {namespace=\"$namespace\", container=~\"$container\"} | logger=~\"mainsite.access|frontend.access\" | status >= $min_status | path=~\".*$path.*\" | unwrap duration_ms [$__auto]) by (container)",
                "legendFormat": "{{container}} p50",
                "queryType": "range"
             },
             {
                "refId": "B",
-               "expr": "quantile_over_time(0.95, {namespace=\"$namespace\", container=~\"$container\"} | logger=~\"mainsite.access|nginx.access\" | status >= $min_status | path=~\".*$path.*\" | unwrap duration_ms [$__auto]) by (container)",
+               "expr": "quantile_over_time(0.95, {namespace=\"$namespace\", container=~\"$container\"} | logger=~\"mainsite.access|frontend.access\" | status >= $min_status | path=~\".*$path.*\" | unwrap duration_ms [$__auto]) by (container)",
                "legendFormat": "{{container}} p95",
                "queryType": "range"
             }
@@ -108,7 +108,7 @@
          "targets": [
             {
                "refId": "A",
-               "expr": "{namespace=\"$namespace\", container=~\"$container\"} | logger=~\"mainsite.access|nginx.access\" | status >= $min_status | path=~\".*$path.*\"",
+               "expr": "{namespace=\"$namespace\", container=~\"$container\"} | logger=~\"mainsite.access|frontend.access\" | status >= $min_status | path=~\".*$path.*\"",
                "queryType": "range",
                "maxLines": 500
             }
@@ -229,7 +229,7 @@
          "targets": [
             {
                "refId": "A",
-               "expr": "{namespace=\"$namespace\", container=~\"backend|celery-worker|celery-scraper|celery-beat|frontend\"} | level=~\"ERROR|CRITICAL\"",
+               "expr": "{namespace=\"$namespace\", container=~\"backend|celery-worker|celery-scraper|celery-ocr|celery-beat|frontend\"} | level=~\"ERROR|CRITICAL\"",
                "queryType": "range"
             }
          ],

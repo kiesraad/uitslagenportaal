@@ -28,8 +28,6 @@ type Options = Omit<RenderOptions, "wrapper"> & {
    initialEntries?: string[];
    /** Route path to mount the element at, when the component reads route params. */
    path?: string;
-   /** What the mounted route's loader hands the page, for components reading `useLoaderData`. */
-   loaderData?: unknown;
    /** A pre-seeded client, for pages whose suspense queries have to resolve without a fetch. */
    queryClient?: QueryClient;
 };
@@ -54,7 +52,7 @@ function RootLayout() {
  */
 export function renderWithProviders(
    ui: ReactElement,
-   { locale = "nl", initialEntries, path, loaderData = null, queryClient, ...options }: Options = {},
+   { locale = "nl", initialEntries, path, queryClient, ...options }: Options = {},
 ) {
    activateLocale(locale);
 
@@ -75,7 +73,6 @@ export function renderWithProviders(
                   {
                      id: "page",
                      path: path ?? "*",
-                     loader: () => loaderData,
                      Component: RouteChildren,
                   },
                ],
@@ -88,10 +85,7 @@ export function renderWithProviders(
             {/* `activateLocale` above stands in for the catalogue the app loads before its first
                 render, so the stub hydrates rather than running the loaders and rendering async. */}
             <ChildrenContext value={children}>
-               <Stub
-                  initialEntries={initialEntries}
-                  hydrationData={{ loaderData: { root: { locale }, page: loaderData } }}
-               />
+               <Stub initialEntries={initialEntries} hydrationData={{ loaderData: { root: { locale } } }} />
             </ChildrenContext>
          </QueryClientProvider>
       );

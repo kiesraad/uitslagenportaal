@@ -14,11 +14,12 @@ from django.db.models import F, Q
 from django.utils import timezone
 
 from election.models import ElectionConfig
-from eml_import.utils.named_bytes_io import NamedBytesIO
-from eml_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
+from file_import.utils.named_bytes_io import NamedBytesIO
+from file_import.utils.pdf_file_handler import DEFAULT_PV_DIRECTORY
 from mainsite.celery import app
+from pv_ocr.utils.pv_classifier import PvClassificationException, PvClassifier
 from pv_scraper.models import ScrapedFile, ScrapeSource, ScrapeStatus
-from pv_scraper.utils.pv_classifier import STORAGE_ENTRY, PvClassificationException, PvClassifier
+from pv_scraper.utils.pv_storage import STORAGE_ENTRY, save_to_storage
 
 logger = logging.getLogger(__name__)
 
@@ -37,15 +38,6 @@ SCRAPE_INTERVAL_DURING_ELECTION = timedelta(hours=24)
 Interval after which a source is due to be queued for scraping,
 in the `SCRAPE_OFTEN_DAYS_AFTER_ELECTION` days after an election.
 """
-
-SCRAPER_QUEUE = "scraper"
-"""
-Consumed only by the worker with Playwright and Tesseract (`-Q scraper` in prod.dockerfile).
-"""
-
-# Redis priorities on the scraper queue (0 is highest), so queued classifications start before queued scrapes.
-CLASSIFICATION_PRIORITY = 0
-SCRAPE_PRIORITY = 9
 
 CLASSIFICATION_QUEUE_FOLDER = "classification_queue"
 """ Folder on storage to store temp files waiting for classification """
@@ -92,7 +84,7 @@ def dispatch_scrape_tasks():
         last_run_started_at=timezone.now(), last_run_status=ScrapeStatus.QUEUED
     )
     for source_id in source_ids:
-        run_scrape_for_source.apply_async((source_id,), queue=SCRAPER_QUEUE, priority=SCRAPE_PRIORITY)
+        run_scrape_for_source.delay(source_id)
 
 
 @app.task(
@@ -119,9 +111,7 @@ def run_scrape_for_source(source_id: int):
                 # Named after the content, as one source may publish several files under one name.
                 name = f"{source.code}_{file.scraped_file.sha256}.pdf"
                 key = storage.save(f"{CLASSIFICATION_QUEUE_FOLDER}/{name}", file.content)
-                classify_scraped_file.apply_async(
-                    (source.pk, key, file.content.name), queue=SCRAPER_QUEUE, priority=CLASSIFICATION_PRIORITY
-                )
+                classify_scraped_file.delay(source.pk, key, file.content.name)
     except Exception:
         # A failure outside the scrape itself, such as the browser not starting, still ends the run.
         if source.last_run_status == ScrapeStatus.RUNNING:
@@ -153,9 +143,9 @@ def classify_scraped_file(source_id: int, key: str, file_name: str) -> None:
     rejected_reason = None
     try:
         classification = classifier.classify()
-        if classification and classification.matched_on.is_certain():
+        if classification.matched_on.is_certain():
             logger.info(f"Classified as {classification.model} for {classification.region}, saving file")
-            classifier.save_to_storage(source, DEFAULT_PV_DIRECTORY)
+            save_to_storage(classifier, source, DEFAULT_PV_DIRECTORY)
         else:
             logger.info("Classification not certain, discarding file")
     except PvClassificationException as e:

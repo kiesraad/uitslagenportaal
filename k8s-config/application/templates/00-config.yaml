@@ -39,6 +39,9 @@ data:
   DEBUG: "{{ .Values.debug }}"
   SITE_ROOT: "https://{{ .Values.app.hostname }}"
   SITE_NAME: "{{ .Values.app.site_name }}"
-  ALLOWED_HOSTS: "{{ .Values.app.hostname }}"
+  # The frontend server calls the backend by its Service name.
+  ALLOWED_HOSTS: "{{ .Values.app.hostname }},{{ .Release.Name }}-backend"
   # Behind a TLS-terminating proxy.
   SECURE_PROXY_SSL_HEADER: "HTTP_X_FORWARDED_PROTO,https"
+
+  BUGSINK_ENVIRONMENT: "{{ .Values.environment }}"

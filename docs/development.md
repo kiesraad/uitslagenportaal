@@ -137,14 +137,14 @@ and reports every problem it finds rather than stopping at the first one.
 ### Importing proces-verbalen
 
 `import_pvs` reads proces-verbaal PDFs from the `pv_import` storage. A Celery beat task
-(`eml_import.tasks.import_pvs`) runs that same import every 5 minutes. After a PDF is
+(`file_import.tasks.import_pvs`) runs that same import every 5 minutes. After a PDF is
 copied into default storage, or skipped as a duplicate, it is deleted from `pv_import`.
 A PDF that is unreadable or has missing or invalid metadata moves to `pv_import_failed/` at
 once. Any other failure, such as a region whose EML is not imported yet, is retried after
 5 minutes, 20 minutes, 1 hour, 12 hours and 24 hours before the file moves there too; a
 file uploaded again under the same name starts that schedule afresh. After each sweep it queues one
-zip rebuild per gemeente that received a polling-station form in that sweep; the zip is
-stored in object storage and the download endpoint redirects to it.
+zip rebuild per gemeente that received a polling-station PV (including a Na 31-2 or Na 14-2
+Bijlage 1) in that sweep; the zip is stored in object storage and the download endpoint redirects to it.
 
 | `PV_IMPORT_SOURCE` | `pv_import` is |
 | --- | --- |
@@ -159,8 +159,8 @@ PV_IMPORT_SOURCE=folder
 ```
 
 Identity is read from PDF Info keys. `PvElection`, `PvModel` and `PvRegionName` are required.
-`PvStembureau` is required for N10-1, N10-2 and NA14-1 (`PvRegionName` is then the gemeente). `PvCsb` is required
-only for those forms in a waterschapsverkiezing. Subfolders are included.
+`PvStembureau` is required for N10-1, N10-2, NA14-1, NA14-2-B1 and NA31-2-B1 (`PvRegionName` is then the
+gemeente). `PvCsb` is required for N10-1, N10-2 and NA14-1 in a waterschapsverkiezing. Subfolders are included.
 
 ```bash
 docker compose run --rm backend-scripts python manage.py import_pvs
@@ -276,6 +276,15 @@ npm install
 npm run dev
 ```
 
+The frontend uses React Router in framework mode with `ssr: true` (`react-router.config.ts`).
+`src/routes.ts` lists the routes, `src/root.tsx` renders the document, the providers and the root
+loader. Each page module exports a `loader`, which loads its data on the server (`serverLoader` in
+`src/queryClient.ts`), and a `clientLoader` for navigating in the browser. The server renders in the
+language of the `lang` cookie. `npm run build` writes `build/client/` and `build/server/`, and
+`npm start` serves both with Node (`server.js`), as in production; it needs `SSR_API_ORIGIN`, the
+backend to render from, e.g. `SSR_API_ORIGIN=http://localhost:8080 npm start` with the compose stack
+running.
+
 ## Management commands
 
 Run these from `backend/` with `uv run manage.py <command>`, or against the running stack with
@@ -383,16 +392,16 @@ election times are always Dutch local time.
 
 The language switcher lives in the footer; the choice is stored in the `lang` cookie
 (`LOCALE_COOKIE`), so a server render can read it too (`localeFromCookieHeader`), and is
-deliberately not part of the URL. Loading a catalogue is the root route's loader (`localeLoader`),
-which returns the locale `LocaleProvider` renders in; the switcher only saves the choice and
-revalidates. That way a language change is router work like any other, and the navigation progress
-bar covers the download.
+deliberately not part of the URL. Loading a catalogue is the root route's `clientLoader` in
+`root.tsx` (through `localeLoader`), which returns the locale `LocaleProvider` renders in; the
+switcher only saves the choice and revalidates. That way a language change is router work like any
+other, and the navigation progress bar covers the download.
 
 > **When changing the build config:** the Lingui macros need a Babel pass, added in
 > `vite.config.ts` via `@rolldown/plugin-babel`. `@vitejs/plugin-react` v6 removed the `babel`
 > option that most Lingui guides use — wiring it that way fails silently: the build succeeds and
 > the app ships untranslated. After touching the plugin setup, verify against a production build
-> (`npm run build && npm run preview`), not the dev server.
+> (`npm run build && npm start`, which serves it on port 3000; see above for `SSR_API_ORIGIN`), not the dev server.
 
 ## Playwright tests
 

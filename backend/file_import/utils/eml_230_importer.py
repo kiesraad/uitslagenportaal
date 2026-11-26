@@ -1,0 +1,128 @@
+from django.db import transaction
+from django.db.models import Count, Exists, OuterRef
+from pyeml_bindings import (
+    Eml230,
+)
+
+from election.models import (
+    Contest,
+    ElectionDocument,
+)
+from file_import.utils.eml_base_importer import EMLBaseImporter
+from mainsite.utils.eml_type import EmlType
+from party.models import Candidate, Party
+
+
+class EML230bImporter(EMLBaseImporter[Eml230]):
+    """Kandidatenlijst"""
+
+    eml_type = EmlType.EML_230b
+    file_type = ElectionDocument.FileType.EML_230B
+
+    def _get_election_identifier_data(self):
+        return self.eml.candidate_list.election.election_identifier
+
+    def _parse_data(self):
+        assert len(self.eml.candidate_list.election.contest) == 1, "More than one contest, cannot parse"
+        contest_data = self.eml.candidate_list.election.contest[0]
+
+        with transaction.atomic():
+            if self._is_correction(contest_data):
+                self._ensure_exchange_correction_allowed()
+                self._delete(contest_data)
+
+            # The contest can already exist for elections with one contest, but for elections with multiple contests
+            # we still need to create it. The 110a has no contest name, so select on id/election only.
+            contest, _ = Contest.objects.update_or_create(
+                identifier=contest_data.contest_identifier.id,
+                election=self.election,
+                defaults={"name": contest_data.contest_identifier.contest_name},
+            )
+
+            # Drops parties (blanco ones too) whose list number is gone after a correction, unless they still run in
+            # another contest (TK/PS kieskringen). Runs first, so the names and numbers it frees can be reused below.
+            list_numbers = {self._list_number(affiliation) for affiliation in contest_data.affiliation}
+            in_other_contest = Candidate.objects.filter(party=OuterRef("pk")).exclude(contest=contest)
+            Party.objects.filter(election=self.election).exclude(list_number__in=list_numbers).exclude(
+                Exists(in_other_contest)
+            ).delete()
+
+            candidates: list[Candidate] = []
+            for affiliation in contest_data.affiliation:
+                # Some candidates are not affiliated to any party, in that case affiliation_identifier.registered_name
+                # is empty and we name the party 'Blanco Lijst <list number>'.
+                list_number = self._list_number(affiliation)
+                registered_name = (
+                    affiliation.affiliation_identifier.registered_name
+                    or f"{self.BLANCO_PARTY_REGISTERED_NAME} {list_number}"
+                )
+                # Matched on list number, so a correction can rename a list, e.g. give a blanco lijst its name.
+                party, _ = Party.objects.update_or_create(
+                    election=self.election,
+                    list_number=list_number,
+                    defaults={"registered_name": registered_name, "slug": Party.slug_for(registered_name)},
+                )
+
+                for candidate in affiliation.candidate:
+                    identifier = int(candidate.candidate_identifier.id)
+
+                    first_name = None
+                    if candidate.candidate_full_name.person_name.first_name:
+                        first_name = candidate.candidate_full_name.person_name.first_name.content[0]
+                    name_prefix = None
+                    if candidate.candidate_full_name.person_name.name_prefix:
+                        name_prefix = candidate.candidate_full_name.person_name.name_prefix.content[0]
+                    candidates.append(
+                        Candidate(
+                            party=party,
+                            contest=contest,
+                            identifier=identifier,
+                            position=identifier,
+                            initials=candidate.candidate_full_name.person_name.name_line.content[0],
+                            first_name=first_name,
+                            name_prefix=name_prefix,
+                            last_name=candidate.candidate_full_name.person_name.last_name.content[0],
+                        )
+                    )
+
+            if candidates:
+                Candidate.objects.bulk_create(candidates, batch_size=self.BULK_BATCH_SIZE)
+
+    def _list_number(self, affiliation) -> int:
+        assert affiliation.affiliation_identifier.id, (
+            f"AffiliationIdentifier/@Id missing for party "
+            f"{affiliation.affiliation_identifier.registered_name or self.BLANCO_PARTY_REGISTERED_NAME}"
+        )
+        return int(affiliation.affiliation_identifier.id)
+
+    def _is_correction(self, contest_data) -> bool:
+        """
+        The EML 230b file being imported is a correction if the contest exists and candidates exist for the contest.
+        :param contest_data:
+        :return:
+        """
+        try:
+            contest = Contest.objects.annotate(candidate_count=Count("candidates")).get(
+                identifier=contest_data.contest_identifier.id,
+                election=self.election,
+            )
+            if contest.candidate_count == 0:
+                return False
+
+            self.logger.warning(
+                "Correction detected for contest '%s', eml_type: %s",
+                contest.identifier,
+                self.eml_type,
+            )
+            return True
+        except Contest.DoesNotExist:
+            return False
+
+    def _delete(self, contest_data) -> None:
+        """Archive prior candidates for this contest so a corrected 230b can recreate them."""
+        contest = Contest.objects.get(
+            identifier=contest_data.contest_identifier.id,
+            election=self.election,
+        )
+        Candidate.objects.filter(contest=contest).delete()
+        Contest.objects.filter(pk=contest.pk).delete()

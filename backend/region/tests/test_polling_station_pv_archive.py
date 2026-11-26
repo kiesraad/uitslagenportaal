@@ -9,7 +9,11 @@ from rest_framework.test import APIRequestFactory
 from election.models import ElectionDocument
 from election.tests.factories import CertifiedElectionDocumentFactory, ElectionFactory
 from mainsite.models import RegionCategory
-from region.polling_station_pv_archive import polling_station_pv_zip_storage_key, write_polling_station_pv_zip
+from region.polling_station_pv_archive import (
+    polling_station_pv_documents,
+    polling_station_pv_zip_storage_key,
+    write_polling_station_pv_zip,
+)
 from region.tasks import build_polling_station_pv_zip
 from region.tests.factories import RegionFactory
 from region.views import RegionDetailView
@@ -149,6 +153,24 @@ def test_archive_zip_lists_polling_station_forms_in_station_then_form_order():
         "TK2025 Lisserdam SB1 Gemeentehuis N10-1.pdf",
         "TK2025 Lisserdam SB1 Gemeentehuis N10-2.pdf",
         "TK2025 Lisserdam SB2 School NA14-1.pdf",
+    ]
+
+
+@pytest.mark.django_db
+def test_archive_zip_includes_the_bijlage_1_pvs_of_a_polling_station():
+    election = ElectionFactory(election_config__identifier="TK2025")
+    municipality = RegionFactory(election=election, region_category=RegionCategory.GEMEENTE, region_name="Lisserdam")
+    station = _station(municipality, "0203::SB1", "Gemeentehuis")
+    correction_bijlage = _pdf(station, ElectionDocument.FileType.PDF_NA14_2_B1, b"%PDF-na14-2-b1", 14)
+    form = _pdf(station, ElectionDocument.FileType.PDF_N10_2, b"%PDF-n10-2", 8)
+    bijlage = _pdf(station, ElectionDocument.FileType.PDF_NA31_2_B1, b"%PDF-na31-2-b1", 14)
+    _pdf(municipality, ElectionDocument.FileType.PDF_NA31_2_B2, b"%PDF-na31-2-b2", 14)
+
+    assert set(polling_station_pv_documents(municipality)) == {form, bijlage, correction_bijlage}
+    assert _member_names(municipality) == [
+        "TK2025 Lisserdam SB1 Gemeentehuis N10-2.pdf",
+        "TK2025 Lisserdam SB1 Gemeentehuis NA31-2-B1.pdf",
+        "TK2025 Lisserdam SB1 Gemeentehuis NA14-2-B1.pdf",
     ]
 
 

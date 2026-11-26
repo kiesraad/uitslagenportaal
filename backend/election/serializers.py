@@ -1,6 +1,8 @@
+from django.core.files.storage import default_storage
 from django.urls import reverse
 from rest_framework import serializers
 
+from election.eml_dates import election_config_eml_dates
 from election.models import (
     Contest,
     ElectionConfig,
@@ -23,6 +25,7 @@ class ElectionDocumentSerializer(serializers.ModelSerializer):
     file_type = serializers.CharField(read_only=True)
     correction_number = serializers.IntegerField(read_only=True)
     metadata = serializers.JSONField(read_only=True)
+    eml_created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = ElectionDocument
@@ -34,11 +37,44 @@ class ElectionDocumentSerializer(serializers.ModelSerializer):
             "file_type",
             "correction_number",
             "metadata",
+            "eml_created_at",
         )
 
     @staticmethod
     def get_url(obj: ElectionDocument) -> str:
         return reverse("document-download", kwargs={"pk": obj.pk})
+
+
+class CertifiedDocumentSerializer(serializers.ModelSerializer):
+    """The proces-verbaal shown in the viewer."""
+
+    url = serializers.SerializerMethodField()
+    preview_url = serializers.SerializerMethodField()
+    toc = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ElectionDocument
+        fields = (
+            "url",
+            "preview_url",
+            "toc",
+        )
+
+    @staticmethod
+    def get_url(obj: ElectionDocument) -> str | None:
+        if not default_storage.exists(obj.storage_key):
+            return None
+        return reverse("certified-document", kwargs={"pk": obj.pk})
+
+    @staticmethod
+    def get_preview_url(obj: ElectionDocument) -> str | None:
+        if not default_storage.exists(obj.preview_storage_key):
+            return None
+        return reverse("certified-document-preview", kwargs={"pk": obj.pk})
+
+    @staticmethod
+    def get_toc(obj: ElectionDocument) -> list[dict] | None:
+        return obj.toc.to_json()["entries"] if obj.toc is not None else None
 
 
 class TimelineDateSerializer(serializers.ModelSerializer):
@@ -54,6 +90,7 @@ class TimelineDateSerializer(serializers.ModelSerializer):
 class ElectionConfigSerializer(serializers.ModelSerializer):
     timeline_dates = TimelineDateSerializer(many=True, read_only=True)
     single_csb = serializers.SerializerMethodField()
+    eml_dates = serializers.SerializerMethodField()
 
     class Meta:
         model = ElectionConfig
@@ -64,6 +101,7 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
             "issue_report_opens_at",
             "issue_report_deadline",
             "timeline_dates",
+            "eml_dates",
             "csb_type",
             "single_csb",
             "has_hsb",
@@ -71,6 +109,9 @@ class ElectionConfigSerializer(serializers.ModelSerializer):
             "counting_info_url",
             "voting_url",
         )
+
+    def get_eml_dates(self, obj) -> dict:
+        return election_config_eml_dates(obj)
 
     def get_single_csb(self, obj):
         """The CSB region for categories whose CSB is the staat (TK, EP), so the frontend can skip the CSB list.

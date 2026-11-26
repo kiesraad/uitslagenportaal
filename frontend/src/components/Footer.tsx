@@ -8,8 +8,9 @@ import { API_ORIGIN } from "@/api/client.ts";
 import Button from "@/elements/Button.tsx";
 import { NewWindowHint } from "@/elements/ExternalLinkIcon.tsx";
 import KiesraadGridHexagon from "@/elements/KiesraadGridHexagon.tsx";
+import { useNow } from "@/hooks/useNow.ts";
 import { type Locale, localeDisplayName, resolveLocale, saveLocale } from "@/i18n";
-import { electionConfigQuery, useElectionConfigs } from "../hooks/queries.ts";
+import { electionConfigQuery, electionConfigsQuery } from "../hooks/queries.ts";
 
 const KIESRAAD_URL = "https://www.kiesraad.nl/";
 // Served by the backend so the email address stays out of the bundle.
@@ -49,7 +50,7 @@ function ExternalLinkIcon() {
 }
 
 export function Footer() {
-   const currentYear = new Date().getFullYear();
+   const currentYear = useNow()?.getFullYear();
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
 
    // On election pages the config comes from the route; elsewhere (e.g. the home
@@ -59,7 +60,8 @@ export function Footer() {
       enabled: Boolean(electionConfigSlug),
       throwOnError: false,
    });
-   const { data: electionConfigs } = useElectionConfigs();
+   // Prefetched by the root loader, which ignores a failure: the footer then just has no label.
+   const { data: electionConfigs } = useQuery(electionConfigsQuery());
    const electionConfig = routeElectionConfig ?? (electionConfigs?.length === 1 ? electionConfigs[0] : undefined);
 
    const label = electionConfig?.label;
@@ -137,7 +139,7 @@ export function Footer() {
                      <Trans>In samenwerking met de Kiesraad</Trans>
                   </p>
                </div>
-               <span className="footer-copy">© {currentYear} De Kiesraad</span>
+               <span className="footer-copy">© {currentYear ? `${currentYear} ` : ""}De Kiesraad</span>
             </div>
          </div>
 

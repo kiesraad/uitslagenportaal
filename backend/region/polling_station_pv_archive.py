@@ -8,11 +8,14 @@ from django.core.files.storage import default_storage
 from election.models import ElectionDocument
 from mainsite.models import RegionCategory
 
-# The original polling-station form and every correction on it belong in the zip.
+# Every PV shown on a polling station's page belongs in the zip: its own form, the
+# GSB's Bijlage 1 for it, and the corrections on either.
 POLLING_STATION_PV_FILE_TYPES = (
     ElectionDocument.FileType.PDF_N10_1,
     ElectionDocument.FileType.PDF_N10_2,
+    ElectionDocument.FileType.PDF_NA31_2_B1,
     ElectionDocument.FileType.PDF_NA14_1,
+    ElectionDocument.FileType.PDF_NA14_2_B1,
 )
 _FORM_ORDER = {file_type: index for index, file_type in enumerate(POLLING_STATION_PV_FILE_TYPES)}
 

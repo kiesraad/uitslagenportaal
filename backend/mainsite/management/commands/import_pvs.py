@@ -3,7 +3,7 @@ import time
 from django.core.files.storage import storages
 from django.core.management.base import BaseCommand
 
-from eml_import.tasks import import_pvs
+from file_import.tasks import import_pvs
 
 
 class Command(BaseCommand):

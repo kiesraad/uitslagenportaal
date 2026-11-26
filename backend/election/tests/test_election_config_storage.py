@@ -14,7 +14,7 @@ from election.election_config_storage import (
 from election.models import ElectionConfig
 from election.tests.factories import ElectionConfigFactory
 from election.utils import tz_aware_from_isoformat
-from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
+from file_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
 
 MINIMAL_DATA = {
     "election": {

@@ -31,8 +31,9 @@ INSTALLED_APPS = [
     "election.apps.ElectionConfig",
     "region.apps.RegionConfig",
     "party.apps.PartyConfig",
-    "eml_import.apps.EmlImportConfig",
+    "file_import.apps.FileImportConfig",
     "pv_scraper.apps.PvScraperConfig",
+    "pv_ocr.apps.PvOcrConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -142,6 +143,13 @@ CELERY_BROKER_URL = f"{REDIS_URL}/{REDIS_DB * 4 + 1}"
 CELERY_RESULT_BACKEND = f"{REDIS_URL}/{REDIS_DB * 4 + 2}"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 0.5h
+# Tasks off the default queue. Only the worker with Playwright consumes "scraper" (`-Q scraper` in prod.dockerfile);
+# "ocr" is consumed by the OCR worker and, locally, by the `celery` compose service.
+CELERY_TASK_ROUTES = {
+    "pv_scraper.tasks.run_scrape_for_source": {"queue": "scraper"},
+    "pv_scraper.tasks.classify_scraped_file": {"queue": "ocr"},
+    "pv_ocr.tasks.*": {"queue": "ocr"},
+}
 if REDIS_SSL_OPTIONS:
     CELERY_BROKER_USE_SSL = REDIS_SSL_OPTIONS
     CELERY_REDIS_BACKEND_USE_SSL = REDIS_SSL_OPTIONS
@@ -170,6 +178,8 @@ CACHES = {
         },
     }
 }
+# Seconds the API keeps a response; 0 turns the API cache off.
+API_CACHE_TIMEOUT = int(os.environ.get("API_CACHE_TIMEOUT", 60 * 10))
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -329,6 +339,8 @@ LOGGING = {
         "redis.connection": {"level": "INFO"},
         "pytesseract": {"level": "INFO"},
         "pypdfium2": {"level": "INFO"},
+        # Warns on every malformed xref it repairs, which scanners often write; a PDF it can't read raises instead.
+        "pypdf._reader": {"level": "ERROR"},
     },
 }
 
@@ -342,6 +354,7 @@ BUGSINK_DSN = os.environ.get("BUGSINK_DSN")
 if BUGSINK_DSN:
     sentry_sdk.init(
         BUGSINK_DSN,
+        environment=os.environ.get("BUGSINK_ENVIRONMENT", "local"),
         data_collection={"user_info": False},
         max_request_body_size="always",
         # Importer frames hold whole EML files; Bugsink refuses events over its size limit

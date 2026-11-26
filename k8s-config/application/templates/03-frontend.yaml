@@ -21,16 +21,22 @@ spec:
           imagePullPolicy: {{ .Values.frontend.pullPolicy }}
           ports:
             - containerPort: {{ .Values.frontend.port }}
-          # Static files only: nginx answering at all means it can serve them.
+          env:
+            - name: PORT
+              value: "{{ .Values.frontend.port }}"
+            # Where the server renders its API calls from, inside the cluster.
+            - name: SSR_API_ORIGIN
+              value: "http://{{ .Release.Name }}-backend:{{ .Values.backend.port }}"
+          # Not `/`: pages call the backend, and a backend outage should not take the frontend down too.
           readinessProbe:
             httpGet:
-              path: /
+              path: /healthz
               port: {{ .Values.frontend.port }}
             initialDelaySeconds: 3
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /
+              path: /healthz
               port: {{ .Values.frontend.port }}
             initialDelaySeconds: 10
             periodSeconds: 20

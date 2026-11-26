@@ -1,12 +1,10 @@
 from datetime import datetime
-from pathlib import Path
 
-from django.core.files.storage import default_storage
-from django.urls import reverse
 from rest_framework import serializers
 
+from election.eml_dates import region_eml_dates
 from election.models import ElectionDocument, TimelineVariant
-from election.serializers import ElectionDocumentSerializer
+from election.serializers import CertifiedDocumentSerializer, ElectionDocumentSerializer
 from mainsite.models import RegionCategory
 from mainsite.serializers import (
     RegionSummarySerializer,
@@ -18,6 +16,29 @@ from region.models import Region, parse_station_number
 CORRECTION_COUNT_FILE_TYPES = {
     RegionCategory.GEMEENTE: ElectionDocument.FileType.EML_510B,
     RegionCategory.KIESKRING: ElectionDocument.FileType.EML_510C,
+}
+
+# Which proces-verbaal the viewer shows, best first: corrections before the forms they correct, and a
+# Bijlage 1 (counts per list and candidate) before its main form (totals per list only). Na 31-2 Bijlage 2
+# holds no vote counts and is never shown.
+VIEWER_PRIORITY = {
+    file_type: rank
+    for rank, file_type in enumerate(
+        (
+            ElectionDocument.FileType.PDF_P1F_1,
+            ElectionDocument.FileType.PDF_NA14_2_B1,
+            ElectionDocument.FileType.PDF_NA14_2,
+            ElectionDocument.FileType.PDF_NA14_1,
+            ElectionDocument.FileType.PDF_P22_1,
+            ElectionDocument.FileType.PDF_P22_2,
+            ElectionDocument.FileType.PDF_O7,
+            ElectionDocument.FileType.PDF_NA31_2_B1,
+            ElectionDocument.FileType.PDF_NA31_2,
+            ElectionDocument.FileType.PDF_NA31_1,
+            ElectionDocument.FileType.PDF_N10_1,
+            ElectionDocument.FileType.PDF_N10_2,
+        )
+    )
 }
 
 
@@ -59,10 +80,10 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     voter_turnout_counts = VoterTurnoutCountSummarySerializer(read_only=True, many=True)
     vote_counts = VoteCountSummarySerializer(read_only=True, many=True)
     documents = ElectionDocumentSerializer(read_only=True, many=True)
-    certified_document_url = serializers.SerializerMethodField()
-    certified_document_preview_url = serializers.SerializerMethodField()
+    certified_document = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
     correction_date = serializers.SerializerMethodField()
+    eml_dates = serializers.SerializerMethodField()
     election_slug = serializers.CharField(source="election.slug", read_only=True)
     station_number = serializers.IntegerField(read_only=True, allow_null=True)
     same_location_stations = SameLocationStationsField()
@@ -77,10 +98,10 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "vote_counts",
             "slug",
             "documents",
-            "certified_document_url",
-            "certified_document_preview_url",
+            "certified_document",
             "timeline_variant",
             "correction_date",
+            "eml_dates",
             "region_category",
             "results_available_at",
             "election_slug",
@@ -92,39 +113,27 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "hsb",
         )
 
-    def _certified_document(self, region):
-        # The view prefetches only the documents of the requested level.
-        documents = sorted(
-            (
-                document
-                for document in region.documents.all()
-                if document.file_type in ElectionDocument.CERTIFIED_FILE_TYPES
+    def get_certified_document(self, region) -> dict | None:
+        # The view prefetches only the documents of the requested level. The form type decides which one is
+        # shown, not the import date, which follows the scraping order. Among forms of the same type the
+        # newest one wins, so the last of several stacked corrections is shown.
+        documents = [document for document in region.documents.all() if document.file_type in VIEWER_PRIORITY]
+        document = min(
+            documents,
+            key=lambda document: (
+                VIEWER_PRIORITY[document.file_type],
+                -document.created_at.timestamp(),
+                -document.pk,
             ),
-            key=lambda document: (document.created_at, document.pk),
-            reverse=True,
+            default=None,
         )
-        corrections = (
-            document for document in documents if document.file_type in ElectionDocument.CORRECTION_FILE_TYPES
-        )
-        return next(corrections, None) or next(iter(documents), None)
+        return CertifiedDocumentSerializer(document).data if document else None
 
-    def get_certified_document_url(self, region) -> str | None:
-        document = self._certified_document(region)
-        if document is None or not default_storage.exists(document.storage_key):
-            return None
-        return reverse("certified-document", kwargs={"pk": document.pk})
-
-    def get_certified_document_preview_url(self, region) -> str | None:
-        document = self._certified_document(region)
-        if document is None:
-            return None
-        preview_key = Path(document.storage_key).with_suffix(".png").as_posix()
-        if not default_storage.exists(preview_key):
-            return None
-        return reverse("certified-document-preview", kwargs={"pk": document.pk})
+    def get_eml_dates(self, region) -> dict:
+        return region_eml_dates(region)
 
     def get_correction_date(self, region) -> datetime | None:
-        """When the region's latest corrected count EML came in; None while it has only the original."""
+        """When the region's latest corrected count EML was created; None while it has only the original."""
         file_type = CORRECTION_COUNT_FILE_TYPES.get(region.region_category)
         if file_type is None:
             return None
@@ -132,7 +141,9 @@ class RegionDetailSerializer(serializers.ModelSerializer):
         counts = ElectionDocument.all_objects.filter(region=region, file_type=file_type).order_by("-created_at", "-pk")
         if counts.count() < 2:
             return None
-        return counts.first().created_at
+        latest = counts.first()
+        # EMLs imported before eml_created_at existed fall back to their import time.
+        return latest.eml_created_at or latest.created_at
 
     def get_timeline_variant(self, region) -> str:
         counting_method = region.counting_method or (region.parent.counting_method if region.parent else None)

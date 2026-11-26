@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ElectionConfig } from "@/api/types";
 import { Footer } from "@/components/Footer";
+import { useRootI18n } from "@/components/LocaleProvider";
 import type { Locale } from "@/i18n/locales";
 import { renderWithProviders } from "../testUtils";
 
@@ -15,6 +16,7 @@ const electionConfig: ElectionConfig = {
    single_csb: null,
    has_hsb: false,
    timeline_dates: [],
+   eml_dates: {},
    report_error_url: "https://example.test/melding",
    counting_info_url: "https://example.test/telproces",
    voting_url: "https://example.test/stemmen",
@@ -35,6 +37,11 @@ function mockElectionConfigs(configs: ElectionConfig[]) {
 
 function renderFooter(locale: Locale = "nl") {
    return renderWithProviders(<Footer />, { locale });
+}
+
+/** Shows the locale the root layout renders `<html lang>` in. */
+function RootLocale() {
+   return <output aria-label="root locale">{useRootI18n().locale}</output>;
 }
 
 afterEach(() => {
@@ -115,6 +122,23 @@ describe("Footer", () => {
       // The switcher now offers the way back, and the choice is persisted.
       expect(screen.getByRole("button", { name: "Nederlands" })).toBeInTheDocument();
       expect(document.cookie).toContain("lang=en");
-      expect(document.documentElement.lang).toBe("en");
+   });
+
+   // The root layout's `<html lang>` reads this hook, so it has to follow a switch.
+   it("Switches the root locale along with the language", async () => {
+      mockElectionConfigs([]);
+      renderWithProviders(
+         <>
+            <Footer />
+            <RootLocale />
+         </>,
+         { locale: "nl" },
+      );
+      const rootLocale = screen.getByRole("status", { name: "root locale" });
+      expect(rootLocale).toHaveTextContent("nl");
+
+      fireEvent.click(screen.getByRole("button", { name: "English" }));
+
+      await waitFor(() => expect(rootLocale).toHaveTextContent("en"));
    });
 });

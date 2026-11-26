@@ -34,6 +34,7 @@ def test_switching_to_english_changes_the_interface_and_survives_a_reload(page: 
 def test_election_content_is_translated_for_the_active_locale(page: Page):
     page.goto("/")
     page.get_by_role("button", name="English").click()
+    expect(page.locator("html")).to_have_attribute("lang", "en")
 
     page.get_by_role("link", name="Waterschapsverkiezingen 2023").click()
     # Region labels come from the catalogue, not from concatenated fragments.

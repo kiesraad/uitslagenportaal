@@ -1,28 +1,27 @@
 import { useLingui } from "@lingui/react/macro";
 import { type QueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import { type LoaderFunctionArgs, useParams } from "react-router";
 import ElectionConfigTabs from "@/components/ElectionConfigTabs.tsx";
 import { LayoutMain } from "@/components/LayoutMain.tsx";
 import PageTop from "@/components/PageTop.tsx";
 import { ElectionTimelineSection } from "@/components/Timeline/ElectionTimelineSection.tsx";
 import { electionConfigQuery } from "@/hooks/queries.ts";
+import { queryClient, serverLoader } from "@/queryClient.ts";
 import { useFormatters } from "@/utils/format.ts";
+import type { Route } from "./+types/ElectionConfigTimelinePage";
 
-export function electionConfigTimelineLoader(queryClient: QueryClient) {
-   return async ({ params }: LoaderFunctionArgs) => {
-      const electionConfigQueryOptions = electionConfigQuery(params.electionConfigSlug);
-      await queryClient.query(electionConfigQueryOptions);
-      return { electionConfigQuery: electionConfigQueryOptions };
-   };
+export async function loadElectionConfigTimeline(client: QueryClient, { params }: Pick<LoaderFunctionArgs, "params">) {
+   await client.query(electionConfigQuery(params.electionConfigSlug));
 }
 
-type LoaderData = Awaited<ReturnType<ReturnType<typeof electionConfigTimelineLoader>>>;
+export const loader = serverLoader(loadElectionConfigTimeline);
+export const clientLoader = (args: Route.ClientLoaderArgs) => loadElectionConfigTimeline(queryClient, args);
 
-export function ElectionConfigTimelinePage() {
-   const { electionConfigQuery } = useLoaderData<LoaderData>();
+export default function ElectionConfigTimelinePage() {
+   const params = useParams();
    const { t } = useLingui();
    const { formatElectionDate } = useFormatters();
-   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery);
+   const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(params.electionConfigSlug));
 
    const electionLabel = electionConfig.label;
    const electionDay = electionConfig.date ? formatElectionDate(electionConfig.date) : "";

@@ -27,7 +27,7 @@ export function ElectionTimelineSection({ electionConfig }: Props) {
                </Trans>
             </p>
 
-            <GenericTimeline dates={electionConfig.timeline_dates} />
+            <GenericTimeline dates={electionConfig.timeline_dates} emlDates={electionConfig.eml_dates} />
          </PageSection>
 
          <PageSection className="max-w-5xl pt-0!">

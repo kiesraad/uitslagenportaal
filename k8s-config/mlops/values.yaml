@@ -1,0 +1,111 @@
+# Values for the MLflow chart. Installed in its own namespace, like the monitoring chart. The database host, the TLS
+# settings and the bucket come from the secrets in docs/deployments.md.
+
+mlflow:
+  # Fixes the names that docs/deployments.md and the db-migration init container (mlflow-env-configmap) address.
+  fullnameOverride: mlflow
+
+  # The new pod migrates the schema before it starts, and the old pod cannot run against the migrated one.
+  strategy:
+    type: Recreate
+
+  backendStore:
+    # The chart's own migration init container gets neither PGHOST from our secret nor the TLS settings; see
+    # initContainers.
+    databaseMigration: false
+    postgres:
+      enabled: true
+      # Required by the chart, but overridden by PGHOST from mlflow-db-creds, which comes later in envFrom.
+      host: "set-by-mlflow-db-creds"
+      port: 5432
+      database: mlflow
+    # Created outside the chart: see the Secrets section in docs/deployments.md.
+    existingDatabaseSecret:
+      name: mlflow-db-creds
+      usernameKey: PGUSER
+      passwordKey: PGPASSWORD
+
+  artifactRoot:
+    # --serve-artifacts: clients up- and download through the server, and runs record mlflow-artifacts:/ URIs rather
+    # than bucket paths, so the bucket can move without touching the database.
+    proxiedArtifactStorage: true
+    s3:
+      enabled: true
+      # Expanded by Kubernetes from mlflow-s3-creds. A missing key stays literal and fails only at the first upload.
+      bucket: "$(MLFLOW_S3_BUCKET)"
+      path: mlflow
+
+  # Main container only. mlflow-s3-creds also holds the AWS keys boto3 reads.
+  extraSecretNamesForEnvFrom:
+    - mlflow-db-creds
+    - mlflow-s3-creds
+  extraEnvVars:
+    MLFLOW_S3_ENDPOINT_URL: https://s3.nl-ams.scw.cloud
+    AWS_DEFAULT_REGION: nl-ams
+    # The job runner serves only GenAI jobs (judges, prompt optimisation); it and its queue consumers push the pod
+    # past 1Gi.
+    MLFLOW_SERVER_ENABLE_JOB_EXECUTION: "false"
+    # The Host headers accepted, against DNS rebinding: a port-forward from the host, and from the ml compose service.
+    MLFLOW_SERVER_ALLOWED_HOSTS: "localhost:*,127.0.0.1:*,host.docker.internal:*"
+
+  extraVolumes:
+    - name: db-ca
+      secret:
+        secretName: mlflow-db-creds
+        items:
+          - key: ca.crt
+            path: ca.crt
+  # PGSSLROOTCERT in mlflow-db-creds points at this path, for both containers.
+  extraVolumeMounts:
+    - name: db-ca
+      mountPath: /etc/mlflow/db
+      readOnly: true
+
+  # Brings the schema up to the image's MLflow version before the server starts, which refuses an out-of-date one.
+  # The same call as the chart's migration container, with the same connection settings as the server, all from
+  # mlflow-db-creds.
+  initContainers:
+    - name: db-migration
+      # Keep in step with the chart's appVersion, the image the server runs.
+      image: burakince/mlflow:3.16.0
+      command: ["python", "-c"]
+      args:
+        - |
+          from mlflow.store.db import utils
+          utils._initialize_tables(utils.create_sqlalchemy_engine_with_retry("postgresql://"))
+      envFrom:
+        - configMapRef:
+            name: mlflow-env-configmap
+        - secretRef:
+            name: mlflow-db-creds
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: db-ca
+          mountPath: /etc/mlflow/db
+          readOnly: true
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: [ "ALL" ]
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          memory: 512Mi
+
+  # Each worker loads the whole server, about 230 MiB; one is enough for a port-forwarded tool.
+  extraArgs:
+    workers: "1"
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 512Mi
+    limits:
+      memory: 1Gi

@@ -22,7 +22,7 @@ on:
       backend-image:
         required: true
         type: string
-        description: Backend image reference including its digest; celery runs it too and must not drift from it
+        description: Backend image reference including its digest; celery and the OCR worker run it too and must not drift from it
       frontend-image:
         required: true
         type: string
@@ -108,6 +108,7 @@ jobs:
             -f "$VALUES_FILE" \
             --set-string backend.image="$BACKEND_IMAGE" \
             --set-string celery.image="$BACKEND_IMAGE" \
+            --set-string ocr.image="$BACKEND_IMAGE" \
             --set-string frontend.image="$FRONTEND_IMAGE" \
             --set-string scraper.image="$SCRAPER_IMAGE" \
             --wait --rollback-on-failure --timeout 15m

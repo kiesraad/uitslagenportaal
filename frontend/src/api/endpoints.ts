@@ -14,7 +14,7 @@ export function getElectionConfigs() {
 }
 
 export function getElectionConfigBySlug(slug?: string) {
-   return apiGet<ElectionConfig>(`/api/election_configs/${slug}/`);
+   return apiGet<ElectionConfig>(`/api/election_configs/${encodeURIComponent(slug ?? "")}/`);
 }
 
 export function getRegions(
@@ -39,7 +39,7 @@ export function getRegions(
    if (csbSlug) {
       searchParams.append("csb", csbSlug);
    }
-   return apiGet<RegionResponse>(`/api/${electionConfigSlug}/regions/?${searchParams}`);
+   return apiGet<RegionResponse>(`/api/${encodeURIComponent(electionConfigSlug)}/regions/?${searchParams}`);
 }
 
 export function getRegion(
@@ -60,7 +60,9 @@ export function getRegion(
    if (parentRegionSlug) {
       searchParams.append("parent_region", parentRegionSlug);
    }
-   return apiGet<Region>(`/api/${electionConfigSlug}/regions/${regionSlug}?${searchParams}`);
+   return apiGet<Region>(
+      `/api/${encodeURIComponent(electionConfigSlug)}/regions/${encodeURIComponent(regionSlug)}?${searchParams}`,
+   );
 }
 
 export function getCSBPartyVoteMatrix(electionSlug?: string, partySlug?: string, csbSlug?: string) {

@@ -1,5 +1,8 @@
 debug: false
 
+# Reported to Bugsink with every event.
+environment: "production"
+
 # Set by values-local.yaml only; templates/local-values-guard.yaml refuses it on Scaleway.
 localCluster: false
 
@@ -73,14 +76,15 @@ frontend:
   image: "ghcr.io/kiesraad/uitslagenportaal-frontend:dev"
   # Pull always because we publish new images to the same tag
   pullPolicy: "Always"
-  port: 80
+  port: 3000
   replicas: 2
   resources:
+    # The idle Node server uses about 90Mi.
     requests:
-      cpu: 10m
-      memory: 32Mi
+      cpu: 50m
+      memory: 160Mi
     limits:
-      memory: 64Mi
+      memory: 256Mi
 
 celery:
   image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
@@ -108,6 +112,22 @@ celery:
       limits:
         memory: 256Mi
 
+ocr:
+  image: "ghcr.io/kiesraad/uitslagenportaal-backend:dev"
+  pullPolicy: "Always"
+  replicas: 1
+  # The resources below are sized for one task at a time.
+  concurrency: 1
+  terminationGracePeriodSeconds: 300
+  resources:
+    # The idle worker uses 135Mi and classifying a PV peaks at 270Mi. Pages render at most at A4 at 300 DPI, so only the
+    # file size adds to that. Single-threaded Tesseract uses no more than one core.
+    requests:
+      cpu: 1000m
+      memory: 300Mi
+    limits:
+      memory: 512Mi
+
 # The PV scraper's worker, see docs/pv-scraper.md. Off unless an environment enables it.
 scraper:
   enabled: false
@@ -121,7 +141,7 @@ scraper:
   dispatchMaxTasks: 5
   terminationGracePeriodSeconds: 300
   resources:
-    # A scrape peaks at 600Mi to 1Gi depending on the site, the idle worker uses 130Mi; OCR stays under 500Mi.
+    # A scrape peaks at 600Mi to 1Gi depending on the site, the idle worker uses 130Mi.
     requests:
       cpu: 250m
       memory: 768Mi
@@ -177,6 +197,6 @@ monitoring:
       resources:
         requests:
           cpu: 10m
-          memory: 64Mi
-        limits:
           memory: 128Mi
+        limits:
+          memory: 256Mi

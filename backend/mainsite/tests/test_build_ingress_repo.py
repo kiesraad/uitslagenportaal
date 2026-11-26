@@ -26,7 +26,7 @@ import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
-from eml_import.utils.file_handler import BaseFileHandler
+from file_import.utils.file_handler import BaseFileHandler
 from mainsite.management.commands import build_ingress_repo
 from mainsite.management.commands._corrigenda import corrigenda_for, draw_corrigenda
 from mainsite.management.commands._osv_csv import read_candidate_names, render_csv

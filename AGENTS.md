@@ -11,6 +11,11 @@ API; the React frontend renders them.
 Docs and comments are a mix of Dutch and English. Domain terms stay Dutch
 (`kieskring`, `stembureau`, `gemeente`, CSB/HSB/GSB); code identifiers are English.
 
+The Kiesraad models (processen-verbaal such as N 10-1, Na 31-2, O 7, and their bijlagen) are listed at
+<https://www.rijksoverheid.nl/themas/overheid-en-democratie/verkiezingen/verkiezingentoolkit/modellen>.
+Each model links to its Kiesraad publication page, which describes the model and what each bijlage contains.
+[pv-models.md](docs/pv-models.md) summarises the models and which of them the PV classifier supports.
+
 Write English in British English with Oxford spelling, in prose, comments, docstrings
 and identifiers alike.
 
@@ -53,7 +58,8 @@ domain rule, a non-obvious trade-off, a reason for doing it the awkward way.
 backend/    Django 6 + DRF, Python 3.13+, managed with uv
 frontend/   React 19 + TypeScript + Vite + Tailwind 4
 .docker/    nginx reverse proxy config, postgres init
-docker-compose.yml  full stack: db, redis, backend, celery, frontend, proxy, object storage
+docker-compose.yml  full stack: db, redis, backend, celery, frontend, proxy, object storage; ml (DVC) on its own profile
+ml/         DVC pipeline and scripts for the PV OCR models; deps are the backend's `ml` group
 ```
 
 ### Backend apps (`backend/`)
@@ -64,12 +70,12 @@ docker-compose.yml  full stack: db, redis, backend, celery, frontend, proxy, obj
 | `election`   | `ElectionConfig`, `Election`, `Contest`, `VoteCount`, `VoterTurnoutCount`, `TimelineDate`, `ElectionDocument`       |
 | `region`     | `Region` — self-referencing tree (CSB → HSB/kieskring → gemeente → stembureau)                                 |
 | `party`      | `Party`, `Candidate`                                                                                           |
-| `eml_import` | EML parsing/import, the GitHub ingress importer, `ImportedCommit`, and the Celery tasks         |
+| `file_import` | EML parsing/import, the GitHub ingress importer, `ImportedCommit`, and the Celery tasks         |
 
 Each app follows Django convention: `models.py`, `serializers.py`, `views.py`, `urls.py`,
 `tests/`. API routes are mounted under `/api/` in `mainsite/urls.py`.
 
-EML import lives in `eml_import/utils/`: `election_importer.py` orchestrates (parallel,
+EML import lives in `file_import/utils/`: `election_importer.py` orchestrates (parallel,
 via `ProcessPoolExecutor`), and per-type importers subclass `EMLBaseImporter`
 (110a definition, 230b candidate lists, 510b/510d counts). Uploaded and generated files
 go to S3-compatible storage through Django's `default_storage`.
@@ -86,6 +92,10 @@ for autoreload. Put new tasks in `<app>/tasks.py` — the app autodiscovers them
 `api/` (fetch client, endpoints, generated-by-hand types) · `hooks/queries.ts`
 (TanStack Query) · `pages/` (routed screens) · `components/` (shared + per-page folders) ·
 `utils/`. Import with the `@/` alias for `src/`. Styling is Tailwind utility classes.
+
+React Router runs in framework mode with `ssr: false`: `routes.ts` lists the routes, `root.tsx`
+holds the document, the providers and the root loader, and each page module exports a
+`clientLoader`. The build is static files in `frontend/build/client/`.
 
 ## Tooling
 
@@ -184,7 +194,7 @@ docker compose run --rm backend-scripts pytest election/tests/test_views.py::tes
 - The root `conftest.py` swaps in `InMemoryStorage` for every test, so tests never hit the
   real storage backend.
 - Test Celery tasks by calling the task function directly and patching `.delay` on the
-  ones it fans out to (see `eml_import/tests/test_tasks.py`); no worker or broker runs.
+  ones it fans out to (see `file_import/tests/test_tasks.py`); no worker or broker runs.
 - Unit tests do not read the XML fixture files in `mainsite/tests/fixtures/eml/`. Build
   the EML input in code with the real `pyeml_bindings` dataclasses, as the importer tests
   do — they are about what the importer writes, not about parsing XML. The fixtures are
@@ -201,16 +211,22 @@ docker compose run --rm frontend npm run test    # or: npm run test
 Stub `fetch` with `vi.stubGlobal`; wrap components in `QueryClientProvider` and
 `MemoryRouter` as the existing tests do.
 
+## PV test set (OCR)
+
+[ml/data/README.md](ml/data/README.md) describes the OCR test set; [pv-ocr.md](docs/pv-ocr.md) how to generate
+handwritten test PVs and set up DVC.
+
 ## CI
 
 `.github/workflows/backend-ci.yml`: ruff check + format check, `pytest` against Postgres 16, and
 `makemigrations --check --dry-run`.
 `.github/workflows/frontend-ci.yml`: `biome ci`, vitest, `npm run i18n:check` and
-`npm run build` (`tsc -b` + vite).
+`npm run build` (`react-router typegen`, `tsc -b` and `react-router build`).
 `.github/workflows/playwright.yml`: the browser tests, against a throwaway stack.
 `.github/workflows/helm-ci.yml`: `helm lint` plus `helm template` piped through
 `kubeconform`, for the application chart against `values.yaml` and for the
-`service-accounts` and `monitoring` charts — the combination that actually gets deployed.
+`service-accounts` and `monitoring` charts, the combination that actually gets deployed, and for the optional
+`mlops` chart.
 
 All four run on PRs — the backend, frontend and Helm suites filtered by path, Playwright on
 every PR — and the first two check that generated files are in step with the source, so

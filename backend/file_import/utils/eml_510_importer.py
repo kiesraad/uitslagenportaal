@@ -1,0 +1,604 @@
+import re
+from abc import ABC
+
+from django.db import transaction
+from django.db.models import Q
+from pyeml_bindings import (
+    Count,
+    CountingMethodMethodCode,
+    Eml510,
+    ReportingUnitVotes,
+)
+
+from election.models import (
+    Contest,
+    ElectionCategory,
+    ElectionDocument,
+    VoteCount,
+    VoterTurnoutCount,
+)
+from file_import.exceptions import EMLImporterException
+from file_import.utils.base_importer import EMLStorageMixin
+from file_import.utils.csv_osv43_importer import HSB_NUMBER_RE
+from file_import.utils.eml_base_importer import EMLBaseImporter
+from mainsite.models import CountingMethod, RegionCategory
+from mainsite.utils.eml_type import EmlType
+from party.models import Candidate, Party
+from region.models import Region, build_region_slug
+
+# A stembureau identifier reads e.g. "Stembureau Gemeentehuis Gieten (postcode: 9461 BH)".
+POSTAL_CODE_RE = re.compile(r"\(postcode:\s*([^)]*)\)")
+DUTCH_POSTAL_CODE_RE = re.compile(r"^(\d{4})\s*([A-Za-z]{2})$")
+
+
+class EML510BaseImporter(EMLStorageMixin, EMLBaseImporter[Eml510], ABC):
+    file_type: ElectionDocument.FileType
+
+    @staticmethod
+    def _counting_method(count) -> str | None:
+        counting_method = getattr(count, "counting_method", None)
+        if counting_method is None:
+            return None
+        return {
+            CountingMethodMethodCode.CENTRALE_STEMOPNEMING: CountingMethod.CSO,
+            CountingMethodMethodCode.DECENTRALE_STEMOPNEMING: CountingMethod.DSO,
+        }.get(counting_method.method_code)
+
+    def _parse_party_candidate_votecounts(
+        self,
+        contest: Contest,
+        region: Region,
+        items: list[Count.Election.Contests.Contest.TotalVotes.Selection | ReportingUnitVotes.Selection],
+        party_by_list_nuber: dict[int, Party],
+        candidate_by_key: dict[tuple[int | None, int], Candidate],
+        vote_counts: list[VoteCount],
+        *,
+        candidate_by_short_code: dict[tuple[int, str], int] | None = None,
+    ) -> None:
+        current_party: Party | None = None
+        for votes_item in items:
+            if votes_item.affiliation_identifier:
+                # get party from pre-saved data
+                current_party = party_by_list_nuber[int(votes_item.affiliation_identifier.id)]
+                vote_counts.append(
+                    VoteCount(
+                        region=region,
+                        contest=contest,
+                        party=current_party,
+                        result_level=VoteCount.RESULT_LEVEL_PARTY,
+                        valid_votes=votes_item.valid_votes,
+                        eml_type=self.eml_type,
+                    )
+                )
+            if votes_item.candidate:
+                assert current_party, "No party to tie candidate to, cannot parse"
+                # get candidate from pre-saved data
+                candidate_id = votes_item.candidate.candidate_identifier.id
+                candidate_short_code = votes_item.candidate.candidate_identifier.short_code_attribute
+                try:
+                    assert candidate_id is not None or candidate_short_code is not None
+                    if candidate_id is not None:
+                        candidate = candidate_by_key[(current_party.id, int(candidate_id))]
+
+                        if candidate_by_short_code is not None:
+                            # Store candidate-short code mapping for later use. We have to save the candidate's DB id
+                            # because when processing total votecounts for candidates that belong to a HSB-specific
+                            # contest, we can't fetch them by position/identifier.
+                            if candidate_id is not None and candidate_short_code is not None:
+                                candidate_by_short_code[(current_party.id, candidate_short_code)] = candidate.id
+                    else:
+                        # Candidate identifier is None, meaning we have to fetch them by short code from the mapping
+                        # created when processing reporting units' votes.
+                        candidate_id = candidate_by_short_code.get((current_party.id, candidate_short_code))
+                        candidate = candidate_by_key[(None, candidate_id)]
+                except KeyError:
+                    candidate_identifier = candidate_id or candidate_short_code
+                    raise EMLImporterException(
+                        f"Candidate {candidate_identifier} not found within party {current_party.registered_name}"
+                    )
+                vote_counts.append(
+                    VoteCount(
+                        region=region,
+                        contest=contest,
+                        party=current_party,
+                        candidate=candidate,
+                        result_level=VoteCount.RESULT_LEVEL_CANDIDATE,
+                        valid_votes=votes_item.valid_votes,
+                        eml_type=self.eml_type,
+                    )
+                )
+
+    def _collect_turnout_counts(self, contest, region, votes, turnout_counts) -> None:
+        for rejected in votes.rejected_votes:
+            turnout_counts.append(
+                VoterTurnoutCount(
+                    contest=contest,
+                    region=region,
+                    category=VoterTurnoutCount.CATEGORY_REJECTED,
+                    reason_code=rejected.reason_code.value,
+                    votes=rejected.value,
+                    eml_type=self.eml_type,
+                )
+            )
+        for uncounted in votes.uncounted_votes:
+            turnout_counts.append(
+                VoterTurnoutCount(
+                    contest=contest,
+                    region=region,
+                    category=VoterTurnoutCount.CATEGORY_UNCOUNTED,
+                    reason_code=uncounted.reason_code.value,
+                    votes=uncounted.value,
+                    eml_type=self.eml_type,
+                )
+            )
+        turnout_counts.append(
+            VoterTurnoutCount(
+                contest=contest,
+                region=region,
+                category=VoterTurnoutCount.CATEGORY_TOTALS,
+                reason_code="total counted",
+                votes=votes.total_counted,
+                eml_type=self.eml_type,
+            )
+        )
+
+    def _get_contest(self, contest_identifier: str, reporting_unit_name: str | None = None) -> Contest:
+        if ElectionCategory(self.election.election_config.category).config.single_contest:
+            return Contest.objects.get(election=self.election)
+        if reporting_unit_name is not None and contest_identifier == "alle":
+            # 'alle' links the candidates to a contest per reporting unit, so get the contest by name.
+            return Contest.objects.get(election=self.election, name=reporting_unit_name)
+        return Contest.objects.get(identifier=contest_identifier, election=self.election)
+
+    def _is_correction(self, region: Region) -> bool:
+        """
+        True when this EML's logical file key is already imported.
+
+        Key: (eml_type, election via region, authority = region).
+        """
+        is_correction = (
+            VoteCount.objects.filter(region=region, eml_type=self.eml_type).exists()
+            or VoterTurnoutCount.objects.filter(region=region, eml_type=self.eml_type).exists()
+        )
+        if is_correction:
+            self.logger.warning(
+                "Correction detected for region %s (%s) eml_type: %s",
+                region.region_number,
+                region.region_name,
+                self.eml_type,
+            )
+        return is_correction
+
+
+class EML510bImporter(EML510BaseImporter):
+    """Telling"""
+
+    eml_type = EmlType.EML_510b
+    file_type = ElectionDocument.FileType.EML_510B
+
+    def _get_election_identifier_data(self):
+        return self.eml.count.election.election_identifier
+
+    def _delete(self, region: Region) -> None:
+        """
+        Archive the previous telling under this municipality so the normal import path
+        can recreate it. Only this eml_type's counts are replaced; the stembureaus stay,
+        so the PVs attached to them stay too.
+        """
+        stations = Region.objects.filter(
+            election=self.election,
+            parent=region,
+            region_category=RegionCategory.STEMBUREAU,
+        )
+        counts_filter = Q(region=region) | Q(region__in=stations)
+        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
+        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
+        ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
+
+    @staticmethod
+    def _polling_station_name(unit: ReportingUnitVotes) -> str:
+        name = unit.reporting_unit_identifier.value.split(" (postcode:")[0]
+        # Strip leading Stembureau if present, do recursively for
+        # eg 'Stembureau Stembureau Nutsgebouw Zwammerdam'
+        while name.startswith("Stembureau "):
+            name = name[len("Stembureau ") :]
+        return name
+
+    @staticmethod
+    def _polling_station_postal_code(unit: ReportingUnitVotes) -> str | None:
+        match = POSTAL_CODE_RE.search(unit.reporting_unit_identifier.value)
+        postal_code = match.group(1).strip() if match else ""
+        # Gemeenten write "1000AB" or "1000 ab" as well; store "1000 AB" so equal postcodes compare equal.
+        if dutch := DUTCH_POSTAL_CODE_RE.match(postal_code):
+            return f"{dutch.group(1)} {dutch.group(2).upper()}"
+        return postal_code or None
+
+    def _ensure_polling_stations(self, region: Region) -> dict[str, Region]:
+        """
+        Create all polling stations of this file up front, keyed by number, update the
+        name and postal code of existing ones, and delete the ones this file no longer lists.
+
+        A polling station is identified by its number alone, as in the PV import, so a
+        renamed station keeps its PVs.
+
+        Replaces a per-station get_or_create (a SELECT plus an INSERT each, in the
+        hottest loop of the import) with one SELECT, one bulk INSERT and one SELECT
+        for the whole file.
+        """
+        stations_filter = {
+            "election": self.election,
+            "parent": region,
+            "region_category": RegionCategory.STEMBUREAU,
+        }
+        existing = {station.region_number: station for station in Region.objects.filter(**stations_filter)}
+
+        name_and_postal_code_by_number: dict[str, tuple[str, str | None]] = {}
+        for contest_data in self.eml.count.election.contests.contest:
+            for unit in contest_data.reporting_unit_votes:
+                name_and_postal_code_by_number[str(unit.reporting_unit_identifier.id)] = (
+                    self._polling_station_name(unit),
+                    self._polling_station_postal_code(unit),
+                )
+
+        stale = existing.keys() - name_and_postal_code_by_number.keys()
+        if stale:
+            Region.objects.filter(pk__in=[existing.pop(number).pk for number in stale]).delete()
+
+        changed = []
+        for number, station in existing.items():
+            name, postal_code = name_and_postal_code_by_number[number]
+            if (station.region_name, station.postal_code) != (name, postal_code):
+                station.region_name, station.postal_code = name, postal_code
+                station.slug = build_region_slug(number, name)
+                changed.append(station)
+        if changed:
+            Region.objects.bulk_update(changed, ["region_name", "postal_code", "slug"], batch_size=self.BULK_BATCH_SIZE)
+
+        missing = {
+            number: name_and_postal_code
+            for number, name_and_postal_code in name_and_postal_code_by_number.items()
+            if number not in existing
+        }
+        if not missing:
+            return existing
+
+        csb = self._csb_for_parent(region)
+        Region.objects.bulk_create(
+            [
+                Region(
+                    election=self.election,
+                    region_number=region_number,
+                    region_name=region_name,
+                    postal_code=postal_code,
+                    parent=region,
+                    csb=csb,
+                    region_category=RegionCategory.STEMBUREAU,
+                    # bulk_create bypasses Region.save(), so derive the slug here
+                    slug=build_region_slug(region_number, region_name),
+                )
+                for region_number, (region_name, postal_code) in missing.items()
+            ],
+            batch_size=self.BULK_BATCH_SIZE,
+        )
+
+        return {station.region_number: station for station in Region.objects.filter(**stations_filter)}
+
+    def _parse_data(self) -> None:
+        authority_el = self.eml.managing_authority.authority_identifier
+        managing_authority_name = (authority_el.value or "").strip()
+        authority_id = int(self.eml.managing_authority.authority_identifier.id)
+
+        try:
+            region = Region.objects.get(
+                election=self.election,
+                region_number=authority_id,
+                region_name=managing_authority_name,
+            )
+        except Region.DoesNotExist:
+            raise EMLImporterException(
+                f"Municipality {managing_authority_name} {authority_id} "
+                f"does not exist in the election definition of election {self.election.name}"
+            )
+
+        # Same (eml_type, election, authority) already imported → replace the tree under it.
+        is_correction = self._is_correction(region)
+
+        # Archive + the existing import path below share one transaction on correction.
+        # First imports rely on the caller's atomic (if any); no second import method.
+        with transaction.atomic():
+            if is_correction:
+                self._delete(region)
+
+            region.results_available_at = self._eml_created_at()
+
+            counting_method = self._counting_method(self.eml.count)
+            if counting_method is not None:
+                region.counting_method = counting_method
+            region.save()
+
+            if self.file_path is not None:
+                self._store_eml(region)
+
+            # Preload party names dict
+            party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
+            polling_stations = self._ensure_polling_stations(region)
+
+            vote_counts: list[VoteCount] = []
+            turnout_counts: list[VoterTurnoutCount] = []
+            for contest_data in self.eml.count.election.contests.contest:
+                contest = self._get_contest(contest_data.contest_identifier.id)
+                candidate_by_key = {
+                    (candidate.party_id, candidate.identifier): candidate
+                    for candidate in Candidate.objects.filter(contest=contest)
+                }
+                self._parse_party_candidate_votecounts(
+                    contest,
+                    region,
+                    contest_data.total_votes.selection,
+                    party_by_list_number,
+                    candidate_by_key,
+                    vote_counts,
+                )
+                self._collect_turnout_counts(contest, region, contest_data.total_votes, turnout_counts)
+                for unit in contest_data.reporting_unit_votes:
+                    polling_station = polling_stations[str(unit.reporting_unit_identifier.id)]
+                    self._parse_party_candidate_votecounts(
+                        contest,
+                        polling_station,
+                        unit.selection,
+                        party_by_list_number,
+                        candidate_by_key,
+                        vote_counts,
+                    )
+                    self._collect_turnout_counts(contest, polling_station, unit, turnout_counts)
+
+            if vote_counts:
+                VoteCount.objects.bulk_create(vote_counts, batch_size=self.BULK_BATCH_SIZE)
+            if turnout_counts:
+                VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=self.BULK_BATCH_SIZE)
+
+
+class EML510cImporter(EML510BaseImporter):
+    """Telling HSB."""
+
+    eml_type = EmlType.EML_510c
+    file_type = ElectionDocument.FileType.EML_510C
+
+    def _get_election_identifier_data(self):
+        return self.eml.count.election.election_identifier
+
+    def _delete(self, region: Region) -> None:
+        """Archive prior HSB totaaltelling rows for this kieskring and its gemeenten."""
+        counts_filter = Q(region=region) | Q(region__parent=region)
+        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
+        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
+        ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
+
+    def _get_kieskring(self) -> Region:
+        regions_qs = Region.objects.filter(election=self.election, region_category=RegionCategory.KIESKRING)
+        election_domain = self._get_election_identifier_data().election_domain
+        if not isinstance(election_domain, list):
+            election_domain = [election_domain]
+
+        if not election_domain:
+            # TK and EP files have no ElectionDomain; the managing authority is the HSB, e.g. "HSB13" Rotterdam.
+            authority = self.eml.managing_authority.authority_identifier
+            match = HSB_NUMBER_RE.fullmatch(authority.id or "")
+            if match is None:
+                raise EMLImporterException(f"Managing authority {authority.id} is not an HSB")
+            return regions_qs.get(region_number=match[1], region_name=(authority.value or "").strip())
+
+        assert len(election_domain) == 1, "More than one election domain, cannot parse"
+        region_number = int(election_domain[0].id) if election_domain[0].id else None
+        region_name = election_domain[0].value
+        if not region_number:
+            # In PS the election domain has no region number, and the name alone identifies the kieskring.
+            return regions_qs.get(region_name=region_name)
+        return regions_qs.get(region_number=region_number, region_name=region_name)
+
+    def _parse_data(self) -> None:
+        region = self._get_kieskring()
+
+        is_correction = self._is_correction(region)
+
+        with transaction.atomic():
+            if is_correction:
+                self._delete(region)
+
+            update_fields = ["results_available_at", "updated_at"]
+            region.results_available_at = self._eml_created_at()
+            counting_method = self._counting_method(self.eml.count)
+            if counting_method is not None and region.counting_method != counting_method:
+                region.counting_method = counting_method
+                update_fields.append("counting_method")
+            region.save(update_fields=update_fields)
+
+            self._store_eml(region)
+
+            self._parse_hsb_counts(region)
+
+    def _parse_hsb_counts(self, region: Region) -> None:
+        # Preload party names dict and child regions (gemeenten) by name
+        party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
+        child_region_by_name = {
+            child.region_name: child
+            for child in Region.objects.filter(
+                election=self.election, region_category=RegionCategory.GEMEENTE, parent=region
+            )
+        }
+        child_region_category_re = re.compile(RegionCategory.GEMEENTE.label, re.IGNORECASE)
+
+        vote_counts: list[VoteCount] = []
+        turnout_counts: list[VoterTurnoutCount] = []
+        for contest_data in self.eml.count.election.contests.contest:
+            # Populated by self._parse_party_candidate_votecounts() when processing reporting unit's votes
+            candidate_by_short_code = {}
+
+            # Breakdown per gemeente
+            for unit in contest_data.reporting_unit_votes:
+                # Get gemeente name without region category prefix (e.g. gemeente)
+                child_region_name = child_region_category_re.sub("", unit.reporting_unit_identifier.value).strip()
+                child_region = child_region_by_name.get(child_region_name)
+                if child_region is None:
+                    raise EMLImporterException(
+                        f"Cannot find child_region_name {child_region_name} in child_region_by_name"
+                    )
+
+                contest = self._get_contest(contest_data.contest_identifier.id, child_region_name)
+                candidate_by_key = {
+                    (candidate.party_id, candidate.identifier): candidate
+                    for candidate in Candidate.objects.filter(contest=contest)
+                }
+
+                self._parse_party_candidate_votecounts(
+                    contest,
+                    child_region,
+                    unit.selection,
+                    party_by_list_number,
+                    candidate_by_key,
+                    vote_counts,
+                    candidate_by_short_code=candidate_by_short_code,
+                )
+                self._collect_turnout_counts(contest, child_region, unit, turnout_counts)
+
+            # HSB totals
+            contest = self._get_contest(contest_data.contest_identifier.id)
+            # Get candidates by (party, identifier) and by (None, DB id) key.
+            # We need to get candidates by DB id when processing contest-spanning totals. The DB ids are determined by
+            # the short code mapping, which is tracked when processing the reporting unit's votes.
+            candidate_by_key = {
+                (candidate.party_id, candidate.identifier): candidate
+                for candidate in Candidate.objects.filter(contest=contest)
+            } | {
+                (None, candidate.id): candidate
+                for candidate in Candidate.objects.filter(contest__election=self.election)
+            }
+            self._parse_party_candidate_votecounts(
+                contest,
+                region,
+                contest_data.total_votes.selection,
+                party_by_list_number,
+                candidate_by_key,
+                vote_counts,
+                candidate_by_short_code=candidate_by_short_code,
+            )
+            self._collect_turnout_counts(contest, region, contest_data.total_votes, turnout_counts)
+
+        if vote_counts:
+            VoteCount.objects.bulk_create(vote_counts, batch_size=self.BULK_BATCH_SIZE)
+        if turnout_counts:
+            VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=self.BULK_BATCH_SIZE)
+
+
+class EML510dImporter(EML510BaseImporter):
+    """Totaaltelling."""
+
+    eml_type = EmlType.EML_510d
+    file_type = ElectionDocument.FileType.EML_510D
+
+    def _get_election_identifier_data(self):
+        return self.eml.count.election.election_identifier
+
+    def _delete(self, region: Region) -> None:
+        """Archive prior totaaltelling rows for this CSB and its descendants."""
+        counts_filter = Q(region=region) | Q(region__csb=region)
+        VoteCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
+        VoterTurnoutCount.objects.filter(counts_filter, eml_type=self.eml_type).delete()
+        ElectionDocument.objects.filter(region=region, file_type=self.file_type).archive()
+
+    def _parse_data(self) -> None:
+        # Each election has exactly one CSB, whose region_category differs per election category. This also covers
+        # TK and EP, whose files have no ElectionDomain.
+        election_category = ElectionCategory(self.election.election_config.category)
+        region = Region.objects.get(election=self.election, region_category=election_category.config.csb)
+
+        is_correction = self._is_correction(region)
+
+        with transaction.atomic():
+            if is_correction:
+                self._delete(region)
+
+            update_fields = ["results_available_at", "updated_at"]
+            region.results_available_at = self._eml_created_at()
+            counting_method = self._counting_method(self.eml.count)
+            if counting_method is not None and region.counting_method != counting_method:
+                region.counting_method = counting_method
+                update_fields.append("counting_method")
+            region.save(update_fields=update_fields)
+
+            # Store the EML file
+            self._store_eml(region)
+
+            self._parse_csb_counts(region)
+
+    def _parse_csb_counts(self, region: Region) -> None:
+        # Preload party names dict and child regions by name
+        party_by_list_number = {party.list_number: party for party in Party.objects.filter(election=self.election)}
+        current_children = Region.objects.filter(parent=region)
+        child_region_category = RegionCategory.GEMEENTE if current_children.count() == 1 else RegionCategory.KIESKRING
+        child_region_by_name = {
+            child.region_name: child
+            for child in Region.objects.filter(election=self.election, region_category=child_region_category)
+        }
+        child_region_category_re = re.compile(child_region_category.label, re.IGNORECASE)
+
+        vote_counts: list[VoteCount] = []
+        turnout_counts: list[VoterTurnoutCount] = []
+        for contest_data in self.eml.count.election.contests.contest:
+            # Populated by self._parse_party_candidate_votecounts() when processing reporting unit's votes
+            candidate_by_short_code = {}
+
+            # Breakdown per child region (HSB/GSB)
+            for unit in contest_data.reporting_unit_votes:
+                # Get child region name without region category prefix (e.g. kieskring)
+                child_region_name = child_region_category_re.sub("", unit.reporting_unit_identifier.value).strip()
+                child_region = child_region_by_name.get(child_region_name)
+                if child_region is None:
+                    raise EMLImporterException(
+                        f"Cannot find child_region_name {child_region_name} in child_region_by_name"
+                    )
+
+                contest = self._get_contest(contest_data.contest_identifier.id, child_region_name)
+                candidate_by_key = {
+                    (candidate.party_id, candidate.identifier): candidate
+                    for candidate in Candidate.objects.filter(contest=contest)
+                }
+
+                self._parse_party_candidate_votecounts(
+                    contest,
+                    child_region,
+                    unit.selection,
+                    party_by_list_number,
+                    candidate_by_key,
+                    vote_counts,
+                    candidate_by_short_code=candidate_by_short_code,
+                )
+                self._collect_turnout_counts(contest, child_region, unit, turnout_counts)
+
+            # CSB totals
+            contest = self._get_contest(contest_data.contest_identifier.id)
+            # Get candidates by (party, identifier) and by (None, DB id) key.
+            # We need to get candidates by DB id when processing contest-spanning totals. The DB ids are determined by
+            # the short code mapping, which is tracked when processing the reporting unit's votes.
+            candidate_by_key = {
+                (candidate.party_id, candidate.identifier): candidate
+                for candidate in Candidate.objects.filter(contest=contest)
+            } | {
+                (None, candidate.id): candidate
+                for candidate in Candidate.objects.filter(contest__election=self.election)
+            }
+            self._parse_party_candidate_votecounts(
+                contest,
+                region,
+                contest_data.total_votes.selection,
+                party_by_list_number,
+                candidate_by_key,
+                vote_counts,
+                candidate_by_short_code=candidate_by_short_code,
+            )
+            self._collect_turnout_counts(contest, region, contest_data.total_votes, turnout_counts)
+
+        if vote_counts:
+            VoteCount.objects.bulk_create(vote_counts, batch_size=self.BULK_BATCH_SIZE)
+        if turnout_counts:
+            VoterTurnoutCount.objects.bulk_create(turnout_counts, batch_size=self.BULK_BATCH_SIZE)

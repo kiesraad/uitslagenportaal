@@ -4,7 +4,7 @@ from redis.exceptions import LockError
 
 from election.election_config_importer import WIPE_LOCK_WAIT, wipe_election_data
 from election.models import ElectionConfig
-from eml_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
+from file_import.utils.github_eml_file_handler import LOCK_TIMEOUT, GithubEmlFileHandler
 
 
 class Command(BaseCommand):

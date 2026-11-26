@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ElectionConfig } from "@/api/types";
 import { electionConfigQuery } from "@/hooks/queries";
-import { ReportIssuePage } from "@/pages/ReportIssuePage";
+import ReportIssuePage from "@/pages/ReportIssuePage";
 import { renderWithProviders } from "../testUtils";
 
 const electionConfig: ElectionConfig = {
@@ -17,28 +17,27 @@ const electionConfig: ElectionConfig = {
    single_csb: null,
    has_hsb: false,
    timeline_dates: [],
+   eml_dates: {},
    report_error_url: "https://example.test/melding",
    counting_info_url: "https://example.test/telproces",
    voting_url: "https://example.test/stemmen",
 };
 
 /**
- * Mounts the page the way its route does: the loader hands it the query, whose data is
- * already in the cache. `staleTime` keeps the suspense query from refetching behind the
- * assertions, so the page renders in one synchronous pass.
+ * Mounts the page the way its route does: the loader has already put the election in the
+ * cache. `staleTime` keeps the suspense query from refetching behind the assertions, so the
+ * page renders in one synchronous pass.
  */
 function renderReportIssuePage(config: ElectionConfig = electionConfig, locale: "nl" | "en" = "nl") {
    const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
    });
-   const query = electionConfigQuery(config.slug);
-   queryClient.setQueryData(query.queryKey, config);
+   queryClient.setQueryData(electionConfigQuery(config.slug).queryKey, config);
 
    return renderWithProviders(<ReportIssuePage />, {
       locale,
       initialEntries: [`/${config.slug}/fout-melden`],
       path: "/:electionConfigSlug/fout-melden",
-      loaderData: { electionConfigQuery: query },
       queryClient,
    });
 }

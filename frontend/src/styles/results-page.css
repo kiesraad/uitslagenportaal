@@ -145,6 +145,8 @@ a.results-image-container:hover {
    position: sticky;
    top: 1.5rem;
    align-self: start;
+   /* Lets the column shrink below the PDF's width, so the viewer can resize to fit. */
+   min-width: 0;
 }
 
 .page-main-two-columns:has(.result-unpublished) .counting-results-column {
