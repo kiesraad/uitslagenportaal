@@ -28,7 +28,7 @@ spec:
             - name: SSR_API_ORIGIN
               value: "http://{{ .Release.Name }}-backend:{{ .Values.backend.port }}"
             - name: ALLOW_INDEXING
-              value: "{{ eq .Values.environment "production" }}"
+              value: "{{ .Values.frontend.allowIndexing }}"
           # Not `/`: pages call the backend, and a backend outage should not take the frontend down too.
           readinessProbe:
             httpGet:
