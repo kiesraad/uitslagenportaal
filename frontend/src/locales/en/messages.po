@@ -155,7 +155,7 @@ msgstr "Central electoral committee checks"
 #. placeholder {0}: document.correction_number
 #: src/components/ResultsPage/ResultsPageColumns.tsx
 msgid "Corrigendum {0}"
-msgstr "Correction {0}"
+msgstr "Corrigendum {0}"
 
 #: src/components/ElectionFileEntry.tsx
 msgid "Corrigendum op het proces-verbaal van het gemeentelijk stembureau."
@@ -590,7 +590,7 @@ msgstr "Candidate"
 
 #: src/components/ResultsPage/PvSelect.tsx
 msgid "Kies een proces-verbaal"
-msgstr "Choose certified election results"
+msgstr "Choose certified election document"
 
 #: src/utils/region.ts
 msgid "Kieskring"
