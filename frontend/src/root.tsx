@@ -68,6 +68,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <meta name="robots" content="index, follow" />
             <meta property="og:type" content="website" />
             <meta property="og:site_name" content="Uitslagenportaal - Kiesraad" />
+            <meta name="twitter:card" content="summary_large_image" />
             <Meta />
             <Links />
          </head>

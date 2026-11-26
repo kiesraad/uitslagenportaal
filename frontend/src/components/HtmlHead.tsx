@@ -20,6 +20,7 @@ export default function HtmlHead({ title, description }: HtmlHeadProps) {
          <meta property="og:description" content={pageDescription} />
          {url && <link rel="canonical" href={url} />}
          {url && <meta property="og:url" content={url} />}
+         {origin && <meta property="og:image" content={`${origin}/images/share.png`} />}
       </>
    );
 }
