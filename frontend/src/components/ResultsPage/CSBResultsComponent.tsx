@@ -19,11 +19,7 @@ export function CSBResultsComponent({ electionConfig, region }: Props) {
    const regionName = region.region_name;
 
    return (
-      <ResultsPageColumns
-         previewUrl={region.certified_document?.preview_url}
-         documentUrl={region.certified_document?.url}
-         documentToc={region.certified_document?.toc}
-      >
+      <ResultsPageColumns documents={region.certified_documents} pvMayDiffer={region.pv_may_differ}>
          <RegionResultsContent
             intro={
                <Trans>

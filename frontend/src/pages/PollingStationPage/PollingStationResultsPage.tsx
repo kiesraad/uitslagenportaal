@@ -99,11 +99,7 @@ export default function PollingStationResultsPage() {
                { label: stationLabel },
             ]}
          />
-         <ResultsPageColumns
-            previewUrl={pollingStation.certified_document?.preview_url}
-            documentUrl={pollingStation.certified_document?.url}
-            documentToc={pollingStation.certified_document?.toc}
-         >
+         <ResultsPageColumns documents={pollingStation.certified_documents} pvMayDiffer={pollingStation.pv_may_differ}>
             <RegionResultsContent
                intro={t`De gemeente typt de telgegevens van alle stembureaus over in de uitslagensoftware. Zo kunnen alle stemmen worden opgeteld. Hieronder zie je hoe de gegevens van dit stembureau zijn overgenomen in de uitslagensoftware.`}
                notice={
