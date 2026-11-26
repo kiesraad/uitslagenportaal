@@ -45,6 +45,8 @@ mlflow:
     # The job runner serves only GenAI jobs (judges, prompt optimisation); it and its queue consumers push the pod
     # past 1Gi.
     MLFLOW_SERVER_ENABLE_JOB_EXECUTION: "false"
+    # The Host headers accepted, against DNS rebinding: a port-forward from the host, and from the ml compose service.
+    MLFLOW_SERVER_ALLOWED_HOSTS: "localhost:*,127.0.0.1:*,host.docker.internal:*"
 
   extraVolumes:
     - name: db-ca

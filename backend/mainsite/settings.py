@@ -340,6 +340,8 @@ LOGGING = {
         "redis.connection": {"level": "INFO"},
         "pytesseract": {"level": "INFO"},
         "pypdfium2": {"level": "INFO"},
+        # Warns on every malformed xref it repairs, which scanners often write; a PDF it can't read raises instead.
+        "pypdf._reader": {"level": "ERROR"},
     },
 }
 
