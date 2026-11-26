@@ -15,24 +15,16 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.conf import settings
-from django.contrib.sitemaps import views as sitemap_views
 from django.urls import include, path
-from django.views.decorators.cache import cache_page
 
 from mainsite import views
-from mainsite.sitemaps import sitemaps
-
-cached = cache_page(settings.API_CACHE_TIMEOUT)
 
 urlpatterns = [
     path("api/", include("election.urls")),
     path("api/<str:election_config>/regions/", include("region.urls")),
     path("api/", include("party.urls")),
     path("api/report-technical-issue/", views.report_technical_issue, name="report-technical-issue"),
-    path("sitemap.xml", cached(sitemap_views.index), {"sitemaps": sitemaps, "sitemap_url_name": "sitemap-section"}),
-    path("sitemap/<section>.xml", cached(sitemap_views.sitemap), {"sitemaps": sitemaps}, name="sitemap-section"),
-    # Neither of these is reachable from the internet: the Gateway routes only /api and /sitemap to
+    # Neither of these is reachable from the internet: the Gateway routes only /api to
     # the backend and everything else to the frontend. Probes and metric scrapes come
     # from inside the cluster and address the pod directly.
     path("healthz/", views.healthz, name="healthz"),

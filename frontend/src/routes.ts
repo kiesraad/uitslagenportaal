@@ -27,6 +27,7 @@ function municipalityRoutes(idSuffix: string): RouteConfigEntry[] {
 // page of their own, so they render a bare `Outlet`.
 export default [
    index("pages/HomePage.tsx", { id: "HomePage" }),
+   route("sitemap.xml", "sitemap.ts", { id: "Sitemap" }),
    route(":electionConfigSlug", "components/RouteOutlet.tsx", { id: "ElectionConfigRoute" }, [
       index("pages/NotFoundPage.tsx", { id: "NotFoundPage" }),
       route("fout-melden", "pages/ReportIssuePage.tsx", { id: "ReportIssuePage" }),
