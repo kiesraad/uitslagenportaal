@@ -51,6 +51,7 @@ class CertifiedDocumentSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     preview_url = serializers.SerializerMethodField()
     toc = serializers.SerializerMethodField()
+    file_type = serializers.CharField(read_only=True)
 
     class Meta:
         model = ElectionDocument
@@ -58,6 +59,7 @@ class CertifiedDocumentSerializer(serializers.ModelSerializer):
             "url",
             "preview_url",
             "toc",
+            "file_type",
         )
 
     @staticmethod

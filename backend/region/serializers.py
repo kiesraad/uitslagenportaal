@@ -11,6 +11,7 @@ from mainsite.serializers import (
     VoteCountSummarySerializer,
     VoterTurnoutCountSummarySerializer,
 )
+from mainsite.utils.eml_type import ReportingLevel
 from region.models import Region, parse_station_number
 
 CORRECTION_COUNT_FILE_TYPES = {
@@ -39,6 +40,16 @@ VIEWER_PRIORITY = {
             ElectionDocument.FileType.PDF_N10_2,
         )
     )
+}
+
+FileType = ElectionDocument.FileType
+
+# Per reporting level: whether the counts sit on the region's parent (a stembureau's come from the gemeente's
+# 510b), and the count EML whose corrections can make it differ from the PV. The CSB's counts are never corrected.
+COUNT_EML_BY_LEVEL = {
+    ReportingLevel.SB: (True, FileType.EML_510B),
+    ReportingLevel.GSB: (False, FileType.EML_510B),
+    ReportingLevel.HSB: (False, FileType.EML_510C),
 }
 
 
@@ -80,7 +91,8 @@ class RegionDetailSerializer(serializers.ModelSerializer):
     voter_turnout_counts = VoterTurnoutCountSummarySerializer(read_only=True, many=True)
     vote_counts = VoteCountSummarySerializer(read_only=True, many=True)
     documents = ElectionDocumentSerializer(read_only=True, many=True)
-    certified_document = serializers.SerializerMethodField()
+    certified_documents = serializers.SerializerMethodField()
+    pv_may_differ = serializers.SerializerMethodField()
     timeline_variant = serializers.SerializerMethodField()
     correction_date = serializers.SerializerMethodField()
     eml_dates = serializers.SerializerMethodField()
@@ -98,7 +110,8 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "vote_counts",
             "slug",
             "documents",
-            "certified_document",
+            "certified_documents",
+            "pv_may_differ",
             "timeline_variant",
             "correction_date",
             "eml_dates",
@@ -113,21 +126,51 @@ class RegionDetailSerializer(serializers.ModelSerializer):
             "hsb",
         )
 
-    def get_certified_document(self, region) -> dict | None:
-        # The view prefetches only the documents of the requested level. The form type decides which one is
-        # shown, not the import date, which follows the scraping order. Among forms of the same type the
-        # newest one wins, so the last of several stacked corrections is shown.
+    @staticmethod
+    def _viewer_documents(region) -> list[ElectionDocument]:
+        # The view prefetches only the documents of the requested level. The form type decides the order, not
+        # the import date, which follows the scraping order. Among forms of the same type the newest comes first,
+        # so the last of several stacked corrections leads.
         documents = [document for document in region.documents.all() if document.file_type in VIEWER_PRIORITY]
-        document = min(
+        return sorted(
             documents,
             key=lambda document: (
                 VIEWER_PRIORITY[document.file_type],
                 -document.created_at.timestamp(),
                 -document.pk,
             ),
-            default=None,
         )
-        return CertifiedDocumentSerializer(document).data if document else None
+
+    def get_certified_documents(self, region) -> list[dict]:
+        """Every PV of the region the viewer can show, best first. Corrections are numbered across the region's
+        corrections in import order; PV dates are not shown, as they follow the scraping order."""
+        documents = self._viewer_documents(region)
+        corrections = sorted(
+            (document for document in documents if document.file_type in ElectionDocument.CORRECTION_FILE_TYPES),
+            key=lambda document: (document.created_at, document.pk),
+        )
+        numbers = {document.pk: number for number, document in enumerate(corrections, start=1)}
+        return [
+            {**CertifiedDocumentSerializer(document).data, "correction_number": numbers.get(document.pk)}
+            for document in documents
+        ]
+
+    def get_pv_may_differ(self, region) -> bool:
+        """Whether the counts or a PV have been corrected, so the PV may not match the counts on the page yet.
+        Neither side says reliably which correction goes with which, so only that one exists is told."""
+        documents = self._viewer_documents(region)
+        if not documents:
+            return False
+        if any(document.file_type in ElectionDocument.CORRECTION_FILE_TYPES for document in documents):
+            return True
+        request = self.context.get("request")
+        level = request.query_params.get("level") if request else None
+        if level not in COUNT_EML_BY_LEVEL:
+            return False
+        on_parent, eml_file_type = COUNT_EML_BY_LEVEL[level]
+        region_id = region.parent_id if on_parent else region.pk
+        # Identical files are skipped on import, so every count after the first is a corrigendum.
+        return ElectionDocument.all_objects.filter(region_id=region_id, file_type=eml_file_type).count() > 1
 
     def get_eml_dates(self, region) -> dict:
         return region_eml_dates(region)

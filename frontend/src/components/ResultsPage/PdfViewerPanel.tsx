@@ -1,7 +1,7 @@
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Trans } from "@lingui/react/macro";
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { lazy, type ReactNode, Suspense, useEffect, useRef } from "react";
 import Button from "@/elements/Button.tsx";
 import { ExternalLinkIcon } from "@/elements/ExternalLinkIcon.tsx";
 
@@ -13,9 +13,11 @@ type Props = {
    pageNumber: number;
    onPageChange: (page: number) => void;
    onClose: () => void;
+   // Shown below the heading, as the choice of PV and notes about it.
+   controls?: ReactNode;
 };
 
-export default function PdfViewerPanel({ documentUrl, pageNumber, onPageChange, onClose }: Props) {
+export default function PdfViewerPanel({ documentUrl, pageNumber, onPageChange, onClose, controls }: Props) {
    const headingRef = useRef<HTMLHeadingElement>(null);
 
    // Only mounts when opened, so focus moves into the panel and a screen reader announces it.
@@ -35,6 +37,7 @@ export default function PdfViewerPanel({ documentUrl, pageNumber, onPageChange, 
                <Trans>Sluiten</Trans>
             </Button>
          </div>
+         {controls}
          <Suspense
             fallback={
                <p role="status">

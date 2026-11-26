@@ -11,16 +11,31 @@ import { useFormatters } from "@/utils/format.ts";
 import { appRoutes } from "@/utils/routes.ts";
 import { InfoBox } from "../InfoBox";
 import PdfViewerPanel from "./PdfViewerPanel";
+import PvSelect from "./PvSelect";
+import type { ViewablePv } from "./ResultsPageColumns";
 
 type Props = {
-   previewUrl?: string | null;
-   documentUrl?: string | null;
+   pvs: ViewablePv[];
+   // The PV shown in the box and the viewer; undefined when the region has none.
+   selected?: ViewablePv;
+   onSelect: (url: string) => void;
+   pvMayDiffer?: boolean;
+   // The PV that was open before a link switched to the selected one.
+   switchedFromLabel?: string | null;
    // The page the viewer shows, or null while it is closed.
    viewerPage: number | null;
    onViewerPageChange: (page: number | null) => void;
 };
 
-export default function ResultsSourceBox({ previewUrl, documentUrl, viewerPage, onViewerPageChange }: Props) {
+export default function ResultsSourceBox({
+   pvs,
+   selected,
+   onSelect,
+   pvMayDiffer,
+   switchedFromLabel,
+   viewerPage,
+   onViewerPageChange,
+}: Props) {
    const { t } = useLingui();
    const { electionConfigSlug } = useParams<{ electionConfigSlug: string }>();
    const { data: electionConfig } = useSuspenseQuery(electionConfigQuery(electionConfigSlug));
@@ -51,7 +66,7 @@ export default function ResultsSourceBox({ previewUrl, documentUrl, viewerPage, 
       </h2>
    );
 
-   if (!documentUrl || !previewUrl) {
+   if (!selected) {
       return (
          <div className="counting-results-infobox">
             <InfoBox disableMargin>
@@ -68,13 +83,38 @@ export default function ResultsSourceBox({ previewUrl, documentUrl, viewerPage, 
       );
    }
 
+   const documentUrl = selected.url;
+   const pvSelect = <PvSelect pvs={pvs} selected={selected} onSelect={onSelect} />;
+   const mayDiffer = pvMayDiffer && (
+      <p>
+         <Trans>
+            Er zijn correcties verwerkt in de telresultaten of in het proces-verbaal. Mogelijk zijn deze nog niet
+            allebei bijgewerkt. De aantallen in het proces-verbaal kunnen daardoor afwijken van die op deze pagina.
+         </Trans>
+      </p>
+   );
+
    if (isViewerOpen) {
+      const shownLabel = selected.label;
       return (
          <PdfViewerPanel
             documentUrl={documentUrl}
             pageNumber={viewerPage}
             onPageChange={onViewerPageChange}
             onClose={closeViewer}
+            controls={
+               <>
+                  {pvSelect}
+                  {switchedFromLabel && (
+                     <p role="status">
+                        <Trans>
+                           Getoond: {shownLabel}. Dit onderdeel staat niet in {switchedFromLabel}.
+                        </Trans>
+                     </p>
+                  )}
+                  {mayDiffer}
+               </>
+            }
          />
       );
    }
@@ -84,7 +124,7 @@ export default function ResultsSourceBox({ previewUrl, documentUrl, viewerPage, 
          <div className="results-image-resize" aria-hidden="true">
             <FontAwesomeIcon icon={faMaximize} />
          </div>
-         <img src={previewUrl} alt={t`Proces-verbaal`} className="results-image" />
+         <img src={selected.previewUrl} alt={t`Proces-verbaal`} className="results-image" />
       </>
    );
 
@@ -98,6 +138,8 @@ export default function ResultsSourceBox({ previewUrl, documentUrl, viewerPage, 
                   proces-verbaal dat gemaakt is na het tellen van de stemmen.
                </Trans>
             </span>
+            {mayDiffer && <div className="mb-2">{mayDiffer}</div>}
+            {pvs.length > 1 && <div className="mb-2">{pvSelect}</div>}
             {/* Two columns open the viewer beside the counts; one column opens the PDF in a new tab. */}
             <div className="mb-2 lg:hidden">
                <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="results-image-container">

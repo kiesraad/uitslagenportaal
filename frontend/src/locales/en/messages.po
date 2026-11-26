@@ -152,6 +152,11 @@ msgstr "Source documents"
 msgid "Centraal Stembureau controleert"
 msgstr "Central electoral committee checks"
 
+#. placeholder {0}: document.correction_number
+#: src/components/ResultsPage/ResultsPageColumns.tsx
+msgid "Corrigendum {0}"
+msgstr "Corrigendum {0}"
+
 #: src/components/ElectionFileEntry.tsx
 msgid "Corrigendum op het proces-verbaal van het gemeentelijk stembureau."
 msgstr "Correction to the certified election results of the municipal electoral committee."
@@ -361,6 +366,10 @@ msgstr "EML_NL election definition 110a"
 msgid "Er is een fout opgetreden"
 msgstr "Something went wrong"
 
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Er zijn correcties verwerkt in de telresultaten of in het proces-verbaal. Mogelijk zijn deze nog niet allebei bijgewerkt. De aantallen in het proces-verbaal kunnen daardoor afwijken van die op deze pagina."
+msgstr "Corrections have been made to the counting results or to the certified election results. They may not both have been updated yet, so the numbers in the certified election results may differ from those on this page."
+
 #: src/pages/ErrorBoundaryPage.tsx
 msgid "Fout"
 msgstr "Error"
@@ -409,6 +418,10 @@ msgstr "Municipalities"
 #: src/pages/PollingStationPage/PollingStationResultsPage.tsx
 msgid "Geplaatst op: {publishedAt}"
 msgstr "Published on: {publishedAt}"
+
+#: src/components/ResultsPage/ResultsSourceBox.tsx
+msgid "Getoond: {shownLabel}. Dit onderdeel staat niet in {switchedFromLabel}."
+msgstr "Showing: {shownLabel}. This part is not in {switchedFromLabel}."
 
 #: src/components/ElectionFileEntry.tsx
 msgid "Handgeschreven verslagen van {present} van de {total} stembureaus"
@@ -574,6 +587,10 @@ msgstr "In collaboration with De Kiesraad"
 #: src/components/ResultsPage/PartyVoteMatrixTable.tsx
 msgid "Kandidaat"
 msgstr "Candidate"
+
+#: src/components/ResultsPage/PvSelect.tsx
+msgid "Kies een proces-verbaal"
+msgstr "Choose certified election document"
 
 #: src/utils/region.ts
 msgid "Kieskring"
@@ -776,6 +793,7 @@ msgstr "Try again"
 
 #: src/components/ResultsPage/PdfDocument.tsx
 #: src/components/ResultsPage/PdfViewerPanel.tsx
+#: src/components/ResultsPage/ResultsPageColumns.tsx
 #: src/components/ResultsPage/ResultsSourceBox.tsx
 msgid "Proces-verbaal"
 msgstr "Certified election results"

@@ -10,7 +10,7 @@ import { twMerge } from "tailwind-merge";
 import type { ElectionDocument, ElectionDocumentFileType } from "@/api/types.ts";
 import { useFormatters } from "@/utils/format.ts";
 
-const FILE_TYPE_MAPPINGS: Record<
+export const FILE_TYPE_MAPPINGS: Record<
    ElectionDocumentFileType,
    { name: MessageDescriptor; fileType: string; description: MessageDescriptor; icon: IconDefinition }
 > = {

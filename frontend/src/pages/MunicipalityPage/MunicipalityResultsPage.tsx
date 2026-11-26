@@ -33,11 +33,7 @@ export default function MunicipalityResultsPage() {
    return (
       <MunicipalityPageLayout electionConfig={electionConfig} region={region} municipalityTitle={municipalityTitle}>
          <HtmlHead title={t`Resultaten ${municipalityTitle}`} />
-         <ResultsPageColumns
-            previewUrl={region.certified_document?.preview_url}
-            documentUrl={region.certified_document?.url}
-            documentToc={region.certified_document?.toc}
-         >
+         <ResultsPageColumns documents={region.certified_documents} pvMayDiffer={region.pv_may_differ}>
             <RegionResultsContent
                intro={
                   <Trans>
