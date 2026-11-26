@@ -50,11 +50,23 @@ dev = [
 ml = [
     "dvc[s3]>=3.67.1",
     "mlflow>=3.18.0",
+    "sentencepiece>=0.2.0",
+    "torch>=2.9.0",
+    "transformers>=4.57.0",
 ]
 # Only the scraper worker image installs this, to keep Playwright out of the runtime image.
 scraper = [
     "playwright>=1.62.0",
 ]
+
+# CPU-only torch: the CUDA wheels add gigabytes the ml image does not use.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
 
 [tool.setuptools]
 py-modules = []

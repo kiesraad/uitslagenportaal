@@ -49,6 +49,30 @@ stages:
     - split.train
     - split.validate
     - split.blank
-    - split.seed
+    - split.random-seed
     outs:
     - data/split
+  evaluate:
+    foreach: ${evaluate.readers}
+    do:
+      cmd: python -m scripts.evaluate data/split/test.csv data/crops data/evaluation/${key} --reader ${key}
+      deps:
+      - data/split/test.csv
+      - data/crops
+      - scripts/evaluate.py
+      - ../backend/pv_ocr/readers/__init__.py
+      - ../backend/pv_ocr/readers/trocr.py
+      - ../backend/pv_ocr/utils/ocr.py
+      params:
+      - evaluate.pages
+      - evaluate.random-seed
+      - evaluate.macro-min-crops
+      - evaluate.readers.${key}
+      metrics:
+      - data/evaluation/${key}/metrics.json:
+          cache: false
+      outs:
+      - data/evaluation/${key}/misreads.csv
+      - data/evaluation/${key}/calibration.csv
+      - data/evaluation/${key}/confusion.csv
+      - data/evaluation/${key}/per_group.csv

@@ -8,4 +8,18 @@ split:
   test: 0.15
   # Blank crops kept, as a share of the written ones; blank means 0 and is easy to tell.
   blank: 0.05
-  seed: 0
+  random-seed: 0
+evaluate:
+  # Pages of the test split sampled, spread evenly over the models; null for all.
+  pages: 300
+  random-seed: 0
+  # The crops a model needs in the sample to count in the macro scores; it is scored on its own either way.
+  macro-min-crops: 200
+  # `reader` names the reader in `pv_ocr.readers.READERS`; the rest are its options.
+  readers:
+    trocr-base:
+      reader: trocr
+      checkpoint: microsoft/trocr-base-handwritten
+    trocr-small:
+      reader: trocr
+      checkpoint: microsoft/trocr-small-handwritten

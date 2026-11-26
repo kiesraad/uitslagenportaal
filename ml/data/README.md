@@ -18,6 +18,7 @@ docker compose exec ml dvc pull data/testdata/GR2026/0228-ede   # part of a dire
 | `orientations.json` | The rotation of each vote page of the OCR models           | `orientations`   |
 | `crops/`            | A crop of each handwritten number, with its 510b value     | `extract_crops`  |
 | `split/`            | The crops for training, validation and testing             | `split`          |
+| `evaluation/`       | The scores of each number reader on the test split         | `evaluate`       |
 
 ## testdata
 
@@ -156,3 +157,26 @@ attached or on its own, leaves out the fields its corrigendum filled in.
 
 The votes-cast and differences crops of N 10-2 are in `train` only: the 510b holds the recount of the gemeentelijk
 stembureau, which differs from what the stembureau wrote in about 5% of them, nearly always by 1 or 2.
+
+## evaluation
+
+The `evaluate` stage runs each reader in `evaluate.readers` of `params.yaml` over the test split, and writes its scores
+to `evaluation/<reader>/`. It reads a sample of `evaluate.pages` whole pages, spread evenly over the models. A model
+with fewer pages than its share, such as the corrigenda, is read whole; `null` reads the whole split. A reader that reads nothing scores
+as 0, which is what a blank area means outside the corrigenda.
+
+| File              | Contents                                                                                  |
+|-------------------|-------------------------------------------------------------------------------------------|
+| `metrics.json`    | The scores per model, pooled (`all`), and as the mean over the models (`macro`)           |
+| `per_group.csv`   | The same scores as a table, a row per model, `all` and `macro`                            |
+| `misreads.csv`    | Each crop read wrongly, with its label, the reading and its confidence, surest first      |
+| `calibration.csv` | Per model and confidence bin, the crops, their mean confidence and their accuracy         |
+| `confusion.csv`   | Per model, how often each digit is read as each other one; `∅` is a missed or extra digit |
+
+The scores are `exact_match`, the share of numbers read right, also for the blank and written crops apart;
+`page_exact_match`, the share of pages with every number of the split right, which holds only a few of their blank
+crops; `digit_error_rate`, `confusion_1_7` and `confusion_7_1` from the confusion matrix of the written crops; and
+`ece`, the expected calibration error. Compare readers on `macro`, the unweighted mean over the models: the pooled
+scores lean towards the models with most numbers per page, such as Na 31-2 Bijlage 1. A model with fewer crops in the
+sample than `evaluate.macro-min-crops` is scored, but left out of `macro`; `models` says how many count. The same scores, files and a heatmap of
+each confusion matrix are logged to MLflow, in the experiment `number-readers`.
