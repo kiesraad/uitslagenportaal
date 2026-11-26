@@ -65,7 +65,6 @@ export function Layout({ children }: { children: ReactNode }) {
             <meta charSet="UTF-8" />
             <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <meta name="robots" content="index, follow" />
             <meta property="og:type" content="website" />
             <meta property="og:site_name" content="Uitslagenportaal - Kiesraad" />
             <meta name="twitter:card" content="summary_large_image" />
