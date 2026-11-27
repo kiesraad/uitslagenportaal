@@ -48,6 +48,7 @@ describe("router", () => {
       ["/ab2023/onzin", "NotFoundPageNested"],
       ["/ab2023", "NotFoundPage"],
       ["/ab2023/van-stem-tot-uitslag", "ElectionConfigTimelinePage"],
+      ["/sitemap.xml", "Sitemap"],
    ])("%s renders %s", (pathname, expected) => {
       expect(match(pathname).chain.at(-1)).toBe(expected);
    });
@@ -90,11 +91,13 @@ function routeFiles(entries: RouteConfigEntry[]): string[] {
 // loader would reach the server as an empty shell.
 describe("route modules", () => {
    const withoutLoader = ["components/RouteOutlet.tsx"];
+   // A resource route answers on the server only.
+   const serverOnly = ["sitemap.ts"];
    const pageFiles = [...new Set(routeFiles(routeConfig as RouteConfigEntry[]))].filter(
       (file) => !withoutLoader.includes(file),
    );
 
-   it.each(pageFiles)("%s exports a clientLoader", async (file) => {
+   it.each(pageFiles.filter((file) => !serverOnly.includes(file)))("%s exports a clientLoader", async (file) => {
       const module = await import(`../src/${file}`);
       expect(module.clientLoader).toBeTypeOf("function");
    });

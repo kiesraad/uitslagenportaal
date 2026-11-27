@@ -1,0 +1,21 @@
+# Uitslagenportaal - Kiesraad
+
+> The Uitslagenportaal of the Kiesraad (Dutch Electoral Council) shows the counting results of Dutch elections, from every polling station up to the national total. It publishes the digital counting files (EML) and the scanned official reports (processen-verbaal) they are based on.
+
+The paper process is leading: votes are counted by hand and recorded in official reports (processen-verbaal). The digital results on this site are derived from those reports. When citing a result, link to the page it comes from and mention that the official report is the authoritative source.
+
+Expired elections are removed from the site. The site is in Dutch; an English version is available through the language switch.
+
+## How the site is organised
+
+Each election has its own pages. Results are shown per level of the counting process: polling station, municipality (gemeentelijk stembureau, GSB), electoral district (hoofdstembureau, HSB, only for elections that have them) and central electoral committee (centraal stembureau, CSB: the country, a province or a water board). Each level has a results page, also per party.
+
+## Finding pages
+
+- [Sitemap](https://uitslagen.kiesraad.nl/sitemap.xml): every election and region page; party and polling-station pages are linked from there
+- [Home](https://uitslagen.kiesraad.nl/): the current elections
+
+## Optional
+
+- [Kiesraad](https://www.kiesraad.nl/): the Dutch Electoral Council
+- [Source code](https://github.com/kiesraad/uitslagenportaal)

@@ -78,6 +78,8 @@ frontend:
   pullPolicy: "Always"
   port: 3000
   replicas: 2
+  # Lets search engines index the site; only the production deploy turns this on.
+  allowIndexing: false
   resources:
     # The idle Node server uses about 90Mi.
     requests:
